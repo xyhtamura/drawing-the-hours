@@ -14,6 +14,8 @@ Playtest Morning Verge on a real tablet — finger-scale closure tolerance, poin
 
 ## Activity
 
+2026-09-14 — Antigravity — Initialized git repository in `relation-garden/` with `.gitignore` and root baseline commit. Backed up complete project to `f:\xyh\relation-garden-backup\`. Refactored gesture input in `src/game.js` to unified Pointer Events API with `setPointerCapture` and `releasePointerCapture`, resolving potential touch/mouse duplicate triggers and supporting stylus drawing beyond the canvas border. Added `drawRoundedRect` canvas fallback for cross-browser resilience. Guarded canvas click when Field Book modal is active. Overhauled and formalized `SPEC.md` to document the verified Level One implementation, stroke length bands, cycle extraction, inhabitant flight models, combination grammar, and the complete 24-level Four-Hour campaign roadmap (Dawn, Noon, Dusk, Midnight). Re-ran test suite (all tests passing). Real-tablet gesture calibration remains next.
+
 2026-09-14 — Codex — Added the three optional mechanical experiments to
 `SPEC.md` at Xyh's request: matching compositions across figure-eight pockets,
 ordered crossing, and length-dependent recipe validity. Correspondence is the

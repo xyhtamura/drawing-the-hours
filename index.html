@@ -114,6 +114,7 @@
 
     // Canvas click to start or restart when in intro / gameover / victory
     canvas.addEventListener('click', () => {
+      if (modal && modal.classList.contains('active')) return;
       if (game.state === 'INTRO') {
         game.startLevel();
       } else if (game.state === 'VICTORY' || game.state === 'GAMEOVER') {

@@ -15,6 +15,24 @@ import { evaluateDrawing } from './recipes.js';
 import { DandelionClock } from './clock.js';
 import { audio } from './audio.js';
 
+function drawRoundedRect(ctx, x, y, w, h, r) {
+  if (ctx.roundRect) {
+    ctx.roundRect(x, y, w, h, r);
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+}
+
 export class Game {
   constructor(canvas) {
     this.canvas = canvas;
@@ -37,6 +55,7 @@ export class Game {
     this.activeBand = getLengthBand(0);
     this.lastPointerPos = { x: 0, y: 0 };
     this.lastPointerTime = 0;
+    this.activePointerId = undefined;
 
     // Transient feedback & visuals
     this.recoilStroke = null;
@@ -169,9 +188,19 @@ export class Game {
     };
 
     const onPointerDown = (e) => {
+      const modal = document.getElementById('fieldbook-modal');
+      if (modal && modal.classList.contains('active')) return;
+
       if (this.state !== 'PLAYING') return;
       e.preventDefault();
       audio.ensureContext();
+
+      if (this.canvas.setPointerCapture && e.pointerId !== undefined) {
+        try {
+          this.canvas.setPointerCapture(e.pointerId);
+          this.activePointerId = e.pointerId;
+        } catch (_) {}
+      }
 
       const pos = getPos(e);
       this.isDrawing = true;
@@ -210,19 +239,24 @@ export class Game {
     const onPointerUp = (e) => {
       if (!this.isDrawing) return;
       e.preventDefault();
+
+      if (this.canvas.releasePointerCapture && this.activePointerId !== undefined) {
+        try {
+          this.canvas.releasePointerCapture(this.activePointerId);
+        } catch (_) {}
+        this.activePointerId = undefined;
+      }
+
       this.isDrawing = false;
       audio.stopDrawingRustle();
 
       this.resolveCurrentStroke();
     };
 
-    this.canvas.addEventListener('mousedown', onPointerDown);
-    window.addEventListener('mousemove', onPointerMove);
-    window.addEventListener('mouseup', onPointerUp);
-
-    this.canvas.addEventListener('touchstart', onPointerDown, { passive: false });
-    window.addEventListener('touchmove', onPointerMove, { passive: false });
-    window.addEventListener('touchend', onPointerUp, { passive: false });
+    this.canvas.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    this.canvas.addEventListener('pointercancel', onPointerUp);
   }
 
   resolveCurrentStroke() {
@@ -613,7 +647,7 @@ export class Game {
     ctx.lineWidth = 1.2;
     const meterW = 160, meterH = 18;
     ctx.beginPath();
-    ctx.roundRect(cx - meterW / 2, 24, meterW, meterH, 9);
+    drawRoundedRect(ctx, cx - meterW / 2, 24, meterW, meterH, 9);
     ctx.fill();
     ctx.stroke();
 
@@ -622,7 +656,7 @@ export class Game {
     if (fillRatio > 0.01) {
       ctx.fillStyle = this.activeBand.color;
       ctx.beginPath();
-      ctx.roundRect(cx - meterW / 2 + 2, 26, (meterW - 4) * fillRatio, meterH - 4, 7);
+      drawRoundedRect(ctx, cx - meterW / 2 + 2, 26, (meterW - 4) * fillRatio, meterH - 4, 7);
       ctx.fill();
     }
 
@@ -671,7 +705,7 @@ export class Game {
       const by = this.height - 54;
 
       ctx.beginPath();
-      ctx.roundRect(cx - boxW / 2, by, boxW, boxH, 8);
+      drawRoundedRect(ctx, cx - boxW / 2, by, boxW, boxH, 8);
       ctx.fill();
       ctx.stroke();
 
@@ -793,7 +827,7 @@ export class Game {
     // Paper card drop shadow
     ctx.fillStyle = 'rgba(20, 25, 15, 0.2)';
     ctx.beginPath();
-    ctx.roundRect(-w / 2 + 5, -h / 2 + 8, w, h, 14);
+    drawRoundedRect(ctx, -w / 2 + 5, -h / 2 + 8, w, h, 14);
     ctx.fill();
 
     // Paper card body
@@ -801,7 +835,7 @@ export class Game {
     ctx.strokeStyle = '#d8ccb6';
     ctx.lineWidth = 1.8;
     ctx.beginPath();
-    ctx.roundRect(-w / 2, -h / 2, w, h, 14);
+    drawRoundedRect(ctx, -w / 2, -h / 2, w, h, 14);
     ctx.fill();
     ctx.stroke();
 
@@ -809,7 +843,7 @@ export class Game {
     ctx.strokeStyle = '#ece3d2';
     ctx.lineWidth = 1.0;
     ctx.beginPath();
-    ctx.roundRect(-w / 2 + 8, -h / 2 + 8, w - 16, h - 16, 10);
+    drawRoundedRect(ctx, -w / 2 + 8, -h / 2 + 8, w - 16, h - 16, 10);
     ctx.stroke();
 
     contentFn();
