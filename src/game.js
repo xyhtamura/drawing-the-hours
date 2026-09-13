@@ -43,6 +43,7 @@ export class Game {
     this.dpr = window.devicePixelRatio || 1;
 
     // Game state
+    this.currentWave = 1; // Wave 1: Foundations | Wave 2: Twin Echoes (Correspondence Experiment)
     this.state = 'INTRO'; // 'INTRO' | 'PLAYING' | 'PAUSED' | 'VICTORY' | 'GAMEOVER'
     this.score = 0;
     this.harmoniesCount = 0;
@@ -119,21 +120,33 @@ export class Game {
     }
   }
 
-  initLevel() {
+  initLevel(wave = this.currentWave) {
+    this.currentWave = wave;
     this.entities = [];
     this.score = 0;
     this.harmoniesCount = 0;
+    this.harmoniesGoal = (this.currentWave === 1) ? 5 : 4;
     this.clock.reset(60);
 
-    // Initial butterfly population
-    const butterflies = [
+    // Initial insect population based on active wave
+    const fliers = (this.currentWave === 1) ? [
       new Butterfly(this.width * 0.25, this.height * 0.35, 'brimstone'),
       new Butterfly(this.width * 0.35, this.height * 0.55, 'brimstone'),
-      new Butterfly(this.width * 0.65, this.height * 0.3, 'azure'),
-      new Butterfly(this.width * 0.75, this.height * 0.6, 'azure'),
-      new Butterfly(this.width * 0.45, this.height * 0.25, 'roseate'),
-      new Butterfly(this.width * 0.5, this.height * 0.7, 'roseate'),
+      new Butterfly(this.width * 0.65, this.height * 0.3, 'damselfly'),
+      new Butterfly(this.width * 0.75, this.height * 0.6, 'damselfly'),
+      new Butterfly(this.width * 0.45, this.height * 0.25, 'hawkmoth'),
+      new Butterfly(this.width * 0.5, this.height * 0.7, 'hawkmoth'),
       new Butterfly(this.width * 0.2, this.height * 0.75, 'brimstone'),
+    ] : [
+      // Wave 2: Twin Echoes (Symmetric Correspondence experiment)
+      new Butterfly(this.width * 0.22, this.height * 0.35, 'brimstone'),
+      new Butterfly(this.width * 0.32, this.height * 0.55, 'brimstone'),
+      new Butterfly(this.width * 0.65, this.height * 0.3, 'damselfly'),
+      new Butterfly(this.width * 0.75, this.height * 0.6, 'damselfly'),
+      new Butterfly(this.width * 0.45, this.height * 0.25, 'hawkmoth'),
+      new Butterfly(this.width * 0.52, this.height * 0.7, 'hawkmoth'),
+      new Butterfly(this.width * 0.2, this.height * 0.75, 'damselfly'),
+      new Butterfly(this.width * 0.8, this.height * 0.4, 'hawkmoth'),
     ];
 
     const seeds = [
@@ -143,14 +156,15 @@ export class Game {
 
     const hazard = new Snail(this.width * 0.5, this.height - 35);
 
-    this.entities.push(...butterflies, ...seeds, hazard);
+    this.entities.push(...fliers, ...seeds, hazard);
   }
 
   maintainPopulation() {
-    const butterflies = this.entities.filter(e => e.type === 'butterfly' && e.state !== 'departing');
-    const kinds = ['brimstone', 'azure', 'roseate'];
+    const fliers = this.entities.filter(e => e.type === 'butterfly' && e.state !== 'departing');
+    const kinds = ['brimstone', 'damselfly', 'hawkmoth'];
 
-    if (butterflies.length < 6) {
+    const targetCount = (this.currentWave === 1) ? 6 : 8;
+    if (fliers.length < targetCount) {
       const missingKind = kinds[Math.floor(Math.random() * kinds.length)];
       // Spawn at verge
       const edge = Math.random();
@@ -343,11 +357,23 @@ export class Game {
     this.strokeLength = 0;
   }
 
-  startLevel() {
-    this.initLevel();
+  startLevel(wave = this.currentWave) {
+    this.currentWave = wave;
+    this.initLevel(this.currentWave);
     this.victoryDelay = 0;
     this.state = 'PLAYING';
-    this.showFeedback('Morning Verge: Gather 5 harmonious combinations', 'info', 3.0);
+    const waveTitle = this.currentWave === 1 ? 'Morning Verge' : 'Twin Echoes';
+    const goalText = this.currentWave === 1
+      ? 'Morning Verge: Gather 5 harmonious combinations'
+      : 'Twin Echoes: Mirror species across figure-eights (4 harmonies)';
+    this.showFeedback(goalText, 'info', 3.0);
+    if (typeof this.onWaveChanged === 'function') {
+      this.onWaveChanged(this.currentWave);
+    }
+  }
+
+  setWave(wave) {
+    this.startLevel(wave);
   }
 
   togglePause() {
@@ -668,12 +694,16 @@ export class Game {
     // --- Top-Right: Objective & Score ---
     ctx.textAlign = 'right';
     ctx.fillStyle = '#4a4235';
-    ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-    ctx.fillText(`Harmonies: ${this.harmoniesCount} / ${this.harmoniesGoal}`, this.width - 24, 38);
+    ctx.font = '600 13px system-ui, -apple-system, sans-serif';
+    ctx.fillText(`Harmonies: ${this.harmoniesCount} / ${this.harmoniesGoal}`, this.width - 24, 34);
+
+    ctx.fillStyle = '#7a6c57';
+    ctx.font = 'italic 11px Georgia, serif';
+    ctx.fillText(`Wave ${this.currentWave}: ${this.currentWave === 1 ? 'Morning Verge' : 'Twin Echoes'}`, this.width - 24, 49);
 
     ctx.fillStyle = '#8a7f70';
-    ctx.font = '500 12px system-ui, -apple-system, sans-serif';
-    ctx.fillText(`Score: ${this.score}`, this.width - 24, 54);
+    ctx.font = '500 11px system-ui, -apple-system, sans-serif';
+    ctx.fillText(`Score: ${this.score}`, this.width - 24, 64);
 
     // --- Bottom-Center: Feedback Banner ---
     if (this.feedbackBanner.timer > 0) {
@@ -718,35 +748,45 @@ export class Game {
   }
 
   drawIntroModal(ctx) {
-    this.drawModalBox(ctx, 460, 310, () => {
+    const isWave1 = (this.currentWave === 1);
+    this.drawModalBox(ctx, 490, 325, () => {
       ctx.fillStyle = '#3a3429';
       ctx.font = 'bold 22px Georgia, serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Drawing the Hours', 0, -85);
+      ctx.fillText('Drawing the Hours', 0, -95);
 
       ctx.font = 'italic 14px Georgia, serif';
       ctx.fillStyle = '#7a6f5f';
-      ctx.fillText('Visit I: Morning Verge', 0, -60);
+      ctx.fillText(isWave1 ? 'Visit I: Morning Verge' : 'Visit II: Twin Echoes (Correspondence)', 0, -70);
 
       ctx.font = '13px system-ui, -apple-system, sans-serif';
       ctx.fillStyle = '#4c4234';
       ctx.textAlign = 'left';
-      const lines = [
-        '• Draw a loop around 2 matching butterflies (Kindred Pair)',
-        '• Or 3 distinct species: Brimstone, Azure, Roseate (Trio of Flight)',
-        '• Pair a butterfly with an airborne dandelion seed (Seed & Wing)',
-        '• Cross over to form a Figure-Eight for two-pocket correspondence!',
-        '• Avoid crawlers — snails will tangle and fray the cord.',
+
+      const lines = isWave1 ? [
+        '• Brimstone Butterfly: Sulphur folded paper wings, wanders and glides.',
+        '• Azure Damselfly: Slender needle body, hovers still then darts swiftly.',
+        '• Roseate Hawkmoth: Plump velvety body, swept delta wings in wide arcs.',
+        '• Single loops: Kindred Pair (2 matching), Trio (all 3), Seed & Wing.',
+        '• Cross cord into Figure-Eight for two-pocket nursery or correspondence.',
+        '• Snails crawl along verges — their shells will fray your cord.',
+      ] : [
+        '• Experiment: Symmetric Correspondence across Figure-Eight lobes.',
+        '• Cross cord to form two pockets: mirror identical species in both!',
+        '• Example: 1 Damselfly + 1 Hawkmoth in Pocket A, and the same in Pocket B.',
+        '• Mixed groupings that fail alone will harmonize through bilateral symmetry.',
+        '• Goal: Gather 4 Twin Echo harmonies before the dandelion clock runs out.',
       ];
+
       lines.forEach((line, idx) => {
-        ctx.fillText(line, -195, -24 + idx * 24);
+        ctx.fillText(line, -215, -34 + idx * 23);
       });
 
       // Button prompt
       ctx.fillStyle = '#5c4538';
       ctx.font = '600 14px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('[ Click anywhere or press Space to enter the meadow ]', 0, 115);
+      ctx.fillText(`[ Click anywhere or press Space to enter ${isWave1 ? 'Morning Verge' : 'Twin Echoes'} ]`, 0, 122);
     });
   }
 
@@ -770,24 +810,39 @@ export class Game {
   }
 
   drawVictoryModal(ctx) {
-    this.drawModalBox(ctx, 450, 260, () => {
+    const isWave1 = (this.currentWave === 1);
+    this.drawModalBox(ctx, 470, 275, () => {
       ctx.fillStyle = '#2b5028';
       ctx.font = 'bold 22px Georgia, serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Morning Verge Harmonized', 0, -65);
+      ctx.fillText(isWave1 ? 'Morning Verge Harmonized' : 'Twin Echoes Harmonized', 0, -70);
 
       ctx.font = 'italic 14px Georgia, serif';
       ctx.fillStyle = '#5a7857';
-      ctx.fillText('The quiet hour departs in peace.', 0, -40);
+      ctx.fillText(
+        isWave1 ? 'The quiet hour departs in peace.' : 'Symmetric correspondence achieved across both lobes.',
+        0,
+        -45
+      );
 
       ctx.font = '14px system-ui, -apple-system, sans-serif';
       ctx.fillStyle = '#3d3428';
-      ctx.fillText(`All 5 relationships completed with grace.`, 0, 0);
-      ctx.fillText(`Final Visit Score: ${this.score} points`, 0, 30);
+      ctx.fillText(
+        isWave1
+          ? `All ${this.harmoniesGoal} relationships completed with grace.`
+          : `All ${this.harmoniesGoal} correspondence experiments mirrored perfectly.`,
+        0,
+        -5
+      );
+      ctx.fillText(`Final Visit Score: ${this.score} points`, 0, 25);
 
       ctx.fillStyle = '#5c4538';
       ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-      ctx.fillText('[ Click to Replay Morning Visit ]', 0, 85);
+      ctx.fillText(
+        isWave1 ? '[ Click or Press Space to Enter Wave 2: Twin Echoes ]' : '[ Click or Press Space to Replay Garden ]',
+        0,
+        85
+      );
     });
   }
 
@@ -809,7 +864,7 @@ export class Game {
 
       ctx.fillStyle = '#5c4538';
       ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-      ctx.fillText('[ Click to Try Again ]', 0, 85);
+      ctx.fillText('[ Click or Press Space to Try Again ]', 0, 85);
     });
   }
 

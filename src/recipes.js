@@ -1,6 +1,7 @@
 /**
  * Drawing the Hours — Combinatorial Recipes & Validation
  * Evaluates entities enclosed in single pockets or two-pocket figure-eights.
+ * Supports distinct meadow species: Brimstone Butterfly, Azure Damselfly, Roseate Hawkmoth.
  */
 
 import { getLengthBand } from './geometry.js';
@@ -10,21 +11,38 @@ export const RECIPE_TYPES = {
   TRIO_OF_FLIGHT: 'TRIO_OF_FLIGHT',
   SEED_AND_WING: 'SEED_AND_WING',
   CROSS_MEADOW_CORRESPONDENCE: 'CROSS_MEADOW_CORRESPONDENCE',
+  SYMMETRIC_CORRESPONDENCE: 'SYMMETRIC_CORRESPONDENCE',
   NURSERY_POLARITY: 'NURSERY_POLARITY',
   TWIN_SEED_AND_WING: 'TWIN_SEED_AND_WING',
 };
 
+export const SPECIES_NAMES = {
+  brimstone: 'Brimstone Butterfly',
+  damselfly: 'Azure Damselfly',
+  hawkmoth: 'Roseate Hawkmoth',
+  // Backward compatibility
+  azure: 'Azure Damselfly',
+  roseate: 'Roseate Hawkmoth',
+};
+
+function normalizeKind(kind) {
+  if (kind === 'azure') return 'damselfly';
+  if (kind === 'roseate') return 'hawkmoth';
+  return kind;
+}
+
 /**
  * Summarize entities within a pocket
  */
-function summarizePocket(entities) {
-  const butterflies = entities.filter(e => e.type === 'butterfly');
+export function summarizePocket(entities) {
+  const butterflies = entities.filter(e => e.type === 'butterfly' || e.type === 'insect');
   const seeds = entities.filter(e => e.type === 'seed');
   const hazards = entities.filter(e => e.type === 'hazard');
 
   const countsByKind = {};
   for (const b of butterflies) {
-    countsByKind[b.kind] = (countsByKind[b.kind] || 0) + 1;
+    const k = normalizeKind(b.kind);
+    countsByKind[k] = (countsByKind[k] || 0) + 1;
   }
 
   return {
@@ -40,7 +58,7 @@ function summarizePocket(entities) {
 /**
  * Check if a single pocket satisfies a basic recipe
  */
-function evaluateSinglePocket(entities) {
+export function evaluateSinglePocket(entities) {
   const summary = summarizePocket(entities);
 
   if (summary.hazards.length > 0) {
@@ -59,52 +77,55 @@ function evaluateSinglePocket(entities) {
     };
   }
 
-  // Kindred Pair: 2 butterflies of the same kind, 0 seeds
+  // Kindred Pair: 2 butterflies of the same species, 0 seeds
   if (summary.butterflies.length === 2 && summary.seeds.length === 0) {
     if (summary.distinctButterflyKinds === 1) {
-      const kind = summary.butterflies[0].kind;
+      const kind = Object.keys(summary.countsByKind)[0];
+      const speciesName = SPECIES_NAMES[kind] || kind;
       return {
         valid: true,
         type: RECIPE_TYPES.KINDRED_PAIR,
         title: 'Kindred Pair',
-        detail: `Two kindred ${kind}s gathered in harmony.`,
+        detail: `Two kindred ${speciesName}s gathered in harmony.`,
         score: 120,
         entities,
       };
     }
     return {
       valid: false,
-      reason: 'Two mismatched wings: need a matching pair or a third for a trio.',
+      reason: 'Two mismatched species: need a matching pair or a third for a trio.',
       faultType: 'MISMATCH',
     };
   }
 
-  // Trio of Flight: 3 butterflies of 3 distinct kinds, 0 seeds
+  // Trio of Flight: 3 butterflies of 3 distinct species, 0 seeds
   if (summary.butterflies.length === 3 && summary.seeds.length === 0) {
     if (summary.distinctButterflyKinds === 3) {
       return {
         valid: true,
         type: RECIPE_TYPES.TRIO_OF_FLIGHT,
         title: 'Trio of Flight',
-        detail: 'Three distinct wings gathered together.',
+        detail: 'Three distinct species (Brimstone, Damselfly, Hawkmoth) gathered together.',
         score: 300,
         entities,
       };
     }
     return {
       valid: false,
-      reason: 'Trio requires 3 distinct species (Brimstone, Azure, Roseate).',
+      reason: 'Trio requires 3 distinct species: Brimstone Butterfly, Azure Damselfly, and Roseate Hawkmoth.',
       faultType: 'MISMATCH',
     };
   }
 
   // Seed & Wing: 1 butterfly + 1 seed
   if (summary.butterflies.length === 1 && summary.seeds.length === 1) {
+    const kind = Object.keys(summary.countsByKind)[0];
+    const speciesName = SPECIES_NAMES[kind] || 'flier';
     return {
       valid: true,
       type: RECIPE_TYPES.SEED_AND_WING,
       title: 'Seed & Wing',
-      detail: 'A traveler meeting an airborne seed.',
+      detail: `A ${speciesName} meeting an airborne seed.`,
       score: 160,
       entities,
     };
@@ -114,7 +135,7 @@ function evaluateSinglePocket(entities) {
   if (summary.butterflies.length === 1 && summary.seeds.length === 0) {
     return {
       valid: false,
-      reason: 'A solitary wing needs a companion or a seed.',
+      reason: 'A solitary flier needs a companion or a seed.',
       faultType: 'UNDERFULL',
     };
   }
@@ -129,7 +150,7 @@ function evaluateSinglePocket(entities) {
 
   return {
     valid: false,
-    reason: 'Unrecognized arrangement: try a pair, trio, or butterfly with a seed.',
+    reason: 'Unrecognized arrangement: try a pair, trio, or insect with a seed.',
     faultType: 'IRREGULAR',
   };
 }
@@ -137,7 +158,7 @@ function evaluateSinglePocket(entities) {
 /**
  * Evaluate full drawing result: pockets + stroke metrics
  */
-export function evaluateDrawing(pocketsWithEntities, strokeLength) {
+export function evaluateDrawing(pocketsWithEntities, strokeLength, options = {}) {
   const band = getLengthBand(strokeLength);
   const bandMultiplier = band.name === 'Petite' ? 1.0 : (band.name === 'Balanced' ? 1.25 : 1.5);
 
@@ -198,7 +219,38 @@ export function evaluateDrawing(pocketsWithEntities, strokeLength) {
     const sumA = summarizePocket(pocketA.entities);
     const sumB = summarizePocket(pocketB.entities);
 
-    // Nursery Polarity: Butterflies in A, Seeds in B (or vice versa)
+    // 1. SYMMETRIC CORRESPONDENCE (Twin Echoes Experiment)
+    // Matching species compositions between Pocket A and Pocket B
+    // Both pockets must have at least 1 creature
+    const allKinds = new Set([...Object.keys(sumA.countsByKind), ...Object.keys(sumB.countsByKind)]);
+    let isSymmetric = (sumA.total > 0 && sumB.total > 0 && sumA.seeds.length === sumB.seeds.length);
+    if (isSymmetric) {
+      for (const k of allKinds) {
+        if ((sumA.countsByKind[k] || 0) !== (sumB.countsByKind[k] || 0)) {
+          isSymmetric = false;
+          break;
+        }
+      }
+    }
+
+    if (isSymmetric) {
+      const creatureCount = allEntities.length;
+      const score = Math.round((600 + creatureCount * 50) * bandMultiplier);
+      return {
+        valid: true,
+        recipeType: RECIPE_TYPES.SYMMETRIC_CORRESPONDENCE,
+        title: 'Twin Echo Correspondence',
+        detail: 'Matching insect compositions mirrored across the figure-eight lobes.',
+        baseScore: 600,
+        finalScore: score,
+        band: band.name,
+        bandMultiplier,
+        harmonizedEntities: allEntities,
+        pockets: pocketsWithEntities,
+      };
+    }
+
+    // 2. Nursery Polarity: Butterflies in A, Seeds in B (or vice versa)
     const isNursery = (sumA.butterflies.length >= 1 && sumA.seeds.length === 0 &&
       sumB.seeds.length >= 1 && sumB.butterflies.length === 0) ||
       (sumB.butterflies.length >= 1 && sumB.seeds.length === 0 &&
@@ -222,7 +274,7 @@ export function evaluateDrawing(pocketsWithEntities, strokeLength) {
       };
     }
 
-    // Cross-Meadow Correspondence: Kindred pair in A, Kindred pair in B
+    // 3. Cross-Meadow Correspondence: Kindred pair in A, Kindred pair in B
     const aPair = sumA.butterflies.length === 2 && sumA.distinctButterflyKinds === 1 && sumA.seeds.length === 0;
     const bPair = sumB.butterflies.length === 2 && sumB.distinctButterflyKinds === 1 && sumB.seeds.length === 0;
 
@@ -242,7 +294,7 @@ export function evaluateDrawing(pocketsWithEntities, strokeLength) {
       };
     }
 
-    // Twin Seed & Wing: 1 butterfly + 1 seed in A, 1 butterfly + 1 seed in B
+    // 4. Twin Seed & Wing: 1 butterfly + 1 seed in A, 1 butterfly + 1 seed in B
     const aSeedWing = sumA.butterflies.length === 1 && sumA.seeds.length === 1;
     const bSeedWing = sumB.butterflies.length === 1 && sumB.seeds.length === 1;
 
@@ -262,7 +314,7 @@ export function evaluateDrawing(pocketsWithEntities, strokeLength) {
       };
     }
 
-    // Both single pockets independently valid?
+    // 5. Both single pockets independently valid?
     const evalA = evaluateSinglePocket(pocketA.entities);
     const evalB = evaluateSinglePocket(pocketB.entities);
 

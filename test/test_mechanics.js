@@ -187,6 +187,26 @@ console.log('--- Running Drawing the Hours Test Suite ---');
   assert.strictEqual(evalNursery.valid, true);
   assert.strictEqual(evalNursery.recipeType, RECIPE_TYPES.NURSERY_POLARITY);
 
+  // Two-Pocket: Symmetric Correspondence (Twin Echoes Experiment)
+  // Pocket A: 1 Damselfly + 1 Hawkmoth (would fail alone)
+  // Pocket B: 1 Damselfly + 1 Hawkmoth (matches A exactly!)
+  const echoLobeA = [
+    { type: 'butterfly', kind: 'damselfly', x: 100, y: 100 },
+    { type: 'butterfly', kind: 'hawkmoth', x: 110, y: 100 },
+  ];
+  const echoLobeB = [
+    { type: 'butterfly', kind: 'damselfly', x: 300, y: 100 },
+    { type: 'butterfly', kind: 'hawkmoth', x: 310, y: 100 },
+  ];
+  const echoPockets = [
+    { id: 1, polygon: [], area: 4000, centroid: { x: 105, y: 100 }, entities: echoLobeA },
+    { id: 2, polygon: [], area: 4000, centroid: { x: 305, y: 100 }, entities: echoLobeB },
+  ];
+  const evalEcho = evaluateDrawing(echoPockets, 800);
+  assert.strictEqual(evalEcho.valid, true);
+  assert.strictEqual(evalEcho.recipeType, RECIPE_TYPES.SYMMETRIC_CORRESPONDENCE);
+  assert.strictEqual(evalEcho.finalScore, Math.round((600 + 4 * 50) * 1.25));
+
   console.log('✔ All recipe evaluation scenarios passed successfully.');
 }
 
