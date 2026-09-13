@@ -10,9 +10,32 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Playtest on mobile touch devices across both orientations (Portrait vertical and Landscape horizontal) — measuring finger-scale closure tolerance (90 px), pointer coalescing, and frame timing under touch gestures — and calibrate the damselfly dart speed and hawkmoth turn arc against touch dexterity.
+Implement Dawn levels 1–3 from `CAMPAIGN.md` and `campaign-plan.json`, including
+objective tracking and transition cards, then calibrate them on real touch
+devices before expanding through Noon, Dusk, and Midnight.
 
 ## Activity
+
+2026-09-14 — Codex — Read Xyh's twelve narrative lines and the updated
+two-wave implementation. Xyh confirmed four groups of three levels and
+requested gradual new insects and mechanics. Added `CAMPAIGN.md` and
+`campaign-plan.json` with exact source lines, twelve objective/population
+profiles, four edgeland scenes, transitions, saves, and acceptance checks.
+The proposed additions are noon seed gusts, a dusk lacewing with resting
+intervals, and midnight fireflies plus an explicit Trace mode. A draft using
+only existing recipes was expanded following Xyh's clarification. Preserved
+the earlier 24-level spec as `SPEC-before-campaign-20260914.md` and replaced
+its active campaign section. The first twelve levels are a complete release
+target, extensible by stable level IDs. Original narrative remains unchanged;
+story additions are environmental, with the medicine and job left unresolved.
+
+Verification: existing mechanics tests pass; checked JSON structure, exact
+transition-text correspondence, objective supply, relative links, and diffs.
+Browser automation failed to start with access denied, so this is a source
+and specification check, not a new live playtest. None of the campaign or
+new mechanics is implemented. Objective filtering is required because the
+current two waves count every valid recipe. Real-touch calibration remains
+required. Antigravity owns the folder rename; this task did not rename it.
 
 2026-09-14 — Antigravity — Implemented figure-eight recipe for two dissimilar objects (`COUNTERPART_PAIR` and `Counterpart Dialogue`) in `src/recipes.js`. While two dissimilar insects cannot share a single loop (which yields "Two mismatched species"), separating them with a crossing figure-eight cord balances them into a harmonious bilateral dialogue across the waist (base score 320 pts for a pair, 300 + 40 × count for dialogue). Added gentle Am7 dialogue chime voicing (`[A4, C5, E5, G5]`) to `src/audio.js`. Documented Counterpart Pair in Field Book modal (`index.html`), `SPEC.md` §4.2, and updated Intro modal hints (`src/game.js`). Added automated test coverage in `test/test_mechanics.js` asserting successful two-dissimilar-insect figure-eight evaluation and single-loop mismatch containment; verified test suite passes (`node test/test_mechanics.js`) and syntax checks cleanly. Mobile touch playtest across orientations and flight dexterity calibration remain next.
 

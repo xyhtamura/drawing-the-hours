@@ -1,6 +1,6 @@
 # Drawing the Hours: Game Specification
 
-**Version:** 0.2.0 (First Playable Level Built & Verified)  
+**Version:** Campaign planning revision; two prototype waves built
 **Date:** 2026-09-14  
 **Working Title:** Drawing the Hours  
 **Repository:** `relation-garden/` (Independent Git Repository; backup at `relation-garden-backup/`)  
@@ -40,14 +40,14 @@ The active band is displayed dynamically on the HUD meter and directly tint-shif
 Upon pointer release, the gesture engine evaluates the stroke topology:
 
 1. **Endpoint Proximity (Single Closed Loop)**:
-   - If distance $(P_0, P_{\text{end}}) \le 55\text{px}$ and no valid crossing exists, closes the polyline into a single polygon.
+   - If distance $(P_0, P_{\text{end}}) \le 90\text{px}$ and no valid crossing exists, closes the polyline into a single polygon.
    - Must clear minimum area threshold ($\text{Area} \ge 900\text{px}^2$) using the Shoelace formula.
 2. **Single Crossing / Lasso**:
    - Detects parametric segment intersection $(S_a, S_b)$ with endpoint tolerance $\varepsilon = 10^{-3}$.
    - The loop formed between $S_a$ and $S_b$ ($X, P_{a+1}, \dots, P_b, X$) is extracted as an enclosed pocket if $\text{Area} \ge 900\text{px}^2$.
 3. **Two-Pocket Figure-Eight**:
    - When an intersection point $X$ exists, evaluates both the inner loop (Lobe 1) and the outer closure loop (Lobe 2: $P_0 \dots P_a, X, P_{b+1} \dots P_{\text{end}}, P_0$).
-   - If both lobes satisfy $\text{Area} \ge 900\text{px}^2$ and outer closure distance $\le 55\text{px}$, the gesture is classified as a **Two-Pocket Figure-Eight** (`figure8_lobeA` and `figure8_lobeB`).
+   - If both lobes satisfy $\text{Area} \ge 900\text{px}^2$ and outer closure distance $\le 90\text{px}$, the gesture is classified as a **Two-Pocket Figure-Eight** (`figure8_lobeA` and `figure8_lobeB`).
 4. **Accidental Pocket Rejection**:
    - Tiny loops, pen hitches, and crossings below $900\text{px}^2$ are discarded, preventing unintended faults or empty-pocket triggers.
 
@@ -132,41 +132,22 @@ When an invalid enclosure occurs, the game does not silently fail; an informativ
 
 ---
 
-## 6. Campaign Architecture: 24 Authored Levels (The Four Hours)
+## 6. First twelve visits: campaign authority
 
-The full progression comprises 24 authored levels arranged across four distinct visits to the same meadow:
+The [twelve-level campaign](CAMPAIGN.md) and [level data](campaign-plan.json)
+supersede the earlier 24-level plan. Xyh confirmed four groups of three
+levels: Dawn, Noon, Dusk, Midnight, with the twelve transition lines in
+[first12levels.md](first12levels.md) preserved verbatim.
 
-### 6.1 Hour I: Morning Verge (Levels 1–6)
-*Theme:* Sunlit cream paper, fresh dew highlights, gentle waking breeze. Sparse population allowing players to learn precise cord figures.
-- **Level 1 (The First Hour)**: Goal: 5 harmonies. Population: 7 butterflies, 2 seeds, 1 snail crawler. Introduces Kindred Pairs, Trios, and Seed & Wing.
-- **Level 2 (Kindred Verges)**: Goal: 6 harmonies. Introduces required Balanced length cord ($450–1100\text{px}$).
-- **Level 3 (Twin Lobes)**: Goal: 4 figure-eight arrangements. Teaches two-pocket waist crossing and Cross-Meadow Correspondence.
-- **Level 4 (Seed Drift)**: Goal: 5 Seed & Wing or Nursery Polarity combinations. Increased seed flow.
-- **Level 5 (The Crawler's Verge)**: Goal: 6 harmonies with 2 crawling snails patrolling meadow verges. Teaches spatial dodging.
-- **Level 6 (Morning Challenge)**: Goal: 8 harmonies within 50s. Fast-paced synthesis of Hour I mechanics.
+The campaign gradually adds a warned seed breeze, lacewings, fireflies,
+and ordered Trace gestures to the existing enclosure grammar. These are
+specified, not implemented. Follow the campaign document for progression,
+objectives, replenishment, story flow, and acceptance checks. Keep the two
+prototype waves available for comparison.
 
-### 6.2 Hour II: Noon Sun (Levels 7–12)
-*Theme:* Bleached grass (`#fdfcf2`), sharp vertical fence shadows, gusty thermal breezes. Fast, crossing traffic.
-- **New Mechanics**:
-  - *Wind Gusts*: Periodically sweep seeds and light butterflies horizontally across the verge.
-  - *Crossing Beetles*: Straight-line ground walkers that cross active cords.
-  - *Strict Length Gates*: Certain recipes only trigger when drawn in the Extended band ($> 1100\text{px}$).
-- **Level Progression**: Progressively teaches handling wind displacement, cording during gusts, and separating windblown seeds from butterflies.
-
-### 6.3 Hour III: Dusk Twilight (Levels 13–18)
-*Theme:* Slate-pink and lavender paper (`#f2e8e8` to `#ded2de`), lengthening bench shadows, softening ambient light.
-- **New Mechanics**:
-  - *Dusk Moths*: Translucent tracing-paper moths that emerge from shaded hedge edges; they flutter slower but disperse if the cord approaches too aggressively.
-  - *Symmetric Correspondence*: Experimental rule requiring identical species composition across both lobes of a figure-eight (e.g. 1 Azure + 1 Brimstone in Lobe A, matched by 1 Azure + 1 Brimstone in Lobe B).
-  - *Overlapping Groups*: Higher creature density requiring deliberate multi-pocket separation.
-
-### 6.4 Hour IV: Midnight Lamplight (Levels 19–24)
-*Theme:* Deep ink-blue ground (`#2b3345`) illuminated by a single warm circular lamplight pool (`#fcefd2`).
-- **New Mechanics**:
-  - *Localized Visibility*: Creatures are fully visible within the lamplight circle, and become faint paper silhouettes when wandering outside in the dark.
-  - *Light Sheltering*: Drawing figures that enclose creatures from the dark into the light pool.
-  - *Three-Pocket Trefoils*: High-skill multi-lobed cords dividing creatures into three separate pockets.
-  - **Level 24 (Midnight Finale)**: The complete meadow in quiet darkness. Demands multi-pocket mastery before the final dandelion clock fades.
+The [previous spec](SPEC-before-campaign-20260914.md) preserves the 24-level
+proposal as history; later expansion is optional. Implementation next steps
+live in [NOTES.md](NOTES.md). Antigravity owns the requested folder rename.
 
 ---
 
