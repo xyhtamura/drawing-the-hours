@@ -205,7 +205,42 @@ console.log('--- Running Drawing the Hours Test Suite ---');
   const evalEcho = evaluateDrawing(echoPockets, 800);
   assert.strictEqual(evalEcho.valid, true);
   assert.strictEqual(evalEcho.recipeType, RECIPE_TYPES.SYMMETRIC_CORRESPONDENCE);
-  assert.strictEqual(evalEcho.finalScore, Math.round((600 + 4 * 50) * 1.25));
+  // Two-Pocket: Counterpart Pair (Two dissimilar species across figure-eight)
+  // Pocket A: 1 Damselfly (fails alone as underfull)
+  // Pocket B: 1 Hawkmoth (fails alone as underfull; fails together in single loop as mismatch)
+  const counterpartLobeA = [
+    { type: 'butterfly', kind: 'damselfly', x: 100, y: 100 },
+  ];
+  const counterpartLobeB = [
+    { type: 'butterfly', kind: 'hawkmoth', x: 300, y: 100 },
+  ];
+  const counterpartPockets = [
+    { id: 1, polygon: [], area: 4000, centroid: { x: 100, y: 100 }, entities: counterpartLobeA },
+    { id: 2, polygon: [], area: 4000, centroid: { x: 300, y: 100 }, entities: counterpartLobeB },
+  ];
+  const evalCounterpart = evaluateDrawing(counterpartPockets, 800);
+  assert.strictEqual(evalCounterpart.valid, true);
+  assert.strictEqual(evalCounterpart.recipeType, RECIPE_TYPES.COUNTERPART_PAIR);
+  assert.strictEqual(evalCounterpart.title, 'Counterpart Pair');
+  assert.strictEqual(evalCounterpart.finalScore, Math.round(320 * 1.25));
+
+  // Two-Pocket: Counterpart Dialogue (1 of kind X in A, 2 of kind Y in B)
+  const dialogueLobeA = [
+    { type: 'butterfly', kind: 'brimstone', x: 100, y: 100 },
+  ];
+  const dialogueLobeB = [
+    { type: 'butterfly', kind: 'damselfly', x: 300, y: 100 },
+    { type: 'butterfly', kind: 'damselfly', x: 310, y: 100 },
+  ];
+  const dialoguePockets = [
+    { id: 1, polygon: [], area: 4000, centroid: { x: 100, y: 100 }, entities: dialogueLobeA },
+    { id: 2, polygon: [], area: 4000, centroid: { x: 305, y: 100 }, entities: dialogueLobeB },
+  ];
+  const evalDialogue = evaluateDrawing(dialoguePockets, 800);
+  assert.strictEqual(evalDialogue.valid, true);
+  assert.strictEqual(evalDialogue.recipeType, RECIPE_TYPES.COUNTERPART_PAIR);
+  assert.strictEqual(evalDialogue.title, 'Counterpart Dialogue');
+  assert.strictEqual(evalDialogue.finalScore, Math.round((300 + 3 * 40) * 1.25));
 
   console.log('✔ All recipe evaluation scenarios passed successfully.');
 }

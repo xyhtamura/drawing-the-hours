@@ -87,6 +87,17 @@ Drawings are evaluated by checking the contents of extracted pockets against aut
   - *Effect*: Soft air puff; seed disintegrates into paper shimmer while the butterfly departs.
 
 ### 4.2 Two-Pocket (Figure-Eight) Recipes
+- **Symmetric Correspondence (Twin Echoes)**:
+  - *Condition*: Pocket A and Pocket B contain identical species compositions ($\ge 1$ creatures in each, 0 hazards).
+  - *Base Score*: $600\text{ pts} + 50\text{ pts per creature}$.
+  - *Effect*: Mixed combinations that fail alone harmonize through bilateral symmetry.
+- **Counterpart Pair**:
+  - *Condition*: Pocket A contains exactly 1 insect of species $X$; Pocket B contains exactly 1 insect of species $Y$, where $X \ne Y$; 0 seeds; 0 hazards.
+  - *Base Score*: 320 pts.
+  - *Philosophy*: While two dissimilar insects cannot share a single loop (which yields "Two mismatched species"), separating them with a crossing figure-eight cord balances their contrast into a harmonious bilateral dialogue.
+- **Counterpart Dialogue**:
+  - *Condition*: Pocket A contains insects of species $X$; Pocket B contains insects of species $Y$ ($X \ne Y$, total count $> 2$); 0 seeds; 0 hazards.
+  - *Base Score*: $300\text{ pts} + 40\text{ pts per creature}$.
 - **Cross-Meadow Correspondence**:
   - *Condition*: Pocket A contains a Kindred Pair (2 of kind $X$); Pocket B contains a Kindred Pair (2 of kind $Y$, where $X$ and $Y$ may be identical or distinct).
   - *Base Score*: 550 pts.

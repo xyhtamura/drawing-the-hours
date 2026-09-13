@@ -837,14 +837,14 @@ export class Game {
         '• Azure Damselfly: Slender body, hovers still then darts swiftly.',
         '• Roseate Hawkmoth: Plump body, swept delta wings in wide arcs.',
         '• Single loops: Kindred Pair (2 matching), Trio (all 3), Seed & Wing.',
-        '• Cross cord into Figure-Eight for two-pocket correspondence.',
+        '• Figure-Eight: Balance 2 dissimilar species across lobes (Counterpart Pair).',
         '• Snails crawl along verges — their shells will fray your cord.',
       ] : [
         '• Experiment: Symmetric Correspondence across Figure-Eight lobes.',
         '• Cross cord to form two pockets: mirror identical species in both!',
-        '• Example: 1 Damselfly + 1 Hawkmoth in Pocket A, and same in Pocket B.',
+        '• Dissimilar pair? Balance 1 of each across crossing (Counterpart Pair).',
         '• Mixed groupings that fail alone harmonize through bilateral symmetry.',
-        '• Goal: Gather 4 Twin Echo harmonies before the dandelion clock ends.',
+        '• Goal: Gather 4 harmonies before the dandelion clock ends.',
       ];
 
       const lineSpacing = isNarrow ? 21 : 23;

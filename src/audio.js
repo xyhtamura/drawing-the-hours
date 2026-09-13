@@ -138,6 +138,8 @@ export class AudioManager {
       selectedChords = [basePitches[0], basePitches[2], basePitches[3], basePitches[5]];
     } else if (recipeType === 'CROSS_MEADOW_CORRESPONDENCE' || recipeType === 'SYMMETRIC_CORRESPONDENCE' || recipeType === 'NURSERY_POLARITY') {
       selectedChords = [basePitches[1], basePitches[3], basePitches[4], basePitches[5] * 1.25];
+    } else if (recipeType === 'COUNTERPART_PAIR') {
+      selectedChords = [basePitches[1], basePitches[2], basePitches[4], basePitches[5]];
     } else if (recipeType === 'SEED_AND_WING') {
       selectedChords = [basePitches[2], basePitches[4], basePitches[5]];
     }

@@ -14,6 +14,7 @@ export const RECIPE_TYPES = {
   SYMMETRIC_CORRESPONDENCE: 'SYMMETRIC_CORRESPONDENCE',
   NURSERY_POLARITY: 'NURSERY_POLARITY',
   TWIN_SEED_AND_WING: 'TWIN_SEED_AND_WING',
+  COUNTERPART_PAIR: 'COUNTERPART_PAIR',
 };
 
 export const SPECIES_NAMES = {
@@ -314,7 +315,39 @@ export function evaluateDrawing(pocketsWithEntities, strokeLength, options = {})
       };
     }
 
-    // 5. Both single pockets independently valid?
+    // 5. Counterpart Pair / Dialogue: Dissimilar species partitioned across lobes
+    // Pocket A has insect(s) of species X, Pocket B has insect(s) of species Y, X !== Y, 0 seeds
+    const aOnlyInsects = sumA.butterflies.length > 0 && sumA.seeds.length === 0 && sumA.distinctButterflyKinds === 1;
+    const bOnlyInsects = sumB.butterflies.length > 0 && sumB.seeds.length === 0 && sumB.distinctButterflyKinds === 1;
+
+    if (aOnlyInsects && bOnlyInsects) {
+      const kindA = Object.keys(sumA.countsByKind)[0];
+      const kindB = Object.keys(sumB.countsByKind)[0];
+      if (kindA !== kindB) {
+        const nameA = SPECIES_NAMES[kindA] || kindA;
+        const nameB = SPECIES_NAMES[kindB] || kindB;
+        const totalCount = sumA.butterflies.length + sumB.butterflies.length;
+        const isPair = (sumA.butterflies.length === 1 && sumB.butterflies.length === 1);
+        const baseScore = isPair ? 320 : (300 + totalCount * 40);
+        const score = Math.round(baseScore * bandMultiplier);
+        return {
+          valid: true,
+          recipeType: RECIPE_TYPES.COUNTERPART_PAIR,
+          title: isPair ? 'Counterpart Pair' : 'Counterpart Dialogue',
+          detail: isPair
+            ? `Two dissimilar species (${nameA} and ${nameB}) balanced across the crossing.`
+            : `${nameA} and ${nameB} conversing across the crossing.`,
+          baseScore,
+          finalScore: score,
+          band: band.name,
+          bandMultiplier,
+          harmonizedEntities: allEntities,
+          pockets: pocketsWithEntities,
+        };
+      }
+    }
+
+    // 6. Both single pockets independently valid?
     const evalA = evaluateSinglePocket(pocketA.entities);
     const evalB = evaluateSinglePocket(pocketB.entities);
 
