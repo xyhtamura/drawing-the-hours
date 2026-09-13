@@ -647,6 +647,7 @@ export class Snail {
   update(dt, bounds) {
     this.bobPhase += dt * 1.5;
     this.x += this.vx * 60 * dt;
+    this.y = bounds.height - 35;
 
     if (this.x > bounds.width - 40) {
       this.vx = -Math.abs(this.vx);

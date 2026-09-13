@@ -101,6 +101,19 @@ export class Game {
       this.canvas.width = this.width * this.dpr;
       this.canvas.height = this.height * this.dpr;
       this.ctx.scale(this.dpr, this.dpr);
+
+      // Keep active entities within new canvas bounds
+      for (const ent of this.entities) {
+        if (ent.type === 'hazard') {
+          ent.y = this.height - 35;
+          ent.x = Math.max(30, Math.min(this.width - 30, ent.x));
+        } else {
+          ent.x = Math.max(16, Math.min(this.width - 16, ent.x));
+          ent.y = Math.max(16, Math.min(this.height - 16, ent.y));
+        }
+      }
+
+      this.initDecorations();
     }
   }
 
@@ -108,9 +121,10 @@ export class Game {
     this.decorations = [];
     // Scattered clover leaves and paper daisies along verges
     const count = 28;
+    const vergeMargin = Math.min(100, this.width * 0.22);
     for (let i = 0; i < count; i++) {
       this.decorations.push({
-        x: (Math.random() < 0.5 ? Math.random() * 120 : this.width - Math.random() * 120),
+        x: (Math.random() < 0.5 ? Math.random() * vergeMargin : this.width - Math.random() * vergeMargin),
         y: Math.random() * this.height,
         size: 8 + Math.random() * 8,
         type: Math.random() < 0.6 ? 'clover' : 'flower',
@@ -650,60 +664,113 @@ export class Game {
 
   drawHUD(ctx) {
     ctx.save();
+    const isNarrow = (this.width < 560);
 
-    // --- Top-Left: Dandelion Visit Clock ---
-    this.clock.draw(ctx, 42, 40, 24);
+    if (isNarrow) {
+      // --- MOBILE / VERTICAL HUD LAYOUT ---
+      // Tier 1: Left Clock, Right Objectives
+      this.clock.draw(ctx, 28, 28, 18);
 
-    ctx.fillStyle = '#4a4235';
-    ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-    ctx.textAlign = 'left';
-    const secondsLeft = Math.ceil(this.clock.remainingSeconds);
-    const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
-    const ss = String(secondsLeft % 60).padStart(2, '0');
-    ctx.fillText(`${mm}:${ss}`, 74, 38);
+      ctx.fillStyle = '#4a4235';
+      ctx.font = '600 13px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      const secondsLeft = Math.ceil(this.clock.remainingSeconds);
+      const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+      const ss = String(secondsLeft % 60).padStart(2, '0');
+      ctx.fillText(`${mm}:${ss}`, 52, 28);
 
-    ctx.fillStyle = '#8a7f70';
-    ctx.font = '500 11px system-ui, -apple-system, sans-serif';
-    ctx.fillText('Dandelion Clock', 74, 52);
+      ctx.fillStyle = '#8a7f70';
+      ctx.font = '500 10px system-ui, -apple-system, sans-serif';
+      ctx.fillText('Clock', 52, 40);
 
-    // --- Top-Center: Stroke Length Band Meter ---
-    const cx = this.width / 2;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.strokeStyle = '#dcd4c5';
-    ctx.lineWidth = 1.2;
-    const meterW = 160, meterH = 18;
-    ctx.beginPath();
-    drawRoundedRect(ctx, cx - meterW / 2, 24, meterW, meterH, 9);
-    ctx.fill();
-    ctx.stroke();
+      // Top-Right: Objective & Score
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#4a4235';
+      ctx.font = '600 12px system-ui, -apple-system, sans-serif';
+      ctx.fillText(`Harmonies: ${this.harmoniesCount} / ${this.harmoniesGoal}`, this.width - 16, 26);
 
-    // Length fill fraction
-    const fillRatio = Math.min(1.0, this.strokeLength / 1400);
-    if (fillRatio > 0.01) {
-      ctx.fillStyle = this.activeBand.color;
+      ctx.fillStyle = '#7a6c57';
+      ctx.font = 'italic 10.5px Georgia, serif';
+      ctx.fillText(`Wave ${this.currentWave}: ${this.currentWave === 1 ? 'Verge' : 'Echoes'} • ${this.score} pts`, this.width - 16, 40);
+
+      // Tier 2: Centered Stroke Length Band Meter (compact, below top row)
+      const cx = this.width / 2;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.strokeStyle = '#dcd4c5';
+      ctx.lineWidth = 1.1;
+      const meterW = Math.min(140, this.width - 60);
+      const meterH = 15;
+      const meterY = 52;
+
       ctx.beginPath();
-      drawRoundedRect(ctx, cx - meterW / 2 + 2, 26, (meterW - 4) * fillRatio, meterH - 4, 7);
+      drawRoundedRect(ctx, cx - meterW / 2, meterY, meterW, meterH, 7);
       ctx.fill();
+      ctx.stroke();
+
+      const fillRatio = Math.min(1.0, this.strokeLength / 1400);
+      if (fillRatio > 0.01) {
+        ctx.fillStyle = this.activeBand.color;
+        ctx.beginPath();
+        drawRoundedRect(ctx, cx - meterW / 2 + 2, meterY + 2, (meterW - 4) * fillRatio, meterH - 4, 5);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#4a4235';
+      ctx.font = '600 9.5px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`CORD: ${this.activeBand.name.toUpperCase()}`, cx, meterY + 11);
+    } else {
+      // --- STANDARD WIDESCREEN HUD LAYOUT ---
+      this.clock.draw(ctx, 42, 40, 24);
+
+      ctx.fillStyle = '#4a4235';
+      ctx.font = '600 14px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      const secondsLeft = Math.ceil(this.clock.remainingSeconds);
+      const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+      const ss = String(secondsLeft % 60).padStart(2, '0');
+      ctx.fillText(`${mm}:${ss}`, 74, 38);
+
+      ctx.fillStyle = '#8a7f70';
+      ctx.font = '500 11px system-ui, -apple-system, sans-serif';
+      ctx.fillText('Dandelion Clock', 74, 52);
+
+      const cx = this.width / 2;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.strokeStyle = '#dcd4c5';
+      ctx.lineWidth = 1.2;
+      const meterW = 160, meterH = 18;
+      ctx.beginPath();
+      drawRoundedRect(ctx, cx - meterW / 2, 24, meterW, meterH, 9);
+      ctx.fill();
+      ctx.stroke();
+
+      const fillRatio = Math.min(1.0, this.strokeLength / 1400);
+      if (fillRatio > 0.01) {
+        ctx.fillStyle = this.activeBand.color;
+        ctx.beginPath();
+        drawRoundedRect(ctx, cx - meterW / 2 + 2, 26, (meterW - 4) * fillRatio, meterH - 4, 7);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#4a4235';
+      ctx.font = '600 11px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`CORD: ${this.activeBand.name.toUpperCase()}`, cx, 37);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#4a4235';
+      ctx.font = '600 13px system-ui, -apple-system, sans-serif';
+      ctx.fillText(`Harmonies: ${this.harmoniesCount} / ${this.harmoniesGoal}`, this.width - 24, 34);
+
+      ctx.fillStyle = '#7a6c57';
+      ctx.font = 'italic 11px Georgia, serif';
+      ctx.fillText(`Wave ${this.currentWave}: ${this.currentWave === 1 ? 'Morning Verge' : 'Twin Echoes'}`, this.width - 24, 49);
+
+      ctx.fillStyle = '#8a7f70';
+      ctx.font = '500 11px system-ui, -apple-system, sans-serif';
+      ctx.fillText(`Score: ${this.score}`, this.width - 24, 64);
     }
-
-    ctx.fillStyle = '#4a4235';
-    ctx.font = '600 11px system-ui, -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(`CORD: ${this.activeBand.name.toUpperCase()}`, cx, 37);
-
-    // --- Top-Right: Objective & Score ---
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#4a4235';
-    ctx.font = '600 13px system-ui, -apple-system, sans-serif';
-    ctx.fillText(`Harmonies: ${this.harmoniesCount} / ${this.harmoniesGoal}`, this.width - 24, 34);
-
-    ctx.fillStyle = '#7a6c57';
-    ctx.font = 'italic 11px Georgia, serif';
-    ctx.fillText(`Wave ${this.currentWave}: ${this.currentWave === 1 ? 'Morning Verge' : 'Twin Echoes'}`, this.width - 24, 49);
-
-    ctx.fillStyle = '#8a7f70';
-    ctx.font = '500 11px system-ui, -apple-system, sans-serif';
-    ctx.fillText(`Score: ${this.score}`, this.width - 24, 64);
 
     // --- Bottom-Center: Feedback Banner ---
     if (this.feedbackBanner.timer > 0) {
@@ -730,9 +797,10 @@ export class Game {
 
       ctx.font = '500 13px system-ui, -apple-system, sans-serif';
       const textWidth = ctx.measureText(this.feedbackBanner.text).width;
-      const boxW = Math.max(220, textWidth + 36);
+      const boxW = Math.min(this.width - 24, Math.max(180, textWidth + 30));
       const boxH = 32;
       const by = this.height - 54;
+      const cx = this.width / 2;
 
       ctx.beginPath();
       drawRoundedRect(ctx, cx - boxW / 2, by, boxW, boxH, 8);
@@ -749,83 +817,94 @@ export class Game {
 
   drawIntroModal(ctx) {
     const isWave1 = (this.currentWave === 1);
-    this.drawModalBox(ctx, 490, 325, () => {
+    this.drawModalBox(ctx, 490, 340, (boxW, boxH) => {
+      const isNarrow = boxW < 440;
       ctx.fillStyle = '#3a3429';
-      ctx.font = 'bold 22px Georgia, serif';
+      ctx.font = isNarrow ? 'bold 18px Georgia, serif' : 'bold 22px Georgia, serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Drawing the Hours', 0, -95);
+      ctx.fillText('Drawing the Hours', 0, -boxH / 2 + 34);
 
-      ctx.font = 'italic 14px Georgia, serif';
+      ctx.font = isNarrow ? 'italic 12px Georgia, serif' : 'italic 14px Georgia, serif';
       ctx.fillStyle = '#7a6f5f';
-      ctx.fillText(isWave1 ? 'Visit I: Morning Verge' : 'Visit II: Twin Echoes (Correspondence)', 0, -70);
+      ctx.fillText(isWave1 ? 'Visit I: Morning Verge' : 'Visit II: Twin Echoes (Correspondence)', 0, -boxH / 2 + 56);
 
-      ctx.font = '13px system-ui, -apple-system, sans-serif';
+      ctx.font = isNarrow ? '11px system-ui, -apple-system, sans-serif' : '13px system-ui, -apple-system, sans-serif';
       ctx.fillStyle = '#4c4234';
       ctx.textAlign = 'left';
 
       const lines = isWave1 ? [
-        '• Brimstone Butterfly: Sulphur folded paper wings, wanders and glides.',
-        '• Azure Damselfly: Slender needle body, hovers still then darts swiftly.',
-        '• Roseate Hawkmoth: Plump velvety body, swept delta wings in wide arcs.',
+        '• Brimstone Butterfly: Sulphur folded wings, wanders & glides.',
+        '• Azure Damselfly: Slender body, hovers still then darts swiftly.',
+        '• Roseate Hawkmoth: Plump body, swept delta wings in wide arcs.',
         '• Single loops: Kindred Pair (2 matching), Trio (all 3), Seed & Wing.',
-        '• Cross cord into Figure-Eight for two-pocket nursery or correspondence.',
+        '• Cross cord into Figure-Eight for two-pocket correspondence.',
         '• Snails crawl along verges — their shells will fray your cord.',
       ] : [
         '• Experiment: Symmetric Correspondence across Figure-Eight lobes.',
         '• Cross cord to form two pockets: mirror identical species in both!',
-        '• Example: 1 Damselfly + 1 Hawkmoth in Pocket A, and the same in Pocket B.',
-        '• Mixed groupings that fail alone will harmonize through bilateral symmetry.',
-        '• Goal: Gather 4 Twin Echo harmonies before the dandelion clock runs out.',
+        '• Example: 1 Damselfly + 1 Hawkmoth in Pocket A, and same in Pocket B.',
+        '• Mixed groupings that fail alone harmonize through bilateral symmetry.',
+        '• Goal: Gather 4 Twin Echo harmonies before the dandelion clock ends.',
       ];
 
+      const lineSpacing = isNarrow ? 21 : 23;
+      const startY = -boxH / 2 + 82;
+      const padX = -boxW / 2 + (isNarrow ? 18 : 25);
+
       lines.forEach((line, idx) => {
-        ctx.fillText(line, -215, -34 + idx * 23);
+        ctx.fillText(line, padX, startY + idx * lineSpacing);
       });
 
       // Button prompt
       ctx.fillStyle = '#5c4538';
-      ctx.font = '600 14px system-ui, -apple-system, sans-serif';
+      ctx.font = isNarrow ? '600 12px system-ui, -apple-system, sans-serif' : '600 14px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`[ Click anywhere or press Space to enter ${isWave1 ? 'Morning Verge' : 'Twin Echoes'} ]`, 0, 122);
+      ctx.fillText(
+        isNarrow ? `[ Tap to start ${isWave1 ? 'Morning Verge' : 'Twin Echoes'} ]` : `[ Click anywhere or press Space to enter ${isWave1 ? 'Morning Verge' : 'Twin Echoes'} ]`,
+        0,
+        boxH / 2 - 20
+      );
     });
   }
 
   drawPausedModal(ctx) {
-    this.drawModalBox(ctx, 420, 240, () => {
+    this.drawModalBox(ctx, 420, 240, (boxW, boxH) => {
+      const isNarrow = boxW < 400;
       ctx.fillStyle = '#3a3429';
-      ctx.font = 'bold 20px Georgia, serif';
+      ctx.font = isNarrow ? 'bold 18px Georgia, serif' : 'bold 20px Georgia, serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Quiet Interval — Paused', 0, -60);
+      ctx.fillText('Quiet Interval — Paused', 0, -boxH / 2 + 40);
 
-      ctx.font = '13px system-ui, -apple-system, sans-serif';
+      ctx.font = isNarrow ? '12px system-ui, -apple-system, sans-serif' : '13px system-ui, -apple-system, sans-serif';
       ctx.fillStyle = '#54483a';
-      ctx.fillText('Remaining Time: ' + Math.ceil(this.clock.remainingSeconds) + 's', 0, -20);
-      ctx.fillText('Harmonies Arranged: ' + this.harmoniesCount + ' / ' + this.harmoniesGoal, 0, 10);
-      ctx.fillText('Current Score: ' + this.score, 0, 40);
+      ctx.fillText('Remaining Time: ' + Math.ceil(this.clock.remainingSeconds) + 's', 0, -15);
+      ctx.fillText('Harmonies Arranged: ' + this.harmoniesCount + ' / ' + this.harmoniesGoal, 0, 12);
+      ctx.fillText('Current Score: ' + this.score, 0, 38);
 
       ctx.fillStyle = '#785b46';
-      ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-      ctx.fillText('[ Press Space or Click Pause to Resume ]', 0, 85);
+      ctx.font = isNarrow ? '600 12px system-ui, -apple-system, sans-serif' : '600 14px system-ui, -apple-system, sans-serif';
+      ctx.fillText(isNarrow ? '[ Tap to Resume ]' : '[ Press Space or Click Pause to Resume ]', 0, boxH / 2 - 22);
     });
   }
 
   drawVictoryModal(ctx) {
     const isWave1 = (this.currentWave === 1);
-    this.drawModalBox(ctx, 470, 275, () => {
+    this.drawModalBox(ctx, 470, 275, (boxW, boxH) => {
+      const isNarrow = boxW < 440;
       ctx.fillStyle = '#2b5028';
-      ctx.font = 'bold 22px Georgia, serif';
+      ctx.font = isNarrow ? 'bold 18px Georgia, serif' : 'bold 22px Georgia, serif';
       ctx.textAlign = 'center';
-      ctx.fillText(isWave1 ? 'Morning Verge Harmonized' : 'Twin Echoes Harmonized', 0, -70);
+      ctx.fillText(isWave1 ? 'Morning Verge Harmonized' : 'Twin Echoes Harmonized', 0, -boxH / 2 + 40);
 
-      ctx.font = 'italic 14px Georgia, serif';
+      ctx.font = isNarrow ? 'italic 12px Georgia, serif' : 'italic 14px Georgia, serif';
       ctx.fillStyle = '#5a7857';
       ctx.fillText(
         isWave1 ? 'The quiet hour departs in peace.' : 'Symmetric correspondence achieved across both lobes.',
         0,
-        -45
+        -boxH / 2 + 64
       );
 
-      ctx.font = '14px system-ui, -apple-system, sans-serif';
+      ctx.font = isNarrow ? '12px system-ui, -apple-system, sans-serif' : '14px system-ui, -apple-system, sans-serif';
       ctx.fillStyle = '#3d3428';
       ctx.fillText(
         isWave1
@@ -834,37 +913,40 @@ export class Game {
         0,
         -5
       );
-      ctx.fillText(`Final Visit Score: ${this.score} points`, 0, 25);
+      ctx.fillText(`Final Visit Score: ${this.score} points`, 0, 22);
 
       ctx.fillStyle = '#5c4538';
-      ctx.font = '600 14px system-ui, -apple-system, sans-serif';
+      ctx.font = isNarrow ? '600 12px system-ui, -apple-system, sans-serif' : '600 14px system-ui, -apple-system, sans-serif';
       ctx.fillText(
-        isWave1 ? '[ Click or Press Space to Enter Wave 2: Twin Echoes ]' : '[ Click or Press Space to Replay Garden ]',
+        isWave1
+          ? (isNarrow ? '[ Tap to Enter Wave 2 ]' : '[ Click or Press Space to Enter Wave 2: Twin Echoes ]')
+          : (isNarrow ? '[ Tap to Replay Garden ]' : '[ Click or Press Space to Replay Garden ]'),
         0,
-        85
+        boxH / 2 - 22
       );
     });
   }
 
   drawGameOverModal(ctx) {
-    this.drawModalBox(ctx, 450, 260, () => {
+    this.drawModalBox(ctx, 450, 260, (boxW, boxH) => {
+      const isNarrow = boxW < 440;
       ctx.fillStyle = '#6e3535';
-      ctx.font = 'bold 22px Georgia, serif';
+      ctx.font = isNarrow ? 'bold 18px Georgia, serif' : 'bold 22px Georgia, serif';
       ctx.textAlign = 'center';
-      ctx.fillText('The Hour Has Passed', 0, -65);
+      ctx.fillText('The Hour Has Passed', 0, -boxH / 2 + 40);
 
-      ctx.font = 'italic 14px Georgia, serif';
+      ctx.font = isNarrow ? 'italic 12px Georgia, serif' : 'italic 14px Georgia, serif';
       ctx.fillStyle = '#8f5c5c';
-      ctx.fillText('The dandelion seeds took flight into the morning breeze.', 0, -40);
+      ctx.fillText('The dandelion seeds took flight into the morning breeze.', 0, -boxH / 2 + 64);
 
-      ctx.font = '14px system-ui, -apple-system, sans-serif';
+      ctx.font = isNarrow ? '12px system-ui, -apple-system, sans-serif' : '14px system-ui, -apple-system, sans-serif';
       ctx.fillStyle = '#42372b';
       ctx.fillText(`Harmonies Gathered: ${this.harmoniesCount} / ${this.harmoniesGoal}`, 0, 0);
-      ctx.fillText(`Score: ${this.score} points`, 0, 30);
+      ctx.fillText(`Score: ${this.score} points`, 0, 26);
 
       ctx.fillStyle = '#5c4538';
-      ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-      ctx.fillText('[ Click or Press Space to Try Again ]', 0, 85);
+      ctx.font = isNarrow ? '600 12px system-ui, -apple-system, sans-serif' : '600 14px system-ui, -apple-system, sans-serif';
+      ctx.fillText(isNarrow ? '[ Tap to Try Again ]' : '[ Click or Press Space to Try Again ]', 0, boxH / 2 - 22);
     });
   }
 
@@ -879,10 +961,14 @@ export class Game {
 
     ctx.translate(cx, cy);
 
+    // Responsive clamping for narrow vertical viewports
+    const actualW = Math.min(w, this.width - 20);
+    const actualH = Math.min(h, this.height - 24);
+
     // Paper card drop shadow
     ctx.fillStyle = 'rgba(20, 25, 15, 0.2)';
     ctx.beginPath();
-    drawRoundedRect(ctx, -w / 2 + 5, -h / 2 + 8, w, h, 14);
+    drawRoundedRect(ctx, -actualW / 2 + 5, -actualH / 2 + 8, actualW, actualH, 14);
     ctx.fill();
 
     // Paper card body
@@ -890,7 +976,7 @@ export class Game {
     ctx.strokeStyle = '#d8ccb6';
     ctx.lineWidth = 1.8;
     ctx.beginPath();
-    drawRoundedRect(ctx, -w / 2, -h / 2, w, h, 14);
+    drawRoundedRect(ctx, -actualW / 2, -actualH / 2, actualW, actualH, 14);
     ctx.fill();
     ctx.stroke();
 
@@ -898,10 +984,10 @@ export class Game {
     ctx.strokeStyle = '#ece3d2';
     ctx.lineWidth = 1.0;
     ctx.beginPath();
-    drawRoundedRect(ctx, -w / 2 + 8, -h / 2 + 8, w - 16, h - 16, 10);
+    drawRoundedRect(ctx, -actualW / 2 + 8, -actualH / 2 + 8, actualW - 16, actualH - 16, 10);
     ctx.stroke();
 
-    contentFn();
+    contentFn(actualW, actualH);
     ctx.restore();
   }
 }

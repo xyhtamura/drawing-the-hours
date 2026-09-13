@@ -16,6 +16,9 @@
       <button id="btn-wave" title="Switch visit wave (W)">
         🌊 Wave: 1 (Verge)
       </button>
+      <button id="btn-orientation" title="Switch orientation mode: Auto / Vertical / Horizontal (V)">
+        📱 View: Auto
+      </button>
       <button id="btn-fieldbook" title="View Field Book combinations (H)">
         📖 Field Book
       </button>
@@ -37,7 +40,7 @@
 
   <footer>
     <div>Draw cord with mouse or touch. Hold or cross to separate pockets.</div>
-    <div>Keyboard: [Space] Pause &bull; [W] Wave &bull; [M] Sound &bull; [H] Field Book &bull; [R] Restart</div>
+    <div>Keyboard: [Space] Pause &bull; [W] Wave &bull; [V] View &bull; [M] Sound &bull; [H] Field Book &bull; [R] Restart</div>
   </footer>
 
   <!-- Field Book Modal -->
@@ -145,6 +148,7 @@
     window.game = game; // handle for playtesting from the console
 
     const btnWave = document.getElementById('btn-wave');
+    const btnOrientation = document.getElementById('btn-orientation');
     const btnFieldbook = document.getElementById('btn-fieldbook');
     const btnAudio = document.getElementById('btn-audio');
     const btnPause = document.getElementById('btn-pause');
@@ -152,6 +156,70 @@
     const modal = document.getElementById('fieldbook-modal');
     const btnCloseModal = document.getElementById('btn-close-modal');
     const headerSub = document.getElementById('header-sub');
+
+    // Orientation view setting: 'auto' | 'vertical' | 'horizontal'
+    const VIEW_STORAGE_KEY = 'relation-garden-orientation';
+    let viewMode = localStorage.getItem(VIEW_STORAGE_KEY) || 'auto';
+
+    const applyViewMode = (mode) => {
+      viewMode = mode;
+      try {
+        localStorage.setItem(VIEW_STORAGE_KEY, mode);
+      } catch (_) {}
+
+      const isMobilePortrait = window.matchMedia('(max-width: 680px) and (orientation: portrait)').matches
+        || (window.innerHeight > window.innerWidth && window.innerWidth <= 768);
+
+      let effectiveVertical = false;
+      if (mode === 'vertical') {
+        effectiveVertical = true;
+      } else if (mode === 'horizontal') {
+        effectiveVertical = false;
+      } else {
+        // 'auto'
+        effectiveVertical = isMobilePortrait;
+      }
+
+      document.body.classList.toggle('is-vertical', effectiveVertical);
+      document.body.classList.toggle('is-horizontal', !effectiveVertical);
+
+      if (btnOrientation) {
+        if (mode === 'vertical') {
+          btnOrientation.textContent = '📱 View: Vertical';
+        } else if (mode === 'horizontal') {
+          btnOrientation.textContent = '💻 View: Horizontal';
+        } else {
+          btnOrientation.textContent = effectiveVertical ? '📱 View: Auto (Vert)' : '📱 View: Auto (Horiz)';
+        }
+      }
+
+      // Allow DOM style reflow then resize canvas
+      requestAnimationFrame(() => {
+        game.resize();
+      });
+    };
+
+    // Initialize layout mode
+    applyViewMode(viewMode);
+
+    btnOrientation.addEventListener('click', () => {
+      const nextMode = (viewMode === 'auto')
+        ? 'vertical'
+        : ((viewMode === 'vertical') ? 'horizontal' : 'auto');
+      applyViewMode(nextMode);
+    });
+
+    window.addEventListener('resize', () => {
+      if (viewMode === 'auto') {
+        applyViewMode('auto');
+      }
+    });
+
+    window.addEventListener('orientationchange', () => {
+      if (viewMode === 'auto') {
+        setTimeout(() => applyViewMode('auto'), 80);
+      }
+    });
 
     const updateWaveUI = (wave) => {
       if (btnWave) {
@@ -246,6 +314,11 @@
         const nextWave = (game.currentWave === 1) ? 2 : 1;
         game.startLevel(nextWave);
         btnPause.textContent = '⏸ Pause';
+      } else if (e.key === 'v' || e.key === 'V') {
+        const nextMode = (viewMode === 'auto')
+          ? 'vertical'
+          : ((viewMode === 'vertical') ? 'horizontal' : 'auto');
+        applyViewMode(nextMode);
       } else if (e.key === 'm' || e.key === 'M') {
         const isMuted = audio.toggleMute();
         btnAudio.textContent = isMuted ? '🔇 Sound: Off' : '🔊 Sound: On';

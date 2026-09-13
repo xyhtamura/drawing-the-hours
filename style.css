@@ -219,3 +219,180 @@ footer {
   width: 100%;
   justify-content: center;
 }
+
+/* =========================================================
+   Mobile Vertical / Portrait Layout & Orientation Overrides
+   ========================================================= */
+
+body.is-vertical {
+  padding: 8px 6px;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+body.is-vertical header {
+  max-width: 520px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 4px 6px;
+  margin-bottom: 8px;
+}
+
+body.is-vertical .brand {
+  text-align: center;
+}
+
+body.is-vertical .brand h1 {
+  font-size: 1.25rem;
+}
+
+body.is-vertical .brand .sub {
+  font-size: 0.8rem;
+}
+
+body.is-vertical .controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+}
+
+body.is-vertical .controls button {
+  padding: 6px 8px;
+  font-size: 0.78rem;
+  flex: 1 1 calc(33.333% - 6px);
+  min-width: 82px;
+  justify-content: center;
+}
+
+body.is-vertical .stage-wrapper {
+  max-width: 520px;
+  width: 100%;
+  height: calc(100vh - 175px);
+  height: calc(100dvh - 175px);
+  max-height: 840px;
+  min-height: 460px;
+  border-radius: 12px;
+}
+
+body.is-vertical canvas#game-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+body.is-vertical footer {
+  max-width: 520px;
+  margin-top: 8px;
+  flex-direction: column;
+  gap: 3px;
+  text-align: center;
+  font-size: 0.72rem;
+  padding: 0 4px;
+}
+
+/* Automatic mobile portrait defaults when not explicitly forced horizontal */
+@media (max-width: 680px) and (orientation: portrait) {
+  body:not(.is-horizontal) {
+    padding: 8px 6px;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  body:not(.is-horizontal) header {
+    max-width: 520px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 4px 6px;
+    margin-bottom: 8px;
+  }
+
+  body:not(.is-horizontal) .brand {
+    text-align: center;
+  }
+
+  body:not(.is-horizontal) .brand h1 {
+    font-size: 1.25rem;
+  }
+
+  body:not(.is-horizontal) .brand .sub {
+    font-size: 0.8rem;
+  }
+
+  body:not(.is-horizontal) .controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+  }
+
+  body:not(.is-horizontal) .controls button {
+    padding: 6px 8px;
+    font-size: 0.78rem;
+    flex: 1 1 calc(33.333% - 6px);
+    min-width: 82px;
+    justify-content: center;
+  }
+
+  body:not(.is-horizontal) .stage-wrapper {
+    max-width: 520px;
+    width: 100%;
+    height: calc(100vh - 175px);
+    height: calc(100dvh - 175px);
+    max-height: 840px;
+    min-height: 460px;
+    border-radius: 12px;
+  }
+
+  body:not(.is-horizontal) canvas#game-canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  body:not(.is-horizontal) footer {
+    max-width: 520px;
+    margin-top: 8px;
+    flex-direction: column;
+    gap: 3px;
+    text-align: center;
+    font-size: 0.72rem;
+    padding: 0 4px;
+  }
+}
+
+/* Compact Field Book on smaller screens */
+@media (max-width: 600px) {
+  .recipe-card {
+    width: 95%;
+    padding: 16px;
+    max-height: 88vh;
+  }
+
+  .recipe-card h2 {
+    font-size: 1.2rem;
+  }
+
+  .recipe-card .field-intro {
+    font-size: 0.82rem;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+  }
+
+  .recipe-entry {
+    gap: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+  }
+
+  .recipe-info h3 {
+    font-size: 0.92rem;
+  }
+
+  .recipe-info p {
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+}
