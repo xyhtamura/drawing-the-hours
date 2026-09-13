@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drawing the Hours — Morning Verge</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>Drawing the Hours</h1>
+      <div class="sub">A Meadow Gesture Study &mdash; Visit I: Morning Verge</div>
+    </div>
+    <div class="controls">
+      <button id="btn-fieldbook" title="View Field Book combinations (H)">
+        📖 Field Book
+      </button>
+      <button id="btn-audio" title="Toggle sound effects (M)">
+        🔊 Sound: On
+      </button>
+      <button id="btn-pause" title="Pause / Resume (Space)">
+        ⏸ Pause
+      </button>
+      <button id="btn-restart" title="Restart visit (R)">
+        ↺ Restart
+      </button>
+    </div>
+  </header>
+
+  <main class="stage-wrapper">
+    <canvas id="game-canvas"></canvas>
+  </main>
+
+  <footer>
+    <div>Draw cord with mouse or touch. Hold or cross to separate pockets.</div>
+    <div>Keyboard: [Space] Pause &bull; [M] Sound &bull; [H] Field Book &bull; [R] Restart</div>
+  </footer>
+
+  <!-- Field Book Modal -->
+  <div id="fieldbook-modal" class="recipe-modal" role="dialog" aria-modal="true">
+    <div class="recipe-card">
+      <h2>Meadow Field Book</h2>
+      <div class="field-intro">
+        Harmonious relationships observed during quiet morning visits. Draw temporary cotton cord around moving creatures to reveal their connections.
+      </div>
+
+      <div class="recipe-entry">
+        <span class="entry-badge badge-single">Single Loop</span>
+        <div class="recipe-info">
+          <h3>Kindred Pair</h3>
+          <p>Enclose exactly two butterflies of the same species (2 Brimstones, 2 Azures, or 2 Roseates). They synchronize wingbeats and leave in peace.</p>
+        </div>
+      </div>
+
+      <div class="recipe-entry">
+        <span class="entry-badge badge-single">Single Loop</span>
+        <div class="recipe-info">
+          <h3>Trio of Flight</h3>
+          <p>Enclose three butterflies representing all three distinct species: 1 Brimstone, 1 Azure, and 1 Roseate.</p>
+        </div>
+      </div>
+
+      <div class="recipe-entry">
+        <span class="entry-badge badge-single">Single Loop</span>
+        <div class="recipe-info">
+          <h3>Seed &amp; Wing</h3>
+          <p>Enclose one butterfly alongside an airborne dandelion seed drifting on the morning breeze.</p>
+        </div>
+      </div>
+
+      <div class="recipe-entry">
+        <span class="entry-badge badge-double">Figure-Eight</span>
+        <div class="recipe-info">
+          <h3>Cross-Meadow Correspondence</h3>
+          <p>Cross the cord to form two distinct pockets: place a kindred pair in Pocket A, and another kindred pair in Pocket B.</p>
+        </div>
+      </div>
+
+      <div class="recipe-entry">
+        <span class="entry-badge badge-double">Figure-Eight</span>
+        <div class="recipe-info">
+          <h3>Nursery Polarity</h3>
+          <p>Place winged travelers in one pocket, and wild drifting dandelion seeds in the opposite pocket.</p>
+        </div>
+      </div>
+
+      <div class="recipe-entry">
+        <span class="entry-badge" style="background:#fae5e5; color:#852b2b;">Hazard</span>
+        <div class="recipe-info">
+          <h3>Ground Crawler (Snail)</h3>
+          <p>Snails crawl slowly along the meadow verges. If enclosed in a flight gesture, their heavy shell snarls and frays the cord.</p>
+        </div>
+      </div>
+
+      <button id="btn-close-modal" class="close-btn">Return to the Verge</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Game } from './src/game.js';
+    import { audio } from './src/audio.js';
+
+    const canvas = document.getElementById('game-canvas');
+    const game = new Game(canvas);
+    window.game = game; // handle for playtesting from the console
+
+    const btnFieldbook = document.getElementById('btn-fieldbook');
+    const btnAudio = document.getElementById('btn-audio');
+    const btnPause = document.getElementById('btn-pause');
+    const btnRestart = document.getElementById('btn-restart');
+    const modal = document.getElementById('fieldbook-modal');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+
+    // Canvas click to start or restart when in intro / gameover / victory
+    canvas.addEventListener('click', () => {
+      if (game.state === 'INTRO') {
+        game.startLevel();
+      } else if (game.state === 'VICTORY' || game.state === 'GAMEOVER') {
+        game.startLevel();
+      }
+    });
+
+    // Toggle Field Book. Opening pauses the visit; closing resumes it, but only
+    // if the Field Book is what paused it.
+    let pausedByFieldbook = false;
+    const toggleFieldbook = () => {
+      const opening = !modal.classList.contains('active');
+      modal.classList.toggle('active');
+      if (opening) {
+        pausedByFieldbook = game.state === 'PLAYING';
+        if (pausedByFieldbook) {
+          game.togglePause();
+          btnPause.textContent = '▶ Resume';
+        }
+      } else if (pausedByFieldbook) {
+        pausedByFieldbook = false;
+        if (game.state === 'PAUSED') {
+          game.togglePause();
+          btnPause.textContent = '⏸ Pause';
+        }
+      }
+    };
+
+    btnFieldbook.addEventListener('click', toggleFieldbook);
+    btnCloseModal.addEventListener('click', toggleFieldbook);
+
+    // Audio toggle
+    btnAudio.addEventListener('click', () => {
+      const isMuted = audio.toggleMute();
+      btnAudio.textContent = isMuted ? '🔇 Sound: Off' : '🔊 Sound: On';
+    });
+
+    // Pause toggle
+    btnPause.addEventListener('click', () => {
+      game.togglePause();
+      btnPause.textContent = (game.state === 'PAUSED') ? '▶ Resume' : '⏸ Pause';
+    });
+
+    // Restart
+    btnRestart.addEventListener('click', () => {
+      game.startLevel();
+      btnPause.textContent = '⏸ Pause';
+    });
+
+    // Keyboard Shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        if (game.state === 'INTRO' || game.state === 'VICTORY' || game.state === 'GAMEOVER') {
+          game.startLevel();
+        } else {
+          game.togglePause();
+          btnPause.textContent = (game.state === 'PAUSED') ? '▶ Resume' : '⏸ Pause';
+        }
+      } else if (e.key === 'm' || e.key === 'M') {
+        const isMuted = audio.toggleMute();
+        btnAudio.textContent = isMuted ? '🔇 Sound: Off' : '🔊 Sound: On';
+      } else if (e.key === 'r' || e.key === 'R') {
+        game.startLevel();
+        btnPause.textContent = '⏸ Pause';
+      } else if (e.key === 'h' || e.key === 'H') {
+        toggleFieldbook();
+      } else if (e.key === 'Escape') {
+        if (modal.classList.contains('active')) {
+          toggleFieldbook();
+        }
+      }
+    });
+  </script>
+</body>
+</html>

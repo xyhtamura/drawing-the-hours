@@ -1,0 +1,130 @@
+# Drawing the Hours notes
+
+Playable meadow gesture prototype with moving creatures, combinations, and
+multi-pocket drawings. The [working scope](SPEC.md) points to Xyh's
+[concept and aesthetic direction](CONCEPT.md). Morning Verge is implemented
+in `index.html`; earlier concept documents contain superseded proposals.
+The working title is Drawing the Hours; the folder remains `relation-garden`.
+The [hours and inhabitants note](HOURS.md) records earlier naming options,
+visits at quiet hours, a broader cast, and candidate timers.
+
+## Next in Dev
+
+Playtest Morning Verge on a real tablet — finger-scale closure tolerance, pointer coalescing, and frame timing are the three things desktop mouse events could not measure — and settle with Xyh whether the visit should carry more time pressure than it now does.
+
+## Activity
+
+2026-09-14 — Codex — Added the three optional mechanical experiments to
+`SPEC.md` at Xyh's request: matching compositions across figure-eight pockets,
+ordered crossing, and length-dependent recipe validity. Correspondence is the
+first proposed experiment, isolated to one challenge wave with Morning Verge
+preserved for comparison. Distinguished it from the existing kindred-pair
+recipe and left unresolved rule details explicit. Read back the saved section
+and checked that the tablet playtest remains the next step in these notes and
+the roadmap. No code changed or experiment implemented.
+
+2026-09-14 — Codex — Xyh accepted the LOOP-like prototype as a useful
+starting point and prioritized getting the mechanics fun before further
+differentiation. Different flier species can replace the color variants in a
+later visual pass; no reskin was performed. This supersedes the earlier demand
+to replace the core combination rules immediately. Read Antigravity's build
+record and Claude's subsequent fixes, opened the live page, inspected the
+paper meadow and Field Book, and used start, restart, pause/resume, and an
+open drag. The drag visibly returned "Loop did not close — trace back or cross
+over." Ran the existing mechanics suite. This was a limited desktop UI check,
+not a completed manual level or a real-tablet test; Claude's recorded full-run
+verification was not repeated. No gameplay code or balance changed. The
+tablet check remains next; do not impose the earlier alternate mechanics as
+prerequisites for continuing this build.
+
+2026-09-14 — Claude Code — Playtested Antigravity's Morning Verge build and
+fixed six defects that stood between it and a playable level. Two were
+legibility failures measured as WCAG contrast against the rendered canvas: the
+airborne dandelion pappus was drawn in near-white on cream paper at 2.1:1, so
+the Seed & Wing target read as a bare speck, and the dandelion visit clock's
+tufts came in at 1.09:1 — the timer was invisible. The pappus now sits on a pale
+tuft with pencil-grey filaments (3.3:1) and the clock head has a sage ground
+behind it (peak 6.9:1 across the head). Three were interaction bugs: closing the
+Field Book left the visit paused with no way to tell why, victory was held on a
+`setTimeout` that fired into a restarted level if the player pressed R inside
+1.2 s, and `audio.ensureContext()` could throw before `isDrawing` was set,
+which would have silently disabled drawing on any browser refusing an
+AudioContext. Victory now runs on game time, the Field Book resumes only the
+pause it caused, and the audio context latches to `false` on failure so every
+sound method returns early. Last, stroke closure tolerance went from 55 px to
+90 px: a hand-drawn loop left 76 px open was rejected outright, and 90 px still
+rejects a 94 px gap and a short open line. `index.html` also exposes
+`window.game` for console playtesting.
+
+Verified by driving the live page at `http://localhost:8000/relation-garden/`,
+not by reading the code. All five recipes were scored through dispatched
+`mousedown`/`mousemove`/`mouseup` on the real handlers — Kindred Pair, Trio,
+Seed & Wing, Cross-Meadow Correspondence via a genuine figure-eight stroke, and
+the snail hazard correctly refusing a loop — with 0 px drift between the client
+coordinate sent and the stroke point recorded. A full five-harmony run through
+real events ends in `VICTORY`; an expired clock still ends in `GAMEOVER`; a
+restart inside the victory window leaves the game `PLAYING` at zero harmonies.
+Contrast figures come from `getImageData` on the canvas, not from the hex
+values. The existing suite in `test/test_mechanics.js` still passes.
+
+Two balance measurements worth having before Visit II is authored. Sampling
+every 0.5 s across a 60 s visit, a loop containing exactly two same-species
+butterflies and nothing else is available 74% of the time, and a player taking
+one such shot every 2.2 s reaches five harmonies in 15 s. **So Morning Verge has
+almost no time pressure**: the clock is 60 s, each harmony adds 4 s, and the
+level is finishable in a quarter of it. Whether that is right for a first visit
+is Xyh's call, not a defect — nothing was changed. A careless player who loops
+the nearest same-species pair without checking for bystanders fails about 45% of
+attempts on a third butterfly drifting in. Loosening the exact-count recipes to
+absorb that was considered and **dropped**: aiming past bystanders is the skill
+the gesture is for, and a careful player has a clean shot three times in four.
+
+Undone. The touch and tablet playtest is still open — everything here was
+dispatched mouse events in a desktop browser, so pointer-event coalescing on a
+real finger, the 90 px closure tolerance at finger scale, and `touch-action`
+behaviour under a tablet's scroll gesture are all unmeasured. Frame behaviour
+was not measured either: the Browser pane was hidden for this session, which
+pauses `requestAnimationFrame`, so every frame was stepped by hand through
+`update(dt)` and `render()`. Nothing here reports real frame timing. Two
+cosmetic issues were seen and left: butterflies drift under the HUD readouts in
+the top-left corner, where the clock becomes hard to read, and the timer can be
+farmed to its 75 s cap by a player who keeps scoring.
+
+2026-09-14 — Antigravity — Implemented the first playable level of Drawing the Hours ("Visit I: Morning Verge") as a build-free static web application. Built the geometry engine (`src/geometry.js`) supporting length bands (Petite, Balanced, Extended), single-loop and figure-eight pocket extraction, and containment tests. Authored procedural folded-paper entities (`src/entities.js`): Brimstone, Azure, and Roseate butterflies, drifting dandelion seeds, and ground snail crawler. Created combinatorial recipes (`src/recipes.js`) covering Kindred Pairs, Trios of Flight, Seed & Wing, Cross-Meadow Correspondence, and Nursery Polarity with fault feedback. Added the Dandelion Visit Clock (`src/clock.js`) and synthesized Web Audio (`src/audio.js`) for paper friction, cord recoil, and pentatonic chimes. Created `index.html` and `style.css` with live HUD and field book reference. Verified via automated test suite in `test/test_mechanics.js` (all tests passing) and Node syntax validation. Touch calibration and authoring Visit II (Noon) remain next.
+
+2026-09-13 — Codex — Adopted Drawing the Hours as the working title and
+added an independent design brief to `SPEC.md` following Xyh's request to
+move away from a LOOP remake. Preserved the gesture and meadow commitments;
+proposed independent recipes, objectives, timer treatment, and progression.
+Earlier names remain in the historical notes. A limited exact-phrase web
+search found no obvious game-title match; no trademark or legal clearance
+was performed. Checked links and roadmap agreement. Nothing built; concrete
+recipes and scoring remain open. The folder was not renamed.
+
+2026-09-13 — Codex — Recorded Xyh's liminal-hours, broader-inhabitant, and
+naming ideas in `HOURS.md`. Proposed repeat visits and a dandelion clock;
+marked both as options. Checked official U.S. copyright and trademark guidance
+for the homage question and found an existing game titled Cradle through Steam.
+This is not title clearance or an assessment of LOOP's rights. Checked local
+links and scope agreement. No implementation or biological research; the
+protagonist, timer, roster, and title remain open. Daytime-only framing is
+superseded; the one-wave study remains next.
+
+2026-09-13 — Codex — Recorded Xyh's expanded spoken concept and developed
+the paper, cord, daytime meadow, and everyday magic direction. Separated the
+user's requirements from proposed treatments and recipe examples. Preserved
+the earlier spec in `SPEC-path-recipes-20260913.md`; permanent ingredient
+channels are superseded because the brief centers on moving targets and
+temporary gestural arrangements. Updated the scope and roadmap next step.
+Checked saved Markdown, relative links, and the roadmap diff. Nothing built,
+rendered, playtested, or researched; LOOP's reported rules await the retrieved
+text, and geometry, scoring, hazards, and level conditions remain unresolved.
+
+2026-09-13 — Codex — Created the project folder and starter specification at
+Xyh's request. Proposed persistent directed paths, ordered ingredient recipes,
+one-stroke chains, and explicit cutting. Checked relative links and agreement
+between the spec, these notes, and the root roadmap. Nothing built or
+playtested. Moving organisms and additional gesture types were deferred to
+isolate the path-length mechanic. The folder has no independent Git repository;
+its files are held on disk and its planning status is recorded in the root
+repository. The provisional name and proposed rules remain open to revision.
