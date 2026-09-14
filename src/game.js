@@ -1159,8 +1159,8 @@ export class Game {
     const lvl = this.currentLevel;
     const teachCounterpart = lvl.id === 'noon-01' || lvl.id === 'practice-noon';
     const teachNursery = lvl.id === 'noon-02';
-    const teachMixedEcho = lvl.id === 'noon-03';
-    const hasDiagram = teachCounterpart || teachNursery || teachMixedEcho;
+    const teachSeedTrio = lvl.id === 'noon-03';
+    const hasDiagram = teachCounterpart || teachNursery || teachSeedTrio;
 
     this.drawModalBox(ctx, 500, hasDiagram ? 415 : 310, (boxW, boxH) => {
       const isNarrow = boxW < 440;
@@ -1239,25 +1239,37 @@ export class Game {
         ctx.fillStyle = '#6e5a47'; ctx.font = 'italic 11px Mali, sans-serif';
         ctx.fillText('🍃 2-second rightward breeze gusts will drift seeds across the glass', 0, 54);
         ctx.restore();
-      } else if (teachMixedEcho) {
+      } else if (teachSeedTrio) {
         ctx.save(); ctx.translate(0, boxH / 2 - 84);
+        // Single loop cord (circle)
         ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(0, 0);
-        ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
-        ctx.bezierCurveTo(100, -65, 100, 65, 0, 0); ctx.stroke();
-        // Left lobe: 1 Brimstone + 1 Hoverfly
-        ctx.fillStyle = '#f1d152'; ctx.beginPath(); ctx.ellipse(-54, -6, 9, 13, -0.4, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#eab765'; ctx.beginPath(); ctx.ellipse(-40, 8, 6, 10, 0.3, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#5d493a'; for (const y of [4, 8, 12]) ctx.fillRect(-44, y, 8, 2);
-        // Right lobe: 1 Brimstone + 1 Hoverfly (Mirrored)
-        ctx.fillStyle = '#f1d152'; ctx.beginPath(); ctx.ellipse(40, -6, 9, 13, 0.4, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#eab765'; ctx.beginPath(); ctx.ellipse(54, 8, 6, 10, -0.3, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#5d493a'; for (const y of [4, 8, 12]) ctx.fillRect(50, y, 8, 2);
+        ctx.beginPath();
+        ctx.ellipse(0, 2, 78, 38, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 1 Seed at center-top
+        const sx = 0, sy = -14;
+        ctx.fillStyle = '#faf7ed'; ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#8a7e6b'; ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + 7, sy + 9); ctx.stroke();
+        ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#655543'; ctx.beginPath(); ctx.ellipse(sx + 7, sy + 9, 1.5, 3, 0.6, 0, Math.PI * 2); ctx.fill();
+
+        // 1 Brimstone butterfly at bottom-left
+        ctx.fillStyle = '#f1d152'; ctx.beginPath(); ctx.ellipse(-44, 12, 9, 13, -0.4, 0, Math.PI * 2); ctx.fill();
+
+        // 1 Amber hoverfly at bottom-center
+        ctx.fillStyle = '#eab765'; ctx.beginPath(); ctx.ellipse(0, 14, 6, 10, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#5d493a'; for (const y of [10, 14, 18]) ctx.fillRect(-4, y, 8, 2);
+
+        // 1 Roseate hawkmoth at bottom-right
+        ctx.fillStyle = '#de99a5'; ctx.beginPath(); ctx.ellipse(44, 12, 7, 12, 0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#a8b894'; ctx.beginPath(); ctx.ellipse(44, 6, 4, 8, 0.8, 0, Math.PI * 2); ctx.fill();
 
         ctx.fillStyle = '#5c4538'; ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('Mirror identical mixed groups across lobes (Mixed Echo)', 0, 39);
+        ctx.fillText('1 seed and 3 distinct insects in a loop (Seed & Trio)', 0, 39);
         ctx.fillStyle = '#6e5a47'; ctx.font = 'italic 11px Mali, sans-serif';
-        ctx.fillText('🍃 Periodic atrium breeze gusts remain active', 0, 54);
+        ctx.fillText('🍃 Periodic atrium breeze gusts will carry seeds rightward', 0, 54);
         ctx.restore();
       }
 

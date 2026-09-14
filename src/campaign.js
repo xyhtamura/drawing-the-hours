@@ -177,11 +177,11 @@ export const CAMPAIGN_LEVELS = [
     },
     motionScale: 0.85,
     objectives: {
-      figure8: 4,
-      mixedEcho: 2,
+      any: 4,
+      seedTrio: 2,
     },
-    instruction: 'Make four figure-eights, including two matching mixed groups.',
-    designNote: 'Combine the established breeze with matching mixed pockets.',
+    instruction: 'Make four combinations, including two loops with a seed and three different insects.',
+    designNote: 'Introduce the Seed & Trio circle (1 seed + 3 different species) in the sunlit atrium breeze.',
     gestures: ['enclose'],
     wind: {
       periodSeconds: 12,
@@ -462,6 +462,7 @@ export const OBJECTIVE_LABELS = {
   lacewingCounterpart: 'Lacewing Counterparts',
   nursery: 'Nursery Polarities',
   mixedEcho: 'Mixed Echoes',
+  seedTrio: 'Seed & Trio Loops',
   twinSeedWing: 'Twin Seed & Wings',
   trace: 'Traces',
 };
@@ -503,6 +504,12 @@ export function deriveObjectiveTags(drawingResult, pockets) {
     // seedWing: exactly 1 flier and 1 seed
     if (fliers.length === 1 && seeds.length === 1) {
       tags.push('seedWing');
+    }
+
+    // seedTrio: exactly 3 fliers of 3 distinct kinds and 1 seed
+    if (fliers.length === 3 && seeds.length === 1) {
+      const kinds = new Set(fliers.map(f => normalizeKind(f.kind)));
+      if (kinds.size === 3) tags.push('seedTrio');
     }
   } else if (pCount === 2) {
     tags.push('figure8');

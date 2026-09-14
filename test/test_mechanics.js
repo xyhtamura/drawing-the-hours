@@ -149,6 +149,31 @@ console.log('--- Running Drawing the Hours Test Suite ---');
   assert.strictEqual(evalSeedWing.valid, true);
   assert.strictEqual(evalSeedWing.recipeType, RECIPE_TYPES.SEED_AND_WING);
 
+  // Seed & Trio: 3 distinct fliers + 1 seed
+  const seedTrio = [
+    { type: 'butterfly', kind: 'brimstone', x: 100, y: 100 },
+    { type: 'butterfly', kind: 'azure', x: 120, y: 110 },
+    { type: 'butterfly', kind: 'roseate', x: 140, y: 110 },
+    { type: 'seed', kind: 'dandelion_seed', x: 120, y: 130 },
+  ];
+  const pocketSeedTrio = [{ id: 1, polygon: [], area: 6000, centroid: { x: 120, y: 115 }, entities: seedTrio }];
+  const evalSeedTrio = evaluateDrawing(pocketSeedTrio, 800);
+  assert.strictEqual(evalSeedTrio.valid, true);
+  assert.strictEqual(evalSeedTrio.recipeType, RECIPE_TYPES.SEED_AND_TRIO);
+  assert.strictEqual(evalSeedTrio.finalScore, Math.round(360 * 1.25));
+
+  // Seed & Trio mismatch: duplicate flier species with seed
+  const seedTrioMismatch = [
+    { type: 'butterfly', kind: 'brimstone', x: 100, y: 100 },
+    { type: 'butterfly', kind: 'brimstone', x: 120, y: 110 },
+    { type: 'butterfly', kind: 'roseate', x: 140, y: 110 },
+    { type: 'seed', kind: 'dandelion_seed', x: 120, y: 130 },
+  ];
+  const pocketSeedTrioMismatch = [{ id: 1, polygon: [], area: 6000, centroid: { x: 120, y: 115 }, entities: seedTrioMismatch }];
+  const evalSeedTrioMismatch = evaluateDrawing(pocketSeedTrioMismatch, 800);
+  assert.strictEqual(evalSeedTrioMismatch.valid, false);
+  assert.strictEqual(evalSeedTrioMismatch.faultType, 'MISMATCH');
+
   // Hazard Fault: Snail enclosed with butterfly
   const hazardGroup = [
     { type: 'butterfly', kind: 'brimstone', x: 100, y: 100 },
@@ -249,6 +274,35 @@ console.log('--- Running Drawing the Hours Test Suite ---');
   assert.strictEqual(evalDialogue.title, 'Counterpart Dialogue');
   assert.strictEqual(evalDialogue.finalScore, Math.round((300 + 3 * 40) * 1.25));
 
+  // Two-Pocket: Reject Similar Fliers divided across figure-eight (Divided Kindred)
+  // Pocket A: 1 Brimstone; Pocket B: 1 Brimstone (must fail — belong in single loop)
+  const dividedPairA = [{ type: 'butterfly', kind: 'brimstone', x: 100, y: 100 }];
+  const dividedPairB = [{ type: 'butterfly', kind: 'brimstone', x: 300, y: 100 }];
+  const dividedPairPockets = [
+    { id: 1, polygon: [], area: 4000, centroid: { x: 100, y: 100 }, entities: dividedPairA },
+    { id: 2, polygon: [], area: 4000, centroid: { x: 300, y: 100 }, entities: dividedPairB },
+  ];
+  const evalDividedPair = evaluateDrawing(dividedPairPockets, 800);
+  assert.strictEqual(evalDividedPair.valid, false);
+  assert.strictEqual(evalDividedPair.faultType, 'DIVIDED_KINDRED');
+
+  // Pocket A: 2 Brimstones; Pocket B: 2 Brimstones (must fail as kindred fliers)
+  const dividedQuadA = [
+    { type: 'butterfly', kind: 'brimstone', x: 100, y: 100 },
+    { type: 'butterfly', kind: 'brimstone', x: 110, y: 100 },
+  ];
+  const dividedQuadB = [
+    { type: 'butterfly', kind: 'brimstone', x: 300, y: 100 },
+    { type: 'butterfly', kind: 'brimstone', x: 310, y: 100 },
+  ];
+  const dividedQuadPockets = [
+    { id: 1, polygon: [], area: 4000, centroid: { x: 105, y: 100 }, entities: dividedQuadA },
+    { id: 2, polygon: [], area: 4000, centroid: { x: 305, y: 100 }, entities: dividedQuadB },
+  ];
+  const evalDividedQuad = evaluateDrawing(dividedQuadPockets, 800);
+  assert.strictEqual(evalDividedQuad.valid, false);
+  assert.strictEqual(evalDividedQuad.faultType, 'DIVIDED_KINDRED');
+
   console.log('✔ All recipe evaluation scenarios passed successfully.');
 }
 
@@ -292,6 +346,22 @@ console.log('--- Running Drawing the Hours Test Suite ---');
   assert.ok(tagsSeedWing.includes('any'));
   assert.ok(tagsSeedWing.includes('single'));
   assert.ok(tagsSeedWing.includes('seedWing'));
+
+  // 7c-2. Single Loop - Seed & Trio
+  const stEntities = [
+    { type: 'butterfly', kind: 'brimstone', x: 100, y: 100 },
+    { type: 'butterfly', kind: 'azure', x: 120, y: 110 },
+    { type: 'butterfly', kind: 'roseate', x: 140, y: 110 },
+    { type: 'seed', kind: 'dandelion_seed', x: 120, y: 130 },
+  ];
+  const pocketST = [{ id: 1, polygon: [], area: 6000, centroid: { x: 120, y: 115 }, entities: stEntities }];
+  const evalST = evaluateDrawing(pocketST, 800);
+  const tagsST = deriveObjectiveTags(evalST, pocketST);
+  assert.ok(tagsST.includes('any'));
+  assert.ok(tagsST.includes('single'));
+  assert.ok(tagsST.includes('seedTrio'));
+  assert.ok(!tagsST.includes('trio'));
+  assert.ok(!tagsST.includes('seedWing'));
 
   // 7d. Figure-Eight - Counterpart Pair
   const cpLobeA = [{ type: 'butterfly', kind: 'damselfly', x: 100, y: 100 }];
@@ -458,7 +528,7 @@ console.log('--- All tests passed! ---');
   // Noon 3 (Visit VI)
   const noon3 = campaign.setLevelById('noon-03');
   assert.strictEqual(noon3.transitionText, 'This atrium makes me feel calmer.');
-  assert.deepStrictEqual(noon3.objectives, { figure8: 4, mixedEcho: 2 });
+  assert.deepStrictEqual(noon3.objectives, { any: 4, seedTrio: 2 });
   assert.strictEqual(noon3.durationSeconds, 100);
   assert.strictEqual(noon3.wind.periodSeconds, 12);
   assert.strictEqual(campaign.getNextLevel(), null, 'Dusk remains locked pending next chapter');

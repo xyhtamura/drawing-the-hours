@@ -10,6 +10,7 @@ export const RECIPE_TYPES = {
   KINDRED_PAIR: 'KINDRED_PAIR',
   TRIO_OF_FLIGHT: 'TRIO_OF_FLIGHT',
   SEED_AND_WING: 'SEED_AND_WING',
+  SEED_AND_TRIO: 'SEED_AND_TRIO',
   CROSS_MEADOW_CORRESPONDENCE: 'CROSS_MEADOW_CORRESPONDENCE',
   SYMMETRIC_CORRESPONDENCE: 'SYMMETRIC_CORRESPONDENCE',
   NURSERY_POLARITY: 'NURSERY_POLARITY',
@@ -133,6 +134,25 @@ export function evaluateSinglePocket(entities) {
     };
   }
 
+  // Seed & Trio: 3 distinct butterflies + 1 seed
+  if (summary.butterflies.length === 3 && summary.seeds.length === 1) {
+    if (summary.distinctButterflyKinds === 3) {
+      return {
+        valid: true,
+        type: RECIPE_TYPES.SEED_AND_TRIO,
+        title: 'Seed & Trio',
+        detail: 'Three distinct species gathered around an airborne seed in a circle.',
+        score: 360,
+        entities,
+      };
+    }
+    return {
+      valid: false,
+      reason: 'Seed & Trio requires three distinct species gathered around the airborne seed.',
+      faultType: 'MISMATCH',
+    };
+  }
+
   // Detailed feedback for near-misses
   if (summary.butterflies.length === 1 && summary.seeds.length === 0) {
     return {
@@ -220,6 +240,21 @@ export function evaluateDrawing(pocketsWithEntities, strokeLength, options = {})
 
     const sumA = summarizePocket(pocketA.entities);
     const sumB = summarizePocket(pocketB.entities);
+
+    const allFlierKinds = new Set([...Object.keys(sumA.countsByKind), ...Object.keys(sumB.countsByKind)]);
+    const totalSeeds = sumA.seeds.length + sumB.seeds.length;
+    const totalFliers = sumA.butterflies.length + sumB.butterflies.length;
+
+    // Reject similar fliers in a figure-eight (Kindred fliers belong together in a single loop)
+    if (totalSeeds === 0 && allFlierKinds.size === 1 && totalFliers >= 2) {
+      return {
+        valid: false,
+        status: 'SIMILAR_IN_FIGURE8',
+        faultType: 'DIVIDED_KINDRED',
+        message: 'Kindred fliers belong together in a single loop — do not divide them across a figure-eight.',
+        pockets: pocketsWithEntities,
+      };
+    }
 
     // 1. SYMMETRIC CORRESPONDENCE (Twin Echoes Experiment)
     // Matching species compositions between Pocket A and Pocket B

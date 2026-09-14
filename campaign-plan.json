@@ -182,11 +182,11 @@
       },
       "motionScale": 0.85,
       "objectives": {
-        "figure8": 4,
-        "mixedEcho": 2
+        "any": 4,
+        "seedTrio": 2
       },
-      "instruction": "Make four figure-eights, including two matching mixed groups.",
-      "designNote": "Combine the established breeze with matching mixed pockets; glass remains scenery.",
+      "instruction": "Make four combinations, including two loops with a seed and three different fliers.",
+      "designNote": "Combine the established breeze with Seed & Trio circles (1 seed + 3 distinct species).",
       "gestures": [
         "enclose"
       ],

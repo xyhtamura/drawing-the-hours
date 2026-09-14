@@ -14,6 +14,13 @@ Implement Hour III: Dusk (Visits VII–IX) introducing paper lacewings with safe
 
 ## Activity
 
+2026-09-15 — Antigravity — Added the Seed & Trio loop recipe, replaced Noon 3's mixedEcho requirement with Seed & Trio, and invalidated kindred fliers divided across figure-eights per Xyh's feedback.
+- Seed & Trio combination: Enclosing 1 airborne seed + 3 distinct insect species in a single loop evaluates as `RECIPE_TYPES.SEED_AND_TRIO` (base score 360) in `src/recipes.js`. Loops with 1 seed + 3 fliers containing duplicate species fail with `MISMATCH`. Added dedicated pentatonic chord voicing in `src/audio.js` and Field Book entry in `index.html`.
+- Kindred fliers in figure-eight: In `src/recipes.js`, two-pocket drawings containing identical flier species (0 seeds, 1 distinct kind, >= 2 fliers total) are rejected with `faultType: 'DIVIDED_KINDRED'` and the guidance "Kindred fliers belong together in a single loop — do not divide them across a figure-eight." Documented this constraint under Kindred Pair in `index.html`.
+- Noon 3 adjustment: Updated Visit VI (`noon-03`) objectives in `src/campaign.js` and `campaign-plan.json` from `{ figure8: 4, mixedEcho: 2 }` to `{ any: 4, seedTrio: 2 }`, removing the punitive 4-entity figure-eight requirement in favour of the Seed & Trio circle. Replaced the Ready screen diagram and instructions with `teachSeedTrio` in `src/game.js`.
+- Verification: Extended `test/test_mechanics.js` with test coverage for `SEED_AND_TRIO` (valid and duplicate mismatch), `DIVIDED_KINDRED` rejection across figure-eight lobes, `seedTrio` objective tag derivation, and `noon-03` progression. All test suites pass cleanly (`node test/test_mechanics.js`) and all ES modules validate (`node --check`).
+Hour III: Dusk (Visits VII–IX) and real-device gesture calibration remain next.
+
 2026-09-14 — Antigravity — Implemented the remainder of Hour II: Noon (Visits V and VI) in `src/game.js`, `src/audio.js`, `src/entities.js`, `src/campaign.js`, `index.html`, and `test/test_mechanics.js`, bringing the Noon atrium chapter to completion per `CAMPAIGN.md` and Xyh's verbatim texts in `first12levels.md`.
 - Completed Noon 2 (Visit V, *For now*): verbatim story card ("I don't know how much longer my job will exist."), Figure-eight Nursery Polarity objective (insects sheltered in one lobe, dandelion seeds gathered in the other), 110s dandelion clock.
 - Completed Noon 3 (Visit VI, *The glass and the leaves*): verbatim story card ("This atrium makes me feel calmer."), Figure-eight Mixed Echo objective (bilateral symmetry of matching mixed insect groups across lobes), 100s dandelion clock.
