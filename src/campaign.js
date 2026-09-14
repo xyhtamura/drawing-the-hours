@@ -373,6 +373,9 @@ export const CAMPAIGN_LEVELS = [
   },
 ];
 
+// Add an ID here only when its scene and mechanics are ready for campaign play.
+export const PLAYABLE_LEVEL_IDS = new Set(['dawn-01', 'dawn-02', 'dawn-03', 'noon-01']);
+
 export const PRACTICE_LEVELS = [
   {
     id: 'practice-01',
@@ -429,6 +432,14 @@ export const PRACTICE_LEVELS = [
     wind: null,
   },
 ];
+
+// A direct test route with the same data, without changing campaign progress.
+PRACTICE_LEVELS.push({
+  ...CAMPAIGN_LEVELS.find(level => level.id === 'noon-01'),
+  id: 'practice-noon',
+  title: 'Lunch in the atrium',
+  hourLabel: 'Practice · Noon',
+});
 
 export const OBJECTIVE_LABELS = {
   any: 'Combinations',
@@ -615,7 +626,7 @@ export class CampaignManager {
 
   setLevelById(id) {
     const foundCamp = CAMPAIGN_LEVELS.find(l => l.id === id);
-    if (foundCamp) {
+    if (foundCamp && PLAYABLE_LEVEL_IDS.has(foundCamp.id)) {
       this.currentMode = 'campaign';
       this.initProgress(foundCamp);
       this.saveState.currentLevelId = id;
@@ -637,7 +648,8 @@ export class CampaignManager {
     }
     const idx = CAMPAIGN_LEVELS.findIndex(l => l.id === this.currentLevel.id);
     if (idx >= 0 && idx < CAMPAIGN_LEVELS.length - 1) {
-      return CAMPAIGN_LEVELS[idx + 1];
+      const next = CAMPAIGN_LEVELS[idx + 1];
+      return PLAYABLE_LEVEL_IDS.has(next.id) ? next : null;
     }
     return null;
   }

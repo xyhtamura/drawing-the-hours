@@ -408,7 +408,7 @@ console.log('--- Running Drawing the Hours Test Suite ---');
 // 9. Campaign Registry and Hour I Verbatim Text Integrity
 {
   assert.strictEqual(CAMPAIGN_LEVELS.length, 12, '12 campaign levels authored');
-  assert.strictEqual(PRACTICE_LEVELS.length, 2, '2 practice sandbox levels maintained');
+  assert.strictEqual(PRACTICE_LEVELS.length, 3, 'Dawn practice plus Noon preview');
 
   // Verify Dawn levels verbatim transition texts per first12levels.md
   const dawn1 = CAMPAIGN_LEVELS[0];
@@ -431,3 +431,22 @@ console.log('--- Running Drawing the Hours Test Suite ---');
 }
 
 console.log('--- All tests passed! ---');
+
+// Noon build boundary and practice isolation.
+{
+ const campaign = new CampaignManager();
+ campaign.setLevelById('dawn-03');
+ assert.strictEqual(campaign.getNextLevel().id, 'noon-01');
+ const noon = campaign.setLevelById('noon-01');
+ assert.strictEqual(noon.transitionText, 'Today, for lunch, I bought myself a sandwich.');
+ assert.deepStrictEqual(noon.objectives, { any: 4, counterpartPair: 3 });
+ assert.strictEqual(campaign.getNextLevel(), null);
+ campaign.setLevelById('noon-02');
+ assert.strictEqual(campaign.currentLevel.id, 'noon-01');
+ const before = JSON.stringify(campaign.saveState);
+ campaign.setLevelById('practice-noon');
+ campaign.recordVictory(500);
+ assert.strictEqual(JSON.stringify(campaign.saveState), before);
+ assert.strictEqual(campaign.getNextLevel(), null);
+ console.log('✔ Noon entry, text, build boundary, and practice isolation verified.');
+}

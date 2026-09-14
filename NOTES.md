@@ -10,7 +10,7 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Calibrate Dawn levels 1–3 on real touch devices, then implement Hour II: Noon (Visits 4–6) with the atrium scene, wind gusts, and figure-eight correspondence objectives.
+Implement Noon visits 5–6 with wind gusts using the shared atrium scene; real-device gesture calibration remains open.
 
 ## Activity
 
@@ -202,3 +202,21 @@ playtested. Moving organisms and additional gesture types were deferred to
 isolate the path-length mechanic. The folder has no independent Git repository;
 its files are held on disk and its planning status is recorded in the root
 repository. The provisional name and proposed rules remain open to revision.
+
+2026-09-14 — Codex — Implemented Noon 1 (Visit IV), Lunch in the atrium.
+Preserved the sandwich transition and authored objectives: four combinations,
+including three Counterpart Pairs, in 90 seconds with three Brimstones and
+three Damselflies. Added cached glass seams, sunlight, planters, paving, and
+a small lunch wrapper in src/noon-art.js; a figure-eight guide; a campaign
+menu entry; and independent Noon practice access.
+
+Checked the ready guide and playable six-insect scene in the in-app browser.
+Node mechanics tests pass, including Noon availability and practice save
+isolation. Full manual completion and real-device touch calibration remain
+unverified. The browser view required vertical scrolling at its current height.
+
+Antigravity handoff: visits 5–6 already have data in src/campaign.js. Implement
+their wind behavior, then add their IDs to PLAYABLE_LEVEL_IDS; the Noon menu
+and next-visit routing follow that registry. Atrium artwork is shared by scene
+name. Noon 1 currently ends with Replay rather than entering unfinished visits.
+Wind and the remaining chapter are deliberately left for Antigravity.

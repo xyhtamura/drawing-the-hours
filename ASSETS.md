@@ -19,3 +19,7 @@ The cached Dawn paper texture, pavement, grasses, and flowers in
 They use Canvas paths and deterministic noise, without third-party textures.
 The existing insect drawings and synthesized audio remain locally authored
 project assets. No external sample or image was added in this pass.
+
+The Noon atrium graphics in `src/noon-art.js` were authored by Codex on
+2026-09-14 using Canvas paths and deterministic noise. No external assets
+were added for Noon.

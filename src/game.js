@@ -15,6 +15,7 @@ import { evaluateDrawing } from './recipes.js';
 import { DandelionClock } from './clock.js';
 import { audio } from './audio.js';
 import { createDawnArt, wrapText } from './dawn-art.js';
+import { createNoonArt } from './noon-art.js';
 import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } from './campaign.js';
 
 function drawRoundedRect(ctx, x, y, w, h, r) {
@@ -587,6 +588,15 @@ export class Game {
   }
 
   drawMeadowFloor(ctx) {
+    if (this.currentLevel?.scene === 'atrium') {
+      const key = `${this.width}:${this.height}:${window.devicePixelRatio || 1}`;
+      if (this.noonArtKey !== key) {
+        this.noonArt = createNoonArt(this.width, this.height, window.devicePixelRatio || 1);
+        this.noonArtKey = key;
+      }
+      ctx.drawImage(this.noonArt, 0, 0, this.width, this.height);
+      return;
+    }
     if (this.currentLevel?.scene === 'curb') {
       const key = `${this.width}:${this.height}:${window.devicePixelRatio || 1}`;
       if (this.dawnArtKey !== key) {
@@ -970,7 +980,8 @@ export class Game {
 
   drawReadyModal(ctx) {
     const lvl = this.currentLevel;
-    this.drawModalBox(ctx, 500, 310, (boxW, boxH) => {
+    const teachCounterpart = lvl.id === 'noon-01' || lvl.id === 'practice-noon';
+    this.drawModalBox(ctx, 500, teachCounterpart ? 400 : 310, (boxW, boxH) => {
       const isNarrow = boxW < 440;
 
       // Header
@@ -1011,6 +1022,19 @@ export class Game {
       ctx.font = 'italic 11.5px Mali, sans-serif';
       ctx.fillStyle = '#8a7e6f';
       ctx.fillText(`Dandelion Clock: ${lvl.durationSeconds} seconds`, padX, startY + 10);
+
+      if (teachCounterpart) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 83);
+        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
+        ctx.bezierCurveTo(100, -65, 100, 65, 0, 0); ctx.stroke();
+        ctx.fillStyle = '#f1d152'; ctx.beginPath(); ctx.ellipse(-46, 0, 11, 15, -.4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#457b9d'; ctx.beginPath(); ctx.ellipse(46, 0, 5, 15, .4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#5c4538'; ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('One different insect in each pocket', 0, 42);
+        ctx.restore();
+      }
 
       // Prompt
       ctx.textAlign = 'center';
@@ -1056,7 +1080,7 @@ export class Game {
       ctx.fillText(
         nextLevel
           ? (isNarrow ? `[ Tap for Next: ${nextLevel.title} ]` : `[ Click or Space for Next Visit: ${nextLevel.title} ]`)
-          : (isNarrow ? '[ Tap to Continue ]' : '[ Click or Press Space to Continue ]'),
+          : (isNarrow ? '[ Tap to Replay ]' : '[ Click or Press Space to Replay ]'),
         0,
         boxH / 2 - 24
       );
