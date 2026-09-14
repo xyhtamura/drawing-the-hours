@@ -56,6 +56,13 @@ export const SPECIES_CONFIG = {
     flutterFreq: 30,
     description: 'Plump velvety body and swept delta wings; flies in sweeping arcs.',
   },
+  hoverfly: {
+    id: 'hoverfly', name: 'Amber Hoverfly', shortName: 'Hoverfly',
+    speciesGroup: 'hoverfly', bodyColor: '#5d493a', bodyAccent: '#eab765',
+    wingColor: 'rgba(239, 245, 232, 0.82)', wingEdge: '#aaa58b',
+    speed: 1, size: 19, flutterFreq: 38,
+    description: 'Striped amber body; pauses, turns, then shifts sideways.',
+  },
   // Aliases for backward compatibility
   azure: null,
   roseate: null,
@@ -87,6 +94,8 @@ export class Insect {
 
     // Species-specific behavioral state
     this.behaviorTimer = 0.5 + Math.random() * 1.5;
+    this.hoverPhase = 'hold';
+    this.hoverRemaining = 1.4 + Math.random() * 0.6;
     this.isHovering = false; // specific to damselfly
     this.arcSign = Math.random() < 0.5 ? 1 : -1; // specific to hawkmoth
   }
@@ -117,7 +126,9 @@ export class Insect {
     }
 
     // --- SPECIES-SPECIFIC MOVEMENT DYNAMICS ---
-    if (this.kind === 'damselfly') {
+    if (this.kind === 'hoverfly') {
+      this.updateHoverfly(dt, bounds);
+    } else if (this.kind === 'damselfly') {
       this.updateDamselfly(dt, bounds);
     } else if (this.kind === 'hawkmoth') {
       this.updateHawkmoth(dt, bounds);
@@ -209,6 +220,58 @@ export class Insect {
     this.y += Math.sin(this.heading) * this.speed * scale * 60 * dt;
   }
 
+  // Explicit phases give a stationary capture window and a turn before each shift.
+  updateHoverfly(dt, bounds) {
+    this.flapPhase += this.config.flutterFreq * dt;
+    let remaining = dt * this.motionScale;
+    while (remaining > 0) {
+      const step = Math.min(remaining, this.hoverRemaining);
+      if (this.hoverPhase === 'shift') {
+        this.x += Math.cos(this.heading) * 95 * step;
+        this.y += Math.sin(this.heading) * 95 * step;
+      } else if (this.hoverPhase === 'turn') {
+        this.smoothTurn(12 * step);
+      }
+      remaining -= step;
+      this.hoverRemaining -= step;
+      if (this.hoverRemaining <= 0) {
+        if (this.hoverPhase === 'hold') {
+          this.hoverPhase = 'turn'; this.hoverRemaining = 0.3;
+          this.targetHeading = this.heading + (Math.random() < 0.5 ? -1 : 1) * Math.PI / 2;
+          this.applyBoundarySteering(bounds, 90);
+        } else if (this.hoverPhase === 'turn') {
+          this.hoverPhase = 'shift'; this.hoverRemaining = 0.5;
+          this.heading = this.targetHeading;
+        } else {
+          this.hoverPhase = 'hold'; this.hoverRemaining = 1.4 + Math.random() * 0.6;
+        }
+      }
+    }
+  }
+
+  drawHoverfly(ctx) {
+    const flutter = 0.86 + Math.sin(this.flapPhase) * 0.14;
+    ctx.fillStyle = 'rgba(70, 55, 35, 0.12)';
+    ctx.beginPath(); ctx.ellipse(3, 7, 13, 17, 0, 0, Math.PI * 2); ctx.fill();
+    for (const side of [-1, 1]) {
+      ctx.save(); ctx.scale(side * flutter, 1);
+      ctx.fillStyle = this.config.wingColor; ctx.strokeStyle = this.config.wingEdge; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(12, -1, 8, 15, -0.7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(3, -7); ctx.lineTo(18, 7); ctx.stroke(); ctx.restore();
+    }
+    ctx.fillStyle = this.config.bodyAccent;
+    ctx.beginPath(); ctx.ellipse(0, 5, 7, 12, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.clip(); ctx.fillStyle = this.config.bodyColor;
+    for (const y of [0, 7, 14]) ctx.fillRect(-8, y, 16, 3);
+    ctx.restore();
+    ctx.fillStyle = this.config.bodyColor;
+    ctx.beginPath(); ctx.ellipse(0, -7, 7, 6, 0, 0, Math.PI * 2); ctx.fill();
+    for (const x of [-4, 4]) {
+      ctx.fillStyle = '#967757'; ctx.beginPath(); ctx.ellipse(x, -12, 3.5, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff2d5'; ctx.beginPath(); ctx.arc(x - 0.8, -13, 0.9, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
   applyBoundarySteering(bounds, pad) {
     if (this.x < pad) this.targetHeading = 0;
     else if (this.x > bounds.width - pad) this.targetHeading = Math.PI;
@@ -241,7 +304,9 @@ export class Insect {
       ctx.restore();
     }
 
-    if (this.kind === 'damselfly') {
+    if (this.kind === 'hoverfly') {
+      this.drawHoverfly(ctx);
+    } else if (this.kind === 'damselfly') {
       this.drawDamselfly(ctx);
     } else if (this.kind === 'hawkmoth') {
       this.drawHawkmoth(ctx);

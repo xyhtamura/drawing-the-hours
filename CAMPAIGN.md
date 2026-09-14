@@ -312,3 +312,32 @@ objective filtering exists yet. The formal spec also retains stale closure
 and species details, corrected by the current source and notes. Browser
 automation could not start (access denied), so no fresh visual playtest was
 performed. The JSON and story sequence were checked as design artifacts only.
+
+## Insect cast revision, 2026-09-14
+
+Noon replaces its damselflies with Amber Hoverflies; the Brimstone stays as a
+familiar insect. All three Noon population definitions use this replacement,
+including the independent Noon practice entry. Existing objectives stay intact.
+Visits 5–6 remain Antigravity's implementation scope.
+
+The hoverfly has a compact amber abdomen with three dark bands, two broad
+translucent wings, and large eyes. At motion scale 1, it holds for 1.4–2 seconds,
+turns in place for 0.3 seconds, then shifts 47.5 pixels over 0.5 seconds. Noon 1's
+0.8 scale lengthens these phases without changing the shift distance. The turn
+signals the next movement; wing vibration continues during the stationary
+capture window. Boundary steering directs the next shift inward. These are
+stylized game behaviors, not a biological simulation.
+
+| Hour | Cast direction | Movement role |
+| --- | --- | --- |
+| Dawn | Brimstone, damselfly, hawkmoth | Wandering, darting, sweeping |
+| Noon | Brimstone and hoverfly; retain other authored ingredients as needed | Passing and pausing |
+| Dusk | Hawkmoth, new lacewing, occasional damselfly | Broad arcs and gentle drifting |
+| Midnight | New firefly and returning lacewing | Pulsing visibility and drifting |
+
+Dusk and Midnight are design directions, not implemented population changes.
+Reconcile their existing visit quotas and recipes when building those chapters.
+Keep firefly visibility readable enough to draw; decide the pulse timing through
+playtesting. Six insect types across the campaign are sufficient for this plan;
+seeds and snails add other interactions. Introduce one new insect per later hour
+and reuse familiar ones so the changing hour remains legible.

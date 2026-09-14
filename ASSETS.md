@@ -23,3 +23,6 @@ project assets. No external sample or image was added in this pass.
 The Noon atrium graphics in `src/noon-art.js` were authored by Codex on
 2026-09-14 using Canvas paths and deterministic noise. No external assets
 were added for Noon.
+
+The Amber Hoverfly in `src/entities.js` is an original Canvas drawing by
+Codex, 2026-09-14. It uses paths and translucent fills; no external artwork.

@@ -18,6 +18,7 @@ export const RECIPE_TYPES = {
 };
 
 export const SPECIES_NAMES = {
+  hoverfly: 'Amber Hoverfly',
   brimstone: 'Brimstone Butterfly',
   damselfly: 'Azure Damselfly',
   hawkmoth: 'Roseate Hawkmoth',

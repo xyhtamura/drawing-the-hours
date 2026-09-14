@@ -106,12 +106,13 @@
       "durationSeconds": 90,
       "population": {
         "brimstone": 3,
-        "damselfly": 3,
+        "damselfly": 0,
         "hawkmoth": 0,
         "seed": 0,
         "snail": 0,
         "lacewing": 0,
-        "firefly": 0
+        "firefly": 0,
+        "hoverfly": 3
       },
       "motionScale": 0.8,
       "objectives": {
@@ -135,12 +136,13 @@
       "durationSeconds": 110,
       "population": {
         "brimstone": 2,
-        "damselfly": 2,
+        "damselfly": 0,
         "hawkmoth": 2,
         "seed": 3,
         "snail": 1,
         "lacewing": 0,
-        "firefly": 0
+        "firefly": 0,
+        "hoverfly": 2
       },
       "motionScale": 0.85,
       "objectives": {
@@ -170,12 +172,13 @@
       "durationSeconds": 100,
       "population": {
         "brimstone": 2,
-        "damselfly": 2,
+        "damselfly": 0,
         "hawkmoth": 2,
         "seed": 2,
         "snail": 0,
         "lacewing": 0,
-        "firefly": 0
+        "firefly": 0,
+        "hoverfly": 2
       },
       "motionScale": 0.85,
       "objectives": {

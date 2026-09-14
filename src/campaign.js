@@ -103,7 +103,8 @@ export const CAMPAIGN_LEVELS = [
     durationSeconds: 90,
     population: {
       brimstone: 3,
-      damselfly: 3,
+      damselfly: 0,
+      hoverfly: 3,
       hawkmoth: 0,
       seed: 0,
       snail: 0,
@@ -131,7 +132,8 @@ export const CAMPAIGN_LEVELS = [
     durationSeconds: 110,
     population: {
       brimstone: 2,
-      damselfly: 2,
+      damselfly: 0,
+      hoverfly: 2,
       hawkmoth: 2,
       seed: 3,
       snail: 1,
@@ -165,7 +167,8 @@ export const CAMPAIGN_LEVELS = [
     durationSeconds: 100,
     population: {
       brimstone: 2,
-      damselfly: 2,
+      damselfly: 0,
+      hoverfly: 2,
       hawkmoth: 2,
       seed: 2,
       snail: 0,

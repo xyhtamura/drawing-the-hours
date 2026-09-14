@@ -450,3 +450,30 @@ console.log('--- All tests passed! ---');
  assert.strictEqual(campaign.getNextLevel(), null);
  console.log('✔ Noon entry, text, build boundary, and practice isolation verified.');
 }
+
+// Hoverfly pauses, warns by turning, and travels a bounded short shift.
+{
+ const { Insect } = await import('../src/entities.js');
+ const fly = new Insect(200, 200, 'hoverfly');
+ const bounds = { width: 600, height: 500 };
+ fly.hoverRemaining = 1.4;
+ fly.update(1, bounds);
+ assert.deepStrictEqual([fly.x, fly.y], [200, 200]);
+ fly.update(0.41, bounds);
+ assert.strictEqual(fly.hoverPhase, 'turn');
+ assert.deepStrictEqual([fly.x, fly.y], [200, 200]);
+ fly.update(0.8, bounds);
+ assert.strictEqual(fly.hoverPhase, 'hold');
+ assert.ok(Math.abs(Math.hypot(fly.x - 200, fly.y - 200) - 47.5) < 0.001);
+ for (let i = 0; i < 600; i++) fly.update(0.1, bounds);
+ assert.ok(fly.x >= 12 && fly.x <= 588 && fly.y >= 12 && fly.y <= 488);
+ const { evaluateSinglePocket } = await import('../src/recipes.js');
+ assert.ok(evaluateSinglePocket([fly, new Insect(210, 200, 'hoverfly')]).valid);
+ const pockets = [{entities: [fly]}, {entities: [new Insect(240, 200, 'brimstone')]}];
+ assert.ok(deriveObjectiveTags({ valid: true }, pockets).includes('counterpartPair'));
+ for (const level of CAMPAIGN_LEVELS.filter(l => l.hour === 'noon')) {
+   assert.ok(level.population.hoverfly > 0);
+   assert.strictEqual(level.population.damselfly, 0);
+ }
+ console.log('✔ Hoverfly hold, turn, shift, bounds, recipes, and Noon populations verified.');
+}

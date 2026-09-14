@@ -220,3 +220,17 @@ their wind behavior, then add their IDs to PLAYABLE_LEVEL_IDS; the Noon menu
 and next-visit routing follow that registry. Atrium artwork is shared by scene
 name. Noon 1 currently ends with Replay rather than entering unfinished visits.
 Wind and the remaining chapter are deliberately left for Antigravity.
+
+2026-09-14 — Codex — Added Amber Hoverfly artwork and hold/turn/shift movement.
+Replaced Noon damselfly quotas with hoverflies in runtime and campaign-plan
+data; Dawn remains unchanged. Added spawning support, recipe display name,
+Field Book entry, and updated Noon guide icon. CAMPAIGN.md records the cast
+direction for all four hours; lacewing and firefly remain future work.
+
+Node mechanics tests pass, including stationary hover, advance warning, shift
+distance, bounds, recipe tags, and Noon quotas. Browser inspection showed
+three striped hoverflies with three Brimstones in Noon practice and the Field
+Book entry in the DOM. Full manual completion and touch calibration remain
+open. Antigravity can use the hoverfly kind directly for visits 5–6; wind
+interaction still needs implementation and playtesting. No future chapters
+were enabled.

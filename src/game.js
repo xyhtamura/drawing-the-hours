@@ -169,7 +169,7 @@ export class Game {
     const padY = this.height * 0.2;
 
     // Fliers
-    const kinds = ['brimstone', 'damselfly', 'hawkmoth'];
+    const kinds = ['brimstone', 'damselfly', 'hawkmoth', 'hoverfly'];
     for (const k of kinds) {
       const count = pop[k] || 0;
       for (let i = 0; i < count; i++) {
@@ -1030,7 +1030,8 @@ export class Game {
         ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
         ctx.bezierCurveTo(100, -65, 100, 65, 0, 0); ctx.stroke();
         ctx.fillStyle = '#f1d152'; ctx.beginPath(); ctx.ellipse(-46, 0, 11, 15, -.4, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#457b9d'; ctx.beginPath(); ctx.ellipse(46, 0, 5, 15, .4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#eab765'; ctx.beginPath(); ctx.ellipse(46, 0, 8, 13, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#5d493a'; for (const y of [-6, 0, 6]) ctx.fillRect(40, y, 12, 3);
         ctx.fillStyle = '#5c4538'; ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('One different insect in each pocket', 0, 42);
         ctx.restore();
