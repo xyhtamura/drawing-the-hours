@@ -10,7 +10,7 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Implement Hour IV: Midnight (Visits X–XII) introducing fireflies and Trace mode; real-device gesture calibration remains open.
+Antigravity: implement Midnight XI–XII and the first-day completion screen from [MIDNIGHT.md](MIDNIGHT.md); real-device gesture calibration remains open.
 
 ## Activity
 
@@ -310,3 +310,47 @@ These checks use controlled target arrangements, not a manual full run or
 real-device gesture calibration. First-pass timing and live arrangement
 availability remain for Xyh to playtest. Implement VIII's seed Nursery visit
 next using DUSK.md; IX and Midnight remain unbuilt.
+
+2026-09-15 — Codex — Implemented Midnight Visit X, The window corner, and
+prepared [MIDNIGHT.md](MIDNIGHT.md) for Antigravity to build XI–XII. X preserves
+Xyh's transition sentence, uses three fireflies and two lacewings, and requires
+three firefly–lacewing–different-firefly traces in 95 seconds. Added the cached
+window-side planter, a firefly whose body and hit radius stay visible between
+glows, numbered Trace rings, an open blue cord, ready instructions, a Field
+Book entry, campaign chaining after Dusk IX, and isolated Midnight practice.
+
+`src/trace.js` evaluates swept relative motion, orders contacts by entry time,
+ignores repeated identities, rejects occupied starts, wrong targets, fourth
+targets, hazards, and ambiguous overlaps, and commits nothing until release.
+The shared input path samples coalesced moves and the release position. Game
+updates also detect an insect crossing a held pointer. Pause, resize, lost
+capture, cancelled pointers, hidden tabs, and window blur clear reservations.
+A different pointer cannot finish a held stroke. Accepted Trace results share
+the enclosure score/objective/departure transaction but produce only `any`
+and `trace` tags. Excluded harmonizing insects from enclosure recapture as well.
+No new audio layer was added; successful Trace uses the existing harmony chord.
+
+The handoff keeps XI–XII unavailable. XI adds hoverflies and seeds to X's cast,
+with no snail; XII returns Brimstones and one snail. Their plan and runtime
+records agree. Existing complex figure-eights remain optional. Antigravity's
+remaining work is the mixed-mode control and cards, larger-field placement,
+XI–XII gameplay verification, and a first-day ending that checks completed IDs
+rather than unlocked levels. Recorded the existing startup resume gap: saved
+`currentLevelId` is not loaded into the initial visit. That is deferred to the
+ending/save-flow pass, not silently treated as implemented. Touch balance and
+a full twelve-visit player run remain open.
+
+Verified `node test/test_mechanics.js`, `node test/test_dusk.js`, and
+`node test/test_midnight.js`, module syntax, and `git diff --check`. Headless
+Edge ran `test/midnight-browser.html` through real handlers with synthetic pen
+Pointer Events: sparse fast strokes, moving targets, wrong-order feedback,
+interruption without scoring, expiry, three traces through victory, pending
+quota preservation and spawning after clearance, practice save isolation,
+non-overlapping five-insect starts at 320×300, 960×320, and 390×640, plus the
+mode setter's active-stroke rejection and retry default. The original spawn
+fixture froze blockers while expecting immediate replenishment; corrected it
+to test queued quotas before clearing the blockers. `test/dusk-browser.html`
+also passed its five enclosure gestures through victory after input refactoring.
+Inspected desktop field and ready-card images and a 390-pixel portrait ready
+card. Moved frame edges below the HUD after seeing text cross the dark border.
+These are controlled-input checks, not a manual or real-touch completion run.

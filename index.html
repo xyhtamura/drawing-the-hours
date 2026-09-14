@@ -42,7 +42,7 @@
   </main>
 
   <footer>
-    <div>Draw around insects. Cross your line to make two pockets.</div>
+    <div id="gesture-hint">Draw around insects. Cross your line to make two pockets.</div>
     <div>Keyboard: [Space] Pause / Advance &bull; [W] Visits &bull; [V] View &bull; [M] Sound &bull; [H] Field Book &bull; [R] Restart</div>
   </footer>
 
@@ -67,6 +67,8 @@
       <div class="recipe-entry">
         <span class="entry-badge" style="background:#e0f2fe; color:#0369a1;">Species</span>
         <div class="recipe-info">
+          <h3>Window Firefly</h3><p>Appears at Midnight. A slow beetle with a pale abdomen that stays visible between glows. In Trace mode, target rings stay the same size throughout the glow cycle.</p>
+          <h3>Ordered Trace</h3><p>Start outside every target ring. Touch a firefly, a lacewing, then a different firefly in one stroke. Release to finish; the line can stay open. Numbered rings show the order. Repeating an insect does not count again. A wrong insect, a fourth target, or a snail invalidates the trace. Overlapping contacts require another attempt. Leaves do not count.</p>
           <h3>Paper Lacewing</h3><p>Appears at Dusk. Mint veined wings fold while it rests on a leaf for 1.5 seconds. Draw a figure-eight with one lacewing and one different insect in separate pockets. Leaves do not count as targets.</p>
           <h3>Amber Hoverfly</h3><p>Appears at Noon. Holds still, turns, then shifts a short distance. Draw a figure-eight around one hoverfly and one Brimstone, with one insect in each pocket.</p>
         </div>
@@ -169,7 +171,7 @@
     <div class="recipe-card visit-card">
       <h2>Meadow Visits &amp; Hours</h2>
       <div class="field-intro">
-        Select any chapter visit or return to an open practice verge. All 9 playable visits are unlocked for testing.
+        Select any chapter visit or return to an open practice verge. All implemented visits are unlocked for testing.
       </div>
 
       <div class="visit-section">
@@ -181,10 +183,11 @@
 
       <div class="visit-section"><div class="visit-section-title">Hour II: Noon</div><div class="visit-list" id="visit-list-noon"></div></div>
       <div class="visit-section"><div class="visit-section-title">Hour III: Dusk</div><div class="visit-list" id="visit-list-dusk"></div></div>
+      <div class="visit-section"><div class="visit-section-title">Hour IV: Midnight</div><div class="visit-list" id="visit-list-midnight"></div></div>
       <div class="visit-section" style="opacity: 0.7; margin-top: 14px;">
         <div class="visit-section-title">Subsequent Hours (Preview)</div>
         <div style="font-size: 0.82rem; color: var(--text-muted); font-style: italic; padding: 4px 2px;">
-          Hour IV: Midnight (Visits X–XII)
+          Midnight Visits XI–XII
         </div>
       </div>
 
@@ -224,6 +227,7 @@
     const visitModal = document.getElementById('visit-modal');
     const btnCloseVisitModal = document.getElementById('btn-close-visit-modal');
     const btnUnlockAllVisits = document.getElementById('btn-unlock-all-visits');
+    const visitListMidnight = document.getElementById('visit-list-midnight');
     const visitListDusk = document.getElementById('visit-list-dusk');
     const visitListNoon = document.getElementById('visit-list-noon');
     const visitListDawn = document.getElementById('visit-list-dawn');
@@ -295,6 +299,9 @@
     });
 
     const updateLevelUI = (level = game.currentLevel) => {
+      document.getElementById('gesture-hint').textContent = game.gestureMode === 'trace'
+        ? 'Start in empty space. Trace through firefly, lacewing, then another firefly. Release to finish.'
+        : 'Draw around insects. Cross your line to make two pockets.';
       if (btnVisit && level) {
         if (level.hourLabel && level.hourLabel.startsWith('Practice')) {
           btnVisit.textContent = `🌿 Sandbox: ${level.number}`;
@@ -315,7 +322,7 @@
       const currentId = game.currentLevel ? game.currentLevel.id : 'dawn-01';
 
       // Preserve global campaign indices for Noon unlocks.
-      for (const [hour, list] of [['dawn', visitListDawn], ['noon', visitListNoon], ['dusk', visitListDusk]]) {
+      for (const [hour, list] of [['dawn', visitListDawn], ['noon', visitListNoon], ['dusk', visitListDusk], ['midnight', visitListMidnight]]) {
         if (!list) continue;
         list.innerHTML = CAMPAIGN_LEVELS.filter(lvl => lvl.hour === hour && PLAYABLE_LEVEL_IDS.has(lvl.id)).map(lvl => {
           const isUnlocked = PLAYABLE_LEVEL_IDS.has(lvl.id) || (CAMPAIGN_LEVELS.indexOf(lvl) <= highestUnlocked);
@@ -535,6 +542,8 @@
         }
       }
     });
+
+    game.onGestureModeChanged = () => updateLevelUI();
 
     // Initial UI setup
     updateLevelUI(game.currentLevel);

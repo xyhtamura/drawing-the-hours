@@ -19,6 +19,7 @@ export const RECIPE_TYPES = {
 };
 
 export const SPECIES_NAMES = {
+  firefly: 'Window Firefly',
   lacewing: 'Paper Lacewing',
   hoverfly: 'Amber Hoverfly',
   brimstone: 'Brimstone Butterfly',

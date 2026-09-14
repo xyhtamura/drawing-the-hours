@@ -141,8 +141,9 @@ levels: Dawn, Noon, Dusk, Midnight, with the twelve transition lines in
 
 The campaign gradually adds a warned seed breeze, lacewings, fireflies,
 and ordered Trace gestures to the existing enclosure grammar. Dawn, Noon,
-and Dusk Visit VII are implemented; VIII–XII remain planned. The
-[Dusk chapter design](DUSK.md) specifies its revised progression. Follow the
+Dusk, and Midnight Visit X are implemented; XI–XII remain planned. The
+[Dusk chapter design](DUSK.md) and [Midnight handoff](MIDNIGHT.md) specify
+their progression. Follow the
 campaign document for progression,
 objectives, replenishment, story flow, and acceptance checks. Keep the two
 prototype waves available for comparison.

@@ -1,7 +1,7 @@
 # Drawing the Hours: first twelve visits
 
 Implementation specification, updated 2026-09-15. **Dawn, Noon, and Dusk
-(Visits I–IX) are implemented. Midnight (Visits X–XII) remains planned; tuning remains provisional.** Xyh confirmed four successive groups of three levels: Dawn,
+(Visits I–IX) and Midnight Visit X are implemented. XI–XII remain planned; tuning remains provisional.** Xyh confirmed four successive groups of three levels: Dawn,
 Noon, Dusk, Midnight. Each of their twelve lines introduces one level.
 Their [original draft](first12levels.md) remains unchanged.
 
@@ -104,6 +104,9 @@ requires a Nursery and a lacewing Counterpart Pair; mixed Echoes are deferred
 pending gesture calibration.
 
 ### Midnight firefly and Trace mode: levels 10–12
+
+[Midnight implementation and handoff](MIDNIGHT.md) records the implemented
+Trace contract, revised populations, and Antigravity's XI–XII build sequence.
 
 Add `firefly`, a slow wandering beetle silhouette with a cream-yellow glowing
 abdomen. Its body and hit radius stay visible and unchanged between glows.

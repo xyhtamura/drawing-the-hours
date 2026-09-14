@@ -103,7 +103,7 @@ const dusk3 = campaign.setLevelById('dusk-03');
 assert.equal(dusk3.transitionText, 'Bringing home medicine today.');
 assert.deepEqual(dusk3.objectives, { any: 6, single: 3, figure8: 2 });
 assert.equal(dusk3.durationSeconds, 100);
-assert.equal(campaign.getNextLevel(), null, 'Hour IV Midnight remains locked pending next chapter');
+assert.equal(campaign.getNextLevel().id, 'midnight-01');
 
 // Single loops (e.g. kindred pair)
 const singlePairPocket = [{ entities: [new Insect(0, 0, 'brimstone'), new Insect(10, 0, 'brimstone')], area: 4000, centroid: {x:5, y:0} }];

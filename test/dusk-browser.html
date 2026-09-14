@@ -39,7 +39,7 @@ try {
   const draw = points => {
     const rect = game.canvas.getBoundingClientRect();
     const event = (type, p) => new w.PointerEvent(type, { clientX: rect.left + p.x,
-      clientY: rect.top + p.y, pointerId: 1, pointerType: 'mouse', bubbles: true });
+      clientY: rect.top + p.y, pointerId: 1, pointerType: 'mouse', isPrimary: true, bubbles: true });
     game.canvas.dispatchEvent(event('pointerdown', points[0]));
     for (const p of points.slice(1)) w.dispatchEvent(event('pointermove', p));
     w.dispatchEvent(event('pointerup', points.at(-1)));

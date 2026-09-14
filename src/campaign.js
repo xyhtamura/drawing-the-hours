@@ -322,13 +322,14 @@ export const CAMPAIGN_LEVELS = [
     transitionText: 'I trace figures, while the world moves around me.',
     durationSeconds: 110,
     population: {
-      brimstone: 2,
-      damselfly: 2,
+      brimstone: 0,
+      damselfly: 0,
+      hoverfly: 2,
       hawkmoth: 0,
       seed: 2,
-      snail: 1,
+      snail: 0,
       lacewing: 2,
-      firefly: 2,
+      firefly: 3,
     },
     motionScale: 0.95,
     objectives: {
@@ -339,7 +340,7 @@ export const CAMPAIGN_LEVELS = [
       trace: 2,
     },
     instruction: 'Make six combinations: include a pair, Seed & Wing, a figure-eight, and two traces.',
-    designNote: 'Explicit Enclose/Trace switching.',
+    designNote: 'Add hoverflies and seeds to the familiar cast; teach explicit Enclose/Trace switching without a snail.',
     gestures: ['enclose', 'trace'],
     wind: null,
     traceSequence: ['firefly', 'lacewing', 'firefly'],
@@ -355,12 +356,13 @@ export const CAMPAIGN_LEVELS = [
     durationSeconds: 110,
     population: {
       brimstone: 2,
-      damselfly: 2,
+      damselfly: 0,
+      hoverfly: 2,
       hawkmoth: 0,
-      seed: 3,
+      seed: 2,
       snail: 1,
       lacewing: 2,
-      firefly: 2,
+      firefly: 3,
     },
     motionScale: 1.0,
     objectives: {
@@ -371,7 +373,7 @@ export const CAMPAIGN_LEVELS = [
       nursery: 1,
     },
     instruction: 'Make seven combinations, including two single loops, two figure-eights, two traces, and a Nursery.',
-    designNote: 'Synthesize enclosure, partition, and ordered contact.',
+    designNote: 'Return Brimstones and one perimeter snail; synthesize familiar gestures without a new rule.',
     gestures: ['enclose', 'trace'],
     wind: null,
     traceSequence: ['firefly', 'lacewing', 'firefly'],
@@ -389,6 +391,7 @@ export const PLAYABLE_LEVEL_IDS = new Set([
   'dusk-01',
   'dusk-02',
   'dusk-03',
+  'midnight-01',
 ]);
 
 export const PRACTICE_LEVELS = [
@@ -461,6 +464,11 @@ PRACTICE_LEVELS.push({
   id: 'practice-dusk', title: 'The way through', hourLabel: 'Practice · Dusk',
 });
 
+PRACTICE_LEVELS.push({
+  ...CAMPAIGN_LEVELS.find(level => level.id === 'midnight-01'),
+  id: 'practice-midnight', title: 'The window corner', hourLabel: 'Practice · Midnight',
+});
+
 export const OBJECTIVE_LABELS = {
   any: 'Combinations',
   single: 'Single Loops',
@@ -489,6 +497,7 @@ function normalizeKind(kind) {
  */
 export function deriveObjectiveTags(drawingResult, pockets) {
   if (!drawingResult || !drawingResult.valid) return [];
+  if (drawingResult.mode === 'trace') return ['any', 'trace'];
   const tags = ['any'];
   const pCount = pockets ? pockets.length : 0;
 

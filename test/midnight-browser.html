@@ -1,0 +1,138 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Midnight browser check</title>
+<style>body{margin:0;background:#f4efe2}iframe{width:100%;height:900px;border:0}pre{white-space:pre-wrap}</style>
+<pre id="result">RUNNING</pre>
+<iframe src="../index.html"></iframe>
+<script type="module">
+const frame = document.querySelector('iframe');
+const params = new URLSearchParams(location.search);
+if (params.has('width')) frame.style.width = `${Number(params.get('width'))}px`;
+const output = document.querySelector('#result');
+const check = (value, message) => { if (!value) throw new Error(message); };
+try {
+  await new Promise(resolve => frame.addEventListener('load', resolve));
+  const w = frame.contentWindow;
+  for (let i = 0; !w.game && i < 100; i++) await new Promise(r => setTimeout(r, 20));
+  const game = w.game;
+  check(game, 'Game did not initialize');
+  const { Insect } = await import('../src/entities.js');
+  // The iframe imports its own module instance; mute through its UI.
+  w.document.getElementById('btn-audio').click();
+  const stored = w.localStorage.getItem('dth_campaign_save_v1');
+  game.startLevel('practice-midnight');
+  check(game.gestureMode === 'trace' && !game.setGestureMode('enclose'), 'Visit X must lock to Trace');
+  check(game.entities.filter(e => e.kind === 'firefly').length === 3, 'Missing three fireflies');
+  check(game.entities.filter(e => e.kind === 'lacewing').length === 2, 'Missing two lacewings');
+  const originalStyle = game.canvas.getAttribute('style');
+  for (const [width, height] of [[320, 300], [960, 320], [390, 640]]) {
+    game.canvas.style.width = `${width}px`; game.canvas.style.height = `${height}px`;
+    game.resize(); game.initLevel();
+    for (let i = 0; i < game.entities.length; i++) for (let j = i + 1; j < game.entities.length; j++) {
+      const a = game.entities[i], b = game.entities[j];
+      check(Math.hypot(a.x - b.x, a.y - b.y) > a.radius + b.radius + 4, `Overlapping first targets at ${width}×${height}`);
+    }
+  }
+  if (originalStyle === null) game.canvas.removeAttribute('style');
+  else game.canvas.setAttribute('style', originalStyle);
+  game.resize(); game.initLevel();
+  const initial = game.entities.map(e => [e.x,e.y,e.stateTime]);
+  game.update(1);
+  check(JSON.stringify(initial) === JSON.stringify(game.entities.map(e => [e.x,e.y,e.stateTime])), 'Transition advanced insects');
+  game.advance(); game.advance();
+  const y = game.height * 0.55;
+  const xs = [game.width * 0.25, game.width * 0.5, game.width * 0.75];
+  const origin = {x:xs[0] - 45, y};
+  const end = {x:xs[2] + 35, y};
+  const event = (type, point, id = 1) => {
+    const r = game.canvas.getBoundingClientRect();
+    const e = new w.PointerEvent(type, {clientX:r.left + point.x, clientY:r.top + point.y,
+      pointerId:id, pointerType:'pen', isPrimary:true, bubbles:true});
+    (type === 'pointerdown' ? game.canvas : w).dispatchEvent(e);
+  };
+  const fixture = () => {
+    game.entities = xs.map((x, i) => new Insect(x, y, i === 1 ? 'lacewing' : 'firefly'));
+    game.respawnQueue = [];
+  };
+  fixture();
+  event('pointerdown', origin);
+  event('pointermove', end);
+  check(game.trace.contacts.length === 3 && game.score === 0, 'Contacts must wait for release to score');
+  check(game.entities.every(e => e.state === 'roaming'), 'Premature departure');
+  event('pointerup', end, 2);
+  check(game.isDrawing, 'Second pointer ended the first pointer stroke');
+  event('pointercancel', end);
+  check(!game.trace && !game.isDrawing && game.score === 0, 'Cancellation committed a trace');
+  for (const interrupt of [() => game.togglePause(), () => game.resize(),
+    () => game.canvas.dispatchEvent(new w.PointerEvent('lostpointercapture', {pointerId:1}))]) {
+    fixture(); event('pointerdown', origin); event('pointermove', end);
+    interrupt();
+    check(!game.trace && game.score === 0, 'Interrupted stroke was not cleared');
+    if (game.state === 'PAUSED') game.togglePause();
+    event('pointerup', end);
+    check(game.score === 0, 'Old release scored after interruption');
+  }
+  fixture(); event('pointerdown', {x:xs[0],y}); event('pointermove', end); event('pointerup', end);
+  check(game.score === 0 && /empty space/.test(game.feedbackBanner.text), 'Occupied start accepted');
+  fixture();
+  game.entities[1].kind = 'firefly';
+  event('pointerdown', origin); event('pointermove', end);
+  check(game.trace.fault && /lacewing/.test(game.feedbackBanner.text), 'Wrong-order feedback missing before release');
+  event('pointerup', end); check(game.score === 0, 'Wrong order scored');
+  // A target sweeps through a held pointer during the game update, without a move event.
+  fixture(); game.entities[0].x = origin.x + 30;
+  game.entities[0].update = () => { game.entities[0].x = origin.x - 30; };
+  event('pointerdown', origin); game.update(0.01);
+  check(game.trace.contacts.length === 1, 'Game loop missed a moving target');
+  event('pointercancel', origin);
+  // Expiration cancels an otherwise valid pending trace.
+  fixture(); event('pointerdown', origin); event('pointermove', end);
+  game.clock.remainingSeconds = 0.01; game.update(0.02); event('pointerup', end);
+  check(game.state === 'GAMEOVER' && game.score === 0 && !game.trace, 'Expired trace scored');
+  game.advance(); game.advance();
+  for (let n = 0; n < 3; n++) {
+    fixture(); event('pointerdown', origin);
+    // One long segment ending only at pointerup tests fast input and final-position capture.
+    if (n === 2) game.clock.remainingSeconds = 0.01;
+    event('pointerup', end);
+    check(game.harmoniesCount === n + 1, `Trace ${n + 1} failed: ${game.feedbackBanner.text}`);
+    if (n === 0) {
+      game.maintainPopulation(0.81);
+      for (const [kind, quota] of [['firefly',3],['lacewing',2]]) {
+        const live = game.entities.filter(e => e.state === 'roaming' && e.kind === kind).length;
+        check(live + game.respawnQueue.filter(e => e.kind === kind).length === quota, 'Replacement quota was lost or duplicated');
+      }
+      // The fixture has no moving frames here. Clear its blockers so queued leaf births can proceed.
+      for (const e of game.entities.filter(e => e.state === 'roaming' && e.kind === 'firefly')) {
+        e.x = 10; e.y = 10;
+      }
+      for (let i = 0; i < 30; i++) game.maintainPopulation(0.21);
+      check(game.entities.filter(e => e.state === 'roaming' && e.kind === 'firefly').length === 3, 'Firefly replenishment failed');
+      check(game.entities.filter(e => e.state === 'roaming' && e.kind === 'lacewing').length === 2, 'Lacewing replenishment failed after clearance');
+    }
+  }
+  const score = game.score;
+  event('pointerdown', origin); event('pointerup', end);
+  check(game.score === score, 'Completion delay permits duplicate score');
+  game.update(0.02); game.update(1.1);
+  check(game.state === 'LEVEL_COMPLETE', 'Final qualifying release did not win');
+  check(w.localStorage.getItem('dth_campaign_save_v1') === stored, 'Practice changed campaign save');
+  // Exercise the reusable mode setter without enabling an unfinished campaign visit.
+  const mixed = {...game.currentLevel, gestures:['enclose','trace']};
+  game.initLevel(mixed); game.state = 'PLAYING';
+  check(game.gestureMode === 'enclose', 'Mixed visit must default to Enclose');
+  check(game.setGestureMode('trace'), 'Allowed mode switch failed');
+  fixture(); event('pointerdown', origin);
+  check(!game.setGestureMode('enclose'), 'Mode changed during an active stroke');
+  event('pointercancel', origin);
+  check(game.setGestureMode('enclose') && !game.trace, 'Mode switch kept Trace reservations');
+  game.initLevel(mixed); check(game.gestureMode === 'enclose', 'Retry did not restore Enclose');
+  game.startLevel('practice-midnight');
+  const view = params.get('view') || 'ready';
+  if (view !== 'transition') game.advance();
+  if (view === 'playing' || view === 'trace') game.advance();
+  if (view === 'trace') { fixture(); event('pointerdown', origin); event('pointermove', {x:xs[1],y}); }
+  game.render();
+  output.textContent = 'PASS: real Trace input, moving targets, cancellation, expiry, victory, replenishment, and practice isolation.';
+} catch (error) { output.textContent = `FAIL: ${error.stack}`; }
+</script>

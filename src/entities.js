@@ -70,6 +70,12 @@ export const SPECIES_CONFIG = {
     wingEdge: '#3f7158', speed: 1, size: 23, flutterFreq: 12,
     description: 'Veined mint wings; travels between leaves and rests for 1.5 seconds.',
   },
+  firefly: {
+    id: 'firefly', name: 'Window Firefly', shortName: 'Firefly',
+    speciesGroup: 'firefly', bodyColor: '#394955', wingColor: '#829c8f',
+    wingEdge: '#465e58', speed: 1.1 * 0.65, size: 22, flutterFreq: 9,
+    description: 'Slow wandering beetle; its pale abdomen stays visible between glows.',
+  },
   // Aliases for backward compatibility
   azure: null,
   roseate: null,
@@ -92,6 +98,7 @@ export class Insect {
     this.targetHeading = this.heading;
     this.speed = this.config.speed;
 
+    this.glowOffset = Math.random() * 3;
     this.flapPhase = Math.random() * Math.PI * 2;
     this.state = 'roaming'; // 'roaming' | 'harmonizing' | 'departing'
     this.stateTime = 0;
@@ -133,7 +140,9 @@ export class Insect {
     }
 
     // --- SPECIES-SPECIFIC MOVEMENT DYNAMICS ---
-    if (this.kind === 'lacewing') {
+    if (this.kind === 'firefly') {
+      this.updateFirefly(dt, bounds);
+    } else if (this.kind === 'lacewing') {
       updateLacewing(this, dt, bounds);
     } else if (this.kind === 'hoverfly') {
       this.updateHoverfly(dt, bounds);
@@ -148,6 +157,15 @@ export class Insect {
     // Clamp inside play area
     this.x = Math.max(12, Math.min(bounds.width - 12, this.x));
     this.y = Math.max(12, Math.min(bounds.height - 12, this.y));
+  }
+
+  updateFirefly(dt, bounds) {
+    this.flapPhase += this.config.flutterFreq * dt;
+    this.targetHeading += Math.sin(this.stateTime * 0.8 + this.glowOffset) * 0.45 * dt;
+    this.applyBoundarySteering(bounds, 70);
+    this.smoothTurn(2 * dt);
+    this.x += Math.cos(this.heading) * this.config.speed * this.motionScale * 60 * dt;
+    this.y += Math.sin(this.heading) * this.config.speed * this.motionScale * 60 * dt;
   }
 
   // 1. Brimstone Butterfly: Wandering flutter with periodic glides
@@ -313,7 +331,9 @@ export class Insect {
       ctx.restore();
     }
 
-    if (this.kind === 'lacewing') {
+    if (this.kind === 'firefly') {
+      drawFirefly(ctx, this);
+    } else if (this.kind === 'lacewing') {
       drawLacewing(ctx, this);
     } else if (this.kind === 'hoverfly') {
       this.drawHoverfly(ctx);
@@ -802,4 +822,28 @@ export class Snail {
 
     ctx.restore();
   }
+}
+
+/** The glow changes its halo, never its body visibility or target radius. */
+export function drawFirefly(ctx, insect) {
+  const phase = ((insect.stateTime || 0) + (insect.glowOffset || 0)) % 3;
+  const glow = phase < 0.8 ? Math.sin(Math.PI * phase / 0.8) : 0;
+  if (glow > 0) {
+    const halo = ctx.createRadialGradient(0, 8, 3, 0, 8, 29);
+    halo.addColorStop(0, `rgba(255,237,148,${0.55 * glow})`);
+    halo.addColorStop(1, 'rgba(255,237,148,0)');
+    ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(0, 8, 29, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.strokeStyle = '#465e58'; ctx.lineWidth = 1.1;
+  for (const side of [-1, 1]) {
+    for (const y of [-5, 1, 7]) {
+      ctx.beginPath(); ctx.moveTo(side * 5, y); ctx.lineTo(side * 12, y + 5); ctx.stroke();
+    }
+    ctx.fillStyle = '#adc1b3'; ctx.beginPath();
+    ctx.ellipse(side * 7, -1, 5, 13, side * 0.25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  }
+  ctx.fillStyle = '#394955'; ctx.beginPath(); ctx.ellipse(0, 0, 6, 14, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff0ae'; ctx.beginPath(); ctx.ellipse(0, 9, 5, 6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#394955'; ctx.beginPath(); ctx.ellipse(0, 9, 5, 6, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-2, -12); ctx.lineTo(-6, -19); ctx.moveTo(2, -12); ctx.lineTo(6, -19); ctx.stroke();
 }

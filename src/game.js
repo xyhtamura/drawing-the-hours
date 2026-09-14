@@ -1,3 +1,5 @@
+import { TraceGesture } from './trace.js';
+import { createMidnightArt } from './midnight-art.js';
 import { createDuskArt } from './dusk-art.js';
 import { leafAnchors, duskSafeArea, placeLacewing, updateLacewing, drawLacewing } from './lacewing.js';
 /**
@@ -12,7 +14,7 @@ import {
   extractPockets,
   pointInPolygon,
 } from './geometry.js';
-import { Butterfly, DandelionSeed, Snail, SPECIES_CONFIG } from './entities.js';
+import { Butterfly, DandelionSeed, Snail, SPECIES_CONFIG, drawFirefly } from './entities.js';
 import { evaluateDrawing } from './recipes.js';
 import { DandelionClock } from './clock.js';
 import { audio } from './audio.js';
@@ -110,6 +112,7 @@ export class Game {
   }
 
   resize() {
+    this.cancelStroke();
     const rect = this.canvas.getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0) {
       this.width = rect.width;
@@ -163,7 +166,9 @@ export class Game {
       level = this.campaign.setLevelById(level);
     }
 
+    this.cancelStroke();
     this.currentLevel = level || this.campaign.currentLevel;
+    this.gestureMode = this.currentLevel.gestures?.[0] || 'enclose';
     this.campaign.initProgress(this.currentLevel);
 
     if (this.activePointerId !== undefined) {
@@ -199,7 +204,7 @@ export class Game {
     const padY = this.height * 0.2;
 
     // Fliers
-    const kinds = ['brimstone', 'damselfly', 'hawkmoth', 'hoverfly', 'lacewing'];
+    const kinds = ['brimstone', 'damselfly', 'hawkmoth', 'hoverfly', 'lacewing', 'firefly'];
     for (const k of kinds) {
       const count = pop[k] || 0;
       for (let i = 0; i < count; i++) {
@@ -209,16 +214,27 @@ export class Game {
         b.motionScale = mScale;
         if (k === 'lacewing') {
           placeLacewing(b, this, i, i * 0.75);
-        } else if (k === 'hoverfly' && this.currentLevel.scene === 'passage') {
+        } else if (k === 'hoverfly' && ['passage', 'window'].includes(this.currentLevel.scene)) {
           const leaf = leafAnchors(this)[i % 3];
           b.x = leaf.x; b.y = leaf.y + 85;
-        } else if (this.currentLevel.scene === 'passage') {
+        } else if (['passage', 'window'].includes(this.currentLevel.scene)) {
           const r = duskSafeArea(this);
           b.x = r.left + Math.random() * (r.right - r.left);
           b.y = r.top + Math.random() * (r.bottom - r.top);
         }
         this.entities.push(b);
       }
+    }
+
+    if (this.currentLevel.scene === 'window') {
+      const r = duskSafeArea(this);
+      const positions = [[0.14, 0.82], [0.50, 0.50], [0.86, 0.82]];
+      this.entities.filter(e => e.kind === 'firefly').forEach((e, i) => {
+        const [x, y] = positions[i % positions.length];
+        e.x = r.left + x * (r.right - r.left);
+        e.y = r.top + y * (r.bottom - r.top);
+        e.glowOffset = i;
+      });
     }
 
     // Seeds
@@ -298,10 +314,16 @@ export class Game {
               e.state !== 'roaming' || Math.hypot(e.x - a.x, e.y - a.y) > 65));
             if (available < 0) { this.respawnQueue.push({ kind: item.kind, delay: 0.2 }); continue; }
             placeLacewing(b, this, available);
-          } else if (this.currentLevel.scene === 'passage') {
+          } else if (['passage', 'window'].includes(this.currentLevel.scene)) {
             const r = duskSafeArea(this);
             b.x = r.left + Math.random() * (r.right - r.left);
             b.y = r.top + Math.random() * (r.bottom - r.top);
+          }
+          if (this.currentLevel.scene === 'window' && this.entities.some(e =>
+              e.state !== 'departing' && e.state !== 'harmonizing' &&
+              Math.hypot(e.x - b.x, e.y - b.y) < e.radius + b.radius + 12)) {
+            this.respawnQueue.push({ kind: item.kind, delay: 0.2 });
+            continue;
           }
           this.entities.push(b);
         }
@@ -326,21 +348,15 @@ export class Game {
       };
     };
 
-    const onPointerDown = (e) => {
-      const modal = document.getElementById('fieldbook-modal');
-      if (modal && modal.classList.contains('active')) return;
-
-      if (this.state !== 'PLAYING') return;
+    const ownsPointer = e => this.activePointerId === e.pointerId;
+    const onPointerDown = e => {
+      if (this.isDrawing || e.isPrimary === false || (e.button !== undefined && e.button !== 0)) return;
+      if (document.querySelector('.modal-overlay.active')) return;
+      if (this.state !== 'PLAYING' || this.victoryDelay > 0 || this.clock.remainingSeconds <= 0) return;
       e.preventDefault();
       audio.ensureContext();
-
-      if (this.canvas.setPointerCapture && e.pointerId !== undefined) {
-        try {
-          this.canvas.setPointerCapture(e.pointerId);
-          this.activePointerId = e.pointerId;
-        } catch (_) {}
-      }
-
+      this.activePointerId = e.pointerId;
+      try { this.canvas.setPointerCapture(e.pointerId); } catch (_) {}
       const pos = getPos(e);
       this.isDrawing = true;
       this.currentStroke = [pos];
@@ -348,57 +364,105 @@ export class Game {
       this.activeBand = getLengthBand(0);
       this.lastPointerPos = pos;
       this.lastPointerTime = performance.now();
-
+      this.trace = this.gestureMode === 'trace'
+        ? new TraceGesture(pos, this.entities, this.currentLevel.traceSequence) : null;
+      if (this.trace?.fault) this.showFeedback(this.trace.fault, 'warning');
       audio.startDrawingRustle();
     };
-
-    const onPointerMove = (e) => {
-      if (!this.isDrawing || this.state !== 'PLAYING') return;
+    const onPointerMove = e => {
+      if (!this.isDrawing || !ownsPointer(e) || this.state !== 'PLAYING') return;
       e.preventDefault();
-
-      const pos = getPos(e);
-      const last = this.currentStroke[this.currentStroke.length - 1];
-      const dist = distance(last, pos);
-
-      if (dist >= 4) {
-        this.currentStroke.push(pos);
-        this.strokeLength += dist;
-        this.activeBand = getLengthBand(this.strokeLength);
-
-        const now = performance.now();
-        const dt = (now - this.lastPointerTime) / 1000;
-        const speed = dt > 0 ? dist / dt : 0;
-        this.lastPointerPos = pos;
-        this.lastPointerTime = now;
-
-        audio.updateDrawingSpeed(speed);
-      }
+      const samples = e.getCoalescedEvents?.();
+      for (const sample of samples?.length ? samples : [e]) this.samplePointer(getPos(sample));
     };
-
-    const onPointerUp = (e) => {
-      if (!this.isDrawing) return;
+    const onPointerUp = e => {
+      if (!this.isDrawing || !ownsPointer(e)) return;
       e.preventDefault();
-
-      if (this.canvas.releasePointerCapture && this.activePointerId !== undefined) {
-        try {
-          this.canvas.releasePointerCapture(this.activePointerId);
-        } catch (_) {}
-        this.activePointerId = undefined;
+      if (this.state !== 'PLAYING' || this.clock.remainingSeconds <= 0 || this.victoryDelay > 0) {
+        this.cancelStroke(); return;
       }
-
+      // Include the release position even when no final move event was sent.
+      this.samplePointer(getPos(e), true);
       this.isDrawing = false;
+      try { this.canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+      this.activePointerId = undefined;
       audio.stopDrawingRustle();
-
       this.resolveCurrentStroke();
+      this.trace = null;
     };
-
+    const onCancel = e => { if (this.isDrawing && ownsPointer(e)) this.cancelStroke(); };
     this.canvas.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
-    this.canvas.addEventListener('pointercancel', onPointerUp);
+    window.addEventListener('pointercancel', onCancel);
+    this.canvas.addEventListener('lostpointercapture', onCancel);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && this.state === 'PLAYING') this.togglePause();
+    });
+    window.addEventListener('blur', () => {
+      if (this.state === 'PLAYING') this.togglePause();
+    });
+  }
+
+  cancelStroke() {
+    this.isDrawing = false;
+    const pointerId = this.activePointerId;
+    this.activePointerId = undefined;
+    if (pointerId !== undefined) {
+      try { this.canvas.releasePointerCapture(pointerId); } catch (_) {}
+    }
+    this.trace = null;
+    this.currentStroke = [];
+    this.strokeLength = 0;
+    this.activeBand = getLengthBand(0);
+    audio.stopDrawingRustle();
+  }
+
+  setGestureMode(mode) {
+    if (this.isDrawing || this.victoryDelay > 0 || !this.currentLevel.gestures.includes(mode)) return false;
+    this.cancelStroke();
+    this.gestureMode = mode;
+    this.onGestureModeChanged?.(mode);
+    return true;
+  }
+
+  sampleTrace(point = this.lastPointerPos) {
+    if (!this.trace) return;
+    const previousFault = this.trace.fault;
+    this.trace.sample(point, this.entities);
+    if (this.trace.fault && !previousFault) this.showFeedback(this.trace.fault, 'warning');
+  }
+
+  samplePointer(pos, force = false) {
+    this.sampleTrace(pos);
+    this.lastPointerPos = pos;
+    const last = this.currentStroke.at(-1);
+    const dist = distance(last, pos);
+    if (dist >= (this.gestureMode === 'trace' ? 0 : 4) || force) {
+      this.currentStroke.push(pos);
+      this.strokeLength += dist;
+      this.activeBand = getLengthBand(this.strokeLength);
+      const now = performance.now();
+      const dt = (now - this.lastPointerTime) / 1000;
+      audio.updateDrawingSpeed(dt > 0 ? dist / dt : 0);
+      this.lastPointerTime = now;
+    }
   }
 
   resolveCurrentStroke() {
+    if (this.state !== 'PLAYING' || this.clock.remainingSeconds <= 0 || this.victoryDelay > 0) {
+      this.cancelStroke(); return;
+    }
+    if (this.gestureMode === 'trace') {
+      const result = this.trace?.finish(this.strokeLength);
+      this.recoilStroke = [...this.currentStroke];
+      this.recoilAlpha = 1;
+      if (result?.valid) this.acceptDrawing(result, []);
+      else if (result) { this.showFeedback(result.message, 'warning'); audio.playFrayFault(); }
+      this.currentStroke = [];
+      this.strokeLength = 0;
+      return;
+    }
     if (this.currentStroke.length < 5) {
       this.currentStroke = [];
       this.strokeLength = 0;
@@ -418,7 +482,7 @@ export class Game {
     // Associate entities with pockets
     const pocketsWithEntities = rawPockets.map(pocket => {
       const enclosed = this.entities.filter(entity => {
-        if (entity.state === 'departing') return false;
+        if (entity.state === 'departing' || entity.state === 'harmonizing') return false;
         return pointInPolygon({ x: entity.x, y: entity.y }, pocket.polygon);
       });
       return {
@@ -436,41 +500,7 @@ export class Game {
     this.pocketFillAlpha = result.valid ? 0.45 : 0.22;
 
     if (result.valid) {
-      // Success!
-      audio.playHarmonyChord(result.recipeType, result.band);
-      this.score += result.finalScore;
-      this.harmoniesCount += 1;
-
-      // Process with campaign manager
-      const campResult = this.campaign.processDrawing(result, pocketsWithEntities, this.clock);
-
-      if (campResult.advancedObjective) {
-        this.showFeedback(`${result.title} (+${result.finalScore} pts)`, 'success');
-      } else {
-        this.showFeedback(`${result.title} (+${result.finalScore} pts) — Objective unchanged`, 'info');
-      }
-
-      // Animate harmonized entities
-      for (const ent of result.harmonizedEntities) {
-        ent.state = 'harmonizing';
-        ent.stateTime = 0;
-      }
-
-      // Add pressed paper stamp at pocket centroids
-      for (const p of pocketsWithEntities) {
-        this.stamps.push({
-          x: p.centroid.x,
-          y: p.centroid.y,
-          radius: Math.min(36, Math.sqrt(p.area) * 0.25),
-          alpha: 1.0,
-          title: result.title,
-        });
-      }
-
-      // Check level complete
-      if (campResult.allComplete) {
-        this.victoryDelay = 1.0;
-      }
+      this.acceptDrawing(result, pocketsWithEntities);
     } else {
       // Fault / Invalid feedback
       if (result.status === 'HAZARD') {
@@ -486,6 +516,44 @@ export class Game {
 
     this.currentStroke = [];
     this.strokeLength = 0;
+  }
+
+  acceptDrawing(result, pocketsWithEntities) {
+    // Success!
+    audio.playHarmonyChord(result.recipeType, result.band);
+    this.score += result.finalScore;
+    this.harmoniesCount += 1;
+
+    // Process with campaign manager
+    const campResult = this.campaign.processDrawing(result, pocketsWithEntities, this.clock);
+
+    if (campResult.advancedObjective) {
+      this.showFeedback(`${result.title} (+${result.finalScore} pts)`, 'success');
+    } else {
+      this.showFeedback(`${result.title} (+${result.finalScore} pts) — Objective unchanged`, 'info');
+    }
+
+    // Animate harmonized entities
+    for (const ent of result.harmonizedEntities) {
+      ent.state = 'harmonizing';
+      ent.stateTime = 0;
+    }
+
+    // Add pressed paper stamp at pocket centroids
+    for (const p of pocketsWithEntities) {
+      this.stamps.push({
+        x: p.centroid.x,
+        y: p.centroid.y,
+        radius: Math.min(36, Math.sqrt(p.area) * 0.25),
+        alpha: 1.0,
+        title: result.title,
+      });
+    }
+
+    // Check level complete
+    if (campResult.allComplete) {
+      this.victoryDelay = 1.0;
+    }
   }
 
   startLevel(levelOrId = this.campaign.currentLevel) {
@@ -530,6 +598,7 @@ export class Game {
 
   togglePause() {
     if (this.state === 'PLAYING') {
+      this.cancelStroke();
       this.state = 'PAUSED';
       this.clock.isPaused = true;
       audio.stopCicadas();
@@ -565,7 +634,10 @@ export class Game {
 
       this.clock.update(dt);
       if (this.clock.isExpired && this.victoryDelay <= 0) {
+        this.cancelStroke();
         this.state = 'GAMEOVER';
+        audio.stopCicadas();
+        return;
       }
 
       // Atrium Wind Mechanics (Noon Visits V-VI)
@@ -615,7 +687,7 @@ export class Game {
       for (let i = this.entities.length - 1; i >= 0; i--) {
         const ent = this.entities[i];
         ent.update(dt, bounds, ent.type === 'seed' ? windVx : 0);
-        if (this.currentLevel.scene === 'passage' && ent.type === 'butterfly' && ent.state === 'roaming') {
+        if (['passage', 'window'].includes(this.currentLevel.scene) && ent.type === 'butterfly' && ent.state === 'roaming') {
           const r = duskSafeArea(bounds);
           if (ent.kind !== 'lacewing') {
             const pad = 35;
@@ -632,6 +704,7 @@ export class Game {
         }
       }
 
+      if (this.isDrawing && this.gestureMode === 'trace') this.sampleTrace();
       this.maintainPopulation(dt);
     } else {
       audio.stopCicadas();
@@ -773,6 +846,8 @@ export class Game {
       ent.draw(ctx);
     }
 
+    this.drawTraceTargets(ctx);
+
     // 6. Translucent Paper Wind Streamlines
     this.drawWindStreaks(ctx);
 
@@ -791,6 +866,15 @@ export class Game {
   }
 
   drawMeadowFloor(ctx) {
+    if (this.currentLevel?.scene === 'window') {
+      const key = `${this.width}:${this.height}:${this.dpr}`;
+      if (this.midnightArtKey !== key) {
+        this.midnightArt = createMidnightArt(this.width, this.height, this.dpr);
+        this.midnightArtKey = key;
+      }
+      ctx.drawImage(this.midnightArt, 0, 0, this.width, this.height);
+      return;
+    }
     if (this.currentLevel?.scene === 'passage') {
       const key = `${this.width}:${this.height}:${window.devicePixelRatio || 1}`;
       if (this.duskArtKey !== key) {
@@ -959,7 +1043,8 @@ export class Game {
       ctx.stroke();
 
       // Main dyed cotton cord strand
-      ctx.strokeStyle = band.cordHue;
+      ctx.strokeStyle = this.gestureMode === 'trace' ? (this.trace?.fault ? '#a23f4b' : '#416e83') : band.cordHue;
+      if (this.gestureMode === 'trace') ctx.setLineDash([10, 4]);
       ctx.lineWidth = 3.8;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -985,6 +1070,24 @@ export class Game {
 
       ctx.restore();
     }
+  }
+
+  drawTraceTargets(ctx) {
+    if (this.gestureMode !== 'trace') return;
+    ctx.save();
+    for (const entity of this.entities) {
+      if (entity.state === 'harmonizing' || entity.state === 'departing') continue;
+      const index = this.trace?.contacts.indexOf(entity) ?? -1;
+      ctx.strokeStyle = index >= 0 ? '#315b73' : 'rgba(53,76,92,.4)';
+      ctx.lineWidth = index >= 0 ? 2 : 1;
+      ctx.beginPath(); ctx.arc(entity.x, entity.y, entity.radius, 0, Math.PI * 2); ctx.stroke();
+      if (index >= 0) {
+        ctx.fillStyle = '#315b73'; ctx.beginPath(); ctx.arc(entity.x + entity.radius, entity.y - entity.radius, 9, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = '600 11px system-ui'; ctx.textAlign = 'center';
+        ctx.fillText(String(index + 1), entity.x + entity.radius, entity.y - entity.radius + 4);
+      }
+    }
+    ctx.restore();
   }
 
   drawHUD(ctx) {
@@ -1111,6 +1214,18 @@ export class Game {
       ctx.fillText(`Score: ${this.score}`, this.width - 24, 64);
     }
 
+    if (this.gestureMode === 'trace') {
+      ctx.save(); ctx.textAlign = 'center';
+      ctx.font = '600 11px system-ui, sans-serif'; ctx.fillStyle = '#315b73';
+      const y = isNarrow ? 104 : 88;
+      ctx.fillText('TRACE: Firefly → Lacewing → Firefly', this.width / 2, y);
+      ctx.font = '11px system-ui, sans-serif';
+      const count = this.trace?.contacts.length || 0;
+      ctx.fillText(this.trace?.fault ? 'Release to try again.' : count === 3
+        ? '3 / 3 · Release to finish.' : `${count} / 3 · Start outside the rings.`, this.width / 2, y + 16);
+      ctx.restore();
+    }
+
     // --- Wind Indicator Badge (Noon Visits V-VI) ---
     if (this.currentLevel?.wind && (this.windPhase === 'warning' || this.windPhase === 'gust')) {
       const cx = this.width / 2;
@@ -1225,13 +1340,14 @@ export class Game {
 
   drawReadyModal(ctx) {
     const lvl = this.currentLevel;
+    const teachTrace = lvl.gestures.length === 1 && lvl.gestures[0] === 'trace';
     const teachLacewing = lvl.id === 'dusk-01' || lvl.id === 'practice-dusk';
     const teachDusk02 = lvl.id === 'dusk-02';
     const teachDusk03 = lvl.id === 'dusk-03';
     const teachCounterpart = lvl.id === 'noon-01' || lvl.id === 'practice-noon';
     const teachNursery = lvl.id === 'noon-02';
     const teachSeedTrio = lvl.id === 'noon-03';
-    const hasDiagram = teachLacewing || teachDusk02 || teachDusk03 || teachCounterpart || teachNursery || teachSeedTrio;
+    const hasDiagram = teachTrace || teachLacewing || teachDusk02 || teachDusk03 || teachCounterpart || teachNursery || teachSeedTrio;
 
     this.drawModalBox(ctx, 500, hasDiagram ? 415 : 310, (boxW, boxH) => {
       const isNarrow = boxW < 440;
@@ -1275,7 +1391,23 @@ export class Game {
       ctx.fillStyle = '#8a7e6f';
       ctx.fillText(`Dandelion Clock: ${lvl.durationSeconds} seconds`, padX, startY + 8);
 
-      if (teachLacewing) {
+      if (teachTrace) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 112);
+        ctx.strokeStyle = '#416e83'; ctx.lineWidth = 2; ctx.setLineDash([7, 4]);
+        ctx.beginPath(); ctx.moveTo(-120, 8); ctx.lineTo(110, 8); ctx.stroke(); ctx.setLineDash([]);
+        for (const [i, x] of [-80, 0, 80].entries()) {
+          ctx.save(); ctx.translate(x, 0); ctx.scale(0.8, 0.8);
+          if (i === 1) drawLacewing(ctx, { lacePhase: 'rest', flapPhase: 0 });
+          else drawFirefly(ctx, { stateTime: 0.4, glowOffset: 0 });
+          ctx.restore();
+          ctx.textAlign = 'center'; ctx.fillStyle = '#315b73'; ctx.font = '11px system-ui';
+          ctx.fillText(`${i + 1}. ${i === 1 ? 'Lacewing' : 'Firefly'}`, x, 37);
+        }
+        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui';
+        ctx.fillText('Start in empty space. Touch three different insects.', 0, 59);
+        ctx.fillText('Release after the third. The line can stay open.', 0, 74);
+        ctx.restore();
+      } else if (teachLacewing) {
         ctx.save(); ctx.translate(0, boxH / 2 - 94);
         ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, 0);
