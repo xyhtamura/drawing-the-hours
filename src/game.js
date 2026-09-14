@@ -1,3 +1,5 @@
+import { createDuskArt } from './dusk-art.js';
+import { leafAnchors, duskSafeArea, placeLacewing, updateLacewing, drawLacewing } from './lacewing.js';
 /**
  * Drawing the Hours — Level One: "Morning Verge: The First Hour"
  * Main Game Loop, Input Coordination, Particle & Stamp Effects, and Meadow Renderer.
@@ -127,6 +129,9 @@ export class Game {
         }
       }
 
+      for (const ent of this.entities) {
+        if (ent.kind === 'lacewing' && ent.state === 'roaming') updateLacewing(ent, 0, this);
+      }
       this.initDecorations();
     }
   }
@@ -161,6 +166,18 @@ export class Game {
     this.currentLevel = level || this.campaign.currentLevel;
     this.campaign.initProgress(this.currentLevel);
 
+    if (this.activePointerId !== undefined) {
+      try { this.canvas.releasePointerCapture(this.activePointerId); } catch (_) {}
+      this.activePointerId = undefined;
+    }
+    this.isDrawing = false;
+    this.currentStroke = [];
+    this.strokeLength = 0;
+    this.activeBand = getLengthBand(0);
+    this.stamps = [];
+    this.feedbackBanner = { text: '', type: 'info', timer: 0 };
+    this.recoilAlpha = 0;
+    this.pocketFillAlpha = 0;
     this.entities = [];
     this.respawnQueue = [];
     this.score = 0;
@@ -181,7 +198,7 @@ export class Game {
     const padY = this.height * 0.2;
 
     // Fliers
-    const kinds = ['brimstone', 'damselfly', 'hawkmoth', 'hoverfly'];
+    const kinds = ['brimstone', 'damselfly', 'hawkmoth', 'hoverfly', 'lacewing'];
     for (const k of kinds) {
       const count = pop[k] || 0;
       for (let i = 0; i < count; i++) {
@@ -189,6 +206,11 @@ export class Game {
         const y = padY + Math.random() * (this.height - 2 * padY);
         const b = new Butterfly(x, y, k);
         b.motionScale = mScale;
+        if (k === 'lacewing') placeLacewing(b, this, i, i * 0.75);
+        if (k === 'hoverfly' && this.currentLevel.scene === 'passage') {
+          const leaf = leafAnchors(this)[i % 3];
+          b.x = leaf.x; b.y = leaf.y + 85;
+        }
         this.entities.push(b);
       }
     }
@@ -265,6 +287,16 @@ export class Game {
 
           const b = new Butterfly(sx, sy, item.kind);
           b.motionScale = mScale;
+          if (item.kind === 'lacewing') {
+            const available = leafAnchors(this).findIndex(a => this.entities.every(e =>
+              e.state !== 'roaming' || Math.hypot(e.x - a.x, e.y - a.y) > 65));
+            if (available < 0) { this.respawnQueue.push({ kind: item.kind, delay: 0.2 }); continue; }
+            placeLacewing(b, this, available);
+          } else if (this.currentLevel.scene === 'passage') {
+            const r = duskSafeArea(this);
+            b.x = r.left + Math.random() * (r.right - r.left);
+            b.y = r.top + Math.random() * (r.bottom - r.top);
+          }
           this.entities.push(b);
         }
       }
@@ -572,6 +604,11 @@ export class Game {
       for (let i = this.entities.length - 1; i >= 0; i--) {
         const ent = this.entities[i];
         ent.update(dt, bounds, ent.type === 'seed' ? windVx : 0);
+        if (this.currentLevel.scene === 'passage' && ent.type === 'butterfly' && ent.state === 'roaming') {
+          const r = duskSafeArea(bounds);
+          ent.x = Math.max(r.left, Math.min(r.right, ent.x));
+          ent.y = Math.max(r.top, Math.min(r.bottom, ent.y));
+        }
         if (ent.alpha <= 0.01 && (ent.state === 'departing' || ent.state === 'harmonizing')) {
           this.entities.splice(i, 1);
         }
@@ -734,6 +771,15 @@ export class Game {
   }
 
   drawMeadowFloor(ctx) {
+    if (this.currentLevel?.scene === 'passage') {
+      const key = `${this.width}:${this.height}:${window.devicePixelRatio || 1}`;
+      if (this.duskArtKey !== key) {
+        this.duskArt = createDuskArt(this.width, this.height, window.devicePixelRatio || 1);
+        this.duskArtKey = key;
+      }
+      ctx.drawImage(this.duskArt, 0, 0, this.width, this.height);
+      return;
+    }
     if (this.currentLevel?.scene === 'atrium') {
       const key = `${this.width}:${this.height}:${window.devicePixelRatio || 1}`;
       if (this.noonArtKey !== key) {
@@ -952,11 +998,13 @@ export class Game {
       ctx.textAlign = 'right';
       ctx.fillStyle = '#4a4235';
       ctx.font = '600 11px system-ui, -apple-system, sans-serif';
-      ctx.fillText(objText, this.width - 16, 26);
+      const objectiveLines = wrapText(ctx, objText, this.width - 126);
+      objectiveLines.forEach((line, i) => ctx.fillText(line, this.width - 16, 26 + i * 14));
+      const extraHUDHeight = (objectiveLines.length - 1) * 14;
 
       ctx.fillStyle = '#7a6c57';
       ctx.font = 'italic 10.5px Mali, sans-serif';
-      ctx.fillText(`${lvlTitle} • ${this.score} pts`, this.width - 16, 40);
+      ctx.fillText(`${lvlTitle} • ${this.score} pts`, this.width - 16, 40 + extraHUDHeight);
 
       // Tier 2: Centered Stroke Length Band Meter (compact, below top row)
       const cx = this.width / 2;
@@ -965,7 +1013,7 @@ export class Game {
       ctx.lineWidth = 1.1;
       const meterW = Math.min(140, this.width - 60);
       const meterH = 15;
-      const meterY = 52;
+      const meterY = 52 + extraHUDHeight;
 
       ctx.beginPath();
       drawRoundedRect(ctx, cx - meterW / 2, meterY, meterW, meterH, 7);
@@ -1157,10 +1205,11 @@ export class Game {
 
   drawReadyModal(ctx) {
     const lvl = this.currentLevel;
+    const teachLacewing = lvl.id === 'dusk-01' || lvl.id === 'practice-dusk';
     const teachCounterpart = lvl.id === 'noon-01' || lvl.id === 'practice-noon';
     const teachNursery = lvl.id === 'noon-02';
     const teachSeedTrio = lvl.id === 'noon-03';
-    const hasDiagram = teachCounterpart || teachNursery || teachSeedTrio;
+    const hasDiagram = teachLacewing || teachCounterpart || teachNursery || teachSeedTrio;
 
     this.drawModalBox(ctx, 500, hasDiagram ? 415 : 310, (boxW, boxH) => {
       const isNarrow = boxW < 440;
@@ -1204,7 +1253,20 @@ export class Game {
       ctx.fillStyle = '#8a7e6f';
       ctx.fillText(`Dandelion Clock: ${lvl.durationSeconds} seconds`, padX, startY + 8);
 
-      if (teachCounterpart) {
+      if (teachLacewing) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 94);
+        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
+        ctx.bezierCurveTo(100, -65, 100, 65, 0, 0); ctx.stroke();
+        ctx.save(); ctx.translate(-46, -5); ctx.scale(0.7, 0.7);
+        drawLacewing(ctx, { lacePhase: 'rest', flapPhase: 0 }); ctx.restore();
+        const fly = new Butterfly(46, 0, 'hoverfly'); fly.heading = -Math.PI / 2; fly.draw(ctx);
+        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
+        ctx.fillText('One lacewing and one hoverfly, in separate pockets.', 0, 41);
+        ctx.fillText('Lacewings rest on each leaf for 1.5 seconds.', 0, 56);
+        ctx.restore();
+      } else if (teachCounterpart) {
         ctx.save(); ctx.translate(0, boxH / 2 - 84);
         ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, 0);

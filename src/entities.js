@@ -1,3 +1,4 @@
+import { updateLacewing, drawLacewing } from './lacewing.js';
 /**
  * Drawing the Hours — Inhabitants of the Meadow
  * Procedural paper entities with distinct morphology and flight physics:
@@ -63,6 +64,12 @@ export const SPECIES_CONFIG = {
     speed: 1, size: 19, flutterFreq: 38,
     description: 'Striped amber body; pauses, turns, then shifts sideways.',
   },
+  lacewing: {
+    id: 'lacewing', name: 'Paper Lacewing', shortName: 'Lacewing',
+    speciesGroup: 'lacewing', bodyColor: '#405c49', wingColor: '#e5f4de',
+    wingEdge: '#3f7158', speed: 1, size: 23, flutterFreq: 12,
+    description: 'Veined mint wings; travels between leaves and rests for 1.5 seconds.',
+  },
   // Aliases for backward compatibility
   azure: null,
   roseate: null,
@@ -126,7 +133,9 @@ export class Insect {
     }
 
     // --- SPECIES-SPECIFIC MOVEMENT DYNAMICS ---
-    if (this.kind === 'hoverfly') {
+    if (this.kind === 'lacewing') {
+      updateLacewing(this, dt, bounds);
+    } else if (this.kind === 'hoverfly') {
       this.updateHoverfly(dt, bounds);
     } else if (this.kind === 'damselfly') {
       this.updateDamselfly(dt, bounds);
@@ -304,7 +313,9 @@ export class Insect {
       ctx.restore();
     }
 
-    if (this.kind === 'hoverfly') {
+    if (this.kind === 'lacewing') {
+      drawLacewing(ctx, this);
+    } else if (this.kind === 'hoverfly') {
       this.drawHoverfly(ctx);
     } else if (this.kind === 'damselfly') {
       this.drawDamselfly(ctx);

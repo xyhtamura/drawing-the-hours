@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "proposed-unimplemented",
+  "status": "dawn-noon-and-dusk-01-implemented",
   "title": "Drawing the Hours",
   "campaignId": "first-twelve",
   "defaults": {
@@ -205,27 +205,29 @@
       "hour": "dusk",
       "scene": "passage",
       "transitionText": "I always find myself walking home through here.",
-      "durationSeconds": 85,
+      "durationSeconds": 100,
       "population": {
-        "brimstone": 2,
-        "damselfly": 2,
+        "brimstone": 0,
+        "damselfly": 0,
+        "hoverfly": 2,
         "hawkmoth": 0,
-        "seed": 2,
-        "snail": 1,
+        "seed": 0,
+        "snail": 0,
         "lacewing": 2,
         "firefly": 0
       },
-      "motionScale": 0.95,
+      "motionScale": 0.85,
       "objectives": {
         "any": 5,
         "lacewingCounterpart": 2
       },
-      "instruction": "Make five combinations, including two Counterpart Pairs containing a lacewing.",
-      "designNote": "Introduce a paper lacewing that pauses at visible leaf anchors; pair it with another kind in separate pockets.",
+      "instruction": "Make five combinations, including two figure-eights with a lacewing and a hoverfly in separate pockets.",
+      "designNote": "Introduce paper lacewings that pause at visible leaf anchors.",
       "gestures": [
         "enclose"
       ],
-      "wind": null
+      "wind": null,
+      "hourLabel": "Dusk · Visit VII"
     },
     {
       "id": "dusk-02",
@@ -237,25 +239,27 @@
       "durationSeconds": 95,
       "population": {
         "brimstone": 2,
-        "damselfly": 2,
+        "damselfly": 0,
+        "hoverfly": 2,
         "hawkmoth": 0,
         "seed": 3,
         "snail": 1,
         "lacewing": 2,
         "firefly": 0
       },
-      "motionScale": 0.95,
+      "motionScale": 0.85,
       "objectives": {
         "any": 5,
         "nursery": 1,
-        "mixedEcho": 1
+        "lacewingCounterpart": 1
       },
-      "instruction": "Make five combinations, including a Nursery and a matching mixed figure-eight.",
-      "designNote": "Use lacewing rest intervals to arrange a Nursery and a matching mixed Echo; audio gaps remain decorative.",
+      "instruction": "Make five combinations, including a Nursery and a lacewing Counterpart Pair.",
+      "designNote": "Add seeds to the resting-insect field; defer mixed Echoes pending gesture calibration.",
       "gestures": [
         "enclose"
       ],
-      "wind": null
+      "wind": null,
+      "hourLabel": "Dusk · Visit VIII"
     },
     {
       "id": "dusk-03",
@@ -267,7 +271,8 @@
       "durationSeconds": 100,
       "population": {
         "brimstone": 2,
-        "damselfly": 2,
+        "damselfly": 0,
+        "hoverfly": 2,
         "hawkmoth": 2,
         "seed": 2,
         "snail": 1,
@@ -281,11 +286,12 @@
         "figure8": 2
       },
       "instruction": "Make six combinations, including three single loops and two figure-eights.",
-      "designNote": "Require switching gestures amid eight fliers; do not introduce a medicine pickup or rescue objective.",
+      "designNote": "Require switching gestures amid eight fliers.",
       "gestures": [
         "enclose"
       ],
-      "wind": null
+      "wind": null,
+      "hourLabel": "Dusk · Visit IX"
     },
     {
       "id": "midnight-01",

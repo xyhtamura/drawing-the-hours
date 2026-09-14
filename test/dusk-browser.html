@@ -1,0 +1,75 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Dusk browser check</title>
+<style>body{margin:0;background:#f4efe2}iframe{width:100%;height:900px;border:0}pre{white-space:pre-wrap}</style>
+<pre id="result">RUNNING</pre>
+<iframe src="../index.html"></iframe>
+<script type="module">
+// Serve from the workspace root. ?view=ready|transition|playing keeps a review frame.
+const frame = document.querySelector('iframe');
+const params = new URLSearchParams(location.search);
+if (params.has('width')) frame.style.width = `${Number(params.get('width'))}px`;
+const output = document.querySelector('#result');
+const check = (value, message) => { if (!value) throw new Error(message); };
+try {
+  await new Promise(resolve => frame.addEventListener('load', resolve));
+  const w = frame.contentWindow;
+  for (let i = 0; !w.game && i < 100; i++) await new Promise(r => setTimeout(r, 20));
+  const game = w.game;
+  check(game, 'Game did not initialize');
+  const { Insect } = await import('../src/entities.js');
+  const { leafAnchors } = await import('../src/lacewing.js');
+  game.startLevel('practice-dusk');
+  const before = game.clock.remainingSeconds;
+  const poses = game.entities.map(e => [e.x, e.y]);
+  game.update(1);
+  check(JSON.stringify(poses) === JSON.stringify(game.entities.map(e => [e.x, e.y])), 'Transition moved insects');
+  check(game.clock.remainingSeconds === before, 'Transition advanced clock');
+  game.advance(); game.advance();
+  check(game.entities.length === 4, 'Expected sparse four-insect field');
+  check(game.entities.filter(e => e.kind === 'lacewing').length === 2, 'Missing lacewings');
+  game.togglePause(); const paused = game.entities.map(e => [e.x, e.y]); game.update(1);
+  check(JSON.stringify(paused) === JSON.stringify(game.entities.map(e => [e.x, e.y])), 'Pause moved insects');
+  game.togglePause();
+  game.entities = leafAnchors(game).map(a => new Insect(a.x, a.y, 'hoverfly'));
+  game.maintainPopulation(0.81);
+  check(!game.entities.some(e => e.kind === 'lacewing'), 'Replacement overlaps an occupied leaf');
+  check(game.respawnQueue.filter(e => e.kind === 'lacewing').length === 2, 'Blocked replacements lost their quota');
+  game.initLevel();
+  const draw = points => {
+    const rect = game.canvas.getBoundingClientRect();
+    const event = (type, p) => new w.PointerEvent(type, { clientX: rect.left + p.x,
+      clientY: rect.top + p.y, pointerId: 1, pointerType: 'mouse', bubbles: true });
+    game.canvas.dispatchEvent(event('pointerdown', points[0]));
+    for (const p of points.slice(1)) w.dispatchEvent(event('pointermove', p));
+    w.dispatchEvent(event('pointerup', points.at(-1)));
+  };
+  const cx = game.width / 2, cy = game.height / 2;
+  for (let n = 0; n < 5; n++) {
+    const eight = n < 2;
+    game.entities = [new Insect(cx - 55, cy, eight ? 'lacewing' : 'hoverfly'), new Insect(cx + 55, cy, 'hoverfly')];
+    draw(Array.from({length: 121}, (_, i) => {
+      const t = i / 120 * Math.PI * 2;
+      return eight ? { x: cx + 100 * Math.sin(t), y: cy + 62 * Math.sin(2 * t) }
+        : { x: cx + 100 * Math.cos(t), y: cy + 65 * Math.sin(t) };
+    }));
+    check(game.harmoniesCount === n + 1, `Drawing ${n + 1}: ${game.feedbackBanner.text}`);
+    if (n === 0) {
+      game.maintainPopulation(0.01); game.maintainPopulation(0.81);
+      check(game.entities.filter(e => e.kind === 'lacewing' && e.state === 'roaming').length === 2, 'Lacewing quota did not replenish');
+    }
+  }
+  check(game.campaign.isComplete(), 'Objectives did not complete');
+  game.update(1.1);
+  check(['VICTORY', 'LEVEL_COMPLETE'].includes(game.state), 'Completion screen missing');
+  game.startLevel('practice-dusk');
+  check(game.feedbackBanner.timer === 0 && game.stamps.length === 0 && game.strokeLength === 0, 'Restart kept gesture feedback');
+  const view = new URLSearchParams(location.search).get('view') || 'playing';
+  if (view !== 'transition') game.advance();
+  if (view === 'playing') game.advance();
+  game.resize();
+  for (const a of leafAnchors(game)) check(a.y > 100 && a.y < game.height - 50, 'Leaf outside safe area');
+  game.render();
+  output.textContent = 'PASS: transition, pause, spawn quotas, five Pointer Event drawings, objectives, victory, and leaf bounds.';
+} catch (error) { output.textContent = `FAIL: ${error.stack}`; }
+</script>

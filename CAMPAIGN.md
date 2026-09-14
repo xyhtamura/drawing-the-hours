@@ -1,7 +1,7 @@
 # Drawing the Hours: first twelve visits
 
-Implementation specification, 2026-09-14. **Proposed campaign, not implemented
-or balanced.** Xyh confirmed four successive groups of three levels: Dawn,
+Implementation specification, updated 2026-09-15. **Dawn, Noon, and Dusk Visit VII
+are implemented. Visits VIII–XII remain planned; tuning remains provisional.** Xyh confirmed four successive groups of three levels: Dawn,
 Noon, Dusk, Midnight. Each of their twelve lines introduces one level.
 Their [original draft](first12levels.md) remains unchanged.
 
@@ -85,7 +85,7 @@ playable-field widths per second to seed horizontal movement. Existing drift
 continues; no wind force acts on insects, cord, or pointer. Pause stops the
 cycle. Seed exit and quota-based re-entry remain visible. Containment uses
 positions at release, so waiting through a gust is a valid strategy. Level 5
-teaches this condition with extra time; level 6 combines it with mixed Echoes.
+teaches this condition with extra time; level 6 combines it with Seed & Trio circles.
 This is an authored movement rule, not a fluid simulation.
 
 ### Dusk lacewing: levels 7–9
@@ -97,6 +97,11 @@ affects travel, not rest. Anchors use normalized positions and allow room for
 a surrounding pocket; recompute them on orientation change. Resting insects
 remain eligible. Level 7 requires two Counterpart Pairs involving a lacewing.
 This is fictional game behavior, not an entomological claim.
+
+The [Dusk chapter design](DUSK.md) specifies the implementation and revised
+Visits VII–IX. Hoverflies remain available as stable partners. Visit VIII
+requires a Nursery and a lacewing Counterpart Pair; mixed Echoes are deferred
+pending gesture calibration.
 
 ### Midnight firefly and Trace mode: levels 10–12
 
@@ -226,9 +231,9 @@ Xyh's confirmed order. No extra narrative lines are required.
 | 3 | Dawn — Something in the air | Five combinations, including two Seed & Wing loops. | Seed drift beside a drain-edge plant and the first perimeter snail. |
 | 4 | Noon — Lunch in the atrium | Four combinations, including three Counterpart Pairs. | Planting beside pale paving; teach one different flier in each lobe. |
 | 5 | Noon — For now | Four figure-eights, including two Nurseries; introduce warned gusts. | Choose when to close around drifting seeds. |
-| 6 | Noon — The glass and the leaves | Four figure-eights, including two mixed Echoes, with breeze. | Glass seams at the edge; compare mixed groups. |
+| 6 | Noon — The glass and the leaves | Four combinations, including two Seed & Trio loops, with breeze. | Glass seams frame single-loop groupings. |
 | 7 | Dusk — The way through | Five combinations, including two Counterpart Pairs with a lacewing. | Leaf anchors offer visible resting intervals. |
-| 8 | Dusk — The gaps in the sound | Five combinations, including one Nursery and one mixed Echo. | Same passage; a sound layer may intermittently fall quiet without changing the rules. |
+| 8 | Dusk — The gaps in the sound | Five combinations, including one Nursery and one lacewing Counterpart Pair. | Same passage; a sound layer may intermittently fall quiet without changing the rules. |
 | 9 | Dusk — Carrying something home | Six combinations, including three single loops and two figure-eights. | Slightly denser field; gesture switching, with no medicine gameplay metaphor. |
 | 10 | Midnight — The window corner | Three firefly–lacewing–firefly traces. | Sparse cast teaches open tracing. |
 | 11 | Midnight — Figures | Six combinations including a pair, Seed & Wing, mixed Echo, and two traces. | Explicit Enclose/Trace switching. |

@@ -67,6 +67,7 @@
       <div class="recipe-entry">
         <span class="entry-badge" style="background:#e0f2fe; color:#0369a1;">Species</span>
         <div class="recipe-info">
+          <h3>Paper Lacewing</h3><p>Appears at Dusk. Mint veined wings fold while it rests on a leaf for 1.5 seconds. Draw a figure-eight with one lacewing and one different insect in separate pockets. Leaves do not count as targets.</p>
           <h3>Amber Hoverfly</h3><p>Appears at Noon. Holds still, turns, then shifts a short distance. Draw a figure-eight around one hoverfly and one Brimstone, with one insect in each pocket.</p>
         </div>
       </div>
@@ -179,10 +180,11 @@
       </div>
 
       <div class="visit-section"><div class="visit-section-title">Hour II: Noon</div><div class="visit-list" id="visit-list-noon"></div></div>
+      <div class="visit-section"><div class="visit-section-title">Hour III: Dusk</div><div class="visit-list" id="visit-list-dusk"></div></div>
       <div class="visit-section" style="opacity: 0.7; margin-top: 14px;">
         <div class="visit-section-title">Subsequent Hours (Preview)</div>
         <div style="font-size: 0.82rem; color: var(--text-muted); font-style: italic; padding: 4px 2px;">
-          Hour III: Dusk (Visits VII–IX) &bull; Hour IV: Midnight (Visits X–XII)
+          Dusk Visits VIII–IX &bull; Hour IV: Midnight (Visits X–XII)
         </div>
       </div>
 
@@ -218,6 +220,7 @@
     const btnCloseModal = document.getElementById('btn-close-modal');
     const visitModal = document.getElementById('visit-modal');
     const btnCloseVisitModal = document.getElementById('btn-close-visit-modal');
+    const visitListDusk = document.getElementById('visit-list-dusk');
     const visitListNoon = document.getElementById('visit-list-noon');
     const visitListDawn = document.getElementById('visit-list-dawn');
     const visitListPractice = document.getElementById('visit-list-practice');
@@ -308,7 +311,7 @@
       const currentId = game.currentLevel ? game.currentLevel.id : 'dawn-01';
 
       // Preserve global campaign indices for Noon unlocks.
-      for (const [hour, list] of [['dawn', visitListDawn], ['noon', visitListNoon]]) {
+      for (const [hour, list] of [['dawn', visitListDawn], ['noon', visitListNoon], ['dusk', visitListDusk]]) {
         if (!list) continue;
         list.innerHTML = CAMPAIGN_LEVELS.filter(lvl => lvl.hour === hour && PLAYABLE_LEVEL_IDS.has(lvl.id)).map(lvl => {
           const isUnlocked = CAMPAIGN_LEVELS.indexOf(lvl) <= highestUnlocked;

@@ -140,14 +140,16 @@ levels: Dawn, Noon, Dusk, Midnight, with the twelve transition lines in
 [first12levels.md](first12levels.md) preserved verbatim.
 
 The campaign gradually adds a warned seed breeze, lacewings, fireflies,
-and ordered Trace gestures to the existing enclosure grammar. These are
-specified, not implemented. Follow the campaign document for progression,
+and ordered Trace gestures to the existing enclosure grammar. Dawn, Noon,
+and Dusk Visit VII are implemented; VIII–XII remain planned. The
+[Dusk chapter design](DUSK.md) specifies its revised progression. Follow the
+campaign document for progression,
 objectives, replenishment, story flow, and acceptance checks. Keep the two
 prototype waves available for comparison.
 
 The [previous spec](SPEC-before-campaign-20260914.md) preserves the 24-level
 proposal as history; later expansion is optional. Implementation next steps
-live in [NOTES.md](NOTES.md). Antigravity owns the requested folder rename.
+live in [NOTES.md](NOTES.md). The folder rename was completed on 2026-09-14.
 
 ---
 

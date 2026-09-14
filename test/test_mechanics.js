@@ -478,7 +478,7 @@ console.log('--- Running Drawing the Hours Test Suite ---');
 // 9. Campaign Registry and Hour I Verbatim Text Integrity
 {
   assert.strictEqual(CAMPAIGN_LEVELS.length, 12, '12 campaign levels authored');
-  assert.strictEqual(PRACTICE_LEVELS.length, 3, 'Dawn practice plus Noon preview');
+  assert.strictEqual(PRACTICE_LEVELS.length, 4, 'Dawn, Noon, and Dusk practice');
 
   // Verify Dawn levels verbatim transition texts per first12levels.md
   const dawn1 = CAMPAIGN_LEVELS[0];
@@ -531,7 +531,7 @@ console.log('--- All tests passed! ---');
   assert.deepStrictEqual(noon3.objectives, { any: 4, seedTrio: 2 });
   assert.strictEqual(noon3.durationSeconds, 100);
   assert.strictEqual(noon3.wind.periodSeconds, 12);
-  assert.strictEqual(campaign.getNextLevel(), null, 'Dusk remains locked pending next chapter');
+  assert.strictEqual(campaign.getNextLevel().id, 'dusk-01');
 
   // Practice isolation
   const before = JSON.stringify(campaign.saveState);

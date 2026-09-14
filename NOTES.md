@@ -10,7 +10,7 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Implement Hour III: Dusk (Visits VII–IX) introducing paper lacewings with safe-area leaf anchors; real-device gesture calibration remains open.
+Implement Dusk Visit VIII using the seed Nursery plan in [DUSK.md](DUSK.md); calibrate Visit VII figure-eights on a touch device.
 
 ## Activity
 
@@ -251,3 +251,37 @@ Book entry in the DOM. Full manual completion and touch calibration remain
 open. Antigravity can use the hoverfly kind directly for visits 5–6; wind
 interaction still needs implementation and playtesting. No future chapters
 were enabled.
+
+2026-09-15 — Codex — Designed Dusk Visits VII–IX in [DUSK.md](DUSK.md)
+and implemented Visit VII, The way through. Two paper lacewings travel among
+three visible leaves and rest for 1.5 seconds; two unchanged amber hoverflies
+provide partners. The visit asks for five combinations, including two
+lacewing Counterpart Pairs, in 100 seconds. It follows Noon VI and is also
+available as Practice · Dusk without campaign completion writes. Added the
+passage scene, species drawing, ready diagram, Field Book explanation,
+responsive anchors, and vacancy-aware replacement at leaves. Plan data,
+campaign specification, active scope, and root roadmap agree.
+
+Recorded Xyh's playtest: hoverfly stillness simplifies circles but helps with
+harder figure-eights. Replaced Dusk VIII's planned mixed Echo requirement with
+one lacewing Counterpart Pair alongside its Nursery; deferred four-target
+Echo precision pending touch calibration. VIII and IX remain planned and
+unavailable. The optional VIII cicada layer is deferred to that visit; no new
+audio work was required for VII. Hoverfly speeds and recipe validity stay
+unchanged.
+
+Verified with `node test/test_mechanics.js`, `node test/test_dusk.js`, module
+syntax checks, and `git diff --check`. Headless Edge ran the actual game through
+five prepared Pointer Event drawings to victory, checked transition and pause
+freeze, population restoration, occupied-leaf replacement queuing, and restart
+feedback clearing. Inspected rendered desktop and 390-pixel portrait ready
+cards and the unobscured desktop field. Lightened lacewing wings and reduced
+leaf contrast after the first field image showed camouflage. Fixed stale
+stroke/stamp/banner state on restart and wrapped narrow HUD objectives around
+the clock. The reusable browser harness is `test/dusk-browser.html`; local
+review images and browser profiles are ignored under `.browser-check/`.
+
+These checks use controlled target arrangements, not a manual full run or
+real-device gesture calibration. First-pass timing and live arrangement
+availability remain for Xyh to playtest. Implement VIII's seed Nursery visit
+next using DUSK.md; IX and Midnight remain unbuilt.

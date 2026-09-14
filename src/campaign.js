@@ -201,22 +201,23 @@ export const CAMPAIGN_LEVELS = [
     hourLabel: 'Dusk · Visit VII',
     scene: 'passage',
     transitionText: 'I always find myself walking home through here.',
-    durationSeconds: 85,
+    durationSeconds: 100,
     population: {
-      brimstone: 2,
-      damselfly: 2,
+      brimstone: 0,
+      damselfly: 0,
+      hoverfly: 2,
       hawkmoth: 0,
-      seed: 2,
-      snail: 1,
+      seed: 0,
+      snail: 0,
       lacewing: 2,
       firefly: 0,
     },
-    motionScale: 0.95,
+    motionScale: 0.85,
     objectives: {
       any: 5,
       lacewingCounterpart: 2,
     },
-    instruction: 'Make five combinations, including two Counterpart Pairs containing a lacewing.',
+    instruction: 'Make five combinations, including two figure-eights with a lacewing and a hoverfly in separate pockets.',
     designNote: 'Introduce paper lacewings that pause at visible leaf anchors.',
     gestures: ['enclose'],
     wind: null,
@@ -232,21 +233,22 @@ export const CAMPAIGN_LEVELS = [
     durationSeconds: 95,
     population: {
       brimstone: 2,
-      damselfly: 2,
+      damselfly: 0,
+      hoverfly: 2,
       hawkmoth: 0,
       seed: 3,
       snail: 1,
       lacewing: 2,
       firefly: 0,
     },
-    motionScale: 0.95,
+    motionScale: 0.85,
     objectives: {
       any: 5,
       nursery: 1,
-      mixedEcho: 1,
+      lacewingCounterpart: 1,
     },
-    instruction: 'Make five combinations, including a Nursery and a matching mixed figure-eight.',
-    designNote: 'Use lacewing rest intervals to arrange a Nursery and mixed Echo.',
+    instruction: 'Make five combinations, including a Nursery and a lacewing Counterpart Pair.',
+    designNote: 'Add seeds to the resting-insect field; defer mixed Echoes pending gesture calibration.',
     gestures: ['enclose'],
     wind: null,
   },
@@ -261,7 +263,8 @@ export const CAMPAIGN_LEVELS = [
     durationSeconds: 100,
     population: {
       brimstone: 2,
-      damselfly: 2,
+      damselfly: 0,
+      hoverfly: 2,
       hawkmoth: 2,
       seed: 2,
       snail: 1,
@@ -384,6 +387,7 @@ export const PLAYABLE_LEVEL_IDS = new Set([
   'noon-01',
   'noon-02',
   'noon-03',
+  'dusk-01',
 ]);
 
 export const PRACTICE_LEVELS = [
@@ -449,6 +453,11 @@ PRACTICE_LEVELS.push({
   id: 'practice-noon',
   title: 'Lunch in the atrium',
   hourLabel: 'Practice · Noon',
+});
+
+PRACTICE_LEVELS.push({
+  ...CAMPAIGN_LEVELS.find(level => level.id === 'dusk-01'),
+  id: 'practice-dusk', title: 'The way through', hourLabel: 'Practice · Dusk',
 });
 
 export const OBJECTIVE_LABELS = {

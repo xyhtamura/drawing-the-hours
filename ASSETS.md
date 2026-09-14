@@ -26,3 +26,7 @@ were added for Noon.
 
 The Amber Hoverfly in `src/entities.js` is an original Canvas drawing by
 Codex, 2026-09-14. It uses paths and translucent fills; no external artwork.
+
+The Dusk passage and leaf anchors in `src/dusk-art.js` and the Paper Lacewing
+in `src/lacewing.js` were authored by Codex on 2026-09-15 using Canvas paths
+and deterministic paper fibers. No third-party artwork was added.
