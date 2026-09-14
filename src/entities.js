@@ -83,6 +83,7 @@ export class Insect {
     this.stateTime = 0;
     this.alpha = 1.0;
     this.highlightGlow = 0;
+    this.motionScale = 1.0;
 
     // Species-specific behavioral state
     this.behaviorTimer = 0.5 + Math.random() * 1.5;
@@ -150,8 +151,9 @@ export class Insect {
     this.applyBoundarySteering(bounds, 65);
     this.smoothTurn(3.5 * dt);
 
-    this.x += Math.cos(this.heading) * this.speed * 60 * dt;
-    this.y += Math.sin(this.heading) * this.speed * 60 * dt;
+    const scale = this.motionScale || 1.0;
+    this.x += Math.cos(this.heading) * this.speed * scale * 60 * dt;
+    this.y += Math.sin(this.heading) * this.speed * scale * 60 * dt;
   }
 
   // 2. Azure Damselfly: Dart-and-hover (freezes still, then swift dart)
@@ -180,9 +182,10 @@ export class Insect {
     // Micro-jitter during hover
     const jitterX = this.isHovering ? (Math.random() - 0.5) * 0.6 : 0;
     const jitterY = this.isHovering ? (Math.random() - 0.5) * 0.6 : 0;
+    const scale = this.motionScale || 1.0;
 
-    this.x += (Math.cos(this.heading) * this.speed + jitterX) * 60 * dt;
-    this.y += (Math.sin(this.heading) * this.speed + jitterY) * 60 * dt;
+    this.x += (Math.cos(this.heading) * this.speed * scale + jitterX) * 60 * dt;
+    this.y += (Math.sin(this.heading) * this.speed * scale + jitterY) * 60 * dt;
   }
 
   // 3. Roseate Hawkmoth: Brisk sweeping arcs and loops
@@ -200,9 +203,10 @@ export class Insect {
     this.applyBoundarySteering(bounds, 65);
     this.smoothTurn(4.0 * dt);
 
+    const scale = this.motionScale || 1.0;
     this.speed = this.config.speed * (0.95 + Math.sin(this.stateTime * 3) * 0.15);
-    this.x += Math.cos(this.heading) * this.speed * 60 * dt;
-    this.y += Math.sin(this.heading) * this.speed * 60 * dt;
+    this.x += Math.cos(this.heading) * this.speed * scale * 60 * dt;
+    this.y += Math.sin(this.heading) * this.speed * scale * 60 * dt;
   }
 
   applyBoundarySteering(bounds, pad) {

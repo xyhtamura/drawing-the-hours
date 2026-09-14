@@ -14,6 +14,13 @@ import {
   polygonArea,
 } from '../src/geometry.js';
 import { evaluateDrawing, RECIPE_TYPES } from '../src/recipes.js';
+import {
+  deriveObjectiveTags,
+  CampaignManager,
+  CAMPAIGN_LEVELS,
+  PRACTICE_LEVELS,
+} from '../src/campaign.js';
+import { DandelionClock } from '../src/clock.js';
 
 console.log('--- Running Drawing the Hours Test Suite ---');
 
@@ -243,6 +250,184 @@ console.log('--- Running Drawing the Hours Test Suite ---');
   assert.strictEqual(evalDialogue.finalScore, Math.round((300 + 3 * 40) * 1.25));
 
   console.log('✔ All recipe evaluation scenarios passed successfully.');
+}
+
+// 7. Objective Tag Derivation Tests (CAMPAIGN.md §5)
+{
+  // 7a. Single Loop - Kindred Pair
+  const pairA = [
+    { type: 'butterfly', kind: 'brimstone', x: 100, y: 100 },
+    { type: 'butterfly', kind: 'brimstone', x: 120, y: 110 },
+  ];
+  const pocketPair = [{ id: 1, polygon: [], area: 4000, centroid: { x: 110, y: 105 }, entities: pairA }];
+  const evalPair = evaluateDrawing(pocketPair, 600);
+  const tagsPair = deriveObjectiveTags(evalPair, pocketPair);
+  assert.ok(tagsPair.includes('any'));
+  assert.ok(tagsPair.includes('single'));
+  assert.ok(tagsPair.includes('pair'));
+  assert.ok(!tagsPair.includes('figure8'));
+
+  // 7b. Single Loop - Trio of Flight
+  const trio = [
+    { type: 'butterfly', kind: 'brimstone', x: 100, y: 100 },
+    { type: 'butterfly', kind: 'azure', x: 120, y: 110 },
+    { type: 'butterfly', kind: 'roseate', x: 140, y: 110 },
+  ];
+  const pocketTrio = [{ id: 1, polygon: [], area: 6000, centroid: { x: 120, y: 105 }, entities: trio }];
+  const evalTrio = evaluateDrawing(pocketTrio, 800);
+  const tagsTrio = deriveObjectiveTags(evalTrio, pocketTrio);
+  assert.ok(tagsTrio.includes('any'));
+  assert.ok(tagsTrio.includes('single'));
+  assert.ok(tagsTrio.includes('trio'));
+  assert.ok(!tagsTrio.includes('pair'));
+
+  // 7c. Single Loop - Seed & Wing
+  const seedWing = [
+    { type: 'butterfly', kind: 'azure', x: 100, y: 100 },
+    { type: 'seed', kind: 'dandelion_seed', x: 110, y: 120 },
+  ];
+  const pocketSeedWing = [{ id: 1, polygon: [], area: 4000, centroid: { x: 105, y: 110 }, entities: seedWing }];
+  const evalSeedWing = evaluateDrawing(pocketSeedWing, 400);
+  const tagsSeedWing = deriveObjectiveTags(evalSeedWing, pocketSeedWing);
+  assert.ok(tagsSeedWing.includes('any'));
+  assert.ok(tagsSeedWing.includes('single'));
+  assert.ok(tagsSeedWing.includes('seedWing'));
+
+  // 7d. Figure-Eight - Counterpart Pair
+  const cpLobeA = [{ type: 'butterfly', kind: 'damselfly', x: 100, y: 100 }];
+  const cpLobeB = [{ type: 'butterfly', kind: 'hawkmoth', x: 300, y: 100 }];
+  const cpPockets = [
+    { id: 1, polygon: [], area: 4000, centroid: { x: 100, y: 100 }, entities: cpLobeA },
+    { id: 2, polygon: [], area: 4000, centroid: { x: 300, y: 100 }, entities: cpLobeB },
+  ];
+  const evalCp = evaluateDrawing(cpPockets, 800);
+  const tagsCp = deriveObjectiveTags(evalCp, cpPockets);
+  assert.ok(tagsCp.includes('any'));
+  assert.ok(tagsCp.includes('figure8'));
+  assert.ok(tagsCp.includes('counterpartPair'));
+
+  // 7e. Figure-Eight - Nursery Polarity
+  const nLobeA = [{ type: 'butterfly', kind: 'brimstone', x: 100, y: 100 }];
+  const nLobeB = [{ type: 'seed', kind: 'dandelion_seed', x: 300, y: 100 }];
+  const nPockets = [
+    { id: 1, polygon: [], area: 4000, centroid: { x: 100, y: 100 }, entities: nLobeA },
+    { id: 2, polygon: [], area: 4000, centroid: { x: 300, y: 100 }, entities: nLobeB },
+  ];
+  const evalNursery = evaluateDrawing(nPockets, 800);
+  const tagsNursery = deriveObjectiveTags(evalNursery, nPockets);
+  assert.ok(tagsNursery.includes('any'));
+  assert.ok(tagsNursery.includes('figure8'));
+  assert.ok(tagsNursery.includes('nursery'));
+
+  // 7f. Figure-Eight - Mixed Echo (Symmetric Correspondence)
+  const echoLobeA = [
+    { type: 'butterfly', kind: 'damselfly', x: 100, y: 100 },
+    { type: 'butterfly', kind: 'hawkmoth', x: 110, y: 100 },
+  ];
+  const echoLobeB = [
+    { type: 'butterfly', kind: 'damselfly', x: 300, y: 100 },
+    { type: 'butterfly', kind: 'hawkmoth', x: 310, y: 100 },
+  ];
+  const echoPockets = [
+    { id: 1, polygon: [], area: 4000, centroid: { x: 105, y: 100 }, entities: echoLobeA },
+    { id: 2, polygon: [], area: 4000, centroid: { x: 305, y: 100 }, entities: echoLobeB },
+  ];
+  const evalEcho = evaluateDrawing(echoPockets, 800);
+  const tagsEcho = deriveObjectiveTags(evalEcho, echoPockets);
+  assert.ok(tagsEcho.includes('any'));
+  assert.ok(tagsEcho.includes('figure8'));
+  assert.ok(tagsEcho.includes('mixedEcho'));
+
+  // 7g. Invalid evaluation returns empty tags
+  const tagsInvalid = deriveObjectiveTags({ valid: false }, pocketPair);
+  assert.deepStrictEqual(tagsInvalid, []);
+
+  console.log('✔ Objective tag derivation verified for all primary gesture archetypes.');
+}
+
+// 8. Campaign Progression, Completion & Time Bonus Logic
+{
+  const campaign = new CampaignManager();
+  // Level 1: Dawn 1 (requires 4 single loops)
+  const lvl1 = campaign.setLevelById('dawn-01');
+  assert.strictEqual(lvl1.id, 'dawn-01');
+  assert.strictEqual(lvl1.durationSeconds, 75);
+
+  const clock = new DandelionClock(lvl1.durationSeconds, 12);
+  const initialTime = clock.remainingSeconds;
+
+  // Mock drawing result
+  const mockSinglePair = {
+    valid: true,
+    recipeType: RECIPE_TYPES.KINDRED_PAIR,
+    pockets: [{ id: 1, polygon: [], area: 4000, centroid: { x: 100, y: 100 }, entities: [
+      { type: 'butterfly', kind: 'brimstone', x: 100, y: 100 },
+      { type: 'butterfly', kind: 'brimstone', x: 120, y: 100 },
+    ]}],
+  };
+
+  // 1st single loop
+  const res1 = campaign.processDrawing(mockSinglePair, mockSinglePair.pockets, clock);
+  assert.strictEqual(res1.advancedObjective, true);
+  assert.strictEqual(res1.allComplete, false);
+  assert.strictEqual(campaign.objectiveProgress.single.current, 1);
+  assert.strictEqual(clock.remainingSeconds, Math.min(initialTime + 4, lvl1.durationSeconds + 15));
+
+  // 2nd single loop
+  const res2 = campaign.processDrawing(mockSinglePair, mockSinglePair.pockets, clock);
+  assert.strictEqual(res2.advancedObjective, true);
+  assert.strictEqual(campaign.objectiveProgress.single.current, 2);
+
+  // 3rd single loop
+  const res3 = campaign.processDrawing(mockSinglePair, mockSinglePair.pockets, clock);
+  assert.strictEqual(res3.advancedObjective, true);
+  assert.strictEqual(campaign.objectiveProgress.single.current, 3);
+
+  // 4th single loop completes the level!
+  const res4 = campaign.processDrawing(mockSinglePair, mockSinglePair.pockets, clock);
+  assert.strictEqual(res4.advancedObjective, true);
+  assert.strictEqual(res4.allComplete, true);
+  assert.strictEqual(campaign.objectiveProgress.single.current, 4);
+
+  // 5th drawing after level completion: should NOT advance
+  const res5 = campaign.processDrawing(mockSinglePair, mockSinglePair.pockets, clock);
+  assert.strictEqual(res5.advancedObjective, false);
+
+  // Record victory and check unlock of Level 2
+  campaign.recordVictory(250);
+  assert.ok(campaign.saveState.completedLevelIds.includes('dawn-01'));
+  assert.ok(campaign.saveState.highestUnlockedIndex >= 1);
+  assert.strictEqual(campaign.saveState.bestScores['dawn-01'], 250);
+
+  const nextLvl = campaign.getNextLevel();
+  assert.strictEqual(nextLvl.id, 'dawn-02');
+
+  console.log('✔ Campaign progression, victory latching, and bonus restriction verified.');
+}
+
+// 9. Campaign Registry and Hour I Verbatim Text Integrity
+{
+  assert.strictEqual(CAMPAIGN_LEVELS.length, 12, '12 campaign levels authored');
+  assert.strictEqual(PRACTICE_LEVELS.length, 2, '2 practice sandbox levels maintained');
+
+  // Verify Dawn levels verbatim transition texts per first12levels.md
+  const dawn1 = CAMPAIGN_LEVELS[0];
+  const dawn2 = CAMPAIGN_LEVELS[1];
+  const dawn3 = CAMPAIGN_LEVELS[2];
+
+  assert.strictEqual(dawn1.transitionText, 'Another morning of standing, waiting for the bus.');
+  assert.strictEqual(dawn2.transitionText, 'I like to watch the insects here, in this patch by the curbside.');
+  assert.strictEqual(dawn3.transitionText, 'Maybe I have an overactive imagination.');
+
+  // Verify non-empty populations and positive durations for all 12 levels
+  for (const lvl of CAMPAIGN_LEVELS) {
+    assert.ok(lvl.id && lvl.title && lvl.hour && lvl.scene, `Level ${lvl.id} has all required fields`);
+    assert.ok(lvl.durationSeconds >= 60, `Level ${lvl.id} has adequate duration`);
+    assert.ok(Object.keys(lvl.objectives).length > 0, `Level ${lvl.id} has objectives`);
+    assert.ok(lvl.population, `Level ${lvl.id} has population`);
+  }
+
+  console.log('✔ Campaign registry and Hour I verbatim texts verified.');
 }
 
 console.log('--- All tests passed! ---');

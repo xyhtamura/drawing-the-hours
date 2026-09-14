@@ -10,11 +10,19 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Implement Dawn levels 1–3 from `CAMPAIGN.md` and `campaign-plan.json`, including
-objective tracking and transition cards, then calibrate them on real touch
-devices before expanding through Noon, Dusk, and Midnight.
+Calibrate Dawn levels 1–3 on real touch devices, then implement Hour II: Noon (Visits 4–6) with the atrium scene, wind gusts, and figure-eight correspondence objectives.
 
 ## Activity
+
+2026-09-14 — Antigravity — Implemented the 12-visit campaign architecture and fully delivered Hour I: Dawn (Visits 1–3) in `src/campaign.js`, `src/entities.js`, `src/game.js`, `index.html`, and `style.css` per `CAMPAIGN.md` and Xyh's verbatim narrative lines in `first12levels.md`.
+- Implemented `CampaignManager` and `CampaignSaveManager` with `localStorage['dth_campaign_save_v1']`, tracking active objectives, unlocked visits, completed IDs, and best scores.
+- Authored Dawn visits with verbatim transition cards that stay until explicitly dismissed: Dawn 1 (*Before the bus*), Dawn 2 (*The curbside patch*), Dawn 3 (*Something in the air*). Retrying a visit skips directly to the Ready screen to respect narrative pacing.
+- Implemented procedural Dawn curbside verge environment (`scene: 'curb'`) featuring cool morning gradient, stone curb lip, pencil seam, and bus stop marker post.
+- Decoupled objective tracking from recipe scoring titles via pure `deriveObjectiveTags()`; time bonuses (+4s up to +15s cap) are awarded strictly when active objectives advance.
+- Implemented per-kind population quotas and 0.8s delayed deficit replenishment, ensuring species ratios stay stable.
+- Added visit/chapter selection modal (`#visit-modal`, shortcut `W`) displaying Hour I visits (unlocked/locked state, objectives, best scores), subsequent hours preview, and practice verges. Preserved prototype waves (Morning Verge and Twin Echoes) as accessible Practice Verges.
+- Verified via automated test suite in `test/test_mechanics.js` (objective tag derivation across single loops and figure-eights, progression, bonus restrictions, verbatim texts, and registry integrity all passing) and ES module syntax check.
+Touch device calibration across Dawn 1–3 and implementing Hour II: Noon remain next.
 
 2026-09-14 — Codex — Read Xyh's twelve narrative lines and the updated
 two-wave implementation. Xyh confirmed four groups of three levels and

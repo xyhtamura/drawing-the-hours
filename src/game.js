@@ -14,6 +14,7 @@ import { Butterfly, DandelionSeed, Snail, SPECIES_CONFIG } from './entities.js';
 import { evaluateDrawing } from './recipes.js';
 import { DandelionClock } from './clock.js';
 import { audio } from './audio.js';
+import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } from './campaign.js';
 
 function drawRoundedRect(ctx, x, y, w, h, r) {
   if (ctx.roundRect) {
@@ -42,12 +43,17 @@ export class Game {
     this.height = 640;
     this.dpr = window.devicePixelRatio || 1;
 
+    // Campaign Manager
+    this.campaign = new CampaignManager();
+    this.currentLevel = this.campaign.currentLevel;
+
     // Game state
-    this.currentWave = 1; // Wave 1: Foundations | Wave 2: Twin Echoes (Correspondence Experiment)
-    this.state = 'INTRO'; // 'INTRO' | 'PLAYING' | 'PAUSED' | 'VICTORY' | 'GAMEOVER'
+    this.currentWave = 1; // For practice/wave compatibility
+    this.state = 'TRANSITION'; // 'TRANSITION' | 'READY' | 'PLAYING' | 'PAUSED' | 'LEVEL_COMPLETE' | 'GAMEOVER'
     this.score = 0;
     this.harmoniesCount = 0;
     this.harmoniesGoal = 5;
+    this.respawnQueue = [];
 
     // Drawing cord state
     this.isDrawing = false;
@@ -134,67 +140,120 @@ export class Game {
     }
   }
 
-  initLevel(wave = this.currentWave) {
-    this.currentWave = wave;
-    this.entities = [];
-    this.score = 0;
-    this.harmoniesCount = 0;
-    this.harmoniesGoal = (this.currentWave === 1) ? 5 : 4;
-    this.clock.reset(60);
-
-    // Initial insect population based on active wave
-    const fliers = (this.currentWave === 1) ? [
-      new Butterfly(this.width * 0.25, this.height * 0.35, 'brimstone'),
-      new Butterfly(this.width * 0.35, this.height * 0.55, 'brimstone'),
-      new Butterfly(this.width * 0.65, this.height * 0.3, 'damselfly'),
-      new Butterfly(this.width * 0.75, this.height * 0.6, 'damselfly'),
-      new Butterfly(this.width * 0.45, this.height * 0.25, 'hawkmoth'),
-      new Butterfly(this.width * 0.5, this.height * 0.7, 'hawkmoth'),
-      new Butterfly(this.width * 0.2, this.height * 0.75, 'brimstone'),
-    ] : [
-      // Wave 2: Twin Echoes (Symmetric Correspondence experiment)
-      new Butterfly(this.width * 0.22, this.height * 0.35, 'brimstone'),
-      new Butterfly(this.width * 0.32, this.height * 0.55, 'brimstone'),
-      new Butterfly(this.width * 0.65, this.height * 0.3, 'damselfly'),
-      new Butterfly(this.width * 0.75, this.height * 0.6, 'damselfly'),
-      new Butterfly(this.width * 0.45, this.height * 0.25, 'hawkmoth'),
-      new Butterfly(this.width * 0.52, this.height * 0.7, 'hawkmoth'),
-      new Butterfly(this.width * 0.2, this.height * 0.75, 'damselfly'),
-      new Butterfly(this.width * 0.8, this.height * 0.4, 'hawkmoth'),
-    ];
-
-    const seeds = [
-      new DandelionSeed(this.width * 0.1, this.height * 0.2),
-      new DandelionSeed(this.width * 0.4, this.height * 0.5),
-    ];
-
-    const hazard = new Snail(this.width * 0.5, this.height - 35);
-
-    this.entities.push(...fliers, ...seeds, hazard);
-  }
-
-  maintainPopulation() {
-    const fliers = this.entities.filter(e => e.type === 'butterfly' && e.state !== 'departing');
-    const kinds = ['brimstone', 'damselfly', 'hawkmoth'];
-
-    const targetCount = (this.currentWave === 1) ? 6 : 8;
-    if (fliers.length < targetCount) {
-      const missingKind = kinds[Math.floor(Math.random() * kinds.length)];
-      // Spawn at verge
-      const edge = Math.random();
-      let sx = 20, sy = 20;
-      if (edge < 0.25) { sx = 20; sy = Math.random() * this.height; }
-      else if (edge < 0.5) { sx = this.width - 20; sy = Math.random() * this.height; }
-      else if (edge < 0.75) { sx = Math.random() * this.width; sy = 20; }
-      else { sx = Math.random() * this.width; sy = this.height - 20; }
-
-      const b = new Butterfly(sx, sy, missingKind);
-      this.entities.push(b);
+  initLevel(level = this.campaign.currentLevel) {
+    if (typeof level === 'number') {
+      // Legacy wave compatibility
+      this.currentWave = level;
+      const pracId = (level === 2) ? 'practice-02' : 'practice-01';
+      level = this.campaign.setLevelById(pracId);
+    } else if (typeof level === 'string') {
+      level = this.campaign.setLevelById(level);
     }
 
-    const seeds = this.entities.filter(e => e.type === 'seed' && e.state !== 'harmonizing');
-    if (seeds.length < 2) {
-      this.entities.push(new DandelionSeed(-15, 60 + Math.random() * (this.height - 120)));
+    this.currentLevel = level || this.campaign.currentLevel;
+    this.campaign.initProgress(this.currentLevel);
+
+    this.entities = [];
+    this.respawnQueue = [];
+    this.score = 0;
+    this.harmoniesCount = 0;
+    this.victoryDelay = 0;
+    this.clock.reset(this.currentLevel.durationSeconds || 60);
+
+    const mScale = this.currentLevel.motionScale || 1.0;
+    const pop = this.currentLevel.population || {};
+
+    const padX = this.width * 0.15;
+    const padY = this.height * 0.2;
+
+    // Fliers
+    const kinds = ['brimstone', 'damselfly', 'hawkmoth'];
+    for (const k of kinds) {
+      const count = pop[k] || 0;
+      for (let i = 0; i < count; i++) {
+        const x = padX + Math.random() * (this.width - 2 * padX);
+        const y = padY + Math.random() * (this.height - 2 * padY);
+        const b = new Butterfly(x, y, k);
+        b.motionScale = mScale;
+        this.entities.push(b);
+      }
+    }
+
+    // Seeds
+    const seedCount = pop.seed || 0;
+    for (let i = 0; i < seedCount; i++) {
+      const x = padX + Math.random() * (this.width - 2 * padX);
+      const y = padY + Math.random() * (this.height - 2 * padY);
+      this.entities.push(new DandelionSeed(x, y));
+    }
+
+    // Snail
+    const snailCount = pop.snail || 0;
+    for (let i = 0; i < snailCount; i++) {
+      this.entities.push(new Snail(this.width * 0.5, this.height - 35));
+    }
+
+    this.initDecorations();
+  }
+
+  maintainPopulation(dt = 0.016) {
+    if (!this.currentLevel || !this.currentLevel.population) return;
+    const pop = this.currentLevel.population;
+    const mScale = this.currentLevel.motionScale || 1.0;
+
+    const activeCounts = { brimstone: 0, damselfly: 0, hawkmoth: 0, seed: 0, snail: 0 };
+    for (const ent of this.entities) {
+      if (ent.state === 'departing' || ent.state === 'harmonizing') continue;
+      if (ent.type === 'butterfly' || ent.type === 'insect') {
+        const k = (ent.kind === 'azure') ? 'damselfly' : ((ent.kind === 'roseate') ? 'hawkmoth' : ent.kind);
+        activeCounts[k] = (activeCounts[k] || 0) + 1;
+      } else if (ent.type === 'seed') {
+        activeCounts.seed += 1;
+      } else if (ent.type === 'hazard') {
+        activeCounts.snail += 1;
+      }
+    }
+
+    const pendingCounts = { brimstone: 0, damselfly: 0, hawkmoth: 0, seed: 0, snail: 0 };
+    for (const item of this.respawnQueue) {
+      pendingCounts[item.kind] = (pendingCounts[item.kind] || 0) + 1;
+    }
+
+    for (const [kind, quota] of Object.entries(pop)) {
+      const planned = (activeCounts[kind] || 0) + (pendingCounts[kind] || 0);
+      if (planned < quota) {
+        const deficit = quota - planned;
+        for (let i = 0; i < deficit; i++) {
+          this.respawnQueue.push({
+            kind,
+            delay: 0.8,
+          });
+        }
+      }
+    }
+
+    for (let i = this.respawnQueue.length - 1; i >= 0; i--) {
+      const item = this.respawnQueue[i];
+      item.delay -= dt;
+      if (item.delay <= 0) {
+        this.respawnQueue.splice(i, 1);
+        if (item.kind === 'seed') {
+          this.entities.push(new DandelionSeed(-15, 60 + Math.random() * (this.height - 120)));
+        } else if (item.kind === 'snail') {
+          this.entities.push(new Snail(this.width * 0.5, this.height - 35));
+        } else {
+          const edge = Math.random();
+          let sx = 20, sy = 20;
+          if (edge < 0.25) { sx = 20; sy = Math.random() * this.height; }
+          else if (edge < 0.5) { sx = this.width - 20; sy = Math.random() * this.height; }
+          else if (edge < 0.75) { sx = Math.random() * this.width; sy = 20; }
+          else { sx = Math.random() * this.width; sy = this.height - 20; }
+
+          const b = new Butterfly(sx, sy, item.kind);
+          b.motionScale = mScale;
+          this.entities.push(b);
+        }
+      }
     }
   }
 
@@ -329,9 +388,15 @@ export class Game {
       audio.playHarmonyChord(result.recipeType, result.band);
       this.score += result.finalScore;
       this.harmoniesCount += 1;
-      this.clock.addTime(4); // time bonus
 
-      this.showFeedback(`${result.title} (+${result.finalScore} pts)`, 'success');
+      // Process with campaign manager
+      const campResult = this.campaign.processDrawing(result, pocketsWithEntities, this.clock);
+
+      if (campResult.advancedObjective) {
+        this.showFeedback(`${result.title} (+${result.finalScore} pts)`, 'success');
+      } else {
+        this.showFeedback(`${result.title} (+${result.finalScore} pts) — Objective unchanged`, 'info');
+      }
 
       // Animate harmonized entities
       for (const ent of result.harmonizedEntities) {
@@ -350,9 +415,9 @@ export class Game {
         });
       }
 
-      // Check level complete. Held on game time so a restart cancels it.
-      if (this.harmoniesCount >= this.harmoniesGoal) {
-        this.victoryDelay = 1.2;
+      // Check level complete
+      if (campResult.allComplete) {
+        this.victoryDelay = 1.0;
       }
     } else {
       // Fault / Invalid feedback
@@ -371,18 +436,39 @@ export class Game {
     this.strokeLength = 0;
   }
 
-  startLevel(wave = this.currentWave) {
-    this.currentWave = wave;
-    this.initLevel(this.currentWave);
+  startLevel(levelOrId = this.campaign.currentLevel) {
+    let lvl = levelOrId;
+    if (typeof levelOrId === 'string' || typeof levelOrId === 'number') {
+      lvl = this.campaign.setLevelById(levelOrId);
+    } else if (levelOrId && levelOrId.id) {
+      lvl = this.campaign.setLevelById(levelOrId.id);
+    }
+    this.initLevel(lvl);
     this.victoryDelay = 0;
-    this.state = 'PLAYING';
-    const waveTitle = this.currentWave === 1 ? 'Morning Verge' : 'Twin Echoes';
-    const goalText = this.currentWave === 1
-      ? 'Morning Verge: Gather 5 harmonious combinations'
-      : 'Twin Echoes: Mirror species across figure-eights (4 harmonies)';
-    this.showFeedback(goalText, 'info', 3.0);
-    if (typeof this.onWaveChanged === 'function') {
-      this.onWaveChanged(this.currentWave);
+    this.state = 'TRANSITION';
+    if (typeof this.onLevelChanged === 'function') {
+      this.onLevelChanged(this.currentLevel);
+    }
+  }
+
+  advance() {
+    if (this.state === 'TRANSITION') {
+      this.state = 'READY';
+    } else if (this.state === 'READY' || this.state === 'INTRO') {
+      this.state = 'PLAYING';
+    } else if (this.state === 'LEVEL_COMPLETE' || this.state === 'VICTORY') {
+      const nextLevel = this.campaign.getNextLevel();
+      if (nextLevel) {
+        this.startLevel(nextLevel);
+      } else {
+        this.startLevel(this.currentLevel);
+      }
+    } else if (this.state === 'GAMEOVER') {
+      this.initLevel(this.currentLevel);
+      this.state = 'READY';
+    }
+    if (typeof this.onStateChanged === 'function') {
+      this.onStateChanged(this.state, this.currentLevel);
     }
   }
 
@@ -415,7 +501,11 @@ export class Game {
       if (this.victoryDelay > 0) {
         this.victoryDelay -= dt;
         if (this.victoryDelay <= 0) {
-          this.state = 'VICTORY';
+          this.state = 'LEVEL_COMPLETE';
+          this.campaign.recordVictory(this.score);
+          if (typeof this.onLevelChanged === 'function') {
+            this.onLevelChanged(this.currentLevel);
+          }
           return;
         }
       }
@@ -434,7 +524,7 @@ export class Game {
         }
       }
 
-      this.maintainPopulation();
+      this.maintainPopulation(dt);
     }
 
     // Update feedback timer
@@ -488,31 +578,69 @@ export class Game {
     this.drawHUD(ctx);
 
     // 7. Modals / Overlays
-    if (this.state === 'INTRO') this.drawIntroModal(ctx);
+    if (this.state === 'TRANSITION') this.drawTransitionModal(ctx);
+    else if (this.state === 'READY' || this.state === 'INTRO') this.drawReadyModal(ctx);
     else if (this.state === 'PAUSED') this.drawPausedModal(ctx);
-    else if (this.state === 'VICTORY') this.drawVictoryModal(ctx);
+    else if (this.state === 'LEVEL_COMPLETE' || this.state === 'VICTORY') this.drawLevelCompleteModal(ctx);
     else if (this.state === 'GAMEOVER') this.drawGameOverModal(ctx);
   }
 
   drawMeadowFloor(ctx) {
-    // Warm sunlit cream paper base
-    const grad = ctx.createLinearGradient(0, 0, 0, this.height);
-    grad.addColorStop(0, '#f9f6ea');
-    grad.addColorStop(1, '#f1ede0');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, this.width, this.height);
+    if (this.currentLevel && this.currentLevel.scene === 'curb') {
+      // Soft morning paper base with cool dawn tint
+      const grad = ctx.createLinearGradient(0, 0, 0, this.height);
+      grad.addColorStop(0, '#f7f5ed');
+      grad.addColorStop(1, '#ece7da');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, this.width, this.height);
 
-    // Gentle verge fence shadow at the top
-    ctx.save();
-    ctx.fillStyle = 'rgba(60, 75, 45, 0.045)';
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(this.width, 0);
-    ctx.lineTo(this.width, 45);
-    ctx.quadraticCurveTo(this.width * 0.5, 65, 0, 40);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
+      ctx.save();
+      // Stone curb lip across the top
+      ctx.fillStyle = 'rgba(215, 208, 195, 0.65)';
+      ctx.fillRect(0, 0, this.width, 22);
+
+      // Pencil curb seam line
+      ctx.strokeStyle = '#9e9585';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(0, 22);
+      ctx.lineTo(this.width, 22);
+      ctx.stroke();
+
+      // Curb drop shadow
+      const shadowGrad = ctx.createLinearGradient(0, 22, 0, 34);
+      shadowGrad.addColorStop(0, 'rgba(80, 70, 60, 0.12)');
+      shadowGrad.addColorStop(1, 'rgba(80, 70, 60, 0)');
+      ctx.fillStyle = shadowGrad;
+      ctx.fillRect(0, 22, this.width, 12);
+
+      // Bus-stop sign base marker in upper-left corner
+      ctx.strokeStyle = 'rgba(120, 110, 100, 0.35)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(38, 11, 6, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      // Warm sunlit cream paper base
+      const grad = ctx.createLinearGradient(0, 0, 0, this.height);
+      grad.addColorStop(0, '#f9f6ea');
+      grad.addColorStop(1, '#f1ede0');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, this.width, this.height);
+
+      // Gentle verge fence shadow at the top
+      ctx.save();
+      ctx.fillStyle = 'rgba(60, 75, 45, 0.045)';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(this.width, 0);
+      ctx.lineTo(this.width, 45);
+      ctx.quadraticCurveTo(this.width * 0.5, 65, 0, 40);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
 
     // Subtle paper verge clover & flower decorations
     for (const dec of this.decorations) {
@@ -684,14 +812,20 @@ export class Game {
       ctx.fillText('Clock', 52, 40);
 
       // Top-Right: Objective & Score
+      const objEntries = Object.entries(this.campaign.objectiveProgress);
+      const objText = objEntries.length > 0
+        ? objEntries.map(([k, o]) => `${o.label}: ${o.current}/${o.target}`).join(' • ')
+        : `Harmonies: ${this.harmoniesCount}`;
+      const lvlTitle = this.currentLevel ? `${this.currentLevel.title}` : `Wave ${this.currentWave}`;
+
       ctx.textAlign = 'right';
       ctx.fillStyle = '#4a4235';
-      ctx.font = '600 12px system-ui, -apple-system, sans-serif';
-      ctx.fillText(`Harmonies: ${this.harmoniesCount} / ${this.harmoniesGoal}`, this.width - 16, 26);
+      ctx.font = '600 11px system-ui, -apple-system, sans-serif';
+      ctx.fillText(objText, this.width - 16, 26);
 
       ctx.fillStyle = '#7a6c57';
       ctx.font = 'italic 10.5px Georgia, serif';
-      ctx.fillText(`Wave ${this.currentWave}: ${this.currentWave === 1 ? 'Verge' : 'Echoes'} • ${this.score} pts`, this.width - 16, 40);
+      ctx.fillText(`${lvlTitle} • ${this.score} pts`, this.width - 16, 40);
 
       // Tier 2: Centered Stroke Length Band Meter (compact, below top row)
       const cx = this.width / 2;
@@ -758,14 +892,20 @@ export class Game {
       ctx.textAlign = 'center';
       ctx.fillText(`CORD: ${this.activeBand.name.toUpperCase()}`, cx, 37);
 
+      const objEntries = Object.entries(this.campaign.objectiveProgress);
+      const objText = objEntries.length > 0
+        ? objEntries.map(([k, o]) => `${o.label}: ${o.current}/${o.target}`).join(' • ')
+        : `Harmonies: ${this.harmoniesCount}`;
+      const lvlTitle = this.currentLevel ? `${this.currentLevel.title}` : `Wave ${this.currentWave}`;
+
       ctx.textAlign = 'right';
       ctx.fillStyle = '#4a4235';
-      ctx.font = '600 13px system-ui, -apple-system, sans-serif';
-      ctx.fillText(`Harmonies: ${this.harmoniesCount} / ${this.harmoniesGoal}`, this.width - 24, 34);
+      ctx.font = '600 12.5px system-ui, -apple-system, sans-serif';
+      ctx.fillText(objText, this.width - 24, 34);
 
       ctx.fillStyle = '#7a6c57';
       ctx.font = 'italic 11px Georgia, serif';
-      ctx.fillText(`Wave ${this.currentWave}: ${this.currentWave === 1 ? 'Morning Verge' : 'Twin Echoes'}`, this.width - 24, 49);
+      ctx.fillText(lvlTitle, this.width - 24, 49);
 
       ctx.fillStyle = '#8a7f70';
       ctx.font = '500 11px system-ui, -apple-system, sans-serif';
@@ -815,71 +955,158 @@ export class Game {
     ctx.restore();
   }
 
-  drawIntroModal(ctx) {
-    const isWave1 = (this.currentWave === 1);
-    this.drawModalBox(ctx, 490, 340, (boxW, boxH) => {
+  drawTransitionModal(ctx) {
+    const lvl = this.currentLevel;
+    this.drawModalBox(ctx, 480, 260, (boxW, boxH) => {
       const isNarrow = boxW < 440;
+
+      // Hour subtitle
+      ctx.font = isNarrow ? '600 11px system-ui, sans-serif' : '600 12px system-ui, sans-serif';
+      ctx.fillStyle = '#8a7d6d';
+      ctx.textAlign = 'center';
+      ctx.fillText((lvl.hourLabel || 'DAWN · VISIT').toUpperCase(), 0, -boxH / 2 + 38);
+
+      // Title
+      ctx.fillStyle = '#2c251d';
+      ctx.font = isNarrow ? 'bold 19px Georgia, serif' : 'bold 22px Georgia, serif';
+      ctx.fillText(lvl.title, 0, -boxH / 2 + 66);
+
+      // Decorative divider
+      ctx.strokeStyle = '#d6cbba';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-boxW * 0.28, -boxH / 2 + 82);
+      ctx.lineTo(boxW * 0.28, -boxH / 2 + 82);
+      ctx.stroke();
+
+      // Verbatim transition text
+      ctx.font = isNarrow ? 'italic 13.5px Georgia, serif' : 'italic 15.5px Georgia, serif';
+      ctx.fillStyle = '#3a3227';
+      ctx.fillText(`“${lvl.transitionText}”`, 0, 10);
+
+      // Prompt
+      ctx.fillStyle = '#5c4538';
+      ctx.font = isNarrow ? '600 12px system-ui, sans-serif' : '600 14px system-ui, sans-serif';
+      ctx.fillText(isNarrow ? '[ Tap to Continue ]' : '[ Click anywhere or press Space to Continue ]', 0, boxH / 2 - 24);
+    });
+  }
+
+  drawReadyModal(ctx) {
+    const lvl = this.currentLevel;
+    this.drawModalBox(ctx, 500, 310, (boxW, boxH) => {
+      const isNarrow = boxW < 440;
+
+      // Header
       ctx.fillStyle = '#3a3429';
       ctx.font = isNarrow ? 'bold 18px Georgia, serif' : 'bold 22px Georgia, serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Drawing the Hours', 0, -boxH / 2 + 34);
+      ctx.fillText(lvl.title, 0, -boxH / 2 + 36);
+
+      // Subtitle
+      ctx.font = isNarrow ? 'italic 12px Georgia, serif' : 'italic 13px Georgia, serif';
+      ctx.fillStyle = '#7a6f5f';
+      ctx.fillText(lvl.hourLabel || 'Dawn · Visit', 0, -boxH / 2 + 58);
+
+      // Instruction
+      ctx.font = isNarrow ? '12px system-ui, sans-serif' : '13px system-ui, sans-serif';
+      ctx.fillStyle = '#4c4234';
+      ctx.fillText(lvl.instruction, 0, -boxH / 2 + 90);
+
+      // Objectives box
+      ctx.textAlign = 'left';
+      ctx.font = isNarrow ? '600 11.5px system-ui, sans-serif' : '600 12.5px system-ui, sans-serif';
+      ctx.fillStyle = '#2c251d';
+      const padX = -boxW / 2 + (isNarrow ? 22 : 36);
+      let startY = -boxH / 2 + 128;
+
+      ctx.fillText('VISIT REQUIREMENTS:', padX, startY);
+      startY += 20;
+
+      ctx.font = isNarrow ? '12px system-ui, sans-serif' : '13px system-ui, sans-serif';
+      ctx.fillStyle = '#4c4234';
+      for (const [k, obj] of Object.entries(this.campaign.objectiveProgress)) {
+        ctx.fillText(`• ${obj.label}: ${obj.current} / ${obj.target}`, padX + 8, startY);
+        startY += 22;
+      }
+
+      // Duration note
+      ctx.font = 'italic 11.5px Georgia, serif';
+      ctx.fillStyle = '#8a7e6f';
+      ctx.fillText(`Dandelion Clock: ${lvl.durationSeconds} seconds`, padX, startY + 10);
+
+      // Prompt
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#5c4538';
+      ctx.font = isNarrow ? '600 12px system-ui, sans-serif' : '600 14px system-ui, sans-serif';
+      ctx.fillText(isNarrow ? '[ Tap to Begin Visit ]' : '[ Click anywhere or press Space to Begin ]', 0, boxH / 2 - 24);
+    });
+  }
+
+  drawLevelCompleteModal(ctx) {
+    const lvl = this.currentLevel;
+    const nextLevel = this.campaign.getNextLevel();
+    this.drawModalBox(ctx, 480, 280, (boxW, boxH) => {
+      const isNarrow = boxW < 440;
+      ctx.fillStyle = '#2b5028';
+      ctx.font = isNarrow ? 'bold 18px Georgia, serif' : 'bold 22px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Visit Complete', 0, -boxH / 2 + 38);
 
       ctx.font = isNarrow ? 'italic 12px Georgia, serif' : 'italic 14px Georgia, serif';
-      ctx.fillStyle = '#7a6f5f';
-      ctx.fillText(isWave1 ? 'Visit I: Morning Verge' : 'Visit II: Twin Echoes (Correspondence)', 0, -boxH / 2 + 56);
+      ctx.fillStyle = '#5a7857';
+      ctx.fillText(`${lvl.title} harmonized peacefully.`, 0, -boxH / 2 + 62);
 
-      ctx.font = isNarrow ? '11px system-ui, -apple-system, sans-serif' : '13px system-ui, -apple-system, sans-serif';
-      ctx.fillStyle = '#4c4234';
+      // Objectives recap
       ctx.textAlign = 'left';
+      const padX = -boxW / 2 + 36;
+      let startY = -boxH / 2 + 96;
+      ctx.font = '500 13px system-ui, sans-serif';
+      ctx.fillStyle = '#2f6932';
+      for (const [k, obj] of Object.entries(this.campaign.objectiveProgress)) {
+        ctx.fillText(`✔ ${obj.label}: ${obj.current} / ${obj.target}`, padX, startY);
+        startY += 22;
+      }
 
-      const lines = isWave1 ? [
-        '• Brimstone Butterfly: Sulphur folded wings, wanders & glides.',
-        '• Azure Damselfly: Slender body, hovers still then darts swiftly.',
-        '• Roseate Hawkmoth: Plump body, swept delta wings in wide arcs.',
-        '• Single loops: Kindred Pair (2 matching), Trio (all 3), Seed & Wing.',
-        '• Figure-Eight: Balance 2 dissimilar species across lobes (Counterpart Pair).',
-        '• Snails crawl along verges — their shells will fray your cord.',
-      ] : [
-        '• Experiment: Symmetric Correspondence across Figure-Eight lobes.',
-        '• Cross cord to form two pockets: mirror identical species in both!',
-        '• Dissimilar pair? Balance 1 of each across crossing (Counterpart Pair).',
-        '• Mixed groupings that fail alone harmonize through bilateral symmetry.',
-        '• Goal: Gather 4 harmonies before the dandelion clock ends.',
-      ];
-
-      const lineSpacing = isNarrow ? 21 : 23;
-      const startY = -boxH / 2 + 82;
-      const padX = -boxW / 2 + (isNarrow ? 18 : 25);
-
-      lines.forEach((line, idx) => {
-        ctx.fillText(line, padX, startY + idx * lineSpacing);
-      });
-
-      // Button prompt
-      ctx.fillStyle = '#5c4538';
-      ctx.font = isNarrow ? '600 12px system-ui, -apple-system, sans-serif' : '600 14px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
+      ctx.font = isNarrow ? '12px system-ui, sans-serif' : '13px system-ui, sans-serif';
+      ctx.fillStyle = '#3d3428';
+      const best = (this.campaign.saveState.bestScores && this.campaign.saveState.bestScores[lvl.id]) || this.score;
+      ctx.fillText(`Score: ${this.score} pts  (Best: ${best} pts)`, 0, startY + 12);
+
+      ctx.fillStyle = '#5c4538';
+      ctx.font = isNarrow ? '600 12px system-ui, sans-serif' : '600 14px system-ui, sans-serif';
       ctx.fillText(
-        isNarrow ? `[ Tap to start ${isWave1 ? 'Morning Verge' : 'Twin Echoes'} ]` : `[ Click anywhere or press Space to enter ${isWave1 ? 'Morning Verge' : 'Twin Echoes'} ]`,
+        nextLevel
+          ? (isNarrow ? `[ Tap for Next: ${nextLevel.title} ]` : `[ Click or Space for Next Visit: ${nextLevel.title} ]`)
+          : (isNarrow ? '[ Tap to Continue ]' : '[ Click or Press Space to Continue ]'),
         0,
-        boxH / 2 - 20
+        boxH / 2 - 24
       );
     });
   }
 
   drawPausedModal(ctx) {
-    this.drawModalBox(ctx, 420, 240, (boxW, boxH) => {
+    const lvl = this.currentLevel;
+    this.drawModalBox(ctx, 450, 260, (boxW, boxH) => {
       const isNarrow = boxW < 400;
       ctx.fillStyle = '#3a3429';
       ctx.font = isNarrow ? 'bold 18px Georgia, serif' : 'bold 20px Georgia, serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Quiet Interval — Paused', 0, -boxH / 2 + 40);
+      ctx.fillText('Quiet Interval — Paused', 0, -boxH / 2 + 38);
+
+      ctx.font = isNarrow ? 'italic 12px Georgia, serif' : 'italic 13px Georgia, serif';
+      ctx.fillStyle = '#7a6f5f';
+      ctx.fillText(lvl.title, 0, -boxH / 2 + 58);
 
       ctx.font = isNarrow ? '12px system-ui, -apple-system, sans-serif' : '13px system-ui, -apple-system, sans-serif';
       ctx.fillStyle = '#54483a';
-      ctx.fillText('Remaining Time: ' + Math.ceil(this.clock.remainingSeconds) + 's', 0, -15);
-      ctx.fillText('Harmonies Arranged: ' + this.harmoniesCount + ' / ' + this.harmoniesGoal, 0, 12);
-      ctx.fillText('Current Score: ' + this.score, 0, 38);
+      ctx.fillText('Remaining Time: ' + Math.ceil(this.clock.remainingSeconds) + 's', 0, -10);
+
+      // Objectives progress
+      const objEntries = Object.entries(this.campaign.objectiveProgress);
+      const objText = objEntries.map(([k, o]) => `${o.label}: ${o.current}/${o.target}`).join(' • ');
+      ctx.fillText(objText, 0, 14);
+      ctx.fillText('Current Score: ' + this.score + ' pts', 0, 38);
 
       ctx.fillStyle = '#785b46';
       ctx.font = isNarrow ? '600 12px system-ui, -apple-system, sans-serif' : '600 14px system-ui, -apple-system, sans-serif';
@@ -887,66 +1114,30 @@ export class Game {
     });
   }
 
-  drawVictoryModal(ctx) {
-    const isWave1 = (this.currentWave === 1);
-    this.drawModalBox(ctx, 470, 275, (boxW, boxH) => {
-      const isNarrow = boxW < 440;
-      ctx.fillStyle = '#2b5028';
-      ctx.font = isNarrow ? 'bold 18px Georgia, serif' : 'bold 22px Georgia, serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(isWave1 ? 'Morning Verge Harmonized' : 'Twin Echoes Harmonized', 0, -boxH / 2 + 40);
-
-      ctx.font = isNarrow ? 'italic 12px Georgia, serif' : 'italic 14px Georgia, serif';
-      ctx.fillStyle = '#5a7857';
-      ctx.fillText(
-        isWave1 ? 'The quiet hour departs in peace.' : 'Symmetric correspondence achieved across both lobes.',
-        0,
-        -boxH / 2 + 64
-      );
-
-      ctx.font = isNarrow ? '12px system-ui, -apple-system, sans-serif' : '14px system-ui, -apple-system, sans-serif';
-      ctx.fillStyle = '#3d3428';
-      ctx.fillText(
-        isWave1
-          ? `All ${this.harmoniesGoal} relationships completed with grace.`
-          : `All ${this.harmoniesGoal} correspondence experiments mirrored perfectly.`,
-        0,
-        -5
-      );
-      ctx.fillText(`Final Visit Score: ${this.score} points`, 0, 22);
-
-      ctx.fillStyle = '#5c4538';
-      ctx.font = isNarrow ? '600 12px system-ui, -apple-system, sans-serif' : '600 14px system-ui, -apple-system, sans-serif';
-      ctx.fillText(
-        isWave1
-          ? (isNarrow ? '[ Tap to Enter Wave 2 ]' : '[ Click or Press Space to Enter Wave 2: Twin Echoes ]')
-          : (isNarrow ? '[ Tap to Replay Garden ]' : '[ Click or Press Space to Replay Garden ]'),
-        0,
-        boxH / 2 - 22
-      );
-    });
-  }
-
   drawGameOverModal(ctx) {
+    const lvl = this.currentLevel;
     this.drawModalBox(ctx, 450, 260, (boxW, boxH) => {
       const isNarrow = boxW < 440;
       ctx.fillStyle = '#6e3535';
       ctx.font = isNarrow ? 'bold 18px Georgia, serif' : 'bold 22px Georgia, serif';
       ctx.textAlign = 'center';
-      ctx.fillText('The Hour Has Passed', 0, -boxH / 2 + 40);
+      ctx.fillText('The Hour Has Passed', 0, -boxH / 2 + 38);
 
       ctx.font = isNarrow ? 'italic 12px Georgia, serif' : 'italic 14px Georgia, serif';
       ctx.fillStyle = '#8f5c5c';
-      ctx.fillText('The dandelion seeds took flight into the morning breeze.', 0, -boxH / 2 + 64);
+      ctx.fillText('The dandelion seeds took flight into the morning breeze.', 0, -boxH / 2 + 60);
 
-      ctx.font = isNarrow ? '12px system-ui, -apple-system, sans-serif' : '14px system-ui, -apple-system, sans-serif';
+      ctx.font = isNarrow ? '12px system-ui, -apple-system, sans-serif' : '13px system-ui, -apple-system, sans-serif';
       ctx.fillStyle = '#42372b';
-      ctx.fillText(`Harmonies Gathered: ${this.harmoniesCount} / ${this.harmoniesGoal}`, 0, 0);
+
+      const objEntries = Object.entries(this.campaign.objectiveProgress);
+      const objText = objEntries.map(([k, o]) => `${o.label}: ${o.current}/${o.target}`).join(' • ');
+      ctx.fillText(objText, 0, 0);
       ctx.fillText(`Score: ${this.score} points`, 0, 26);
 
       ctx.fillStyle = '#5c4538';
       ctx.font = isNarrow ? '600 12px system-ui, -apple-system, sans-serif' : '600 14px system-ui, -apple-system, sans-serif';
-      ctx.fillText(isNarrow ? '[ Tap to Try Again ]' : '[ Click or Press Space to Try Again ]', 0, boxH / 2 - 22);
+      ctx.fillText(isNarrow ? '[ Tap to Retry Visit ]' : '[ Click or Press Space to Retry Visit ]', 0, boxH / 2 - 22);
     });
   }
 

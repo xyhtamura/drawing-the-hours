@@ -221,6 +221,116 @@ footer {
 }
 
 /* =========================================================
+   Visit / Chapter Selection Modal Styles
+   ========================================================= */
+
+.visit-card {
+  max-width: 580px;
+}
+
+.visit-section {
+  margin-bottom: 12px;
+}
+
+.visit-section-title {
+  font-family: Georgia, serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border-paper);
+  padding-bottom: 4px;
+}
+
+.visit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.visit-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: 1px solid var(--border-paper);
+  border-radius: 8px;
+  background: #fbf9f4;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  gap: 10px;
+  text-align: left;
+}
+
+.visit-item:hover:not(.locked) {
+  background: #ffffff;
+  border-color: #b5a489;
+  transform: translateX(2px);
+}
+
+.visit-item.active {
+  border-color: var(--accent-green);
+  background: #f1f7ed;
+}
+
+.visit-item.locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: #f5f2eb;
+}
+
+.visit-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.visit-item-title {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text-dark);
+}
+
+.visit-item-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.visit-item-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.visit-item-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.visit-item-badge.completed {
+  background: #e1f2dc;
+  color: #2e6628;
+}
+
+.visit-item-badge.current {
+  background: #fcecd7;
+  color: #8c4712;
+}
+
+.visit-item-badge.locked {
+  background: #ece8e1;
+  color: #797166;
+}
+
+/* =========================================================
    Mobile Vertical / Portrait Layout & Orientation Overrides
    ========================================================= */
 

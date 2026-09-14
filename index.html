@@ -13,8 +13,8 @@
       <div class="sub" id="header-sub">A Meadow Gesture Study &mdash; Visit I: Morning Verge</div>
     </div>
     <div class="controls">
-      <button id="btn-wave" title="Switch visit wave (W)">
-        🌊 Wave: 1 (Verge)
+      <button id="btn-visit" title="Garden Visits &amp; Hours (W)">
+        🌿 Visit: Dawn 1
       </button>
       <button id="btn-orientation" title="Switch orientation mode: Auto / Vertical / Horizontal (V)">
         📱 View: Auto
@@ -40,7 +40,7 @@
 
   <footer>
     <div>Draw cord with mouse or touch. Hold or cross to separate pockets.</div>
-    <div>Keyboard: [Space] Pause &bull; [W] Wave &bull; [V] View &bull; [M] Sound &bull; [H] Field Book &bull; [R] Restart</div>
+    <div>Keyboard: [Space] Pause / Advance &bull; [W] Visits &bull; [V] View &bull; [M] Sound &bull; [H] Field Book &bull; [R] Restart</div>
   </footer>
 
   <!-- Field Book Modal -->
@@ -147,15 +147,49 @@
     </div>
   </div>
 
+  <!-- Visit / Chapter Selection Modal -->
+  <div id="visit-modal" class="recipe-modal" role="dialog" aria-modal="true">
+    <div class="recipe-card visit-card">
+      <h2>Meadow Visits &amp; Hours</h2>
+      <div class="field-intro">
+        Select an unlocked chapter visit or return to an open practice verge.
+      </div>
+
+      <div class="visit-section">
+        <div class="visit-section-title">Hour I: Dawn</div>
+        <div class="visit-list" id="visit-list-dawn">
+          <!-- Populated by script -->
+        </div>
+      </div>
+
+      <div class="visit-section" style="opacity: 0.7; margin-top: 14px;">
+        <div class="visit-section-title">Subsequent Hours (Preview)</div>
+        <div style="font-size: 0.82rem; color: var(--text-muted); font-style: italic; padding: 4px 2px;">
+          Hour II: Noon (Visits IV–VI) &bull; Hour III: Dusk (Visits VII–IX) &bull; Hour IV: Midnight (Visits X–XII)
+        </div>
+      </div>
+
+      <div class="visit-section" style="margin-top: 16px;">
+        <div class="visit-section-title">Practice Verges</div>
+        <div class="visit-list" id="visit-list-practice">
+          <!-- Populated by script -->
+        </div>
+      </div>
+
+      <button id="btn-close-visit-modal" class="close-btn">Return to Visit</button>
+    </div>
+  </div>
+
   <script type="module">
     import { Game } from './src/game.js';
     import { audio } from './src/audio.js';
+    import { CAMPAIGN_LEVELS, PRACTICE_LEVELS } from './src/campaign.js';
 
     const canvas = document.getElementById('game-canvas');
     const game = new Game(canvas);
     window.game = game; // handle for playtesting from the console
 
-    const btnWave = document.getElementById('btn-wave');
+    const btnVisit = document.getElementById('btn-visit');
     const btnOrientation = document.getElementById('btn-orientation');
     const btnFieldbook = document.getElementById('btn-fieldbook');
     const btnAudio = document.getElementById('btn-audio');
@@ -163,6 +197,10 @@
     const btnRestart = document.getElementById('btn-restart');
     const modal = document.getElementById('fieldbook-modal');
     const btnCloseModal = document.getElementById('btn-close-modal');
+    const visitModal = document.getElementById('visit-modal');
+    const btnCloseVisitModal = document.getElementById('btn-close-visit-modal');
+    const visitListDawn = document.getElementById('visit-list-dawn');
+    const visitListPractice = document.getElementById('visit-list-practice');
     const headerSub = document.getElementById('header-sub');
 
     // Orientation view setting: 'auto' | 'vertical' | 'horizontal'
@@ -229,66 +267,186 @@
       }
     });
 
-    const updateWaveUI = (wave) => {
-      if (btnWave) {
-        btnWave.textContent = (wave === 1) ? '🌊 Wave: 1 (Verge)' : '🌊 Wave: 2 (Echoes)';
+    const updateLevelUI = (level = game.currentLevel) => {
+      if (btnVisit && level) {
+        if (level.hourLabel && level.hourLabel.startsWith('Practice')) {
+          btnVisit.textContent = `🌿 Sandbox: ${level.number}`;
+        } else if (level.hour === 'dawn') {
+          btnVisit.textContent = `🌿 Visit: Dawn ${level.number}`;
+        } else {
+          btnVisit.textContent = `🌿 Visit: ${level.number}`;
+        }
       }
-      if (headerSub) {
-        headerSub.innerHTML = (wave === 1)
-          ? 'A Meadow Gesture Study &mdash; Visit I: Morning Verge'
-          : 'A Meadow Gesture Study &mdash; Visit II: Twin Echoes';
+      if (headerSub && level) {
+        headerSub.innerHTML = `A Meadow Gesture Study &mdash; ${level.hourLabel || 'Dawn'}: ${level.title}`;
       }
     };
 
-    game.onWaveChanged = updateWaveUI;
+    const renderVisitModal = () => {
+      const save = game.campaign.saveState;
+      const highestUnlocked = save.highestUnlockedIndex || 0;
+      const currentId = game.currentLevel ? game.currentLevel.id : 'dawn-01';
+
+      // Dawn levels (1–3)
+      const dawnLevels = CAMPAIGN_LEVELS.filter(lvl => lvl.hour === 'dawn');
+      if (visitListDawn) {
+        visitListDawn.innerHTML = dawnLevels.map((lvl, idx) => {
+          const isUnlocked = idx <= highestUnlocked;
+          const isCompleted = save.completedLevelIds.includes(lvl.id);
+          const isActive = lvl.id === currentId;
+          const bestScore = save.bestScores ? save.bestScores[lvl.id] : undefined;
+
+          let badgeClass = 'locked';
+          let badgeText = 'Locked';
+          if (isCompleted) {
+            badgeClass = 'completed';
+            badgeText = 'Completed';
+          } else if (isUnlocked) {
+            badgeClass = 'current';
+            badgeText = isActive ? 'Current' : 'Unlocked';
+          }
+
+          return `
+            <div class="visit-item ${isActive ? 'active' : ''} ${!isUnlocked ? 'locked' : ''}" data-level-id="${lvl.id}">
+              <div class="visit-item-main">
+                <div class="visit-item-title">${lvl.hourLabel}: ${lvl.title}</div>
+                <div class="visit-item-sub">${lvl.instruction}</div>
+              </div>
+              <div class="visit-item-meta">
+                <span class="visit-item-badge ${badgeClass}">${badgeText}</span>
+                ${bestScore !== undefined ? `<span>Best: ${bestScore} pts</span>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Practice levels
+      if (visitListPractice) {
+        visitListPractice.innerHTML = PRACTICE_LEVELS.map(lvl => {
+          const isActive = lvl.id === currentId;
+          return `
+            <div class="visit-item ${isActive ? 'active' : ''}" data-level-id="${lvl.id}">
+              <div class="visit-item-main">
+                <div class="visit-item-title">${lvl.hourLabel}: ${lvl.title}</div>
+                <div class="visit-item-sub">${lvl.instruction}</div>
+              </div>
+              <div class="visit-item-meta">
+                <span class="visit-item-badge current">Sandbox</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Click handlers for unlocked items
+      if (visitModal) {
+        visitModal.querySelectorAll('.visit-item:not(.locked)').forEach(el => {
+          el.addEventListener('click', () => {
+            const lvlId = el.getAttribute('data-level-id');
+            if (lvlId) {
+              game.startLevel(lvlId);
+              btnPause.textContent = '⏸ Pause';
+              toggleVisitModal(false);
+            }
+          });
+        });
+      }
+    };
+
+    game.onLevelChanged = (level) => {
+      updateLevelUI(level);
+      renderVisitModal();
+    };
+
+    game.onStateChanged = () => {
+      btnPause.textContent = (game.state === 'PAUSED') ? '▶ Resume' : '⏸ Pause';
+    };
 
     // Advance or restart depending on state
     const advanceOrRestart = () => {
       if (modal && modal.classList.contains('active')) return;
-      if (game.state === 'INTRO') {
-        game.startLevel(game.currentWave);
-      } else if (game.state === 'VICTORY') {
-        const nextWave = (game.currentWave === 1) ? 2 : 1;
-        game.startLevel(nextWave);
-      } else if (game.state === 'GAMEOVER') {
-        game.startLevel(game.currentWave);
+      if (visitModal && visitModal.classList.contains('active')) return;
+
+      if (game.state === 'TRANSITION' || game.state === 'READY' || game.state === 'LEVEL_COMPLETE' || game.state === 'GAMEOVER') {
+        game.advance();
+        btnPause.textContent = '⏸ Pause';
       }
-      btnPause.textContent = '⏸ Pause';
     };
 
-    // Canvas click to start or advance
+    // Canvas click to advance modals
     canvas.addEventListener('click', advanceOrRestart);
-
-    // Wave toggle button
-    btnWave.addEventListener('click', () => {
-      const nextWave = (game.currentWave === 1) ? 2 : 1;
-      game.startLevel(nextWave);
-      btnPause.textContent = '⏸ Pause';
-    });
 
     // Toggle Field Book. Opening pauses the visit; closing resumes it, but only
     // if the Field Book is what paused it.
     let pausedByFieldbook = false;
-    const toggleFieldbook = () => {
-      const opening = !modal.classList.contains('active');
-      modal.classList.toggle('active');
-      if (opening) {
-        pausedByFieldbook = game.state === 'PLAYING';
+    const toggleFieldbook = (forceState) => {
+      const willOpen = (typeof forceState === 'boolean')
+        ? forceState
+        : !modal.classList.contains('active');
+
+      if (willOpen) {
+        if (visitModal && visitModal.classList.contains('active')) {
+          toggleVisitModal(false);
+        }
+        modal.classList.add('active');
+        pausedByFieldbook = (game.state === 'PLAYING');
         if (pausedByFieldbook) {
           game.togglePause();
           btnPause.textContent = '▶ Resume';
         }
-      } else if (pausedByFieldbook) {
-        pausedByFieldbook = false;
-        if (game.state === 'PAUSED') {
-          game.togglePause();
-          btnPause.textContent = '⏸ Pause';
+      } else {
+        modal.classList.remove('active');
+        if (pausedByFieldbook) {
+          pausedByFieldbook = false;
+          if (game.state === 'PAUSED') {
+            game.togglePause();
+            btnPause.textContent = '⏸ Pause';
+          }
         }
       }
     };
 
-    btnFieldbook.addEventListener('click', toggleFieldbook);
-    btnCloseModal.addEventListener('click', toggleFieldbook);
+    btnFieldbook.addEventListener('click', () => toggleFieldbook());
+    btnCloseModal.addEventListener('click', () => toggleFieldbook(false));
+
+    // Toggle Visit Modal
+    let pausedByVisitModal = false;
+    const toggleVisitModal = (forceState) => {
+      if (!visitModal) return;
+      const willOpen = (typeof forceState === 'boolean')
+        ? forceState
+        : !visitModal.classList.contains('active');
+
+      if (willOpen) {
+        if (modal.classList.contains('active')) {
+          toggleFieldbook(false);
+        }
+        renderVisitModal();
+        visitModal.classList.add('active');
+        pausedByVisitModal = (game.state === 'PLAYING');
+        if (pausedByVisitModal) {
+          game.togglePause();
+          btnPause.textContent = '▶ Resume';
+        }
+      } else {
+        visitModal.classList.remove('active');
+        if (pausedByVisitModal) {
+          pausedByVisitModal = false;
+          if (game.state === 'PAUSED') {
+            game.togglePause();
+            btnPause.textContent = '⏸ Pause';
+          }
+        }
+      }
+    };
+
+    if (btnVisit) {
+      btnVisit.addEventListener('click', () => toggleVisitModal());
+    }
+    if (btnCloseVisitModal) {
+      btnCloseVisitModal.addEventListener('click', () => toggleVisitModal(false));
+    }
 
     // Audio toggle
     btnAudio.addEventListener('click', () => {
@@ -304,7 +462,7 @@
 
     // Restart
     btnRestart.addEventListener('click', () => {
-      game.startLevel(game.currentWave);
+      game.startLevel(game.currentLevel);
       btnPause.textContent = '⏸ Pause';
     });
 
@@ -312,16 +470,14 @@
     window.addEventListener('keydown', (e) => {
       if (e.key === ' ' || e.code === 'Space') {
         e.preventDefault();
-        if (game.state === 'INTRO' || game.state === 'VICTORY' || game.state === 'GAMEOVER') {
+        if (game.state === 'TRANSITION' || game.state === 'READY' || game.state === 'LEVEL_COMPLETE' || game.state === 'GAMEOVER') {
           advanceOrRestart();
         } else {
           game.togglePause();
           btnPause.textContent = (game.state === 'PAUSED') ? '▶ Resume' : '⏸ Pause';
         }
       } else if (e.key === 'w' || e.key === 'W') {
-        const nextWave = (game.currentWave === 1) ? 2 : 1;
-        game.startLevel(nextWave);
-        btnPause.textContent = '⏸ Pause';
+        toggleVisitModal();
       } else if (e.key === 'v' || e.key === 'V') {
         const nextMode = (viewMode === 'auto')
           ? 'vertical'
@@ -331,16 +487,23 @@
         const isMuted = audio.toggleMute();
         btnAudio.textContent = isMuted ? '🔇 Sound: Off' : '🔊 Sound: On';
       } else if (e.key === 'r' || e.key === 'R') {
-        game.startLevel(game.currentWave);
+        game.startLevel(game.currentLevel);
         btnPause.textContent = '⏸ Pause';
       } else if (e.key === 'h' || e.key === 'H') {
         toggleFieldbook();
       } else if (e.key === 'Escape') {
-        if (modal.classList.contains('active')) {
-          toggleFieldbook();
+        if (visitModal && visitModal.classList.contains('active')) {
+          toggleVisitModal(false);
+        } else if (modal && modal.classList.contains('active')) {
+          toggleFieldbook(false);
         }
       }
     });
+
+    // Initial UI setup
+    updateLevelUI(game.currentLevel);
+    renderVisitModal();
   </script>
 </body>
 </html>
+
