@@ -190,6 +190,7 @@ export class Game {
     this.windPhase = 'calm';
     this.prevWindPhase = 'calm';
     this.windStreaks = [];
+    audio.stopCicadas();
 
     const mScale = this.currentLevel.motionScale || 1.0;
     const pop = this.currentLevel.population || {};
@@ -206,10 +207,15 @@ export class Game {
         const y = padY + Math.random() * (this.height - 2 * padY);
         const b = new Butterfly(x, y, k);
         b.motionScale = mScale;
-        if (k === 'lacewing') placeLacewing(b, this, i, i * 0.75);
-        if (k === 'hoverfly' && this.currentLevel.scene === 'passage') {
+        if (k === 'lacewing') {
+          placeLacewing(b, this, i, i * 0.75);
+        } else if (k === 'hoverfly' && this.currentLevel.scene === 'passage') {
           const leaf = leafAnchors(this)[i % 3];
           b.x = leaf.x; b.y = leaf.y + 85;
+        } else if (this.currentLevel.scene === 'passage') {
+          const r = duskSafeArea(this);
+          b.x = r.left + Math.random() * (r.right - r.left);
+          b.y = r.top + Math.random() * (r.bottom - r.top);
         }
         this.entities.push(b);
       }
@@ -526,6 +532,7 @@ export class Game {
     if (this.state === 'PLAYING') {
       this.state = 'PAUSED';
       this.clock.isPaused = true;
+      audio.stopCicadas();
     } else if (this.state === 'PAUSED') {
       this.state = 'PLAYING';
       this.clock.isPaused = false;
@@ -596,6 +603,10 @@ export class Game {
         this.windStreaks = [];
       }
 
+      // Dusk Cicada Ambient Layer (Visit VIII)
+      const isCicadaLevel = this.currentLevel?.id === 'dusk-02';
+      audio.updateCicadas(dt, isCicadaLevel && this.state === 'PLAYING');
+
       const bounds = { width: this.width, height: this.height };
       const windVx = (this.windPhase === 'gust' && this.currentLevel?.wind)
         ? (this.currentLevel.wind.seedSpeedPlayWidthsPerSecond || 0.08) * this.width
@@ -606,6 +617,13 @@ export class Game {
         ent.update(dt, bounds, ent.type === 'seed' ? windVx : 0);
         if (this.currentLevel.scene === 'passage' && ent.type === 'butterfly' && ent.state === 'roaming') {
           const r = duskSafeArea(bounds);
+          if (ent.kind !== 'lacewing') {
+            const pad = 35;
+            if (ent.x < r.left + pad) ent.targetHeading = 0;
+            else if (ent.x > r.right - pad) ent.targetHeading = Math.PI;
+            if (ent.y < r.top + pad) ent.targetHeading = Math.PI / 2;
+            else if (ent.y > r.bottom - pad) ent.targetHeading = -Math.PI / 2;
+          }
           ent.x = Math.max(r.left, Math.min(r.right, ent.x));
           ent.y = Math.max(r.top, Math.min(r.bottom, ent.y));
         }
@@ -615,6 +633,8 @@ export class Game {
       }
 
       this.maintainPopulation(dt);
+    } else {
+      audio.stopCicadas();
     }
 
     // Update feedback timer
@@ -1206,10 +1226,12 @@ export class Game {
   drawReadyModal(ctx) {
     const lvl = this.currentLevel;
     const teachLacewing = lvl.id === 'dusk-01' || lvl.id === 'practice-dusk';
+    const teachDusk02 = lvl.id === 'dusk-02';
+    const teachDusk03 = lvl.id === 'dusk-03';
     const teachCounterpart = lvl.id === 'noon-01' || lvl.id === 'practice-noon';
     const teachNursery = lvl.id === 'noon-02';
     const teachSeedTrio = lvl.id === 'noon-03';
-    const hasDiagram = teachLacewing || teachCounterpart || teachNursery || teachSeedTrio;
+    const hasDiagram = teachLacewing || teachDusk02 || teachDusk03 || teachCounterpart || teachNursery || teachSeedTrio;
 
     this.drawModalBox(ctx, 500, hasDiagram ? 415 : 310, (boxW, boxH) => {
       const isNarrow = boxW < 440;
@@ -1265,6 +1287,40 @@ export class Game {
         ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
         ctx.fillText('One lacewing and one hoverfly, in separate pockets.', 0, 41);
         ctx.fillText('Lacewings rest on each leaf for 1.5 seconds.', 0, 56);
+        ctx.restore();
+      } else if (teachDusk02) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 94);
+        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
+        ctx.bezierCurveTo(100, -65, 100, 65, 0, 0); ctx.stroke();
+        ctx.save(); ctx.translate(-46, -5); ctx.scale(0.7, 0.7);
+        drawLacewing(ctx, { lacePhase: 'rest', flapPhase: 0 }); ctx.restore();
+        ctx.save(); ctx.translate(46, -6); ctx.scale(0.75, 0.75);
+        new DandelionSeed(0, 0).draw(ctx);
+        new DandelionSeed(18, 12).draw(ctx);
+        ctx.restore();
+        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
+        ctx.fillText('Nursery Polarity: fliers in one lobe, airborne seeds in the other.', 0, 41);
+        ctx.fillText('Also make a lacewing Counterpart Pair; cicadas pause intermittently.', 0, 56);
+        ctx.restore();
+      } else if (teachDusk03) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 94);
+        // Left: single circular loop
+        ctx.strokeStyle = '#7c9a62'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(-62, -2, 34, 0, Math.PI * 2); ctx.stroke();
+        const fly1 = new Butterfly(-72, -6, 'brimstone'); fly1.heading = -0.4; fly1.draw(ctx);
+        const fly2 = new Butterfly(-52, 6, 'hoverfly'); fly2.heading = 0.5; fly2.draw(ctx);
+        // Right: figure-eight
+        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(60, -2);
+        ctx.bezierCurveTo(20, -45, 20, 41, 60, -2);
+        ctx.bezierCurveTo(100, -45, 100, 41, 60, -2); ctx.stroke();
+        const fly3 = new Butterfly(40, -2, 'damselfly'); fly3.heading = -Math.PI / 2; fly3.draw(ctx);
+        const fly4 = new Butterfly(80, -2, 'hawkmoth'); fly4.heading = Math.PI / 2; fly4.draw(ctx);
+        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
+        ctx.fillText('Switch between gestures: 3 single loops and 2 figure-eights.', 0, 41);
+        ctx.fillText('Dense field with 8 fliers; keep clear of the perimeter snail.', 0, 56);
         ctx.restore();
       } else if (teachCounterpart) {
         ctx.save(); ctx.translate(0, boxH / 2 - 84);

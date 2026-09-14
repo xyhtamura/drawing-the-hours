@@ -542,6 +542,42 @@ console.log('--- All tests passed! ---');
   console.log('✔ Complete Noon chapter progression, verbatim texts, and practice isolation verified.');
 }
 
+// 10b. Complete Dusk Chapter Progression & Verbatim Texts
+{
+  const campaign = new CampaignManager();
+  campaign.setLevelById('noon-03');
+  assert.strictEqual(campaign.getNextLevel().id, 'dusk-01');
+
+  // Dusk 1 (Visit VII: The way through)
+  const dusk1 = campaign.setLevelById('dusk-01');
+  assert.strictEqual(dusk1.transitionText, 'I always find myself walking home through here.');
+  assert.deepStrictEqual(dusk1.objectives, { any: 5, lacewingCounterpart: 2 });
+  assert.strictEqual(dusk1.durationSeconds, 100);
+  assert.strictEqual(campaign.getNextLevel().id, 'dusk-02');
+
+  // Dusk 2 (Visit VIII: The gaps in the sound)
+  const dusk2 = campaign.setLevelById('dusk-02');
+  assert.strictEqual(dusk2.transitionText, "I can hear the cicadas. And sometimes I can't.");
+  assert.deepStrictEqual(dusk2.objectives, { any: 5, nursery: 1, lacewingCounterpart: 1 });
+  assert.strictEqual(dusk2.durationSeconds, 95);
+  assert.strictEqual(campaign.getNextLevel().id, 'dusk-03');
+
+  // Dusk 3 (Visit IX: Carrying something home)
+  const dusk3 = campaign.setLevelById('dusk-03');
+  assert.strictEqual(dusk3.transitionText, 'Bringing home medicine today.');
+  assert.deepStrictEqual(dusk3.objectives, { any: 6, single: 3, figure8: 2 });
+  assert.strictEqual(dusk3.durationSeconds, 100);
+  assert.strictEqual(campaign.getNextLevel(), null, 'Midnight remains locked pending next chapter');
+
+  // Practice isolation
+  const before = JSON.stringify(campaign.saveState);
+  campaign.setLevelById('practice-dusk');
+  campaign.recordVictory(500);
+  assert.strictEqual(JSON.stringify(campaign.saveState), before);
+  assert.strictEqual(campaign.getNextLevel(), null);
+  console.log('✔ Complete Dusk chapter progression, verbatim texts, and practice isolation verified.');
+}
+
 // Atrium wind mechanics and seed acceleration
 {
   const { DandelionSeed, Insect } = await import('../src/entities.js');

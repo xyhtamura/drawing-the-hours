@@ -1,7 +1,7 @@
 # Drawing the Hours: first twelve visits
 
-Implementation specification, updated 2026-09-15. **Dawn, Noon, and Dusk Visit VII
-are implemented. Visits VIII–XII remain planned; tuning remains provisional.** Xyh confirmed four successive groups of three levels: Dawn,
+Implementation specification, updated 2026-09-15. **Dawn, Noon, and Dusk
+(Visits I–IX) are implemented. Midnight (Visits X–XII) remains planned; tuning remains provisional.** Xyh confirmed four successive groups of three levels: Dawn,
 Noon, Dusk, Midnight. Each of their twelve lines introduces one level.
 Their [original draft](first12levels.md) remains unchanged.
 

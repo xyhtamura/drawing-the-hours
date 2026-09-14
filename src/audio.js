@@ -11,6 +11,9 @@ export class AudioManager {
     this.rustleNode = null;
     this.rustleGain = null;
     this.rustleFilter = null;
+    this.cicadaTimer = 0;
+    this.cicadaGain = null;
+    this.cicadaNodes = null;
   }
 
   ensureContext() {
@@ -34,8 +37,11 @@ export class AudioManager {
 
   toggleMute() {
     this.isMuted = !this.isMuted;
-    if (this.isMuted && this.rustleGain) {
-      this.rustleGain.gain.setValueAtTime(0, this.ctx.currentTime);
+    if (this.isMuted) {
+      if (this.rustleGain && this.ctx) {
+        this.rustleGain.gain.setValueAtTime(0, this.ctx.currentTime);
+      }
+      this.stopCicadas();
     }
     return this.isMuted;
   }
@@ -295,6 +301,114 @@ export class AudioManager {
       noise.start(t);
       noise.stop(t + dur + 0.05);
     } catch (_) {}
+  }
+
+  // --- Dusk Intermittent Cicada Ambient Layer (Visit VIII) ---
+  startCicadaVoice() {
+    if (this.isMuted) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    try {
+      this.stopCicadas();
+      const t = this.ctx.currentTime;
+      const dur = 5.2;
+
+      // Two high-frequency oscillators with slight detune and bandpass filter
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(5200, t);
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(6400, t);
+
+      // Tremolo LFO for rapid cicada stridulation rhythm (20 Hz)
+      const lfo = this.ctx.createOscillator();
+      lfo.type = 'sine';
+      lfo.frequency.setValueAtTime(20, t);
+      const lfoGain = this.ctx.createGain();
+      lfoGain.gain.setValueAtTime(0.4, t);
+
+      const amp = this.ctx.createGain();
+      amp.gain.setValueAtTime(0.6, t);
+      lfo.connect(amp.gain);
+
+      // Main envelope gain: swell in, hold gently, fade out into silence
+      const envGain = this.ctx.createGain();
+      envGain.gain.setValueAtTime(0.0001, t);
+      envGain.gain.linearRampToValueAtTime(0.016, t + 1.2);
+      envGain.gain.setValueAtTime(0.016, t + 3.8);
+      envGain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(5600, t);
+      filter.Q.setValueAtTime(3.5, t);
+
+      osc1.connect(amp);
+      osc2.connect(amp);
+      amp.connect(filter);
+      filter.connect(envGain);
+      envGain.connect(this.ctx.destination);
+
+      osc1.start(t);
+      osc2.start(t);
+      lfo.start(t);
+
+      osc1.stop(t + dur + 0.1);
+      osc2.stop(t + dur + 0.1);
+      lfo.stop(t + dur + 0.1);
+
+      this.cicadaGain = envGain;
+      this.cicadaNodes = [osc1, osc2, lfo, lfoGain, amp, filter, envGain];
+
+      setTimeout(() => {
+        if (this.cicadaGain === envGain) {
+          this.cicadaGain = null;
+          this.cicadaNodes = null;
+        }
+      }, (dur + 0.2) * 1000);
+    } catch (_) {}
+  }
+
+  stopCicadas() {
+    if (this.cicadaGain && this.ctx) {
+      try {
+        const t = this.ctx.currentTime;
+        this.cicadaGain.gain.cancelScheduledValues(t);
+        this.cicadaGain.gain.setValueAtTime(this.cicadaGain.gain.value, t);
+        this.cicadaGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+      } catch (_) {}
+    }
+    if (this.cicadaNodes) {
+      setTimeout(() => {
+        if (this.cicadaNodes) {
+          for (const node of this.cicadaNodes) {
+            try { node.disconnect(); } catch (_) {}
+          }
+          this.cicadaNodes = null;
+          this.cicadaGain = null;
+        }
+      }, 120);
+    }
+  }
+
+  updateCicadas(dt, active) {
+    if (!active || this.isMuted) {
+      if (this.cicadaGain) this.stopCicadas();
+      this.cicadaTimer = 0;
+      return;
+    }
+
+    const cycle = 12.0; // 5.2s cicada buzzing + 6.8s gap in the sound
+    if (this.cicadaTimer === 0) {
+      this.startCicadaVoice();
+    }
+    this.cicadaTimer += dt;
+    if (this.cicadaTimer >= cycle) {
+      this.cicadaTimer = 0.001;
+      this.startCicadaVoice();
+    }
   }
 }
 

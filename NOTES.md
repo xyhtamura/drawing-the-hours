@@ -10,9 +10,19 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Implement Dusk Visit VIII using the seed Nursery plan in [DUSK.md](DUSK.md); calibrate Visit VII figure-eights on a touch device.
+Implement Hour IV: Midnight (Visits X–XII) introducing fireflies and Trace mode; real-device gesture calibration remains open.
 
 ## Activity
+
+2026-09-15 — Antigravity — Implemented the remainder of Hour III: Dusk (Visits VIII and IX) in `src/campaign.js`, `src/game.js`, `src/audio.js`, `index.html`, `test/test_dusk.js`, and `test/test_mechanics.js`, bringing the Dusk chapter to completion per `DUSK.md`, `CAMPAIGN.md`, and Xyh's verbatim texts.
+- Completed Visit VIII (*The gaps in the sound*): verbatim story card ("I can hear the cicadas. And sometimes I can't."), Nursery Polarity (insects sheltered in one pocket, airborne seeds gathered in the other) + lacewing Counterpart Pair objectives, 95s dandelion clock.
+- Intermittent cicada ambient layer: synthesized high-frequency stridulation buzzing (5.2s swell/pulse/fade followed by 6.8s of silence) in Web Audio honoring Xyh's story card and `DUSK.md` §62. Stops cleanly on pause, mute, level restart, or completion.
+- Completed Visit IX (*Carrying something home*): verbatim story card ("Bringing home medicine today."), gesture-switching objectives (3 single loops and 2 figure-eights amid 8 fliers), 100s dandelion clock.
+- Safe-area flier containment: fliers in passage scene spawn inside `duskSafeArea` and steer softly away from safe area borders, preventing edge-clamping during flight.
+- Ready screen diagrams: added custom diagram illustrations in `src/game.js` for Visit VIII (`teachDusk02`, Nursery polarity with resting lacewing and dandelion seeds) and Visit IX (`teachDusk03`, gesture switching between single loop and figure-eight with perimeter snail note).
+- Progression & Playable IDs: added `'dusk-02'` and `'dusk-03'` to `PLAYABLE_LEVEL_IDS` in `src/campaign.js`, updated `#visit-modal` preview text in `index.html`, and verified campaign chaining (`noon-03` -> `dusk-01` -> `dusk-02` -> `dusk-03` -> locked Midnight).
+- Verification: both `test/test_dusk.js` and `test/test_mechanics.js` pass with full progression coverage; all ES modules validate cleanly with `node --check`.
+Hour IV: Midnight (Visits X–XII) and real-device gesture calibration remain next.
 
 2026-09-15 — Antigravity — Added the Seed & Trio loop recipe, replaced Noon 3's mixedEcho requirement with Seed & Trio, and invalidated kindred fliers divided across figure-eights per Xyh's feedback.
 - Seed & Trio combination: Enclosing 1 airborne seed + 3 distinct insect species in a single loop evaluates as `RECIPE_TYPES.SEED_AND_TRIO` (base score 360) in `src/recipes.js`. Loops with 1 seed + 3 fliers containing duplicate species fail with `MISMATCH`. Added dedicated pentatonic chord voicing in `src/audio.js` and Field Book entry in `index.html`.

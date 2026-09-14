@@ -1,6 +1,6 @@
 # Dusk chapter
 
-Chapter design, 2026-09-15. Visit VII is implemented; VIII and IX are planned.
+Chapter design, 2026-09-15. Visits VII, VIII, and IX are implemented.
 The [runtime records](src/campaign.js) and [campaign plan](campaign-plan.json)
 carry the same Dusk objectives and populations. Xyh's transition text stays
 verbatim in all three visits.
@@ -57,9 +57,10 @@ VII follows Noon VI in campaign progression. **Visits** also offers **Practice Â
 Dusk**, using the same timer and objectives without writing campaign victories.
 Its ready card diagrams the two different insects in separate pockets.
 The Field Book explains leaf rests and their exclusion from recipe contents.
-VIII and IX remain unavailable until their own implementation checks pass.
+VIII and IX are fully implemented and verified in the Dusk progression suite.
 
-The optional intermittent cicada layer for VIII stays deferred to that visit.
+The intermittent cicada layer for VIII is synthesized in Web Audio with
+natural buzzing pulses and gaps in sound, honoring Xyh's story card.
 No sound-dependent objective or timing cue is required. IX's medicine remains
 part of the narrator's supplied sentence, with no invented recipient or
 medicine mechanic.
@@ -68,8 +69,8 @@ medicine mechanic.
 
 Run `node test/test_mechanics.js` and `node test/test_dusk.js` from this folder.
 The Dusk suite checks rest and travel duration, large-step equivalence,
-portrait bounds, resizing, recipe acceptance, progression, and agreement
-between the Dusk plan and runtime.
+portrait bounds, resizing, recipe acceptance, progression across all three visits,
+and agreement between the Dusk plan and runtime.
 
 Serve the workspace root and open `test/dusk-browser.html` to exercise the real
 game in an iframe: pause, transition freeze, replacement quotas, and five
@@ -78,6 +79,6 @@ keeps a portrait ready card; `?view=playing` keeps the field visible.
 This harness controls target placement for gesture checks. It does not measure
 how often a player can find or draw a successful arrangement during live motion.
 
-Next: implement VIII's seeds and Nursery instruction, then check its supply
-and mixed objectives. VII's 100-second clock, initial spacing, and rest length
-remain first-pass tuning pending Xyh's touch-device playtest.
+Next: Hour IV: Midnight (Visits Xâ€“XII) introducing fireflies and Trace mode.
+Dusk timing, initial spacing, and rest length remain first-pass tuning pending
+Xyh's touch-device playtest.
