@@ -145,7 +145,7 @@ export const CAMPAIGN_LEVELS = [
       figure8: 4,
       nursery: 2,
     },
-    instruction: 'Make four figure-eights, including two with insects and seeds in separate pockets.',
+    instruction: 'Make four figure-eights, including two with 1 flier and 1 seed in separate pockets.',
     designNote: 'Introduce a two-second seed-moving gust after a visible warning.',
     gestures: ['enclose'],
     wind: {
@@ -247,7 +247,7 @@ export const CAMPAIGN_LEVELS = [
       nursery: 1,
       lacewingCounterpart: 1,
     },
-    instruction: 'Make five combinations, including a Nursery and a lacewing Counterpart Pair.',
+    instruction: 'Make five combinations, including a Nursery (1 flier and 1 seed) and a lacewing Counterpart Pair.',
     designNote: 'Add seeds to the resting-insect field; defer mixed Echoes pending gesture calibration.',
     gestures: ['enclose'],
     wind: null,
@@ -335,10 +335,10 @@ export const CAMPAIGN_LEVELS = [
       any: 6,
       pair: 1,
       seedWing: 1,
-      mixedEcho: 1,
+      figure8: 1,
       trace: 2,
     },
-    instruction: 'Make six combinations: include a pair, Seed & Wing, a matching mixed figure, and two traces.',
+    instruction: 'Make six combinations: include a pair, Seed & Wing, a figure-eight, and two traces.',
     designNote: 'Explicit Enclose/Trace switching.',
     gestures: ['enclose', 'trace'],
     wind: null,
@@ -369,9 +369,8 @@ export const CAMPAIGN_LEVELS = [
       figure8: 2,
       trace: 2,
       nursery: 1,
-      mixedEcho: 1,
     },
-    instruction: 'Make seven combinations, including two single loops, two figure-eights, two traces, a Nursery, and a matching mixed figure.',
+    instruction: 'Make seven combinations, including two single loops, two figure-eights, two traces, and a Nursery.',
     designNote: 'Synthesize enclosure, partition, and ordered contact.',
     gestures: ['enclose', 'trace'],
     wind: null,
@@ -531,9 +530,9 @@ export function deriveObjectiveTags(drawingResult, pockets) {
     const fliersB = pB.entities.filter(e => e.type === 'butterfly' || e.type === 'insect');
     const seedsB = pB.entities.filter(e => e.type === 'seed');
 
-    // nursery: one pocket fliers only (>=1), other seeds only (>=1)
-    if ((fliersA.length >= 1 && seedsA.length === 0 && seedsB.length >= 1 && fliersB.length === 0) ||
-        (fliersB.length >= 1 && seedsB.length === 0 && seedsA.length >= 1 && fliersA.length === 0)) {
+    // nursery: exactly 1 flier in one pocket, exactly 1 seed in the other
+    if ((fliersA.length === 1 && seedsA.length === 0 && seedsB.length === 1 && fliersB.length === 0) ||
+        (fliersB.length === 1 && seedsB.length === 0 && seedsA.length === 1 && fliersA.length === 0)) {
       tags.push('nursery');
     }
 

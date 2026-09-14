@@ -149,7 +149,7 @@
         "figure8": 4,
         "nursery": 2
       },
-      "instruction": "Make four figure-eights, including two with insects and seeds in separate pockets.",
+      "instruction": "Make four figure-eights, including two with 1 flier and 1 seed in separate pockets.",
       "designNote": "Introduce a two-second seed-moving gust after a visible warning; keep Nursery as the objective.",
       "gestures": [
         "enclose"
@@ -253,7 +253,7 @@
         "nursery": 1,
         "lacewingCounterpart": 1
       },
-      "instruction": "Make five combinations, including a Nursery and a lacewing Counterpart Pair.",
+      "instruction": "Make five combinations, including a Nursery (1 flier and 1 seed) and a lacewing Counterpart Pair.",
       "designNote": "Add seeds to the resting-insect field; defer mixed Echoes pending gesture calibration.",
       "gestures": [
         "enclose"
@@ -348,10 +348,10 @@
         "any": 6,
         "pair": 1,
         "seedWing": 1,
-        "mixedEcho": 1,
+        "figure8": 1,
         "trace": 2
       },
-      "instruction": "Make six combinations: include a pair, Seed & Wing, a matching mixed figure, and two traces.",
+      "instruction": "Make six combinations: include a pair, Seed & Wing, a figure-eight, and two traces.",
       "designNote": "Introduce an explicit Enclose/Trace selector; reuse the sequence learned in level 10.",
       "gestures": [
         "enclose",
@@ -387,10 +387,9 @@
         "single": 2,
         "figure8": 2,
         "trace": 2,
-        "nursery": 1,
-        "mixedEcho": 1
+        "nursery": 1
       },
-      "instruction": "Make seven combinations, including two single loops, two figure-eights, two traces, a Nursery, and a matching mixed figure.",
+      "instruction": "Make seven combinations, including two single loops, two figure-eights, two traces, and a Nursery.",
       "designNote": "Synthesize enclosure, partition, and ordered contact; no new rule or forced perfect run.",
       "gestures": [
         "enclose",

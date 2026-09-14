@@ -14,6 +14,13 @@ Implement Hour IV: Midnight (Visits X–XII) introducing fireflies and Trace mod
 
 ## Activity
 
+2026-09-15 — Antigravity — Constrained Nursery Polarity to exactly 1 flier and 1 seed, made Twin Echo and Cross-Meadow figure-eights strictly optional in campaign objectives per Xyh's feedback.
+- Nursery Polarity Refinement: In `src/recipes.js`, two-pocket drawings with a fliers-only and seeds-only partition must contain exactly 1 flier and 1 seed (base score 300). More than one of either flier or seed explicitly fails with `faultType: 'CROWDED_NURSERY'` and clear guidance. Updated `deriveObjectiveTags()` in `src/campaign.js` accordingly.
+- Ready Diagrams & Field Book: Updated `teachNursery` and `teachDusk02` illustrations in `src/game.js` to show exactly 1 flier and 1 seed; updated the Field Book entry in `index.html`.
+- Campaign Objectives Optionality: Ensured Twin Echo (`SYMMETRIC_CORRESPONDENCE` / `mixedEcho`) and Cross-Meadow (`CROSS_MEADOW_CORRESPONDENCE`) remain fully valid and rewarding high-score figures when drawn, but are not forced requirements in campaign levels. Replaced `mixedEcho: 1` in Midnight 2 (`midnight-02`) with a generic `figure8: 1` objective, and removed `mixedEcho: 1` from Midnight 3 (`midnight-03`) in both `src/campaign.js` and `campaign-plan.json`.
+- Verification: Extended `test/test_mechanics.js` and `test/test_dusk.js` to verify valid 1-flier + 1-seed Nursery evaluations, crowded disqualifications (1+2, 2+1, 2+2), and confirmed that no campaign level requires `mixedEcho` or `crossMeadow`. All test suites and syntax checks pass cleanly.
+Hour IV: Midnight (Visits X–XII) and real-device gesture calibration remain next.
+
 2026-09-15 — Antigravity — Unlocked all 9 playable levels (Dawn 1–3, Noon 1–3, Dusk 1–3) in the Meadow Visits selection UI and added playtesting save management hooks per user request.
 - Visit Selection Modal: Updated `renderVisitModal()` in `index.html` so that all currently implemented visits (`PLAYABLE_LEVEL_IDS`) are unlocked, clickable, and show status badges (`Current`, `Completed`, or `Unlocked`).
 - Testing Controls: Added a `🔓 Unlock All in Save` button in `#visit-modal` alongside the Return button.

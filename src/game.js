@@ -1296,12 +1296,11 @@ export class Game {
         ctx.bezierCurveTo(100, -65, 100, 65, 0, 0); ctx.stroke();
         ctx.save(); ctx.translate(-46, -5); ctx.scale(0.7, 0.7);
         drawLacewing(ctx, { lacePhase: 'rest', flapPhase: 0 }); ctx.restore();
-        ctx.save(); ctx.translate(46, -6); ctx.scale(0.75, 0.75);
+        ctx.save(); ctx.translate(46, -2); ctx.scale(0.85, 0.85);
         new DandelionSeed(0, 0).draw(ctx);
-        new DandelionSeed(18, 12).draw(ctx);
         ctx.restore();
         ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
-        ctx.fillText('Nursery Polarity: fliers in one lobe, airborne seeds in the other.', 0, 41);
+        ctx.fillText('Nursery Polarity: 1 flier in one lobe, 1 seed in the other.', 0, 41);
         ctx.fillText('Also make a lacewing Counterpart Pair; cicadas pause intermittently.', 0, 56);
         ctx.restore();
       } else if (teachDusk03) {
@@ -1340,20 +1339,18 @@ export class Game {
         ctx.beginPath(); ctx.moveTo(0, 0);
         ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
         ctx.bezierCurveTo(100, -65, 100, 65, 0, 0); ctx.stroke();
-        // Left lobe: 1 Brimstone + 1 Hoverfly
-        ctx.fillStyle = '#f1d152'; ctx.beginPath(); ctx.ellipse(-54, -6, 9, 13, -0.4, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#eab765'; ctx.beginPath(); ctx.ellipse(-40, 8, 6, 10, 0.3, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#5d493a'; for (const y of [4, 8, 12]) ctx.fillRect(-44, y, 8, 2);
-        // Right lobe: 2 Dandelion seeds
-        for (const [sx, sy] of [[40, -6], [54, 8]]) {
-          ctx.fillStyle = '#faf7ed'; ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.fill();
-          ctx.strokeStyle = '#8a7e6b'; ctx.lineWidth = 0.8;
-          ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + 7, sy + 9); ctx.stroke();
-          ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.stroke();
-          ctx.fillStyle = '#655543'; ctx.beginPath(); ctx.ellipse(sx + 7, sy + 9, 1.5, 3, 0.6, 0, Math.PI * 2); ctx.fill();
-        }
+        // Left lobe: 1 Brimstone
+        ctx.fillStyle = '#f1d152'; ctx.beginPath(); ctx.ellipse(-46, 0, 11, 15, -0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#5d493a'; ctx.lineWidth = 1; ctx.stroke();
+        // Right lobe: 1 Dandelion seed
+        const sx = 46, sy = 0;
+        ctx.fillStyle = '#faf7ed'; ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#8a7e6b'; ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + 7, sy + 9); ctx.stroke();
+        ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#655543'; ctx.beginPath(); ctx.ellipse(sx + 7, sy + 9, 1.5, 3, 0.6, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#5c4538'; ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('Insects in one lobe, seeds in the other (Nursery)', 0, 39);
+        ctx.fillText('Nursery Polarity: 1 flier in one lobe, 1 seed in the other', 0, 39);
         ctx.fillStyle = '#6e5a47'; ctx.font = 'italic 11px Mali, sans-serif';
         ctx.fillText('🍃 2-second rightward breeze gusts will drift seeds across the glass', 0, 54);
         ctx.restore();

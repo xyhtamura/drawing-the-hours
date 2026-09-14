@@ -288,28 +288,38 @@ export function evaluateDrawing(pocketsWithEntities, strokeLength, options = {})
       };
     }
 
-    // 2. Nursery Polarity: Butterflies in A, Seeds in B (or vice versa)
-    const isNursery = (sumA.butterflies.length >= 1 && sumA.seeds.length === 0 &&
-      sumB.seeds.length >= 1 && sumB.butterflies.length === 0) ||
-      (sumB.butterflies.length >= 1 && sumB.seeds.length === 0 &&
-      sumA.seeds.length >= 1 && sumA.butterflies.length === 0);
+    // 2. Nursery Polarity: Exactly 1 flier in one lobe, 1 seed in the other
+    const hasNurseryPartition = (sumA.butterflies.length > 0 && sumA.seeds.length === 0 &&
+      sumB.seeds.length > 0 && sumB.butterflies.length === 0) ||
+      (sumB.butterflies.length > 0 && sumB.seeds.length === 0 &&
+      sumA.seeds.length > 0 && sumA.butterflies.length === 0);
 
-    if (isNursery) {
+    if (hasNurseryPartition) {
       const bCount = sumA.butterflies.length + sumB.butterflies.length;
       const sCount = sumA.seeds.length + sumB.seeds.length;
-      const score = Math.round((250 + (bCount + sCount) * 50) * bandMultiplier);
-      return {
-        valid: true,
-        recipeType: RECIPE_TYPES.NURSERY_POLARITY,
-        title: 'Nursery Polarity',
-        detail: 'Wings sheltered on one side, wild seeds gathered on the other.',
-        baseScore: 250,
-        finalScore: score,
-        band: band.name,
-        bandMultiplier,
-        harmonizedEntities: allEntities,
-        pockets: pocketsWithEntities,
-      };
+      if (bCount === 1 && sCount === 1) {
+        const score = Math.round(300 * bandMultiplier);
+        return {
+          valid: true,
+          recipeType: RECIPE_TYPES.NURSERY_POLARITY,
+          title: 'Nursery Polarity',
+          detail: 'One sheltered wing on one side, one solitary seed on the other.',
+          baseScore: 300,
+          finalScore: score,
+          band: band.name,
+          bandMultiplier,
+          harmonizedEntities: allEntities,
+          pockets: pocketsWithEntities,
+        };
+      } else {
+        return {
+          valid: false,
+          status: 'CROWDED_NURSERY',
+          faultType: 'CROWDED_NURSERY',
+          message: 'Nursery Polarity requires exactly 1 flier and 1 seed — more than one of either disturbs the balance.',
+          pockets: pocketsWithEntities,
+        };
+      }
     }
 
     // 3. Cross-Meadow Correspondence: Kindred pair in A, Kindred pair in B

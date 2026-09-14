@@ -62,17 +62,26 @@ assert.deepEqual(dusk2.objectives, { any: 5, nursery: 1, lacewingCounterpart: 1 
 assert.equal(dusk2.durationSeconds, 95);
 assert.equal(campaign.getNextLevel().id, 'dusk-03');
 
-// Nursery in Dusk: 1 lacewing in A, 2 seeds in B
+// Nursery in Dusk: 1 lacewing in A, 1 seed in B
 const nurseryPockets = [
   { entities: [new Insect(0, 0, 'lacewing')], area: 4000, centroid: {x:0, y:0} },
-  { entities: [{ type: 'seed', kind: 'dandelion_seed', x: 100, y: 100 }, { type: 'seed', kind: 'dandelion_seed', x: 110, y: 100 }], area: 4000, centroid: {x:105, y:100} },
+  { entities: [{ type: 'seed', kind: 'dandelion_seed', x: 100, y: 100 }], area: 4000, centroid: {x:100, y:100} },
 ];
 const nurseryEval = evaluateDrawing(nurseryPockets, 800);
-assert.ok(nurseryEval.valid, 'Nursery with lacewing and seeds is valid');
+assert.ok(nurseryEval.valid, 'Nursery with lacewing and 1 seed is valid');
 const nurseryClock = new DandelionClock(95);
 campaign.processDrawing(nurseryEval, nurseryPockets, nurseryClock);
 assert.equal(campaign.objectiveProgress.nursery.current, 1);
 assert.equal(campaign.objectiveProgress.any.current, 1);
+
+// Disqualification test: >1 seed disqualifies
+const crowdedNursery = [
+  { entities: [new Insect(0, 0, 'lacewing')], area: 4000, centroid: {x:0, y:0} },
+  { entities: [{ type: 'seed', kind: 'dandelion_seed', x: 100, y: 100 }, { type: 'seed', kind: 'dandelion_seed', x: 110, y: 100 }], area: 4000, centroid: {x:105, y:100} },
+];
+const crowdedEval = evaluateDrawing(crowdedNursery, 800);
+assert.equal(crowdedEval.valid, false);
+assert.equal(crowdedEval.faultType, 'CROWDED_NURSERY');
 
 // Lacewing Counterpart: 1 lacewing in A, 1 hoverfly in B
 const cpPockets = [

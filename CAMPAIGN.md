@@ -230,14 +230,14 @@ Xyh's confirmed order. No extra narrative lines are required.
 | 2 | Dawn — The curbside patch | Four combinations, including two three-kind trios. | Same patch, third flier silhouette introduced; no new hazard. |
 | 3 | Dawn — Something in the air | Five combinations, including two Seed & Wing loops. | Seed drift beside a drain-edge plant and the first perimeter snail. |
 | 4 | Noon — Lunch in the atrium | Four combinations, including three Counterpart Pairs. | Planting beside pale paving; teach one different flier in each lobe. |
-| 5 | Noon — For now | Four figure-eights, including two Nurseries; introduce warned gusts. | Choose when to close around drifting seeds. |
+| 5 | Noon — For now | Four figure-eights, including two Nurseries (1 flier + 1 seed); introduce warned gusts. | Choose when to close around drifting seeds. |
 | 6 | Noon — The glass and the leaves | Four combinations, including two Seed & Trio loops, with breeze. | Glass seams frame single-loop groupings. |
 | 7 | Dusk — The way through | Five combinations, including two Counterpart Pairs with a lacewing. | Leaf anchors offer visible resting intervals. |
-| 8 | Dusk — The gaps in the sound | Five combinations, including one Nursery and one lacewing Counterpart Pair. | Same passage; a sound layer may intermittently fall quiet without changing the rules. |
+| 8 | Dusk — The gaps in the sound | Five combinations, including one Nursery (1 flier + 1 seed) and one lacewing Counterpart Pair. | Same passage; a sound layer may intermittently fall quiet without changing the rules. |
 | 9 | Dusk — Carrying something home | Six combinations, including three single loops and two figure-eights. | Slightly denser field; gesture switching, with no medicine gameplay metaphor. |
 | 10 | Midnight — The window corner | Three firefly–lacewing–firefly traces. | Sparse cast teaches open tracing. |
-| 11 | Midnight — Figures | Six combinations including a pair, Seed & Wing, mixed Echo, and two traces. | Explicit Enclose/Trace switching. |
-| 12 | Midnight — Tomorrow keeps happening | Seven combinations including two singles, two figure-eights, two traces, a Nursery, and a mixed Echo. | Flexible synthesis with no new rule. |
+| 11 | Midnight — Figures | Six combinations including a pair, Seed & Wing, a figure-eight, and two traces. | Explicit Enclose/Trace switching. |
+| 12 | Midnight — Tomorrow keeps happening | Seven combinations including two singles, two figure-eights, two traces, and a Nursery. | Flexible synthesis with no new rule. |
 
 The midnight scene must not hide valid targets or hazards. Lamplight is a
 palette and framing treatment in these twelve levels. The selected

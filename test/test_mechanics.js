@@ -202,22 +202,51 @@ console.log('--- Running Drawing the Hours Test Suite ---');
   assert.strictEqual(evalTwoPockets.recipeType, RECIPE_TYPES.CROSS_MEADOW_CORRESPONDENCE);
   assert.strictEqual(evalTwoPockets.finalScore, Math.round(550 * 1.5));
 
-  // Two-Pocket: Nursery Polarity
+  // Two-Pocket: Nursery Polarity (1 flier in A, 1 seed in B)
   const nurseryLobeA = [
     { type: 'butterfly', kind: 'roseate', x: 100, y: 100 },
-    { type: 'butterfly', kind: 'azure', x: 110, y: 100 },
   ];
   const nurseryLobeB = [
     { type: 'seed', kind: 'dandelion_seed', x: 300, y: 100 },
-    { type: 'seed', kind: 'dandelion_seed', x: 310, y: 100 },
   ];
   const nurseryPockets = [
-    { id: 1, polygon: [], area: 4000, centroid: { x: 105, y: 100 }, entities: nurseryLobeA },
-    { id: 2, polygon: [], area: 4000, centroid: { x: 305, y: 100 }, entities: nurseryLobeB },
+    { id: 1, polygon: [], area: 4000, centroid: { x: 100, y: 100 }, entities: nurseryLobeA },
+    { id: 2, polygon: [], area: 4000, centroid: { x: 300, y: 100 }, entities: nurseryLobeB },
   ];
   const evalNursery = evaluateDrawing(nurseryPockets, 800);
   assert.strictEqual(evalNursery.valid, true);
   assert.strictEqual(evalNursery.recipeType, RECIPE_TYPES.NURSERY_POLARITY);
+  assert.strictEqual(evalNursery.finalScore, Math.round(300 * 1.25));
+
+  // Nursery Polarity: More than 1 flier or seed disqualifies with CROWDED_NURSERY
+  const crowdedNurseryPockets = [
+    { id: 1, polygon: [], area: 4000, centroid: { x: 105, y: 100 }, entities: [
+      { type: 'butterfly', kind: 'roseate', x: 100, y: 100 },
+      { type: 'butterfly', kind: 'azure', x: 110, y: 100 },
+    ] },
+    { id: 2, polygon: [], area: 4000, centroid: { x: 305, y: 100 }, entities: [
+      { type: 'seed', kind: 'dandelion_seed', x: 300, y: 100 },
+      { type: 'seed', kind: 'dandelion_seed', x: 310, y: 100 },
+    ] },
+  ];
+  const evalCrowded = evaluateDrawing(crowdedNurseryPockets, 800);
+  assert.strictEqual(evalCrowded.valid, false);
+  assert.strictEqual(evalCrowded.faultType, 'CROWDED_NURSERY');
+
+  // Nursery Polarity: 1 flier + 2 seeds or 2 fliers + 1 seed also disqualify
+  const crowdedSeeds = [
+    { id: 1, polygon: [], area: 4000, centroid: { x: 100, y: 100 }, entities: [{ type: 'butterfly', kind: 'roseate', x: 100, y: 100 }] },
+    { id: 2, polygon: [], area: 4000, centroid: { x: 300, y: 100 }, entities: [{ type: 'seed', kind: 'dandelion_seed', x: 300, y: 100 }, { type: 'seed', kind: 'dandelion_seed', x: 310, y: 100 }] },
+  ];
+  assert.strictEqual(evaluateDrawing(crowdedSeeds, 800).valid, false);
+  assert.strictEqual(evaluateDrawing(crowdedSeeds, 800).faultType, 'CROWDED_NURSERY');
+
+  const crowdedFliers = [
+    { id: 1, polygon: [], area: 4000, centroid: { x: 100, y: 100 }, entities: [{ type: 'butterfly', kind: 'roseate', x: 100, y: 100 }, { type: 'butterfly', kind: 'azure', x: 110, y: 100 }] },
+    { id: 2, polygon: [], area: 4000, centroid: { x: 300, y: 100 }, entities: [{ type: 'seed', kind: 'dandelion_seed', x: 300, y: 100 }] },
+  ];
+  assert.strictEqual(evaluateDrawing(crowdedFliers, 800).valid, false);
+  assert.strictEqual(evaluateDrawing(crowdedFliers, 800).faultType, 'CROWDED_NURSERY');
 
   // Two-Pocket: Symmetric Correspondence (Twin Echoes Experiment)
   // Pocket A: 1 Damselfly + 1 Hawkmoth (would fail alone)
@@ -503,9 +532,12 @@ console.log('--- Running Drawing the Hours Test Suite ---');
     assert.ok(lvl.durationSeconds >= 60, `Level ${lvl.id} has adequate duration`);
     assert.ok(Object.keys(lvl.objectives).length > 0, `Level ${lvl.id} has objectives`);
     assert.ok(lvl.population, `Level ${lvl.id} has population`);
+    // Verify that neither mixedEcho nor crossMeadow is forced as a required objective
+    assert.strictEqual(lvl.objectives.mixedEcho, undefined, `Level ${lvl.id} does not require mixedEcho`);
+    assert.strictEqual(lvl.objectives.crossMeadow, undefined, `Level ${lvl.id} does not require crossMeadow`);
   }
 
-  console.log('✔ Campaign registry and Hour I verbatim texts verified.');
+  console.log('✔ Campaign registry, verbatim texts, and optionality of complex figure-eights verified.');
 }
 
 console.log('--- All tests passed! ---');
@@ -620,17 +652,17 @@ console.log('--- All tests passed! ---');
   const { Insect, DandelionSeed } = await import('../src/entities.js');
   const { evaluateDrawing } = await import('../src/recipes.js');
 
-  // Nursery Polarity: Insects in Lobe A, Seeds in Lobe B
+  // Nursery Polarity: Exactly 1 insect in Lobe A, 1 Seed in Lobe B
   const nurseryPockets = [
     {
       id: 1,
       polygon: [],
-      entities: [new Insect(100, 100, 'brimstone'), new Insect(120, 100, 'hoverfly')],
+      entities: [new Insect(100, 100, 'brimstone')],
     },
     {
       id: 2,
       polygon: [],
-      entities: [new DandelionSeed(300, 300), new DandelionSeed(320, 300)],
+      entities: [new DandelionSeed(300, 300)],
     },
   ];
   const evalNursery = evaluateDrawing(nurseryPockets, 800);
