@@ -14,6 +14,7 @@ import { Butterfly, DandelionSeed, Snail, SPECIES_CONFIG } from './entities.js';
 import { evaluateDrawing } from './recipes.js';
 import { DandelionClock } from './clock.js';
 import { audio } from './audio.js';
+import { createDawnArt, wrapText } from './dawn-art.js';
 import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } from './campaign.js';
 
 function drawRoundedRect(ctx, x, y, w, h, r) {
@@ -586,42 +587,16 @@ export class Game {
   }
 
   drawMeadowFloor(ctx) {
-    if (this.currentLevel && this.currentLevel.scene === 'curb') {
-      // Soft morning paper base with cool dawn tint
-      const grad = ctx.createLinearGradient(0, 0, 0, this.height);
-      grad.addColorStop(0, '#f7f5ed');
-      grad.addColorStop(1, '#ece7da');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, this.width, this.height);
-
-      ctx.save();
-      // Stone curb lip across the top
-      ctx.fillStyle = 'rgba(215, 208, 195, 0.65)';
-      ctx.fillRect(0, 0, this.width, 22);
-
-      // Pencil curb seam line
-      ctx.strokeStyle = '#9e9585';
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.moveTo(0, 22);
-      ctx.lineTo(this.width, 22);
-      ctx.stroke();
-
-      // Curb drop shadow
-      const shadowGrad = ctx.createLinearGradient(0, 22, 0, 34);
-      shadowGrad.addColorStop(0, 'rgba(80, 70, 60, 0.12)');
-      shadowGrad.addColorStop(1, 'rgba(80, 70, 60, 0)');
-      ctx.fillStyle = shadowGrad;
-      ctx.fillRect(0, 22, this.width, 12);
-
-      // Bus-stop sign base marker in upper-left corner
-      ctx.strokeStyle = 'rgba(120, 110, 100, 0.35)';
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.arc(38, 11, 6, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    } else {
+    if (this.currentLevel?.scene === 'curb') {
+      const key = `${this.width}:${this.height}:${window.devicePixelRatio || 1}`;
+      if (this.dawnArtKey !== key) {
+        this.dawnArt = createDawnArt(this.width, this.height, window.devicePixelRatio || 1);
+        this.dawnArtKey = key;
+      }
+      ctx.drawImage(this.dawnArt, 0, 0, this.width, this.height);
+      return;
+    }
+    {
       // Warm sunlit cream paper base
       const grad = ctx.createLinearGradient(0, 0, 0, this.height);
       grad.addColorStop(0, '#f9f6ea');
@@ -824,7 +799,7 @@ export class Game {
       ctx.fillText(objText, this.width - 16, 26);
 
       ctx.fillStyle = '#7a6c57';
-      ctx.font = 'italic 10.5px Georgia, serif';
+      ctx.font = 'italic 10.5px Mali, sans-serif';
       ctx.fillText(`${lvlTitle} • ${this.score} pts`, this.width - 16, 40);
 
       // Tier 2: Centered Stroke Length Band Meter (compact, below top row)
@@ -904,7 +879,7 @@ export class Game {
       ctx.fillText(objText, this.width - 24, 34);
 
       ctx.fillStyle = '#7a6c57';
-      ctx.font = 'italic 11px Georgia, serif';
+      ctx.font = 'italic 11px Mali, sans-serif';
       ctx.fillText(lvlTitle, this.width - 24, 49);
 
       ctx.fillStyle = '#8a7f70';
@@ -968,7 +943,7 @@ export class Game {
 
       // Title
       ctx.fillStyle = '#2c251d';
-      ctx.font = isNarrow ? 'bold 19px Georgia, serif' : 'bold 22px Georgia, serif';
+      ctx.font = isNarrow ? '600 23px Mali, sans-serif' : '600 27px Mali, sans-serif';
       ctx.fillText(lvl.title, 0, -boxH / 2 + 66);
 
       // Decorative divider
@@ -980,9 +955,11 @@ export class Game {
       ctx.stroke();
 
       // Verbatim transition text
-      ctx.font = isNarrow ? 'italic 13.5px Georgia, serif' : 'italic 15.5px Georgia, serif';
+      ctx.font = isNarrow ? '400 18px Mali, sans-serif' : '400 21px Mali, sans-serif';
       ctx.fillStyle = '#3a3227';
-      ctx.fillText(`“${lvl.transitionText}”`, 0, 10);
+      const lines = wrapText(ctx, lvl.transitionText, boxW - 64);
+      const lineHeight = isNarrow ? 27 : 30;
+      lines.forEach((line, i) => ctx.fillText(line, 0, 7 + (i - (lines.length - 1) / 2) * lineHeight));
 
       // Prompt
       ctx.fillStyle = '#5c4538';
@@ -998,26 +975,27 @@ export class Game {
 
       // Header
       ctx.fillStyle = '#3a3429';
-      ctx.font = isNarrow ? 'bold 18px Georgia, serif' : 'bold 22px Georgia, serif';
+      ctx.font = isNarrow ? '600 22px Mali, sans-serif' : '600 27px Mali, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(lvl.title, 0, -boxH / 2 + 36);
 
       // Subtitle
-      ctx.font = isNarrow ? 'italic 12px Georgia, serif' : 'italic 13px Georgia, serif';
+      ctx.font = isNarrow ? 'italic 12px Mali, sans-serif' : 'italic 13px Mali, sans-serif';
       ctx.fillStyle = '#7a6f5f';
       ctx.fillText(lvl.hourLabel || 'Dawn · Visit', 0, -boxH / 2 + 58);
 
       // Instruction
       ctx.font = isNarrow ? '12px system-ui, sans-serif' : '13px system-ui, sans-serif';
       ctx.fillStyle = '#4c4234';
-      ctx.fillText(lvl.instruction, 0, -boxH / 2 + 90);
+      const instructionLines = wrapText(ctx, lvl.instruction, boxW - 48);
+      instructionLines.forEach((line, i) => ctx.fillText(line, 0, -boxH / 2 + 90 + i * 17));
 
       // Objectives box
       ctx.textAlign = 'left';
       ctx.font = isNarrow ? '600 11.5px system-ui, sans-serif' : '600 12.5px system-ui, sans-serif';
       ctx.fillStyle = '#2c251d';
       const padX = -boxW / 2 + (isNarrow ? 22 : 36);
-      let startY = -boxH / 2 + 128;
+      let startY = -boxH / 2 + 128 + (instructionLines.length - 1) * 17;
 
       ctx.fillText('VISIT REQUIREMENTS:', padX, startY);
       startY += 20;
@@ -1030,7 +1008,7 @@ export class Game {
       }
 
       // Duration note
-      ctx.font = 'italic 11.5px Georgia, serif';
+      ctx.font = 'italic 11.5px Mali, sans-serif';
       ctx.fillStyle = '#8a7e6f';
       ctx.fillText(`Dandelion Clock: ${lvl.durationSeconds} seconds`, padX, startY + 10);
 
@@ -1048,11 +1026,11 @@ export class Game {
     this.drawModalBox(ctx, 480, 280, (boxW, boxH) => {
       const isNarrow = boxW < 440;
       ctx.fillStyle = '#2b5028';
-      ctx.font = isNarrow ? 'bold 18px Georgia, serif' : 'bold 22px Georgia, serif';
+      ctx.font = isNarrow ? '600 22px Mali, sans-serif' : '600 27px Mali, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Visit Complete', 0, -boxH / 2 + 38);
 
-      ctx.font = isNarrow ? 'italic 12px Georgia, serif' : 'italic 14px Georgia, serif';
+      ctx.font = isNarrow ? 'italic 12px Mali, sans-serif' : 'italic 14px Mali, sans-serif';
       ctx.fillStyle = '#5a7857';
       ctx.fillText(`${lvl.title} harmonized peacefully.`, 0, -boxH / 2 + 62);
 
@@ -1090,11 +1068,11 @@ export class Game {
     this.drawModalBox(ctx, 450, 260, (boxW, boxH) => {
       const isNarrow = boxW < 400;
       ctx.fillStyle = '#3a3429';
-      ctx.font = isNarrow ? 'bold 18px Georgia, serif' : 'bold 20px Georgia, serif';
+      ctx.font = isNarrow ? '600 22px Mali, sans-serif' : 'bold 20px Mali, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Quiet Interval — Paused', 0, -boxH / 2 + 38);
 
-      ctx.font = isNarrow ? 'italic 12px Georgia, serif' : 'italic 13px Georgia, serif';
+      ctx.font = isNarrow ? 'italic 12px Mali, sans-serif' : 'italic 13px Mali, sans-serif';
       ctx.fillStyle = '#7a6f5f';
       ctx.fillText(lvl.title, 0, -boxH / 2 + 58);
 
@@ -1119,11 +1097,11 @@ export class Game {
     this.drawModalBox(ctx, 450, 260, (boxW, boxH) => {
       const isNarrow = boxW < 440;
       ctx.fillStyle = '#6e3535';
-      ctx.font = isNarrow ? 'bold 18px Georgia, serif' : 'bold 22px Georgia, serif';
+      ctx.font = isNarrow ? '600 22px Mali, sans-serif' : '600 27px Mali, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('The Hour Has Passed', 0, -boxH / 2 + 38);
 
-      ctx.font = isNarrow ? 'italic 12px Georgia, serif' : 'italic 14px Georgia, serif';
+      ctx.font = isNarrow ? 'italic 12px Mali, sans-serif' : 'italic 14px Mali, sans-serif';
       ctx.fillStyle = '#8f5c5c';
       ctx.fillText('The dandelion seeds took flight into the morning breeze.', 0, -boxH / 2 + 60);
 
@@ -1144,7 +1122,7 @@ export class Game {
   drawModalBox(ctx, w, h, contentFn) {
     ctx.save();
     // Backdrop dim
-    ctx.fillStyle = 'rgba(45, 40, 32, 0.42)';
+    ctx.fillStyle = 'rgba(83, 66, 73, 0.22)';
     ctx.fillRect(0, 0, this.width, this.height);
 
     const cx = this.width / 2;

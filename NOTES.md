@@ -14,6 +14,30 @@ Calibrate Dawn levels 1–3 on real touch devices, then implement Hour II: Noon 
 
 ## Activity
 
+2026-09-14 — Codex — Refined Dawn's baseline visual treatment at Xyh's
+request: locally hosted Mali Regular/SemiBold, rose notebook controls, warmer
+paper gradients, deterministic fiber texture, paving seams, boundary grasses,
+pink flowers, and a bus-stop marker. `src/dawn-art.js` caches the static
+scene at up to 2x resolution and rebuilds only on size/pixel-ratio changes.
+Added `ASSETS.md` and the font's full OFL license. Canvas initialization waits
+for local font load attempts so text measurement uses the intended face.
+
+Wrapped narrative and ready-screen instructions to fit their cards while
+preserving Xyh's words. Adjusted automatic portrait layout so the larger
+controls, playfield, and footer fit together; added visible keyboard focus
+and reduced-motion button treatment. Removed obsolete study wording from
+the header and clarified the gesture hint. No recipe, speed, quota, or timer
+balance changes were made.
+
+Verified in the live browser: portrait transition and ready cards, new font
+appearance, field rendering, an open drag's feedback, and pause/resume. The
+existing mechanics/campaign suite and module syntax checks pass; a narrow
+width wrapping check preserved all three Dawn narrative strings. These are
+not a complete manual Dawn run, a real-touch calibration, or a frame-time
+benchmark. The cached scene's performance benefit is structural, not measured.
+The tab is left paused for Xyh. Tablet calibration remains next; folder rename
+and Noon are still outside this pass.
+
 2026-09-14 — Antigravity — Implemented the 12-visit campaign architecture and fully delivered Hour I: Dawn (Visits 1–3) in `src/campaign.js`, `src/entities.js`, `src/game.js`, `index.html`, and `style.css` per `CAMPAIGN.md` and Xyh's verbatim narrative lines in `first12levels.md`.
 - Implemented `CampaignManager` and `CampaignSaveManager` with `localStorage['dth_campaign_save_v1']`, tracking active objectives, unlocked visits, completed IDs, and best scores.
 - Authored Dawn visits with verbatim transition cards that stay until explicitly dismissed: Dawn 1 (*Before the bus*), Dawn 2 (*The curbside patch*), Dawn 3 (*Something in the air*). Retrying a visit skips directly to the Ready screen to respect narrative pacing.

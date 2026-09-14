@@ -3,14 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Drawing the Hours — Morning Verge</title>
+  <title>Drawing the Hours — Dawn</title>
+  <link rel="preload" href="assets/fonts/Mali-Regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="assets/fonts/Mali-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="assets/fonts/fonts.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
     <div class="brand">
       <h1>Drawing the Hours</h1>
-      <div class="sub" id="header-sub">A Meadow Gesture Study &mdash; Visit I: Morning Verge</div>
+      <div class="sub" id="header-sub">Dawn · Before the bus</div>
     </div>
     <div class="controls">
       <button id="btn-visit" title="Garden Visits &amp; Hours (W)">
@@ -39,7 +42,7 @@
   </main>
 
   <footer>
-    <div>Draw cord with mouse or touch. Hold or cross to separate pockets.</div>
+    <div>Draw around insects. Cross your line to make two pockets.</div>
     <div>Keyboard: [Space] Pause / Advance &bull; [W] Visits &bull; [V] View &bull; [M] Sound &bull; [H] Field Book &bull; [R] Restart</div>
   </footer>
 
@@ -186,6 +189,8 @@
     import { CAMPAIGN_LEVELS, PRACTICE_LEVELS } from './src/campaign.js';
 
     const canvas = document.getElementById('game-canvas');
+    // Finish local font loading before measuring canvas text. Failure uses fallbacks.
+    await Promise.allSettled([document.fonts.load('400 18px Mali'), document.fonts.load('600 22px Mali')]);
     const game = new Game(canvas);
     window.game = game; // handle for playtesting from the console
 
@@ -278,7 +283,7 @@
         }
       }
       if (headerSub && level) {
-        headerSub.innerHTML = `A Meadow Gesture Study &mdash; ${level.hourLabel || 'Dawn'}: ${level.title}`;
+        headerSub.textContent = `${level.hourLabel || 'Dawn'}: ${level.title}`;
       }
     };
 
@@ -506,4 +511,3 @@
   </script>
 </body>
 </html>
-
