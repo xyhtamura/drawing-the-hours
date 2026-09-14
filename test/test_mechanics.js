@@ -432,23 +432,122 @@ console.log('--- Running Drawing the Hours Test Suite ---');
 
 console.log('--- All tests passed! ---');
 
-// Noon build boundary and practice isolation.
+// Noon complete chapter progression, objectives, and practice isolation.
 {
- const campaign = new CampaignManager();
- campaign.setLevelById('dawn-03');
- assert.strictEqual(campaign.getNextLevel().id, 'noon-01');
- const noon = campaign.setLevelById('noon-01');
- assert.strictEqual(noon.transitionText, 'Today, for lunch, I bought myself a sandwich.');
- assert.deepStrictEqual(noon.objectives, { any: 4, counterpartPair: 3 });
- assert.strictEqual(campaign.getNextLevel(), null);
- campaign.setLevelById('noon-02');
- assert.strictEqual(campaign.currentLevel.id, 'noon-01');
- const before = JSON.stringify(campaign.saveState);
- campaign.setLevelById('practice-noon');
- campaign.recordVictory(500);
- assert.strictEqual(JSON.stringify(campaign.saveState), before);
- assert.strictEqual(campaign.getNextLevel(), null);
- console.log('✔ Noon entry, text, build boundary, and practice isolation verified.');
+  const campaign = new CampaignManager();
+  campaign.setLevelById('dawn-03');
+  assert.strictEqual(campaign.getNextLevel().id, 'noon-01');
+
+  // Noon 1 (Visit IV)
+  const noon1 = campaign.setLevelById('noon-01');
+  assert.strictEqual(noon1.transitionText, 'Today, for lunch, I bought myself a sandwich.');
+  assert.deepStrictEqual(noon1.objectives, { any: 4, counterpartPair: 3 });
+  assert.strictEqual(campaign.getNextLevel().id, 'noon-02');
+
+  // Noon 2 (Visit V)
+  const noon2 = campaign.setLevelById('noon-02');
+  assert.strictEqual(noon2.transitionText, "I don't know how much longer my job will exist.");
+  assert.deepStrictEqual(noon2.objectives, { figure8: 4, nursery: 2 });
+  assert.strictEqual(noon2.durationSeconds, 110);
+  assert.strictEqual(noon2.wind.periodSeconds, 12);
+  assert.strictEqual(noon2.wind.warningSeconds, 2);
+  assert.strictEqual(noon2.wind.gustSeconds, 2);
+  assert.strictEqual(noon2.wind.seedSpeedPlayWidthsPerSecond, 0.08);
+  assert.strictEqual(campaign.getNextLevel().id, 'noon-03');
+
+  // Noon 3 (Visit VI)
+  const noon3 = campaign.setLevelById('noon-03');
+  assert.strictEqual(noon3.transitionText, 'This atrium makes me feel calmer.');
+  assert.deepStrictEqual(noon3.objectives, { figure8: 4, mixedEcho: 2 });
+  assert.strictEqual(noon3.durationSeconds, 100);
+  assert.strictEqual(noon3.wind.periodSeconds, 12);
+  assert.strictEqual(campaign.getNextLevel(), null, 'Dusk remains locked pending next chapter');
+
+  // Practice isolation
+  const before = JSON.stringify(campaign.saveState);
+  campaign.setLevelById('practice-noon');
+  campaign.recordVictory(500);
+  assert.strictEqual(JSON.stringify(campaign.saveState), before);
+  assert.strictEqual(campaign.getNextLevel(), null);
+  console.log('✔ Complete Noon chapter progression, verbatim texts, and practice isolation verified.');
+}
+
+// Atrium wind mechanics and seed acceleration
+{
+  const { DandelionSeed, Insect } = await import('../src/entities.js');
+  const bounds = { width: 1000, height: 600 };
+  const seed = new DandelionSeed(200, 300);
+  seed.vx = 0.5; // default vx * 60 = 30 px/s
+
+  // Calm condition: windVx = 0
+  const xBefore = seed.x;
+  seed.update(1.0, bounds, 0);
+  const calmDist = seed.x - xBefore;
+  assert.ok(Math.abs(calmDist - 30) < 0.001, `Expected ~30px drift, got ${calmDist}`);
+
+  // Gust condition: windVx = 0.08 * 1000 = 80 px/s
+  const gustVx = 0.08 * bounds.width;
+  const xBeforeGust = seed.x;
+  seed.update(1.0, bounds, gustVx);
+  const gustDist = seed.x - xBeforeGust;
+  assert.ok(Math.abs(gustDist - 110) < 0.001, `Expected ~110px displacement during gust, got ${gustDist}`);
+
+  // Flier unaffected by wind
+  const fly = new Insect(200, 200, 'hoverfly');
+  fly.hoverRemaining = 5.0; // in hold phase
+  fly.update(1.0, bounds, gustVx);
+  assert.deepStrictEqual([fly.x, fly.y], [200, 200], 'Insects must not be affected by wind force');
+
+  console.log('✔ Atrium wind acceleration on seeds and flier immunity verified.');
+}
+
+// Nursery Polarity and Mixed Echo objective derivation
+{
+  const { Insect, DandelionSeed } = await import('../src/entities.js');
+  const { evaluateDrawing } = await import('../src/recipes.js');
+
+  // Nursery Polarity: Insects in Lobe A, Seeds in Lobe B
+  const nurseryPockets = [
+    {
+      id: 1,
+      polygon: [],
+      entities: [new Insect(100, 100, 'brimstone'), new Insect(120, 100, 'hoverfly')],
+    },
+    {
+      id: 2,
+      polygon: [],
+      entities: [new DandelionSeed(300, 300), new DandelionSeed(320, 300)],
+    },
+  ];
+  const evalNursery = evaluateDrawing(nurseryPockets, 800);
+  assert.strictEqual(evalNursery.valid, true);
+  assert.strictEqual(evalNursery.recipeType, 'NURSERY_POLARITY');
+  const nurseryTags = deriveObjectiveTags(evalNursery, nurseryPockets);
+  assert.ok(nurseryTags.includes('figure8'));
+  assert.ok(nurseryTags.includes('nursery'));
+
+  // Mixed Echo: Symmetrical mixed composition across lobes
+  // Lobe A: 1 Brimstone + 1 Hoverfly, Lobe B: 1 Brimstone + 1 Hoverfly
+  const echoPockets = [
+    {
+      id: 1,
+      polygon: [],
+      entities: [new Insect(100, 100, 'brimstone'), new Insect(120, 100, 'hoverfly')],
+    },
+    {
+      id: 2,
+      polygon: [],
+      entities: [new Insect(300, 300, 'brimstone'), new Insect(320, 300, 'hoverfly')],
+    },
+  ];
+  const evalEcho = evaluateDrawing(echoPockets, 800);
+  assert.strictEqual(evalEcho.valid, true);
+  assert.strictEqual(evalEcho.recipeType, 'SYMMETRIC_CORRESPONDENCE');
+  const echoTags = deriveObjectiveTags(evalEcho, echoPockets);
+  assert.ok(echoTags.includes('figure8'));
+  assert.ok(echoTags.includes('mixedEcho'));
+
+  console.log('✔ Nursery Polarity and Mixed Echo evaluations and tags verified.');
 }
 
 // Hoverfly pauses, warns by turning, and travels a bounded short shift.

@@ -82,6 +82,12 @@ export class Game {
     // Background paper decor
     this.decorations = [];
 
+    // Atrium Wind Mechanics (Noon Visits V-VI)
+    this.windTimer = 0;
+    this.windPhase = 'calm'; // 'calm' | 'warning' | 'gust'
+    this.prevWindPhase = 'calm';
+    this.windStreaks = [];
+
     this.initCanvas();
     this.initDecorations();
     this.initLevel();
@@ -161,6 +167,12 @@ export class Game {
     this.harmoniesCount = 0;
     this.victoryDelay = 0;
     this.clock.reset(this.currentLevel.durationSeconds || 60);
+
+    // Reset wind state
+    this.windTimer = 0;
+    this.windPhase = 'calm';
+    this.prevWindPhase = 'calm';
+    this.windStreaks = [];
 
     const mScale = this.currentLevel.motionScale || 1.0;
     const pop = this.currentLevel.population || {};
@@ -517,10 +529,49 @@ export class Game {
         this.state = 'GAMEOVER';
       }
 
+      // Atrium Wind Mechanics (Noon Visits V-VI)
+      if (this.currentLevel?.wind) {
+        const wind = this.currentLevel.wind;
+        const period = wind.periodSeconds || 12;
+        const warnSec = wind.warningSeconds || 2;
+        const gustSec = wind.gustSeconds || 2;
+        const calmSec = Math.max(0, period - warnSec - gustSec);
+
+        this.windTimer = (this.windTimer + dt) % period;
+
+        let phase = 'calm';
+        if (this.windTimer >= calmSec + warnSec) {
+          phase = 'gust';
+        } else if (this.windTimer >= calmSec) {
+          phase = 'warning';
+        }
+
+        if (phase !== this.windPhase) {
+          if (phase === 'warning') {
+            audio.playWindWarning();
+          } else if (phase === 'gust') {
+            audio.playWindGust();
+            this.spawnWindStreaks();
+          }
+          this.prevWindPhase = this.windPhase;
+          this.windPhase = phase;
+        }
+
+        this.updateWindStreaks(dt);
+      } else {
+        this.windPhase = 'calm';
+        this.windTimer = 0;
+        this.windStreaks = [];
+      }
+
       const bounds = { width: this.width, height: this.height };
+      const windVx = (this.windPhase === 'gust' && this.currentLevel?.wind)
+        ? (this.currentLevel.wind.seedSpeedPlayWidthsPerSecond || 0.08) * this.width
+        : 0;
+
       for (let i = this.entities.length - 1; i >= 0; i--) {
         const ent = this.entities[i];
-        ent.update(dt, bounds);
+        ent.update(dt, bounds, ent.type === 'seed' ? windVx : 0);
         if (ent.alpha <= 0.01 && (ent.state === 'departing' || ent.state === 'harmonizing')) {
           this.entities.splice(i, 1);
         }
@@ -553,6 +604,95 @@ export class Game {
     }
   }
 
+  spawnWindStreaks() {
+    this.windStreaks = [];
+    const count = 7;
+    for (let i = 0; i < count; i++) {
+      this.windStreaks.push({
+        x: -40 - Math.random() * 240,
+        y: 60 + Math.random() * (this.height - 140),
+        length: 90 + Math.random() * 140,
+        speed: this.width * (0.65 + Math.random() * 0.35),
+        alpha: 0.22 + Math.random() * 0.28,
+        curveOffset: (Math.random() - 0.5) * 16,
+      });
+    }
+  }
+
+  updateWindStreaks(dt) {
+    if (this.windPhase === 'warning' && this.windStreaks.length < 3 && Math.random() < 0.08) {
+      this.windStreaks.push({
+        x: -50,
+        y: 80 + Math.random() * (this.height - 160),
+        length: 60 + Math.random() * 80,
+        speed: this.width * 0.32,
+        alpha: 0.14,
+        curveOffset: (Math.random() - 0.5) * 12,
+      });
+    }
+
+    for (let i = this.windStreaks.length - 1; i >= 0; i--) {
+      const s = this.windStreaks[i];
+      s.x += s.speed * dt;
+      if (s.x > this.width + 40) {
+        if (this.windPhase === 'gust') {
+          s.x = -s.length - Math.random() * 100;
+          s.y = 60 + Math.random() * (this.height - 140);
+        } else {
+          this.windStreaks.splice(i, 1);
+        }
+      }
+    }
+  }
+
+  drawWindPlanters(ctx) {
+    if (!this.currentLevel?.wind || this.currentLevel.scene !== 'atrium') return;
+    const isWarning = this.windPhase === 'warning';
+    const isGust = this.windPhase === 'gust';
+    if (!isWarning && !isGust) return;
+
+    const time = performance.now() * 0.003;
+    const sway = isGust ? (0.26 + Math.sin(time * 5.5) * 0.09) : (0.1 + Math.sin(time * 3) * 0.05);
+
+    ctx.save();
+    for (const side of [0, 1]) {
+      const x = side ? this.width - 7 : 7;
+      for (let i = 0; i < 9; i++) {
+        const y = this.height * 0.52 + i * Math.max(12, this.height * 0.038);
+        const dir = side ? -1 : 1;
+        ctx.save();
+        ctx.translate(x + dir * 11, y);
+        ctx.rotate(sway * dir);
+        ctx.fillStyle = i % 2 ? 'rgba(180, 198, 158, 0.75)' : 'rgba(145, 173, 136, 0.75)';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 4.5, 10, dir * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+  }
+
+  drawWindStreaks(ctx) {
+    if (this.windStreaks.length === 0) return;
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    for (const s of this.windStreaks) {
+      ctx.strokeStyle = `rgba(255, 252, 240, ${s.alpha})`;
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y);
+      ctx.quadraticCurveTo(s.x + s.length * 0.5, s.y + s.curveOffset, s.x + s.length, s.y);
+      ctx.stroke();
+
+      ctx.strokeStyle = `rgba(215, 228, 220, ${s.alpha * 0.85})`;
+      ctx.lineWidth = 1.0;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   render() {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.width, this.height);
@@ -568,12 +708,18 @@ export class Game {
     // 3. Pressed Paper Stamps
     this.drawStamps(ctx);
 
-    // 4. Inhabitants (Folded Butterflies, Seeds, Snail)
+    // 4. Dynamic Atrium Planter Leaves Sway
+    this.drawWindPlanters(ctx);
+
+    // 5. Inhabitants (Folded Butterflies, Seeds, Snail)
     for (const ent of this.entities) {
       ent.draw(ctx);
     }
 
-    // 5. Active Drawn Cord / Recoil Cord
+    // 6. Translucent Paper Wind Streamlines
+    this.drawWindStreaks(ctx);
+
+    // 7. Active Drawn Cord / Recoil Cord
     this.drawCord(ctx);
 
     // 6. HUD & Banners
@@ -897,6 +1043,37 @@ export class Game {
       ctx.fillText(`Score: ${this.score}`, this.width - 24, 64);
     }
 
+    // --- Wind Indicator Badge (Noon Visits V-VI) ---
+    if (this.currentLevel?.wind && (this.windPhase === 'warning' || this.windPhase === 'gust')) {
+      const cx = this.width / 2;
+      const isGust = this.windPhase === 'gust';
+      const isNarrow = this.width < 560;
+      const badgeText = isGust ? '💨 Atrium Breeze: Rightward Gust »»' : '🍃 Breeze Warning: Gust Approaching';
+      const bg = isGust ? 'rgba(232, 246, 228, 0.94)' : 'rgba(254, 247, 230, 0.94)';
+      const border = isGust ? '#8ab583' : '#d8b97e';
+      const textCol = isGust ? '#234f21' : '#684d1e';
+
+      ctx.save();
+      ctx.font = isNarrow ? '600 10.5px system-ui, sans-serif' : '600 11.5px system-ui, sans-serif';
+      const tw = ctx.measureText(badgeText).width;
+      const bw = Math.min(this.width - 24, tw + 20);
+      const bh = isNarrow ? 19 : 22;
+      const by = isNarrow ? 71 : 48;
+
+      ctx.fillStyle = bg;
+      ctx.strokeStyle = border;
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      drawRoundedRect(ctx, cx - bw / 2, by, bw, bh, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = textCol;
+      ctx.textAlign = 'center';
+      ctx.fillText(badgeText, cx, by + (isNarrow ? 13 : 15));
+      ctx.restore();
+    }
+
     // --- Bottom-Center: Feedback Banner ---
     if (this.feedbackBanner.timer > 0) {
       const bAlpha = Math.min(1.0, this.feedbackBanner.timer * 2.5);
@@ -981,7 +1158,11 @@ export class Game {
   drawReadyModal(ctx) {
     const lvl = this.currentLevel;
     const teachCounterpart = lvl.id === 'noon-01' || lvl.id === 'practice-noon';
-    this.drawModalBox(ctx, 500, teachCounterpart ? 400 : 310, (boxW, boxH) => {
+    const teachNursery = lvl.id === 'noon-02';
+    const teachMixedEcho = lvl.id === 'noon-03';
+    const hasDiagram = teachCounterpart || teachNursery || teachMixedEcho;
+
+    this.drawModalBox(ctx, 500, hasDiagram ? 415 : 310, (boxW, boxH) => {
       const isNarrow = boxW < 440;
 
       // Header
@@ -999,32 +1180,32 @@ export class Game {
       ctx.font = isNarrow ? '12px system-ui, sans-serif' : '13px system-ui, sans-serif';
       ctx.fillStyle = '#4c4234';
       const instructionLines = wrapText(ctx, lvl.instruction, boxW - 48);
-      instructionLines.forEach((line, i) => ctx.fillText(line, 0, -boxH / 2 + 90 + i * 17));
+      instructionLines.forEach((line, i) => ctx.fillText(line, 0, -boxH / 2 + 88 + i * 17));
 
       // Objectives box
       ctx.textAlign = 'left';
       ctx.font = isNarrow ? '600 11.5px system-ui, sans-serif' : '600 12.5px system-ui, sans-serif';
       ctx.fillStyle = '#2c251d';
       const padX = -boxW / 2 + (isNarrow ? 22 : 36);
-      let startY = -boxH / 2 + 128 + (instructionLines.length - 1) * 17;
+      let startY = -boxH / 2 + 124 + (instructionLines.length - 1) * 17;
 
       ctx.fillText('VISIT REQUIREMENTS:', padX, startY);
-      startY += 20;
+      startY += 19;
 
       ctx.font = isNarrow ? '12px system-ui, sans-serif' : '13px system-ui, sans-serif';
       ctx.fillStyle = '#4c4234';
       for (const [k, obj] of Object.entries(this.campaign.objectiveProgress)) {
         ctx.fillText(`• ${obj.label}: ${obj.current} / ${obj.target}`, padX + 8, startY);
-        startY += 22;
+        startY += 21;
       }
 
       // Duration note
       ctx.font = 'italic 11.5px Mali, sans-serif';
       ctx.fillStyle = '#8a7e6f';
-      ctx.fillText(`Dandelion Clock: ${lvl.durationSeconds} seconds`, padX, startY + 10);
+      ctx.fillText(`Dandelion Clock: ${lvl.durationSeconds} seconds`, padX, startY + 8);
 
       if (teachCounterpart) {
-        ctx.save(); ctx.translate(0, boxH / 2 - 83);
+        ctx.save(); ctx.translate(0, boxH / 2 - 84);
         ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, 0);
         ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
@@ -1034,6 +1215,49 @@ export class Game {
         ctx.fillStyle = '#5d493a'; for (const y of [-6, 0, 6]) ctx.fillRect(40, y, 12, 3);
         ctx.fillStyle = '#5c4538'; ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('One different insect in each pocket', 0, 42);
+        ctx.restore();
+      } else if (teachNursery) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 84);
+        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
+        ctx.bezierCurveTo(100, -65, 100, 65, 0, 0); ctx.stroke();
+        // Left lobe: 1 Brimstone + 1 Hoverfly
+        ctx.fillStyle = '#f1d152'; ctx.beginPath(); ctx.ellipse(-54, -6, 9, 13, -0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#eab765'; ctx.beginPath(); ctx.ellipse(-40, 8, 6, 10, 0.3, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#5d493a'; for (const y of [4, 8, 12]) ctx.fillRect(-44, y, 8, 2);
+        // Right lobe: 2 Dandelion seeds
+        for (const [sx, sy] of [[40, -6], [54, 8]]) {
+          ctx.fillStyle = '#faf7ed'; ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = '#8a7e6b'; ctx.lineWidth = 0.8;
+          ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + 7, sy + 9); ctx.stroke();
+          ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.stroke();
+          ctx.fillStyle = '#655543'; ctx.beginPath(); ctx.ellipse(sx + 7, sy + 9, 1.5, 3, 0.6, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.fillStyle = '#5c4538'; ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('Insects in one lobe, seeds in the other (Nursery)', 0, 39);
+        ctx.fillStyle = '#6e5a47'; ctx.font = 'italic 11px Mali, sans-serif';
+        ctx.fillText('🍃 2-second rightward breeze gusts will drift seeds across the glass', 0, 54);
+        ctx.restore();
+      } else if (teachMixedEcho) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 84);
+        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
+        ctx.bezierCurveTo(100, -65, 100, 65, 0, 0); ctx.stroke();
+        // Left lobe: 1 Brimstone + 1 Hoverfly
+        ctx.fillStyle = '#f1d152'; ctx.beginPath(); ctx.ellipse(-54, -6, 9, 13, -0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#eab765'; ctx.beginPath(); ctx.ellipse(-40, 8, 6, 10, 0.3, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#5d493a'; for (const y of [4, 8, 12]) ctx.fillRect(-44, y, 8, 2);
+        // Right lobe: 1 Brimstone + 1 Hoverfly (Mirrored)
+        ctx.fillStyle = '#f1d152'; ctx.beginPath(); ctx.ellipse(40, -6, 9, 13, 0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#eab765'; ctx.beginPath(); ctx.ellipse(54, 8, 6, 10, -0.3, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#5d493a'; for (const y of [4, 8, 12]) ctx.fillRect(50, y, 8, 2);
+
+        ctx.fillStyle = '#5c4538'; ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('Mirror identical mixed groups across lobes (Mixed Echo)', 0, 39);
+        ctx.fillStyle = '#6e5a47'; ctx.font = 'italic 11px Mali, sans-serif';
+        ctx.fillText('🍃 Periodic atrium breeze gusts remain active', 0, 54);
         ctx.restore();
       }
 

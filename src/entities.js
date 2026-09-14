@@ -621,7 +621,7 @@ export class DandelionSeed {
     this.alpha = 0.92;
   }
 
-  update(dt, bounds) {
+  update(dt, bounds, windVx = 0) {
     this.stateTime += dt;
 
     if (this.state === 'harmonizing') {
@@ -632,8 +632,15 @@ export class DandelionSeed {
     this.phase += dt * 2.0;
     const waveY = Math.sin(this.phase) * 0.4;
 
-    this.x += this.vx * 60 * dt;
+    this.x += (this.vx * 60 + windVx) * dt;
     this.y += (this.vy + waveY) * 60 * dt;
+
+    // Lean slightly into active breeze
+    if (windVx > 0) {
+      this.tilt = Math.min(0.48, this.tilt + dt * 0.75);
+    } else {
+      this.tilt = Math.max(-0.25, Math.min(0.25, this.tilt * (1 - dt * 1.5)));
+    }
 
     // Wrap around gracefully
     if (this.x > bounds.width + 30) {

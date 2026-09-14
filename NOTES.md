@@ -10,9 +10,19 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Implement Noon visits 5–6 with wind gusts using the shared atrium scene; real-device gesture calibration remains open.
+Implement Hour III: Dusk (Visits VII–IX) introducing paper lacewings with safe-area leaf anchors; real-device gesture calibration remains open.
 
 ## Activity
+
+2026-09-14 — Antigravity — Implemented the remainder of Hour II: Noon (Visits V and VI) in `src/game.js`, `src/audio.js`, `src/entities.js`, `src/campaign.js`, `index.html`, and `test/test_mechanics.js`, bringing the Noon atrium chapter to completion per `CAMPAIGN.md` and Xyh's verbatim texts in `first12levels.md`.
+- Completed Noon 2 (Visit V, *For now*): verbatim story card ("I don't know how much longer my job will exist."), Figure-eight Nursery Polarity objective (insects sheltered in one lobe, dandelion seeds gathered in the other), 110s dandelion clock.
+- Completed Noon 3 (Visit VI, *The glass and the leaves*): verbatim story card ("This atrium makes me feel calmer."), Figure-eight Mixed Echo objective (bilateral symmetry of matching mixed insect groups across lobes), 100s dandelion clock.
+- Implemented atrium wind cycle: 12-second periodic state machine (8s calm drift, 2s warning with soft bandpass-filtered noise breath and HUD indicator, 2s rightward gust accelerating seeds at 0.08 playfield widths/s with synthesized rushing whoosh). Seeds lean into the wind and wrap gracefully; insects, cord, and pointer remain strictly unaffected. Pausing freezes the cycle.
+- Added dynamic wind presentation: leaning foliage swaying in side planters during gusts, drifting translucent paper wind streamlines across the atrium floor, and responsive HUD wind indicator badge below the cord meter on both desktop and mobile viewports.
+- Added illustrated Ready screen diagrams for Nursery Polarity (`noon-02`) and Mixed Echo (`noon-03`) with wind advisories.
+- Added `'noon-02'` and `'noon-03'` to `PLAYABLE_LEVEL_IDS` in `src/campaign.js` and updated `#visit-modal` preview text in `index.html`.
+- Verification: automated suite in `test/test_mechanics.js` confirms full Noon progression (`noon-01` -> `noon-02` -> `noon-03`), verbatim texts, gust acceleration on seeds, flier immunity, and objective derivation; all ES modules pass syntax check (`node --check`).
+Hour III: Dusk (Visits VII–IX) and touch device calibration remain next.
 
 2026-09-14 — Antigravity — Renamed the project folder and repository to `drawing-the-hours/` (matching the display title Drawing the Hours and the workspace's kebab-case folder convention) per Xyh's instruction.
 - Renamed project repository directory `f:\xyh\relation-garden` to `f:\xyh\drawing-the-hours`.

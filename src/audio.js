@@ -213,6 +213,87 @@ export class AudioManager {
     osc.start(t);
     osc.stop(t + 0.2);
   }
+
+  // --- Atrium Wind Warning & Gust (Noon Visits V-VI) ---
+  playWindWarning() {
+    if (this.isMuted) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    try {
+      const t = this.ctx.currentTime;
+      const bufferSize = Math.floor(this.ctx.sampleRate * 1.8);
+      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        output[i] = (last + 0.03 * white) / 1.03;
+        last = output[i];
+      }
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(550, t);
+      filter.frequency.linearRampToValueAtTime(850, t + 1.2);
+      filter.Q.setValueAtTime(1.8, t);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.linearRampToValueAtTime(0.035, t + 0.6);
+      gain.gain.linearRampToValueAtTime(0.0001, t + 1.75);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      noise.start(t);
+      noise.stop(t + 1.8);
+    } catch (_) {}
+  }
+
+  playWindGust() {
+    if (this.isMuted) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    try {
+      const t = this.ctx.currentTime;
+      const dur = 2.0;
+      const bufferSize = Math.floor(this.ctx.sampleRate * dur);
+      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        output[i] = (last + 0.04 * white) / 1.04;
+        last = output[i];
+      }
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(450, t);
+      filter.frequency.linearRampToValueAtTime(1100, t + 0.7);
+      filter.frequency.linearRampToValueAtTime(380, t + dur);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.linearRampToValueAtTime(0.065, t + 0.45);
+      gain.gain.linearRampToValueAtTime(0.045, t + 1.3);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      noise.start(t);
+      noise.stop(t + dur + 0.05);
+    } catch (_) {}
+  }
 }
 
 export const audio = new AudioManager();

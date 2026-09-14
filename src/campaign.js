@@ -377,7 +377,14 @@ export const CAMPAIGN_LEVELS = [
 ];
 
 // Add an ID here only when its scene and mechanics are ready for campaign play.
-export const PLAYABLE_LEVEL_IDS = new Set(['dawn-01', 'dawn-02', 'dawn-03', 'noon-01']);
+export const PLAYABLE_LEVEL_IDS = new Set([
+  'dawn-01',
+  'dawn-02',
+  'dawn-03',
+  'noon-01',
+  'noon-02',
+  'noon-03',
+]);
 
 export const PRACTICE_LEVELS = [
   {
