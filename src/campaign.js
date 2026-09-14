@@ -629,6 +629,22 @@ export class CampaignSaveManager {
     this.save(state);
     return state;
   }
+
+  static unlockAll() {
+    const state = this.load();
+    state.highestUnlockedIndex = CAMPAIGN_LEVELS.length - 1;
+    this.save(state);
+    return state;
+  }
+
+  static reset() {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignore storage errors
+    }
+    return this.load();
+  }
 }
 
 export class CampaignManager {
@@ -638,6 +654,16 @@ export class CampaignManager {
     this.currentLevel = CAMPAIGN_LEVELS[0];
     this.objectiveProgress = {};
     this.initProgress(this.currentLevel);
+  }
+
+  unlockAll() {
+    this.saveState = CampaignSaveManager.unlockAll();
+    return this.saveState;
+  }
+
+  reset() {
+    this.saveState = CampaignSaveManager.reset();
+    return this.saveState;
   }
 
   initProgress(level) {

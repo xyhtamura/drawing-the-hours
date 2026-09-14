@@ -14,6 +14,14 @@ Implement Hour IV: Midnight (Visits X–XII) introducing fireflies and Trace mod
 
 ## Activity
 
+2026-09-15 — Antigravity — Unlocked all 9 playable levels (Dawn 1–3, Noon 1–3, Dusk 1–3) in the Meadow Visits selection UI and added playtesting save management hooks per user request.
+- Visit Selection Modal: Updated `renderVisitModal()` in `index.html` so that all currently implemented visits (`PLAYABLE_LEVEL_IDS`) are unlocked, clickable, and show status badges (`Current`, `Completed`, or `Unlocked`).
+- Testing Controls: Added a `🔓 Unlock All in Save` button in `#visit-modal` alongside the Return button.
+- Save Management Methods: Added `unlockAll()` and `reset()` to `CampaignSaveManager` and `CampaignManager` in `src/campaign.js`.
+- Console Hooks: Exposed `window.unlockAllLevels()` and `window.resetProgress()` for fast playtesting and debugging from the browser console.
+- Verification: Extended `test/test_mechanics.js` to verify `unlockAll()` and `reset()`; all tests (`test_mechanics.js` and `test_dusk.js`) and ES module syntax checks pass cleanly.
+Hour IV: Midnight (Visits X–XII) and real-device gesture calibration remain next.
+
 2026-09-15 — Antigravity — Implemented the remainder of Hour III: Dusk (Visits VIII and IX) in `src/campaign.js`, `src/game.js`, `src/audio.js`, `index.html`, `test/test_dusk.js`, and `test/test_mechanics.js`, bringing the Dusk chapter to completion per `DUSK.md`, `CAMPAIGN.md`, and Xyh's verbatim texts.
 - Completed Visit VIII (*The gaps in the sound*): verbatim story card ("I can hear the cicadas. And sometimes I can't."), Nursery Polarity (insects sheltered in one pocket, airborne seeds gathered in the other) + lacewing Counterpart Pair objectives, 95s dandelion clock.
 - Intermittent cicada ambient layer: synthesized high-frequency stridulation buzzing (5.2s swell/pulse/fade followed by 6.8s of silence) in Web Audio honoring Xyh's story card and `DUSK.md` §62. Stops cleanly on pause, mute, level restart, or completion.

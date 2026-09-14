@@ -169,7 +169,7 @@
     <div class="recipe-card visit-card">
       <h2>Meadow Visits &amp; Hours</h2>
       <div class="field-intro">
-        Select an unlocked chapter visit or return to an open practice verge.
+        Select any chapter visit or return to an open practice verge. All 9 playable visits are unlocked for testing.
       </div>
 
       <div class="visit-section">
@@ -195,14 +195,17 @@
         </div>
       </div>
 
-      <button id="btn-close-visit-modal" class="close-btn">Return to Visit</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; gap:8px;">
+        <button id="btn-unlock-all-visits" style="background:#f4ece1; border:1px solid #d4c5b0; border-radius:6px; color:#5c4837; padding:7px 12px; font-size:0.8rem; cursor:pointer; font-family:inherit;">🔓 Unlock All in Save</button>
+        <button id="btn-close-visit-modal" class="close-btn" style="margin-top:0;">Return to Visit</button>
+      </div>
     </div>
   </div>
 
   <script type="module">
     import { Game } from './src/game.js';
     import { audio } from './src/audio.js';
-    import { CAMPAIGN_LEVELS, PRACTICE_LEVELS, PLAYABLE_LEVEL_IDS } from './src/campaign.js';
+    import { CAMPAIGN_LEVELS, PRACTICE_LEVELS, PLAYABLE_LEVEL_IDS, CampaignSaveManager } from './src/campaign.js';
 
     const canvas = document.getElementById('game-canvas');
     // Finish local font loading before measuring canvas text. Failure uses fallbacks.
@@ -220,6 +223,7 @@
     const btnCloseModal = document.getElementById('btn-close-modal');
     const visitModal = document.getElementById('visit-modal');
     const btnCloseVisitModal = document.getElementById('btn-close-visit-modal');
+    const btnUnlockAllVisits = document.getElementById('btn-unlock-all-visits');
     const visitListDusk = document.getElementById('visit-list-dusk');
     const visitListNoon = document.getElementById('visit-list-noon');
     const visitListDawn = document.getElementById('visit-list-dawn');
@@ -314,7 +318,7 @@
       for (const [hour, list] of [['dawn', visitListDawn], ['noon', visitListNoon], ['dusk', visitListDusk]]) {
         if (!list) continue;
         list.innerHTML = CAMPAIGN_LEVELS.filter(lvl => lvl.hour === hour && PLAYABLE_LEVEL_IDS.has(lvl.id)).map(lvl => {
-          const isUnlocked = CAMPAIGN_LEVELS.indexOf(lvl) <= highestUnlocked;
+          const isUnlocked = PLAYABLE_LEVEL_IDS.has(lvl.id) || (CAMPAIGN_LEVELS.indexOf(lvl) <= highestUnlocked);
           const isCompleted = save.completedLevelIds.includes(lvl.id);
           const isActive = lvl.id === currentId;
           const bestScore = save.bestScores ? save.bestScores[lvl.id] : undefined;
@@ -324,9 +328,12 @@
           if (isCompleted) {
             badgeClass = 'completed';
             badgeText = 'Completed';
+          } else if (isActive) {
+            badgeClass = 'current';
+            badgeText = 'Current';
           } else if (isUnlocked) {
             badgeClass = 'current';
-            badgeText = isActive ? 'Current' : 'Unlocked';
+            badgeText = 'Unlocked';
           }
 
           return `
@@ -470,6 +477,12 @@
     if (btnCloseVisitModal) {
       btnCloseVisitModal.addEventListener('click', () => toggleVisitModal(false));
     }
+    if (btnUnlockAllVisits) {
+      btnUnlockAllVisits.addEventListener('click', () => {
+        game.campaign.unlockAll();
+        renderVisitModal();
+      });
+    }
 
     // Audio toggle
     btnAudio.addEventListener('click', () => {
@@ -526,6 +539,18 @@
     // Initial UI setup
     updateLevelUI(game.currentLevel);
     renderVisitModal();
+
+    // Playtesting and testing hooks
+    window.unlockAllLevels = () => {
+      game.campaign.unlockAll();
+      renderVisitModal();
+      console.log('All campaign levels unlocked in save.');
+    };
+    window.resetProgress = () => {
+      game.campaign.reset();
+      renderVisitModal();
+      console.log('Campaign progress reset.');
+    };
   </script>
 </body>
 </html>

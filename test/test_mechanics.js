@@ -472,7 +472,15 @@ console.log('--- Running Drawing the Hours Test Suite ---');
   const nextLvl = campaign.getNextLevel();
   assert.strictEqual(nextLvl.id, 'dawn-02');
 
-  console.log('✔ Campaign progression, victory latching, and bonus restriction verified.');
+  // Test unlockAll and reset hooks
+  campaign.unlockAll();
+  assert.strictEqual(campaign.saveState.highestUnlockedIndex, CAMPAIGN_LEVELS.length - 1);
+
+  campaign.reset();
+  assert.strictEqual(campaign.saveState.highestUnlockedIndex, 0);
+  assert.strictEqual(campaign.saveState.completedLevelIds.length, 0);
+
+  console.log('✔ Campaign progression, victory latching, bonus restriction, and unlock/reset hooks verified.');
 }
 
 // 9. Campaign Registry and Hour I Verbatim Text Integrity
