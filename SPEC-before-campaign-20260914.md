@@ -3,7 +3,7 @@
 **Version:** 0.2.0 (First Playable Level Built & Verified)  
 **Date:** 2026-09-14  
 **Working Title:** Drawing the Hours  
-**Repository:** `relation-garden/` (Independent Git Repository; backup at `relation-garden-backup/`)  
+**Repository:** `drawing-the-hours/` (Independent Git Repository; backup at `drawing-the-hours-backup/`)  
 **Core Reference:** [CONCEPT.md](CONCEPT.md), [HOURS.md](HOURS.md), [NOTES.md](NOTES.md)
 
 ---

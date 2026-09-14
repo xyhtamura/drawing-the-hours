@@ -6,8 +6,8 @@ that title and records the independent design brief. Earlier options below
 are retained as history; Cradle is no longer the working title.
 
 Ideation recorded on 2026-09-13. **Cradle**, **String figures**, and **Draw them
-together** are Xyh's tentative naming directions. The folder remains
-`relation-garden`; no title has been selected. This note extends and amends
+together** are Xyh's tentative naming directions. The project was titled Drawing the
+Hours and the folder renamed to `drawing-the-hours` on 2026-09-14. This note extends and amends
 the [earlier daytime concept](CONCEPT.md), especially its restriction of moths
 to daytime shade. Dawn, noon, dusk, and midnight are now possible settings.
 

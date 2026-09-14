@@ -268,11 +268,10 @@ The optional ambient sound for line 8 can be deferred; its text remains intact.
 The earlier existing-recipes-only draft was expanded after Xyh explicitly
 invited gradual new mechanics and insects; the JSON reflects the revision.
 
-Antigravity owns the requested folder rename to `drawing-the-hours`. Do not
-rename it during this spec task. On rename, update root roadmap/backlog inbound
-links and the local URL; preserve level/save IDs and internal relative links.
-Do not encode `relation-garden` in campaign save keys. Coordinate edits in this
-project sequentially; no concurrent implementation agents are authorized here.
+The folder rename to `drawing-the-hours` was executed on 2026-09-14 per Xyh's
+instruction, with root roadmap, backlog inbound links, and local URLs updated;
+level/save IDs (`dth_campaign_save_v1`) and internal relative links were preserved.
+Coordinate edits in this project sequentially; no concurrent implementation agents are authorized here.
 
 To extend the campaign, append records with new stable IDs and reuse scenes,
 objective tags, and profiles. New mechanics require their own evaluator and

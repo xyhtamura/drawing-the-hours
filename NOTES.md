@@ -4,7 +4,7 @@ Playable meadow gesture prototype with moving creatures, combinations, and
 multi-pocket drawings. The [working scope](SPEC.md) points to Xyh's
 [concept and aesthetic direction](CONCEPT.md). Morning Verge is implemented
 in `index.html`; earlier concept documents contain superseded proposals.
-The working title is Drawing the Hours; the folder remains `relation-garden`.
+The project title is Drawing the Hours; the folder was renamed to `drawing-the-hours/` on 2026-09-14.
 The [hours and inhabitants note](HOURS.md) records earlier naming options,
 visits at quiet hours, a broader cast, and candidate timers.
 
@@ -13,6 +13,17 @@ visits at quiet hours, a broader cast, and candidate timers.
 Calibrate Dawn levels 1–3 on real touch devices, then implement Hour II: Noon (Visits 4–6) with the atrium scene, wind gusts, and figure-eight correspondence objectives.
 
 ## Activity
+
+2026-09-14 — Antigravity — Renamed the project folder and repository to `drawing-the-hours/` (matching the display title Drawing the Hours and the workspace's kebab-case folder convention) per Xyh's instruction.
+- Renamed project repository directory `f:\xyh\relation-garden` to `f:\xyh\drawing-the-hours`.
+- Renamed backup snapshot `f:\xyh\relation-garden-backup` to `f:\xyh\drawing-the-hours-backup`.
+- Configured git `safe.directory` for the new path; verified git history is preserved intact.
+- Updated `package.json` name to `"drawing-the-hours"`.
+- Updated `VIEW_STORAGE_KEY` in `index.html` to `'drawing-the-hours-orientation'` with seamless fallback to `'relation-garden-orientation'` to preserve user device view preferences.
+- Updated internal references across `CAMPAIGN.md`, `SPEC.md`, `NOTES.md`, and spec history files.
+- Updated workspace inbound references in root `ROADMAP.md` and `unbuilt/` (`README.md`, `LUDIC_APPS_IDEAS.md`, `loop-meadow-forest_ideas_20260913.md`).
+- Verified all mechanics and campaign test suites pass (`node test/test_mechanics.js`) and all ES modules pass syntax validation.
+Tablet touch calibration across Dawn 1–3 and implementing Hour II: Noon remain next.
 
 2026-09-14 — Codex — Refined Dawn's baseline visual treatment at Xyh's
 request: locally hosted Mali Regular/SemiBold, rose notebook controls, warmer

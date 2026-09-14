@@ -2,8 +2,8 @@
 
 Working direction for a tablet and browser gesture game, recorded on
 2026-09-13. The player draws among moving creatures and makes combinations
-through enclosure, separation, stroke length, and intersection. The folder
-name `relation-garden` remains provisional. Nothing is built.
+through enclosure, separation, stroke length, and intersection. The provisional
+folder name `relation-garden` was formally renamed to `drawing-the-hours` on 2026-09-14.
 
 **Working title update:** Drawing the Hours. The
 [independent design brief](SPEC.md#independent-design-brief) supersedes

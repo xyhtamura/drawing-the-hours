@@ -209,8 +209,8 @@
     const headerSub = document.getElementById('header-sub');
 
     // Orientation view setting: 'auto' | 'vertical' | 'horizontal'
-    const VIEW_STORAGE_KEY = 'relation-garden-orientation';
-    let viewMode = localStorage.getItem(VIEW_STORAGE_KEY) || 'auto';
+    const VIEW_STORAGE_KEY = 'drawing-the-hours-orientation';
+    let viewMode = localStorage.getItem(VIEW_STORAGE_KEY) || localStorage.getItem('relation-garden-orientation') || 'auto';
 
     const applyViewMode = (mode) => {
       viewMode = mode;

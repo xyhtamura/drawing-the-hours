@@ -4,8 +4,8 @@ A proposed browser game about drawing paths between objects and arranging the
 order in which ingredients meet. The paths persist, carry visible pulses, and
 take time to traverse. Their length changes the recipe's timing.
 
-**Status:** specification only, 2026-09-13. `relation-garden` is a provisional
-folder name. Xyh requested a small starting spec exploring lines, gestures,
+**Status:** specification only, 2026-09-13. `relation-garden` was the provisional
+folder name (renamed to `drawing-the-hours` on 2026-09-14). Xyh requested a small starting spec exploring lines, gestures,
 recipes, and relationships after the
 [LOOP-inspired brainstorm](../unbuilt/loop-meadow-forest_ideas_20260913.md).
 The rules below are Codex's proposed first version, open to revision.
@@ -118,7 +118,7 @@ ingredient expiring at the bud, so the player can identify what to change.
 
 Build a static page with `index.html`, `style.css`, and native JavaScript
 modules, reachable through the shared root server at
-`http://localhost:<port>/relation-garden/`. Use authored SVG or canvas shapes,
+`http://localhost:<port>/drawing-the-hours/`. Use authored SVG or canvas shapes,
 with no package installation or external assets. Keep recipe definitions and
 tuning values in a separate data module; keep simulation updates independent
 of rendering.
