@@ -520,7 +520,7 @@ export class Game {
       this.activeBand = getLengthBand(0);
       this.lastPointerPos = pos;
       this.lastPointerTime = performance.now();
-      this.lastReportedTraceCount = 0;
+      this.lastReportedTraceKey = null;
       if (this.currentLevel?.stringRules) {
         this.tapTracker.onPress(pos, performance.now(), this.entities);
         this.stringGesture = new StringGesture(pos, this.currentLevel.maxCordLength ?? MAX_CORD_LENGTH);
@@ -618,7 +618,7 @@ export class Game {
     }
     this.tapTracker?.cancel();
     this.trace = null;
-    this.lastReportedTraceCount = 0;
+    this.lastReportedTraceKey = null;
     this.currentStroke = [];
     this.strokeLength = 0;
     this.activePockets = [];
@@ -668,27 +668,35 @@ export class Game {
           return;
         }
 
-        const trace = this.traceStatus();
-        if (trace && trace.order.length !== this.lastReportedTraceCount) {
-          this.lastReportedTraceCount = trace.order.length;
-          if (trace.complete) {
-            this.showFeedback(`Trace ready: ${trace.threaded}. Release to score.`, 'success', 3.0);
-          } else if (trace.matchesSoFar) {
-            this.showFeedback(`Trace: ${trace.threaded} (${trace.order.length}/${trace.sequence.length})`, 'info', 2.0);
-          } else {
-            this.showFeedback(this.traceFaultMessage(trace), 'warning', 2.5);
-          }
-        }
       }
 
       if (this.gestureMode !== 'trace') {
-        this.checkCordHazards(this.currentStroke.slice(-2));
+        if (this.checkCordHazards(this.currentStroke.slice(-2))) return;
         if (this.currentStroke.length >= 5) {
           this.activePockets = this.findPockets(this.currentStroke);
         } else {
           this.activePockets = [];
         }
       }
+      // After the pockets update, so the banner sees this sample's enclosure.
+      this.reportTraceProgress();
+    }
+  }
+
+  /** Live banner for a string Trace visit. It speaks when the threaded count or the enclosure changes. */
+  reportTraceProgress() {
+    if (!this.isDrawing) return;
+    const trace = this.traceStatus();
+    if (!trace || trace.order.length === 0) return;
+    const key = `${trace.order.length}:${trace.encloses}`;
+    if (key === this.lastReportedTraceKey) return;
+    this.lastReportedTraceKey = key;
+    if (trace.ready) {
+      this.showFeedback(`Trace ready: ${trace.threaded}. Release to score.`, 'success', 3.0);
+    } else if (trace.matchesSoFar && !trace.encloses) {
+      this.showFeedback(`Trace: ${trace.threaded} (${trace.order.length}/${trace.sequence.length})`, 'info', 2.0);
+    } else {
+      this.showFeedback(this.traceFaultMessage(trace), 'warning', 2.5);
     }
   }
 
@@ -697,27 +705,49 @@ export class Game {
    * rule 4), or null outside string visits with a `traceSequence`. The pointer
    * update, release, cord glow, and bead markers all read this one result.
    */
-  traceStatus() {
+  traceStatus(pockets = this.activePockets) {
     const sequence = this.currentLevel?.stringRules ? this.currentLevel.traceSequence : null;
     if (!sequence?.length) return null;
     const order = this.stringGesture?.threadingOrder || [];
     const prefixMatches = order.slice(0, sequence.length).every((e, i) => e.kind === sequence[i]);
     const matchesSoFar = prefixMatches && order.length <= sequence.length;
+    const complete = matchesSoFar && order.length === sequence.length;
+    // Purity (STRING.md rule 4): a stroke that also encloses a live entity scores nothing.
+    const encloses = this.enclosedEntities(pockets || []).length > 0;
     return {
       sequence,
       order,
       prefixMatches,
       matchesSoFar,
-      complete: matchesSoFar && order.length === sequence.length,
+      complete,
+      encloses,
+      ready: complete && !encloses,
       required: sequence.map(speciesLabel).join(' → '),
       threaded: order.map(e => speciesLabel(e.kind)).join(' → '),
     };
   }
 
-  /** A wrong order is reported before a count, so live and release messages agree. */
+  /** Live, unthreaded entities inside any pocket. Beads and departing insects do not count. */
+  enclosedEntities(pockets) {
+    const found = new Set();
+    for (const pocket of pockets) {
+      for (const entity of this.entities) {
+        if (entity.state === 'roaming' && pointInPolygon({ x: entity.x, y: entity.y }, pocket.polygon)) {
+          found.add(entity);
+        }
+      }
+    }
+    return [...found];
+  }
+
+  /**
+   * Faults in the order the player can act on them: a wrong order, an extra bead,
+   * a stroke that also encloses, then a count. Live and release messages agree.
+   */
   traceFaultMessage(trace) {
     if (!trace.prefixMatches) return `Wrong order: ${trace.threaded}. A Trace needs ${trace.required}.`;
     if (trace.order.length > trace.sequence.length) return `Too many insects threaded. A Trace needs ${trace.required}.`;
+    if (trace.encloses) return 'A stroke cannot both thread and enclose, so neither counts.';
     return `Trace incomplete: ${trace.order.length} of ${trace.sequence.length} threaded. A Trace needs ${trace.required}.`;
   }
 
@@ -768,11 +798,13 @@ export class Game {
       this.recoilAlpha = 1.0;
       this.lastEvaluatedPockets = [];
 
-      const trace = this.traceStatus();
+      // Pockets are measured on the released stroke: a live insect, seed, or snail
+      // inside one makes the stroke impure (STRING.md rule 4).
+      const trace = this.traceStatus(this.findPockets(strokePoints));
       if (trace) {
         const beadEntities = [...trace.order];
 
-        if (trace.complete) {
+        if (trace.ready) {
           const band = getLengthBand(this.strokeLength);
           const multiplier = band.name === 'Petite' ? 1 : band.name === 'Balanced' ? 1.25 : 1.5;
           const result = {
@@ -1509,7 +1541,7 @@ export class Game {
       const isClosed = Boolean(this.activePockets && this.activePockets.length > 0);
       const hasBeads = Boolean(this.currentLevel?.stringRules && this.stringGesture?.hasBeads);
 
-      const isTraceReady = Boolean(this.traceStatus()?.complete);
+      const isTraceReady = Boolean(this.traceStatus()?.ready);
 
       ctx.save();
 

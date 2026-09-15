@@ -344,13 +344,13 @@ console.log('--- Running String Sandbox Test Suite ---');
 
 // 10. One snap limit for every visit
 {
-  assert.strictEqual(MAX_CORD_LENGTH, 1200, 'The shared snap limit is 1200 px');
+  assert.strictEqual(MAX_CORD_LENGTH, 1300, 'The shared snap limit is 1300 px');
   for (const level of [...CAMPAIGN_LEVELS, ...PRACTICE_LEVELS]) {
     assert.strictEqual(level.maxCordLength, undefined, `${level.id} must not set its own snap limit`);
   }
   assert.strictEqual(new StringGesture({ x: 0, y: 0 }).maxCordLength, MAX_CORD_LENGTH, 'A cord defaults to the shared limit');
 
-  console.log('✔ Every visit uses the shared 1200 px snap limit.');
+  console.log('✔ Every visit uses the shared 1300 px snap limit.');
 }
 
 // 11. Live loop closure detection before release
@@ -806,6 +806,31 @@ console.log('--- Running String Sandbox Test Suite ---');
   assert.strictEqual(l2.state, 'harmonizing', 'l2 harmonizing');
   assert.strictEqual(f5.state, 'harmonizing', 'f5 harmonizing');
 
+  // Case B2: purity. The same closed Trace loop with a bystander inside scores nothing.
+  const f13 = new Insect(150, 150, 'firefly');
+  const l7 = new Insect(250, 150, 'lacewing');
+  const f14 = new Insect(350, 150, 'firefly');
+  const bystander = new Insect(250, 200, 'firefly');
+  game.entities = [f13, l7, f14, bystander];
+  game.isDrawing = true;
+  game.currentStroke = loopStroke;
+  game.strokeLength = loopLength;
+  game.activeBand = getLengthBand(loopLength);
+  game.stringGesture = new StringGesture(loopStroke[0], 1300);
+  game.stringGesture.points = [...loopStroke];
+  game.stringGesture.totalLength = loopLength;
+  game.stringGesture.threadBead(f13, 30);
+  game.stringGesture.threadBead(l7, 90);
+  game.stringGesture.threadBead(f14, 150);
+  const traceBeforeImpure = game.campaign.objectiveProgress.trace.current;
+  const scoreBeforeImpure = game.score;
+  game.resolveCurrentStroke();
+  assert.strictEqual(game.score, scoreBeforeImpure, 'A Trace stroke that also encloses scores nothing');
+  assert.strictEqual(game.campaign.objectiveProgress.trace.current, traceBeforeImpure, 'An impure stroke does not advance the Trace objective');
+  assert.strictEqual(game.feedbackBanner.text, 'A stroke cannot both thread and enclose, so neither counts.');
+  assert.deepStrictEqual([f13.state, l7.state, f14.state, bystander.state], ['roaming', 'roaming', 'roaming', 'roaming'],
+    'Beads and the enclosed bystander are all released');
+
   // Case C: Wrong order (lacewing -> firefly -> firefly)
   const f6 = new Insect(100, 100, 'firefly');
   const l3 = new Insect(200, 100, 'lacewing');
@@ -964,6 +989,29 @@ console.log('--- Running String Sandbox Test Suite ---');
     assert.strictEqual(game.feedbackBanner.text, live, 'Release repeats the live wrong-order message');
     assert.strictEqual(game.campaign.objectiveProgress.trace.current, 0, 'Wrong order scores nothing');
 
+    // A Trace stroke that also closes around a bystander: neither counts, live or on release.
+    t = setup();
+    t.f1.x = 180;
+    t.lace.x = 280;
+    t.f2.x = 380;
+    const bystander = new Insect(300, 350, 'firefly');
+    game.entities.push(bystander);
+    const path = [[110, 300], [440, 300], [440, 400], [130, 400], [130, 250]];
+    pointer('pointerdown', ...path[0]);
+    for (let k = 1; k < path.length; k++) {
+      const [x0, y0] = path[k - 1];
+      const [x1, y1] = path[k];
+      const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 8);
+      for (let i = 1; i <= n; i++) pointer('pointermove', x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n);
+    }
+    const liveImpure = game.feedbackBanner.text;
+    pointer('pointerup', 130, 250);
+    assert.strictEqual(liveImpure, 'A stroke cannot both thread and enclose, so neither counts.', `Live purity banner (got "${liveImpure}")`);
+    assert.strictEqual(game.feedbackBanner.text, liveImpure, 'Release repeats the purity message');
+    assert.strictEqual(game.campaign.objectiveProgress.trace.current, 0, 'An impure stroke scores no Trace');
+    assert.strictEqual(game.score, 0, 'An impure stroke scores nothing');
+    assert.strictEqual(bystander.state, 'roaming', 'The enclosed bystander is released unscored');
+
     // A press that starts on the first firefly threads it first.
     t = setup();
     pointer('pointerdown', 200, 300);
@@ -974,7 +1022,7 @@ console.log('--- Running String Sandbox Test Suite ---');
     if (!hadWindow) delete globalThis.window;
     if (!hadDocument) delete globalThis.document;
   }
-  console.log('✔ Trace through real pointer handlers: live banners, release, wrong order, and a press on the first firefly.');
+  console.log('✔ Trace through real pointer handlers: live banners, release, wrong order, purity, and a press on the first firefly.');
 }
 
 // 20. Card text is fitted to the card at any width

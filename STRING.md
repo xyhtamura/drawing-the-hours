@@ -23,6 +23,12 @@ rules every action happens inside one stroke. Difficulty comes from closing the
 gap before insects leave, keeping the cord short enough, avoiding accidental
 threading, wind, and the snail.
 
+Xyh, 2026-09-16: the game rewards patience, coaxing, and timing as well as
+quickness. One player draws an opening stretch of cord to wall an insect off, then
+keeps holding while other insects move into place; another spots an opening and
+closes it fast. Rules and limits should leave room for both, which is why the
+snap limit rose to 1,300 px (rule 5).
+
 ## Terms
 
 - **Cord**: the polyline drawn by the held pointer, from press to release.
@@ -132,10 +138,19 @@ both a completed Trace and a failed one read clearly and feel right. A wrong
 order is reported before a count, so the message on release matches the one
 shown while drawing.
 
+**Purity (Xyh, 2026-09-16).** A stroke that threads and also encloses fails for
+both: no Trace, no enclosure recipe, no objective, and every insect is released
+where it is. A stroke encloses when a closed pocket (rule 9) holds a live insect,
+seed, or snail that is not threaded on it. Xyh adopted the rule for now for two
+reasons: one stroke never has to decide between overlapping recipes, and later
+recipes can deliberately require both threading and looping. The rule may be
+revisited. The banner reads "A stroke cannot both thread and enclose, so neither
+counts.", both while drawing and on release.
+
 Agent defaults, not yet confirmed by Xyh:
 
-- A stroke that threads the sequence is judged only as a Trace; insects it
-  encloses are released and not scored.
+- A closed Trace line whose pockets hold nothing except its own beads still
+  scores the Trace.
 - Beads out of order, a partial sequence, or an extra bead cancel the stroke as
   above, with a banner that names the required order.
 - The rule that a trace must start outside every target ring is dropped. A press
@@ -147,7 +162,9 @@ beads with pockets. Each needs its own evaluator and tests before a visit uses i
 ## 5. Long cords snap
 
 Every visit uses the same snap limit, `MAX_CORD_LENGTH` in `src/string.js`, which
-Xyh set to 1,200 px on 2026-09-15 as a consistent and forgiving length. No level
+Xyh set to 1,200 px on 2026-09-15 as a consistent and forgiving length, then
+raised to 1,300 px on 2026-09-16 after playtesting Dawn, to leave room for an
+opening wall held while insects move into place. No level
 record sets its own limit, and `test/test_string_sandbox.js` fails if one does;
 only the measurement script overrides the limit, inside its own level objects.
 The cord meter fills toward a visible snap mark. When the stroke length passes the limit, the cord breaks at once in
@@ -164,6 +181,8 @@ visit. At pointer speeds of 700 and 450 px/s, 1,150 px was the lowest tested lim
 that kept completions at the unlimited level, and trio completions fell at 900 px
 and below. The chosen 1,200 px matched 1,150 and 1,300 px in all three Dawn visits
 (Dawn III: 30/30 at 700 px/s, 26/30 at 450 px/s) with 1–3 s of waiting per visit.
+In that 2026-09-15 run, the current 1,300 px gave the same Dawn III completions
+with 1.3–2.4 s of waiting per visit.
 
 Open: whether the limit scales with the field. A portrait field measured
 359×567 px and the desktop field 996×640 px on 2026-09-15, while the closure
@@ -357,8 +376,6 @@ describes:
 ## Open questions for Xyh
 
 - What a successful figure means in the fiction, given that insects are released.
-- Whether a stroke that threads the Trace sequence may also score what it
-  encloses (agent default: no).
 - Whether the snap limit scales with field size.
 - Which later-day insects cross walls.
 - Whether hours other than Noon gain wind.

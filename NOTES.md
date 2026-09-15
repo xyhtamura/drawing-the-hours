@@ -14,6 +14,40 @@ Build STRING.md rule 7, wind that changes direction, for Noon V–VI: item 1 of 
 
 ## Activity
 
+2026-09-16 — Claude Code — Recorded Xyh's Dawn playtest and two decisions:
+recipe purity and a 1,300 px snap limit.
+
+- Xyh playtested the Dawn chapter under string rules. Xyh said the game rewards
+  patience, coaxing, and timing as well as quickness: a player can draw an opening
+  wall around an insect and keep holding while others move into place, or spot an
+  opening and close it fast. Recorded under "Reason for the change" in STRING.md.
+- Snap limit raised from 1,200 to 1,300 px (`MAX_CORD_LENGTH` in `src/string.js`)
+  to leave room for that held opening wall. STRING.md rule 5 updated.
+- Purity (STRING.md rule 4): a stroke that threads and also encloses fails for
+  both. Xyh first proposed scoring enclosed insects that form a recipe alongside a
+  Trace, then chose purity for now: one stroke never has to decide between
+  overlapping recipes, and later recipes can require both threading and looping.
+  "Encloses" means a closed pocket holds a live insect, seed, or snail that is not
+  threaded. `Game.traceStatus` now reports `encloses` and `ready`;
+  `traceFaultMessage` reports purity after order and count faults and before an
+  incomplete count. The live banner moved after the pocket update so it sees the
+  current sample's enclosure, and it now speaks when the enclosure changes as well
+  as when the threaded count does. Agent default: a closed Trace line whose
+  pockets hold only its own beads still scores.
+
+Verification:
+
+- `node test/test_string_sandbox.js`: test 10 checks 1,300 px; new test 18 case
+  B2 releases a closed Trace loop around a bystander and checks no score, no
+  objective, the purity message, and every insect released; test 19 adds a purity
+  stroke through the real pointer handlers and checks the live and release
+  banners. All four suites, `node --check`, and `git diff --check` pass.
+- Live page, synthetic pen Pointer Events in `practice-string-trace`: an open
+  Trace scored "Ordered Trace (+240 pts)" after showing "Trace ready"; the same
+  Trace closed around a bystander showed the purity message while drawing and on
+  release, scored 0, and released the bystander. In `practice-string` a 1,290 px
+  stroke kept drawing and a 1,310 px stroke snapped.
+
 2026-09-16 — Claude Code — Recorded Xyh's decision to keep the Dawn cards,
 brought STRING.md up to date, added a check that keeps its status line honest,
 and wrote the Noon wind handoff. No game code changed.

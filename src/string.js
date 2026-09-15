@@ -14,11 +14,12 @@
 import { distance, polylineLength } from './geometry.js';
 
 /**
- * Snap limit shared by every visit (Xyh, 2026-09-15; STRING.md rule 5). Level
+ * Snap limit shared by every visit (Xyh: 1,200 px on 2026-09-15, raised to
+ * 1,300 px on 2026-09-16; STRING.md rule 5). Level
  * records must not set their own `maxCordLength`; test_string_sandbox.js fails if
  * one does. Only the measurement script overrides it in its own level objects.
  */
-export const MAX_CORD_LENGTH = 1200;
+export const MAX_CORD_LENGTH = 1300;
 
 /**
  * Returns array of segments from polyline points: [{ p1, p2 }, ...]
