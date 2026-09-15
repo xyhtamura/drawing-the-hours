@@ -10,9 +10,39 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Build Trace as threading in sequence (STRING.md rule 4) for string visits, the next item of the handoff list in NOTES.md.
+Build STRING.md rule 7 (wind that changes direction) for Noon V–VI and roll string rules out to Noon and Dusk, the next item of the handoff list in NOTES.md.
 
 ## Activity
+
+2026-09-16 — Antigravity — Built Trace as threading in sequence (STRING.md Rule 4) for string visits, with live feedback, Ready diagram, and String Trace sandbox.
+
+- Added String Trace sandbox (`practice-string-trace`) to `PRACTICE_LEVELS` in `src/campaign.js`: Midnight window scene, cast of 3 fireflies, 2 lacewings, 1 snail; `stringRules: true`, `gestures: ['string']`, `traceSequence: ['firefly', 'lacewing', 'firefly']`, and objectives `{ any: 4, trace: 3 }`.
+- Threading order tracking: `StringGesture.threadingOrder` records entities in chronological order of contact; reset on release.
+- Harmony chord voicing: added `ORDERED_TRACE` chord voicing to `AudioManager.playHarmonyChord` in `src/audio.js`.
+- Objective tag derivation: updated `deriveObjectiveTags` in `src/campaign.js` to return `['any', 'trace']` for `recipeType === 'ORDERED_TRACE'`.
+- String trace stroke evaluation in `src/game.js`:
+  * Matching sequence: releases stroke with beads matching `traceSequence` in order, scores `Ordered Trace` (240 base * length band multiplier), advances `trace` and `any` objectives, harmonizes threaded insects, releases un-scored enclosed bystanders, and accepts line open or closed.
+  * Mismatch handling: cancels stroke with descriptive fault banner (`Trace requires: ... Threaded X/Y`, `Too many insects threaded`, `Wrong sequence (...)`), plays fray fault, and releases beads back to roaming.
+  * Non-trace visits: preserves existing Dawn I–III behavior ("An insect was threaded on the cord, so the loop does not count.").
+- Live pointer feedback: dynamically updates feedback banner during stroke (`Trace: Firefly (1/3)` -> `Trace ready: Firefly → Lacewing → Firefly — release to score!`).
+- Visual feedback & styling:
+  * Bead markers: starlight blue (`#315b73`) hit-circle, tether, cord pip, and badge numbers (`1`, `2`, `3`) for matching beads in trace visits; warning hue for unexpected beads.
+  * Cord ready glow: starlight blue aura (`rgba(70, 180, 220, 0.9)`), luminous under-glow, and `#416e83` tip when sequence is satisfied and ready to release.
+  * Ready modal diagram (`teachStringTrace`): illustrates sequence threading with Firefly 1, Lacewing 2, Firefly 3 badges and cord line.
+- Test coverage:
+  * Added Test 18 to `test/test_string_sandbox.js`: verifying exact match with open line (awards 300 pts Balanced, advances trace/any, harmonizes beads, bystander stays roaming), closed loop match (240 pts Petite), wrong order rejection, partial sequence rejection, extra bead rejection, and banner messaging.
+  * Updated `test/test_mechanics.js` assertion for 7 practice levels including `practice-string-trace`.
+- STRING.md: updated Rule 4 status from "Not built yet" to "Built and testable in practice-string-trace".
+
+Verification:
+- `node test/test_string_sandbox.js`: all 18 unit tests PASS.
+- `node test/test_mechanics.js`: 100% PASS.
+- `node test/test_dusk.js` & `node test/test_midnight.js`: 100% PASS.
+- `node --check` and `git diff --check`: clean.
+
+Undone / Open for Xyh:
+- Playtest the live String Trace Sandbox via Practice Verges in `#visit-modal` to test pointer threading sequence feel, feedback, and open/closed releases.
+- Next phase: build STRING.md Rule 7 (wind changing direction) for Noon V–VI and roll string rules out to Noon and Dusk.
 
 2026-09-15 — Antigravity — Updated STRING.md with settled sandbox decisions, and rolled out string rules to Dawn I–III (dawn-01, dawn-02, dawn-03).
 

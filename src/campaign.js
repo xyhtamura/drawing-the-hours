@@ -508,6 +508,37 @@ PRACTICE_LEVELS.push({
   snailRoute: 'seam',
 });
 
+PRACTICE_LEVELS.push({
+  id: 'practice-string-trace',
+  number: 'T',
+  title: 'String Trace sandbox',
+  hour: 'midnight',
+  hourLabel: 'Practice · String Trace Sandbox',
+  scene: 'window',
+  transitionText: 'Practice threading in sequence under one-gesture string rules: firefly → lacewing → different firefly.',
+  durationSeconds: 120,
+  population: {
+    brimstone: 0,
+    damselfly: 0,
+    hawkmoth: 0,
+    seed: 0,
+    snail: 1,
+    lacewing: 2,
+    firefly: 3,
+  },
+  motionScale: 0.85,
+  objectives: {
+    any: 4,
+    trace: 3,
+  },
+  traceSequence: ['firefly', 'lacewing', 'firefly'],
+  instruction: 'Thread three insects in sequence: Firefly → Lacewing → different Firefly. Avoid other contacts and the snail.',
+  designNote: 'String sandbox practicing ordered trace threading with Window fireflies and Paper lacewings.',
+  gestures: ['string'],
+  stringRules: true,
+  wind: null,
+});
+
 export const OBJECTIVE_LABELS = {
   any: 'Combinations',
   single: 'Single Loops',
@@ -536,7 +567,7 @@ function normalizeKind(kind) {
  */
 export function deriveObjectiveTags(drawingResult, pockets) {
   if (!drawingResult || !drawingResult.valid) return [];
-  if (drawingResult.mode === 'trace') return ['any', 'trace'];
+  if (drawingResult.mode === 'trace' || drawingResult.recipeType === 'ORDERED_TRACE') return ['any', 'trace'];
   const tags = ['any'];
   const pCount = pockets ? pockets.length : 0;
 

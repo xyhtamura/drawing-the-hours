@@ -22,7 +22,7 @@ import {
   pointAndTangentAtArcLength,
 } from '../src/string.js';
 import { Insect, DandelionSeed, Snail } from '../src/entities.js';
-import { extractClosedPockets, polylineLength } from '../src/geometry.js';
+import { extractClosedPockets, polylineLength, getLengthBand } from '../src/geometry.js';
 import { CAMPAIGN_LEVELS, PRACTICE_LEVELS } from '../src/campaign.js';
 import { Game } from '../src/game.js';
 
@@ -719,6 +719,159 @@ console.log('--- Running String Sandbox Test Suite ---');
   assert.strictEqual(game.feedbackBanner.text, 'An insect was threaded on the cord, so the loop does not count.');
 
   console.log('✔ Dawn I–III campaign visits adopt string rules, rule 9 closure, and bead cancellation.');
+}
+
+// 18. Trace as Threading in Sequence (STRING.md Rule 4)
+{
+  const canvas = {
+    getContext: () => ({
+      measureText: () => ({ width: 10 }),
+      scale: () => {},
+    }),
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 960, height: 640 }),
+  };
+  const game = new Game(canvas);
+  game.initLevel('practice-string-trace');
+  game.state = 'PLAYING';
+
+  assert.strictEqual(game.currentLevel.stringRules, true, 'practice-string-trace has stringRules: true');
+  assert.deepStrictEqual(game.currentLevel.gestures, ['string'], 'practice-string-trace has gestures: [string]');
+  assert.deepStrictEqual(game.currentLevel.traceSequence, ['firefly', 'lacewing', 'firefly'], 'traceSequence defined');
+  assert.strictEqual(game.gestureMode, 'string', 'gestureMode is string');
+
+  // Case A: Exact sequence match with open line (firefly A -> lacewing -> firefly B)
+  const f1 = new Insect(100, 100, 'firefly');
+  const l1 = new Insect(200, 100, 'lacewing');
+  const f2 = new Insect(300, 100, 'firefly');
+  const f3 = new Insect(200, 120, 'firefly'); // bystander
+  game.entities = [f1, l1, f2, f3];
+  game.isDrawing = true;
+  game.currentStroke = [{ x: 50, y: 100 }, { x: 200, y: 100 }, { x: 400, y: 100 }, { x: 650, y: 100 }];
+  game.strokeLength = 600;
+  game.activeBand = getLengthBand(600);
+  game.stringGesture = new StringGesture(game.currentStroke[0], 1200);
+  game.stringGesture.points = [...game.currentStroke];
+  game.stringGesture.totalLength = 600;
+
+  // Thread in exact chronological order: f1 -> l1 -> f2
+  game.stringGesture.threadBead(f1, 50);
+  game.stringGesture.threadBead(l1, 150);
+  game.stringGesture.threadBead(f2, 250);
+  assert.strictEqual(game.stringGesture.hasBeads, true);
+  assert.strictEqual(game.stringGesture.threadingOrder.length, 3);
+
+  const initialScore = game.score;
+  game.resolveCurrentStroke();
+
+  assert.strictEqual(game.score, initialScore + 300, 'Ordered trace awards 240 * 1.25 = 300 pts on Balanced band');
+  assert.strictEqual(game.harmoniesCount, 1, 'Harmonies count incremented');
+  assert.ok(game.feedbackBanner.text.includes('Ordered Trace (+300 pts)'), 'Success feedback banner displayed');
+  assert.strictEqual(f1.state, 'harmonizing', 'First firefly is harmonizing');
+  assert.strictEqual(l1.state, 'harmonizing', 'Lacewing is harmonizing');
+  assert.strictEqual(f2.state, 'harmonizing', 'Second firefly is harmonizing');
+  assert.strictEqual(f3.state, 'roaming', 'Bystander firefly remains roaming and unscored');
+  assert.strictEqual(game.campaign.objectiveProgress.trace.current, 1, 'Trace objective advanced');
+  assert.strictEqual(game.campaign.objectiveProgress.any.current, 1, 'Any objective advanced');
+
+  // Case B: Exact sequence match with closed loop (line closed or crossing)
+  const f4 = new Insect(150, 150, 'firefly');
+  const l2 = new Insect(250, 150, 'lacewing');
+  const f5 = new Insect(350, 150, 'firefly');
+  game.entities = [f4, l2, f5];
+  game.isDrawing = true;
+  // A circular loop
+  const loopStroke = [];
+  for (let i = 0; i <= 24; i++) {
+    const a = (i / 24) * Math.PI * 2;
+    loopStroke.push({ x: 250 + Math.cos(a) * 100, y: 150 + Math.sin(a) * 100 });
+  }
+  game.currentStroke = loopStroke;
+  game.strokeLength = 200;
+  game.activeBand = { name: 'Petite', cordHue: '#3a728b', color: '#416e83' };
+  game.stringGesture = new StringGesture(loopStroke[0], 1200);
+  game.stringGesture.points = [...loopStroke];
+  game.stringGesture.totalLength = 200;
+  game.stringGesture.threadBead(f4, 30);
+  game.stringGesture.threadBead(l2, 90);
+  game.stringGesture.threadBead(f5, 150);
+
+  const prevScore = game.score;
+  game.resolveCurrentStroke();
+  assert.strictEqual(game.score, prevScore + 240, 'Closed ordered trace awards 240 * 1.0 = 240 pts on Petite band');
+  assert.strictEqual(f4.state, 'harmonizing', 'f4 harmonizing');
+  assert.strictEqual(l2.state, 'harmonizing', 'l2 harmonizing');
+  assert.strictEqual(f5.state, 'harmonizing', 'f5 harmonizing');
+
+  // Case C: Wrong order (lacewing -> firefly -> firefly)
+  const f6 = new Insect(100, 100, 'firefly');
+  const l3 = new Insect(200, 100, 'lacewing');
+  const f7 = new Insect(300, 100, 'firefly');
+  game.entities = [f6, l3, f7];
+  game.isDrawing = true;
+  game.currentStroke = [{ x: 50, y: 100 }, { x: 150, y: 100 }, { x: 250, y: 100 }, { x: 350, y: 100 }];
+  game.strokeLength = 300;
+  game.activeBand = { name: 'Petite', cordHue: '#3a728b', color: '#416e83' };
+  game.stringGesture = new StringGesture(game.currentStroke[0], 1200);
+  game.stringGesture.points = [...game.currentStroke];
+  game.stringGesture.totalLength = 300;
+
+  // Thread wrong order: lacewing first!
+  game.stringGesture.threadBead(l3, 50);
+  game.stringGesture.threadBead(f6, 150);
+  game.stringGesture.threadBead(f7, 250);
+
+  const scoreBeforeWrong = game.score;
+  game.resolveCurrentStroke();
+  assert.strictEqual(game.score, scoreBeforeWrong, 'Wrong order awards no points');
+  assert.strictEqual(f6.state, 'roaming', 'Insects released back to roaming on mismatch');
+  assert.strictEqual(l3.state, 'roaming', 'Insects released back to roaming on mismatch');
+  assert.strictEqual(f7.state, 'roaming', 'Insects released back to roaming on mismatch');
+  assert.ok(game.feedbackBanner.text.includes('Wrong sequence'), 'Feedback banner reports wrong sequence');
+  assert.ok(game.feedbackBanner.text.includes('Trace requires: Firefly → Lacewing → Firefly'), 'Banner states required order');
+
+  // Case D: Partial sequence (only firefly -> lacewing, 2/3)
+  const f8 = new Insect(100, 100, 'firefly');
+  const l4 = new Insect(200, 100, 'lacewing');
+  game.entities = [f8, l4];
+  game.isDrawing = true;
+  game.currentStroke = [{ x: 50, y: 100 }, { x: 150, y: 100 }, { x: 250, y: 100 }];
+  game.strokeLength = 200;
+  game.activeBand = { name: 'Petite', cordHue: '#3a728b', color: '#416e83' };
+  game.stringGesture = new StringGesture(game.currentStroke[0], 1200);
+  game.stringGesture.points = [...game.currentStroke];
+  game.stringGesture.totalLength = 200;
+  game.stringGesture.threadBead(f8, 50);
+  game.stringGesture.threadBead(l4, 150);
+
+  game.resolveCurrentStroke();
+  assert.strictEqual(game.score, scoreBeforeWrong, 'Partial sequence awards no points');
+  assert.ok(game.feedbackBanner.text.includes('Threaded 2/3'), 'Banner reports 2/3 threaded');
+  assert.strictEqual(f8.state, 'roaming', 'Released back to roaming');
+  assert.strictEqual(l4.state, 'roaming', 'Released back to roaming');
+
+  // Case E: Extra bead (4 insects threaded)
+  const f9 = new Insect(100, 100, 'firefly');
+  const l5 = new Insect(200, 100, 'lacewing');
+  const f10 = new Insect(300, 100, 'firefly');
+  const f11 = new Insect(400, 100, 'firefly');
+  game.entities = [f9, l5, f10, f11];
+  game.isDrawing = true;
+  game.currentStroke = [{ x: 50, y: 100 }, { x: 150, y: 100 }, { x: 250, y: 100 }, { x: 350, y: 100 }, { x: 450, y: 100 }];
+  game.strokeLength = 400;
+  game.activeBand = { name: 'Balanced', cordHue: '#3a728b', color: '#416e83' };
+  game.stringGesture = new StringGesture(game.currentStroke[0], 1200);
+  game.stringGesture.points = [...game.currentStroke];
+  game.stringGesture.totalLength = 400;
+  game.stringGesture.threadBead(f9, 50);
+  game.stringGesture.threadBead(l5, 150);
+  game.stringGesture.threadBead(f10, 250);
+  game.stringGesture.threadBead(f11, 350);
+
+  game.resolveCurrentStroke();
+  assert.strictEqual(game.score, scoreBeforeWrong, 'Extra bead awards no points');
+  assert.ok(game.feedbackBanner.text.includes('Too many insects threaded'), 'Banner reports too many beads');
+
+  console.log('✔ Trace as threading in sequence verified (order, matching, partial, extra, open/closed).');
 }
 
 console.log('--- All String Sandbox unit tests passed! ---');

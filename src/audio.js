@@ -150,6 +150,8 @@ export class AudioManager {
       selectedChords = [basePitches[2], basePitches[4], basePitches[5]];
     } else if (recipeType === 'SEED_AND_TRIO') {
       selectedChords = [basePitches[0], basePitches[2], basePitches[3], basePitches[4], basePitches[5]];
+    } else if (recipeType === 'ORDERED_TRACE') {
+      selectedChords = [basePitches[0], basePitches[1], basePitches[3], basePitches[5]];
     }
 
     const t = this.ctx.currentTime;

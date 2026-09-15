@@ -513,6 +513,7 @@ export class Game {
       this.activeBand = getLengthBand(0);
       this.lastPointerPos = pos;
       this.lastPointerTime = performance.now();
+      this.lastReportedTraceCount = 0;
       if (this.currentLevel?.stringRules) {
         this.tapTracker.onPress(pos, performance.now(), this.entities);
         this.stringGesture = new StringGesture(pos, this.currentLevel.maxCordLength ?? MAX_CORD_LENGTH);
@@ -610,6 +611,7 @@ export class Game {
     }
     this.tapTracker?.cancel();
     this.trace = null;
+    this.lastReportedTraceCount = 0;
     this.currentStroke = [];
     this.strokeLength = 0;
     this.activePockets = [];
@@ -657,6 +659,30 @@ export class Game {
         if (sampleRes.snapped) {
           this.breakCord('The cord snapped. Keep your stroke shorter.');
           return;
+        }
+
+        if (this.currentLevel?.traceSequence) {
+          const order = this.stringGesture.threadingOrder;
+          if (order.length !== this.lastReportedTraceCount) {
+            this.lastReportedTraceCount = order.length;
+            const seq = this.currentLevel.traceSequence;
+            const seqText = seq.map(k => k.charAt(0).toUpperCase() + k.slice(1)).join(' → ');
+            if (order.length > 0 && order.length <= seq.length) {
+              const matchesSoFar = order.every((e, i) => e.kind === seq[i]);
+              const gotText = order.map(e => e.kind.charAt(0).toUpperCase() + e.kind.slice(1)).join(' → ');
+              if (matchesSoFar) {
+                if (order.length === seq.length) {
+                  this.showFeedback(`Trace ready: ${gotText} — release to score!`, 'success', 3.0);
+                } else {
+                  this.showFeedback(`Trace: ${gotText} (${order.length}/${seq.length})`, 'info', 2.0);
+                }
+              } else {
+                this.showFeedback(`Wrong sequence (${gotText}). Trace requires: ${seqText}.`, 'warning', 2.5);
+              }
+            } else if (order.length > seq.length) {
+              this.showFeedback(`Too many insects threaded. Trace requires: ${seqText}.`, 'warning', 2.5);
+            }
+          }
         }
       }
 
@@ -716,6 +742,58 @@ export class Game {
       const strokePoints = [...this.currentStroke];
       this.recoilStroke = strokePoints;
       this.recoilAlpha = 1.0;
+      this.lastEvaluatedPockets = [];
+
+      const seq = this.currentLevel.traceSequence;
+      if (seq && seq.length > 0) {
+        const beadEntities = this.stringGesture.threadingOrder;
+        const uniqueEntities = new Set(beadEntities);
+        const seqText = seq.map(k => k.charAt(0).toUpperCase() + k.slice(1)).join(' → ');
+
+        const isExactMatch = beadEntities.length === seq.length &&
+          uniqueEntities.size === beadEntities.length &&
+          beadEntities.every((e, i) => e.kind === seq[i]);
+
+        if (isExactMatch) {
+          const band = getLengthBand(this.strokeLength);
+          const multiplier = band.name === 'Petite' ? 1 : band.name === 'Balanced' ? 1.25 : 1.5;
+          const result = {
+            valid: true,
+            mode: 'trace',
+            recipeType: 'ORDERED_TRACE',
+            title: 'Ordered Trace',
+            finalScore: Math.round(240 * multiplier),
+            band: band.name,
+            harmonizedEntities: [...beadEntities],
+          };
+          this.acceptDrawing(result, []);
+          this.stringGesture.releaseBeads();
+          this.currentStroke = [];
+          this.strokeLength = 0;
+          return;
+        }
+
+        // Trace mismatch / fault
+        let faultMsg;
+        if (uniqueEntities.size !== beadEntities.length) {
+          faultMsg = `Trace requires different insects: ${seqText}.`;
+        } else if (beadEntities.length < seq.length) {
+          faultMsg = `Trace requires: ${seqText}. Threaded ${beadEntities.length}/${seq.length}.`;
+        } else if (beadEntities.length > seq.length) {
+          faultMsg = `Too many insects threaded. Trace requires: ${seqText}.`;
+        } else {
+          const gotText = beadEntities.map(e => e.kind.charAt(0).toUpperCase() + e.kind.slice(1)).join(' → ');
+          faultMsg = `Wrong sequence (${gotText}). Trace requires: ${seqText}.`;
+        }
+
+        this.showFeedback(faultMsg, 'warning');
+        audio.playFrayFault();
+        this.stringGesture.releaseBeads();
+        this.currentStroke = [];
+        this.strokeLength = 0;
+        return;
+      }
+
       this.showFeedback('An insect was threaded on the cord, so the loop does not count.', 'warning');
       audio.playFrayFault();
       this.stringGesture.releaseBeads();
@@ -1426,10 +1504,20 @@ export class Game {
       const isClosed = Boolean(this.activePockets && this.activePockets.length > 0);
       const hasBeads = Boolean(this.currentLevel?.stringRules && this.stringGesture?.hasBeads);
 
+      const isTraceLevel = Boolean(this.currentLevel?.stringRules && this.currentLevel?.traceSequence);
+      const traceOrder = this.stringGesture?.threadingOrder || [];
+      const traceSeq = this.currentLevel?.traceSequence || [];
+      const isTraceReady = isTraceLevel && traceOrder.length === traceSeq.length &&
+        new Set(traceOrder).size === traceOrder.length &&
+        traceOrder.every((e, i) => e.kind === traceSeq[i]);
+
       ctx.save();
 
-      // Cord closure luminous aura when loop qualifies as closed
-      if (isClosed) {
+      // Cord closure luminous aura when loop qualifies as closed or trace is ready
+      if (isTraceReady) {
+        ctx.shadowColor = 'rgba(70, 180, 220, 0.9)';
+        ctx.shadowBlur = 14;
+      } else if (isClosed) {
         ctx.shadowColor = hasBeads ? 'rgba(215, 90, 50, 0.75)' : 'rgba(240, 195, 75, 0.85)';
         ctx.shadowBlur = 12;
       }
@@ -1446,8 +1534,12 @@ export class Game {
       }
       ctx.stroke();
 
-      // Soft luminous under-glow along cord if closed
-      if (isClosed) {
+      // Soft luminous under-glow along cord if closed or trace is ready
+      if (isTraceReady) {
+        ctx.strokeStyle = 'rgba(70, 180, 220, 0.4)';
+        ctx.lineWidth = 6.5;
+        ctx.stroke();
+      } else if (isClosed) {
         ctx.strokeStyle = hasBeads ? 'rgba(215, 90, 50, 0.35)' : 'rgba(245, 205, 80, 0.45)';
         ctx.lineWidth = 6.5;
         ctx.stroke();
@@ -1472,11 +1564,11 @@ export class Game {
       ctx.setLineDash([6, 5]);
       ctx.stroke();
 
-      // Drawing head ring (pulses gently when closed)
+      // Drawing head ring (pulses gently when closed or trace is ready)
       const tip = pts[pts.length - 1];
-      ctx.fillStyle = isClosed ? (hasBeads ? '#d46b43' : '#7fad5a') : band.color;
+      ctx.fillStyle = isTraceReady ? '#416e83' : (isClosed ? (hasBeads ? '#d46b43' : '#7fad5a') : band.color);
       ctx.beginPath();
-      ctx.arc(tip.x, tip.y, isClosed ? 5.2 : 4, 0, Math.PI * 2);
+      ctx.arc(tip.x, tip.y, (isTraceReady || isClosed) ? 5.2 : 4, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.restore();
@@ -1524,11 +1616,18 @@ export class Game {
 
   drawBeadMarkers(ctx) {
     if (!this.isDrawing || !this.stringGesture || !this.stringGesture.hasBeads) return;
+    const isTraceLevel = Boolean(this.currentLevel?.stringRules && this.currentLevel?.traceSequence);
+    const traceOrder = this.stringGesture.threadingOrder || [];
+    const traceSeq = this.currentLevel?.traceSequence || [];
     ctx.save();
     for (const bead of this.stringGesture.beads) {
       const ent = bead.entity;
+      const orderIdx = traceOrder.indexOf(ent);
+      const isMatchingBead = isTraceLevel && orderIdx >= 0 && orderIdx < traceSeq.length && ent.kind === traceSeq[orderIdx];
+      const markerHue = isTraceLevel ? (isMatchingBead ? '#315b73' : '#c85a32') : '#c85a32';
+
       // Hit circle indicator around the bug
-      ctx.strokeStyle = '#c85a32';
+      ctx.strokeStyle = markerHue;
       ctx.lineWidth = 2.0;
       ctx.setLineDash([4, 3]);
       ctx.beginPath();
@@ -1540,7 +1639,7 @@ export class Game {
 
       // Subtle tether line from cord anchor point to insect center
       ctx.setLineDash([]);
-      ctx.strokeStyle = 'rgba(200, 90, 50, 0.45)';
+      ctx.strokeStyle = isTraceLevel && isMatchingBead ? 'rgba(49, 91, 115, 0.45)' : 'rgba(200, 90, 50, 0.45)';
       ctx.lineWidth = 1.2;
       ctx.beginPath();
       ctx.moveTo(point.x, point.y);
@@ -1549,12 +1648,24 @@ export class Game {
 
       // Small bead pip on the cord itself
       ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#c85a32';
+      ctx.strokeStyle = markerHue;
       ctx.lineWidth = 1.4;
       ctx.beginPath();
       ctx.arc(point.x, point.y, 3.2, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+
+      // If in trace level and ordered, show index badge (1, 2, 3) near insect
+      if (isTraceLevel && orderIdx >= 0) {
+        ctx.fillStyle = markerHue;
+        ctx.beginPath();
+        ctx.arc(ent.x + ent.radius, ent.y - ent.radius, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '600 10px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(orderIdx + 1), ent.x + ent.radius, ent.y - ent.radius + 3.5);
+      }
     }
     ctx.restore();
   }
@@ -1840,6 +1951,7 @@ export class Game {
   drawReadyModal(ctx) {
     const lvl = this.currentLevel;
     const teachTrace = lvl.gestures.length === 1 && lvl.gestures[0] === 'trace';
+    const teachStringTrace = lvl.id === 'practice-string-trace';
     const teachLacewing = lvl.id === 'dusk-01' || lvl.id === 'practice-dusk';
     const teachDusk02 = lvl.id === 'dusk-02';
     const teachDusk03 = lvl.id === 'dusk-03';
@@ -1851,9 +1963,9 @@ export class Game {
     const teachDawn01 = lvl.id === 'dawn-01';
     const teachDawn02 = lvl.id === 'dawn-02';
     const teachDawn03 = lvl.id === 'dawn-03';
-    const hasDiagram = teachDawn01 || teachDawn02 || teachDawn03 || teachTrace || teachLacewing || teachDusk02 || teachDusk03 || teachCounterpart || teachNursery || teachSeedTrio || teachMidnight02 || teachMidnight03;
+    const hasDiagram = teachDawn01 || teachDawn02 || teachDawn03 || teachStringTrace || teachTrace || teachLacewing || teachDusk02 || teachDusk03 || teachCounterpart || teachNursery || teachSeedTrio || teachMidnight02 || teachMidnight03;
     const teachDawn = teachDawn01 || teachDawn02 || teachDawn03;
-    const modalHeight = (teachMidnight02 || teachMidnight03 || teachDawn) ? 445 : (hasDiagram ? 415 : 310);
+    const modalHeight = (teachMidnight02 || teachMidnight03 || teachDawn || teachStringTrace) ? 445 : (hasDiagram ? 415 : 310);
 
     this.drawModalBox(ctx, 500, modalHeight, (boxW, boxH) => {
       const isNarrow = boxW < 440;
@@ -2024,6 +2136,31 @@ export class Game {
         ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
         ctx.fillText('Close the loop by crossing the cord over itself or landing on the line.', 0, 41);
         ctx.fillText('Trio of Flight: enclose three different kinds (shared limit: 1,200 px).', 0, 56);
+        ctx.restore();
+      } else if (teachStringTrace) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 112);
+        // Cord line threading three insects
+        ctx.strokeStyle = '#416e83'; ctx.lineWidth = 2.4;
+        ctx.beginPath(); ctx.moveTo(-110, 8); ctx.lineTo(110, 8); ctx.stroke();
+        for (const [i, x] of [-70, 0, 70].entries()) {
+          ctx.save(); ctx.translate(x, 8); ctx.scale(0.8, 0.8);
+          if (i === 1) drawLacewing(ctx, { lacePhase: 'rest', flapPhase: 0 });
+          else drawFirefly(ctx, { stateTime: 0.4, glowOffset: 0 });
+          ctx.restore();
+          // Bead pip on the cord
+          ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#315b73'; ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.arc(x, 8, 3.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          // Badge
+          ctx.fillStyle = '#315b73'; ctx.beginPath(); ctx.arc(x + 14, 8 - 14, 8, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#fff'; ctx.font = '600 10px system-ui'; ctx.textAlign = 'center';
+          ctx.fillText(String(i + 1), x + 14, 8 - 10.5);
+
+          ctx.textAlign = 'center'; ctx.fillStyle = '#315b73'; ctx.font = '11px system-ui';
+          ctx.fillText(`${i + 1}. ${i === 1 ? 'Lacewing' : 'Firefly'}`, x, 34);
+        }
+        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui';
+        ctx.fillText('Thread three insects in sequence: Firefly → Lacewing → different Firefly.', 0, 56);
+        ctx.fillText('Line may stay open or close. Release after the third to score.', 0, 71);
         ctx.restore();
       } else if (teachTrace) {
         ctx.save(); ctx.translate(0, boxH / 2 - 112);

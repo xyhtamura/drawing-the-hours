@@ -123,7 +123,8 @@ Trace becomes threading in sequence. A stroke whose beads, in threading order, a
 exactly the visit's `traceSequence` (a firefly, a lacewing, then a different
 firefly) scores a Trace on release instead of being cancelled. The line may stay
 open or close. A Trace keeps its current scoring and tags: 240 base points times
-the length multiplier, advancing `trace` and `any`. Not built yet.
+the length multiplier, advancing `trace` and `any`. Built and testable in
+`practice-string-trace` (String Trace Sandbox).
 
 Agent defaults, not yet confirmed by Xyh:
 

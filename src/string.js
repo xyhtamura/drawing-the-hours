@@ -414,6 +414,7 @@ export class StringGesture {
     this.totalLength = 0;
     this.maxCordLength = maxCordLength;
     this.beads = []; // [{ entity, s, offsetX, offsetY, prevX, prevY }]
+    this.threadingOrder = []; // [entity, ...] in chronological order of threading
     this.snapped = false;
   }
 
@@ -471,6 +472,7 @@ export class StringGesture {
 
   threadBead(entity, arcLength) {
     if (this.beads.some(b => b.entity === entity)) return;
+    this.threadingOrder.push(entity);
     entity.isBead = true;
     entity.state = 'bead';
     const s = Math.max(0, Math.min(this.totalLength, arcLength));
@@ -594,6 +596,7 @@ export class StringGesture {
       }
     }
     this.beads = [];
+    this.threadingOrder = [];
   }
 }
 
