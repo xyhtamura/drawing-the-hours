@@ -392,6 +392,8 @@ export const PLAYABLE_LEVEL_IDS = new Set([
   'dusk-02',
   'dusk-03',
   'midnight-01',
+  'midnight-02',
+  'midnight-03',
 ]);
 
 export const PRACTICE_LEVELS = [

@@ -10,9 +10,18 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Antigravity: implement Midnight XI–XII and the first-day completion screen from [MIDNIGHT.md](MIDNIGHT.md); real-device gesture calibration remains open.
+Real-device gesture calibration, finger occlusion testing, and difficulty balancing across all twelve visits.
 
 ## Activity
+
+2026-09-15 — Antigravity — Implemented Hour IV: Midnight Visits XI and XII, explicit Enclose / Trace mode toggle UI, ready card diagrams, clearance-aware window spawning, and day completion view, completing the 12-visit authored campaign per MIDNIGHT.md and CAMPAIGN.md.
+- Enclose / Trace Mode UI: Added `#btn-gesture-mode` in controls bar with keyboard shortcut `[T]`. Explicit switching between Enclose and Trace modes via `setGestureMode()`; locked to Trace in Visit X, hidden in visits with Enclose only, and disabled while drawing or during victory delay. Added visible mode indicators on canvas HUD for Enclose as well as Trace, and updated footer keyboard hints.
+- Clearance-Aware Window Scene Spawning: In `src/game.js`, initial placement and replenishment in `window` scene checks distance against already placed entities (`hypot >= e.radius + cand.radius + 14`). Fireflies spawn at anchored positions, lacewings at leaf anchors, while hoverflies, brimstones, seeds, and snail verify clearance across up to 25 attempts or queue to `respawnQueue` with short delay to prevent overlapping starts.
+- Ready Screen Diagrams: Added dual Enclose loop (Kindred / Seed & Wing) and Trace sequence (Firefly 1 → Lacewing 2 → Firefly 3) diagram for Visit XI (`teachMidnight02`), explicitly clarifying that seeds belong in Enclose. Added ready vignette for Visit XII (`teachMidnight03`) highlighting the return of Brimstone butterflies and perimeter snail.
+- Day-Completion View & Replay Routing: In `src/game.js`, when finishing Visit XII (`midnight-03`), checks actual completed IDs set (`save.completedLevelIds.length === 12` covering all 12 IDs). Renders "Twelve Visits Complete" with total campaign score and prompt "[ Tap to Replay a Visit ]", opening `#visit-modal` on advance. If XII completed out-of-order via test unlocks, renders "Visit XII Complete" and offers visit selection. Replay for practice modes preserved.
+- Campaign Activation: Added `'midnight-02'` and `'midnight-03'` to `PLAYABLE_LEVEL_IDS` in `src/campaign.js`. All 12 campaign visits across all 4 hours (Dawn, Noon, Dusk, Midnight) are now playable. Updated `#visit-modal` introductory copy and removed preview notice.
+- Verification: Extended `test/test_midnight.js` covering XI and XII objective satisfaction (`any`, `pair`, `seedWing`, `figure8`, `trace`, `nursery`), gesture lockout during strokes and victory delays, day completion verification, and window scene placement clearance at landscape (960x640) and portrait (390x844) viewport dimensions. All test suites (`test_mechanics.js`, `test_dusk.js`, `test_midnight.js`) pass with 0 errors and all ES modules pass `node --check`.
+Real-device touch calibration across all twelve visits remains next.
 
 2026-09-15 — Antigravity — Constrained Nursery Polarity to exactly 1 flier and 1 seed, made Twin Echo and Cross-Meadow figure-eights strictly optional in campaign objectives per Xyh's feedback.
 - Nursery Polarity Refinement: In `src/recipes.js`, two-pocket drawings with a fliers-only and seeds-only partition must contain exactly 1 flier and 1 seed (base score 300). More than one of either flier or seed explicitly fails with `faultType: 'CROWDED_NURSERY'` and clear guidance. Updated `deriveObjectiveTags()` in `src/campaign.js` accordingly.

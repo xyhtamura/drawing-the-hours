@@ -19,6 +19,9 @@
       <button id="btn-visit" title="Garden Visits &amp; Hours (W)">
         🌿 Visit: Dawn 1
       </button>
+      <button id="btn-gesture-mode" title="Switch gesture mode: Enclose / Trace (T)" aria-label="Gesture Mode" style="display: none;">
+        ✏ Mode: Enclose [T]
+      </button>
       <button id="btn-orientation" title="Switch orientation mode: Auto / Vertical / Horizontal (V)">
         📱 View: Auto
       </button>
@@ -43,7 +46,7 @@
 
   <footer>
     <div id="gesture-hint">Draw around insects. Cross your line to make two pockets.</div>
-    <div>Keyboard: [Space] Pause / Advance &bull; [W] Visits &bull; [V] View &bull; [M] Sound &bull; [H] Field Book &bull; [R] Restart</div>
+    <div>Keyboard: [Space] Pause / Advance &bull; [T] Mode &bull; [W] Visits &bull; [V] View &bull; [M] Sound &bull; [H] Field Book &bull; [R] Restart</div>
   </footer>
 
   <!-- Field Book Modal -->
@@ -171,7 +174,7 @@
     <div class="recipe-card visit-card">
       <h2>Meadow Visits &amp; Hours</h2>
       <div class="field-intro">
-        Select any chapter visit or return to an open practice verge. All implemented visits are unlocked for testing.
+        Select any chapter visit across the four hours of the day, or return to an open practice verge. All 12 visits are playable.
       </div>
 
       <div class="visit-section">
@@ -184,12 +187,6 @@
       <div class="visit-section"><div class="visit-section-title">Hour II: Noon</div><div class="visit-list" id="visit-list-noon"></div></div>
       <div class="visit-section"><div class="visit-section-title">Hour III: Dusk</div><div class="visit-list" id="visit-list-dusk"></div></div>
       <div class="visit-section"><div class="visit-section-title">Hour IV: Midnight</div><div class="visit-list" id="visit-list-midnight"></div></div>
-      <div class="visit-section" style="opacity: 0.7; margin-top: 14px;">
-        <div class="visit-section-title">Subsequent Hours (Preview)</div>
-        <div style="font-size: 0.82rem; color: var(--text-muted); font-style: italic; padding: 4px 2px;">
-          Midnight Visits XI–XII
-        </div>
-      </div>
 
       <div class="visit-section" style="margin-top: 16px;">
         <div class="visit-section-title">Practice Verges</div>
@@ -217,6 +214,7 @@
     window.game = game; // handle for playtesting from the console
 
     const btnVisit = document.getElementById('btn-visit');
+    const btnGestureMode = document.getElementById('btn-gesture-mode');
     const btnOrientation = document.getElementById('btn-orientation');
     const btnFieldbook = document.getElementById('btn-fieldbook');
     const btnAudio = document.getElementById('btn-audio');
@@ -301,7 +299,9 @@
     const updateLevelUI = (level = game.currentLevel) => {
       document.getElementById('gesture-hint').textContent = game.gestureMode === 'trace'
         ? 'Start in empty space. Trace through firefly, lacewing, then another firefly. Release to finish.'
-        : 'Draw around insects. Cross your line to make two pockets.';
+        : (level?.hour === 'midnight'
+          ? 'Draw around insects. Seeds belong in Enclose. Cross line for two lobes.'
+          : 'Draw around insects. Cross your line to make two pockets.');
       if (btnVisit && level) {
         if (level.hourLabel && level.hourLabel.startsWith('Practice')) {
           btnVisit.textContent = `🌿 Sandbox: ${level.number}`;
@@ -309,6 +309,30 @@
           btnVisit.textContent = `🌿 Visit: Dawn ${level.number}`;
         } else {
           btnVisit.textContent = `🌿 Visit: ${level.number}`;
+        }
+      }
+      if (btnGestureMode && level) {
+        const gestures = level.gestures || ['enclose'];
+        if (gestures.length > 1) {
+          btnGestureMode.style.display = 'inline-flex';
+          btnGestureMode.disabled = game.isDrawing || game.victoryDelay > 0;
+          if (game.gestureMode === 'trace') {
+            btnGestureMode.textContent = '✨ Mode: Trace [T]';
+            btnGestureMode.className = 'mode-trace';
+            btnGestureMode.title = 'Switch gesture mode: Enclose / Trace (T)';
+          } else {
+            btnGestureMode.textContent = '✏ Mode: Enclose [T]';
+            btnGestureMode.className = 'mode-enclose';
+            btnGestureMode.title = 'Switch gesture mode: Enclose / Trace (T)';
+          }
+        } else if (gestures[0] === 'trace') {
+          btnGestureMode.style.display = 'inline-flex';
+          btnGestureMode.disabled = true;
+          btnGestureMode.textContent = '✨ Mode: Trace (Locked)';
+          btnGestureMode.className = 'mode-trace';
+          btnGestureMode.title = 'Trace mode locked for this visit';
+        } else {
+          btnGestureMode.style.display = 'none';
         }
       }
       if (headerSub && level) {
@@ -509,6 +533,17 @@
       btnPause.textContent = '⏸ Pause';
     });
 
+    // Gesture mode toggle
+    if (btnGestureMode) {
+      btnGestureMode.addEventListener('click', () => {
+        if (game.isDrawing || game.victoryDelay > 0) return;
+        const next = game.gestureMode === 'trace' ? 'enclose' : 'trace';
+        if (game.setGestureMode(next)) {
+          updateLevelUI();
+        }
+      });
+    }
+
     // Keyboard Shortcuts
     window.addEventListener('keydown', (e) => {
       if (e.key === ' ' || e.code === 'Space') {
@@ -518,6 +553,13 @@
         } else {
           game.togglePause();
           btnPause.textContent = (game.state === 'PAUSED') ? '▶ Resume' : '⏸ Pause';
+        }
+      } else if (e.key === 't' || e.key === 'T') {
+        if (!game.isDrawing && game.victoryDelay <= 0 && game.currentLevel?.gestures?.length > 1) {
+          const next = game.gestureMode === 'trace' ? 'enclose' : 'trace';
+          if (game.setGestureMode(next)) {
+            updateLevelUI();
+          }
         }
       } else if (e.key === 'w' || e.key === 'W') {
         toggleVisitModal();
@@ -544,6 +586,8 @@
     });
 
     game.onGestureModeChanged = () => updateLevelUI();
+    game.onDrawingStateChanged = () => updateLevelUI();
+    game.onOpenVisitModal = () => toggleVisitModal(true);
 
     // Initial UI setup
     updateLevelUI(game.currentLevel);

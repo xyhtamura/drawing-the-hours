@@ -108,6 +108,24 @@ body {
   color: #713e52;
 }
 
+#btn-gesture-mode.mode-trace {
+  background: #e2eef5;
+  border-color: #79a6be;
+  color: #265069;
+}
+
+#btn-gesture-mode.mode-enclose {
+  background: #fae8ee;
+  border-color: #c98ea1;
+  color: #713e52;
+}
+
+#btn-gesture-mode:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .recipe-card h2, .recipe-info h3, .visit-section-title {
   font-family: Mali, sans-serif;
 }

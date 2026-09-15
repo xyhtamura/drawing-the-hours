@@ -203,52 +203,141 @@ export class Game {
     const padX = this.width * 0.15;
     const padY = this.height * 0.2;
 
-    // Fliers
-    const kinds = ['brimstone', 'damselfly', 'hawkmoth', 'hoverfly', 'lacewing', 'firefly'];
-    for (const k of kinds) {
-      const count = pop[k] || 0;
-      for (let i = 0; i < count; i++) {
-        const x = padX + Math.random() * (this.width - 2 * padX);
-        const y = padY + Math.random() * (this.height - 2 * padY);
-        const b = new Butterfly(x, y, k);
-        b.motionScale = mScale;
-        if (k === 'lacewing') {
-          placeLacewing(b, this, i, i * 0.75);
-        } else if (k === 'hoverfly' && ['passage', 'window'].includes(this.currentLevel.scene)) {
-          const leaf = leafAnchors(this)[i % 3];
-          b.x = leaf.x; b.y = leaf.y + 85;
-        } else if (['passage', 'window'].includes(this.currentLevel.scene)) {
-          const r = duskSafeArea(this);
-          b.x = r.left + Math.random() * (r.right - r.left);
-          b.y = r.top + Math.random() * (r.bottom - r.top);
-        }
-        this.entities.push(b);
-      }
-    }
-
     if (this.currentLevel.scene === 'window') {
       const r = duskSafeArea(this);
-      const positions = [[0.14, 0.82], [0.50, 0.50], [0.86, 0.82]];
-      this.entities.filter(e => e.kind === 'firefly').forEach((e, i) => {
-        const [x, y] = positions[i % positions.length];
-        e.x = r.left + x * (r.right - r.left);
-        e.y = r.top + y * (r.bottom - r.top);
-        e.glowOffset = i;
-      });
-    }
 
-    // Seeds
-    const seedCount = pop.seed || 0;
-    for (let i = 0; i < seedCount; i++) {
-      const x = padX + Math.random() * (this.width - 2 * padX);
-      const y = padY + Math.random() * (this.height - 2 * padY);
-      this.entities.push(new DandelionSeed(x, y));
-    }
+      // 1. Anchored Fireflies
+      const fireflyPositions = [[0.14, 0.82], [0.50, 0.50], [0.86, 0.82]];
+      const fireflyCount = pop.firefly || 0;
+      for (let i = 0; i < fireflyCount; i++) {
+        const [fx, fy] = fireflyPositions[i % fireflyPositions.length];
+        const b = new Butterfly(r.left + fx * (r.right - r.left), r.top + fy * (r.bottom - r.top), 'firefly');
+        b.motionScale = mScale;
+        b.glowOffset = i;
+        this.entities.push(b);
+      }
 
-    // Snail
-    const snailCount = pop.snail || 0;
-    for (let i = 0; i < snailCount; i++) {
-      this.entities.push(new Snail(this.width * 0.5, this.height - 35));
+      // 2. Leaf-anchored Lacewings
+      const lacewingCount = pop.lacewing || 0;
+      for (let i = 0; i < lacewingCount; i++) {
+        const b = new Butterfly(0, 0, 'lacewing');
+        b.motionScale = mScale;
+        placeLacewing(b, this, i, i * 0.75);
+        this.entities.push(b);
+      }
+
+      const hasClearance = (x, y, radius) => {
+        return this.entities.every(e => Math.hypot(e.x - x, e.y - y) >= e.radius + radius + 14);
+      };
+
+      // 3. Hoverflies
+      const hoverCount = pop.hoverfly || 0;
+      for (let i = 0; i < hoverCount; i++) {
+        let placed = false;
+        const leaf = leafAnchors(this)[i % 3];
+        if (hasClearance(leaf.x, leaf.y + 85, 16)) {
+          const b = new Butterfly(leaf.x, leaf.y + 85, 'hoverfly');
+          b.motionScale = mScale;
+          this.entities.push(b);
+          placed = true;
+        } else {
+          for (let attempt = 0; attempt < 25; attempt++) {
+            const cx = r.left + Math.random() * (r.right - r.left);
+            const cy = r.top + Math.random() * (r.bottom - r.top);
+            if (hasClearance(cx, cy, 16)) {
+              const b = new Butterfly(cx, cy, 'hoverfly');
+              b.motionScale = mScale;
+              this.entities.push(b);
+              placed = true;
+              break;
+            }
+          }
+        }
+        if (!placed) {
+          this.respawnQueue.push({ kind: 'hoverfly', delay: 0.3 });
+        }
+      }
+
+      // 4. Brimstones (Visit XII)
+      const brimCount = pop.brimstone || 0;
+      for (let i = 0; i < brimCount; i++) {
+        let placed = false;
+        for (let attempt = 0; attempt < 25; attempt++) {
+          const cx = r.left + Math.random() * (r.right - r.left);
+          const cy = r.top + Math.random() * (r.bottom - r.top);
+          if (hasClearance(cx, cy, 18)) {
+            const b = new Butterfly(cx, cy, 'brimstone');
+            b.motionScale = mScale;
+            this.entities.push(b);
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          this.respawnQueue.push({ kind: 'brimstone', delay: 0.3 });
+        }
+      }
+
+      // 5. Seeds
+      const seedCount = pop.seed || 0;
+      for (let i = 0; i < seedCount; i++) {
+        let placed = false;
+        for (let attempt = 0; attempt < 25; attempt++) {
+          const cx = r.left + Math.random() * (r.right - r.left);
+          const cy = r.top + Math.random() * (r.bottom - r.top);
+          if (hasClearance(cx, cy, 14)) {
+            this.entities.push(new DandelionSeed(cx, cy));
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          this.respawnQueue.push({ kind: 'seed', delay: 0.3 });
+        }
+      }
+
+      // 6. Perimeter Snail (Visit XII)
+      const snailCount = pop.snail || 0;
+      for (let i = 0; i < snailCount; i++) {
+        this.entities.push(new Snail(this.width * 0.5, this.height - 35));
+      }
+    } else {
+      // Fliers (Meadow & Passage)
+      const kinds = ['brimstone', 'damselfly', 'hawkmoth', 'hoverfly', 'lacewing', 'firefly'];
+      for (const k of kinds) {
+        const count = pop[k] || 0;
+        for (let i = 0; i < count; i++) {
+          const x = padX + Math.random() * (this.width - 2 * padX);
+          const y = padY + Math.random() * (this.height - 2 * padY);
+          const b = new Butterfly(x, y, k);
+          b.motionScale = mScale;
+          if (k === 'lacewing') {
+            placeLacewing(b, this, i, i * 0.75);
+          } else if (k === 'hoverfly' && this.currentLevel.scene === 'passage') {
+            const leaf = leafAnchors(this)[i % 3];
+            b.x = leaf.x; b.y = leaf.y + 85;
+          } else if (this.currentLevel.scene === 'passage') {
+            const r = duskSafeArea(this);
+            b.x = r.left + Math.random() * (r.right - r.left);
+            b.y = r.top + Math.random() * (r.bottom - r.top);
+          }
+          this.entities.push(b);
+        }
+      }
+
+      // Seeds
+      const seedCount = pop.seed || 0;
+      for (let i = 0; i < seedCount; i++) {
+        const x = padX + Math.random() * (this.width - 2 * padX);
+        const y = padY + Math.random() * (this.height - 2 * padY);
+        this.entities.push(new DandelionSeed(x, y));
+      }
+
+      // Snail
+      const snailCount = pop.snail || 0;
+      for (let i = 0; i < snailCount; i++) {
+        this.entities.push(new Snail(this.width * 0.5, this.height - 35));
+      }
     }
 
     this.initDecorations();
@@ -296,7 +385,18 @@ export class Game {
       if (item.delay <= 0) {
         this.respawnQueue.splice(i, 1);
         if (item.kind === 'seed') {
-          this.entities.push(new DandelionSeed(-15, 60 + Math.random() * (this.height - 120)));
+          if (this.currentLevel.scene === 'window') {
+            const r = duskSafeArea(this);
+            const sx = r.left + Math.random() * (r.right - r.left);
+            const sy = r.top + Math.random() * (r.bottom - r.top);
+            if (this.entities.some(e => e.state !== 'departing' && e.state !== 'harmonizing' && Math.hypot(e.x - sx, e.y - sy) < e.radius + 26)) {
+              this.respawnQueue.push({ kind: item.kind, delay: 0.2 });
+              continue;
+            }
+            this.entities.push(new DandelionSeed(sx, sy));
+          } else {
+            this.entities.push(new DandelionSeed(-15, 60 + Math.random() * (this.height - 120)));
+          }
         } else if (item.kind === 'snail') {
           this.entities.push(new Snail(this.width * 0.5, this.height - 35));
         } else {
@@ -368,6 +468,7 @@ export class Game {
         ? new TraceGesture(pos, this.entities, this.currentLevel.traceSequence) : null;
       if (this.trace?.fault) this.showFeedback(this.trace.fault, 'warning');
       audio.startDrawingRustle();
+      this.onDrawingStateChanged?.(true);
     };
     const onPointerMove = e => {
       if (!this.isDrawing || !ownsPointer(e) || this.state !== 'PLAYING') return;
@@ -387,6 +488,7 @@ export class Game {
       try { this.canvas.releasePointerCapture(e.pointerId); } catch (_) {}
       this.activePointerId = undefined;
       audio.stopDrawingRustle();
+      this.onDrawingStateChanged?.(false);
       this.resolveCurrentStroke();
       this.trace = null;
     };
@@ -416,6 +518,7 @@ export class Game {
     this.strokeLength = 0;
     this.activeBand = getLengthBand(0);
     audio.stopDrawingRustle();
+    this.onDrawingStateChanged?.(false);
   }
 
   setGestureMode(mode) {
@@ -577,6 +680,14 @@ export class Game {
     } else if (this.state === 'READY' || this.state === 'INTRO') {
       this.state = 'PLAYING';
     } else if (this.state === 'LEVEL_COMPLETE' || this.state === 'VICTORY') {
+      if (this.currentLevel.id === 'midnight-03') {
+        if (typeof this.onOpenVisitModal === 'function') {
+          this.onOpenVisitModal();
+        } else {
+          this.startLevel(this.currentLevel);
+        }
+        return;
+      }
       const nextLevel = this.campaign.getNextLevel();
       if (nextLevel) {
         this.startLevel(nextLevel);
@@ -1224,6 +1335,12 @@ export class Game {
       ctx.fillText(this.trace?.fault ? 'Release to try again.' : count === 3
         ? '3 / 3 · Release to finish.' : `${count} / 3 · Start outside the rings.`, this.width / 2, y + 16);
       ctx.restore();
+    } else if (this.currentLevel?.gestures?.length > 1) {
+      ctx.save(); ctx.textAlign = 'center';
+      ctx.font = '600 11px system-ui, sans-serif'; ctx.fillStyle = '#85485e';
+      const y = isNarrow ? 104 : 88;
+      ctx.fillText('ENCLOSE: Loops & Figure-Eights (Press [T] for Trace)', this.width / 2, y);
+      ctx.restore();
     }
 
     // --- Wind Indicator Badge (Noon Visits V-VI) ---
@@ -1347,9 +1464,12 @@ export class Game {
     const teachCounterpart = lvl.id === 'noon-01' || lvl.id === 'practice-noon';
     const teachNursery = lvl.id === 'noon-02';
     const teachSeedTrio = lvl.id === 'noon-03';
-    const hasDiagram = teachTrace || teachLacewing || teachDusk02 || teachDusk03 || teachCounterpart || teachNursery || teachSeedTrio;
+    const teachMidnight02 = lvl.id === 'midnight-02';
+    const teachMidnight03 = lvl.id === 'midnight-03';
+    const hasDiagram = teachTrace || teachLacewing || teachDusk02 || teachDusk03 || teachCounterpart || teachNursery || teachSeedTrio || teachMidnight02 || teachMidnight03;
+    const modalHeight = (teachMidnight02 || teachMidnight03) ? 445 : (hasDiagram ? 415 : 310);
 
-    this.drawModalBox(ctx, 500, hasDiagram ? 415 : 310, (boxW, boxH) => {
+    this.drawModalBox(ctx, 500, modalHeight, (boxW, boxH) => {
       const isNarrow = boxW < 440;
 
       // Header
@@ -1518,6 +1638,59 @@ export class Game {
         ctx.fillStyle = '#6e5a47'; ctx.font = 'italic 11px Mali, sans-serif';
         ctx.fillText('🍃 Periodic atrium breeze gusts will carry seeds rightward', 0, 54);
         ctx.restore();
+      } else if (teachMidnight02) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 96);
+        // Left side: Enclose Loop (Seed & Wing + Kindred)
+        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.ellipse(-88, -12, 54, 28, -0.15, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 1 Hoverfly and 1 Seed in loop
+        const hf = new Butterfly(-108, -12, 'hoverfly'); hf.heading = 0.3; hf.draw(ctx);
+        ctx.save(); ctx.translate(-68, -12); ctx.scale(0.8, 0.8);
+        new DandelionSeed(0, 0).draw(ctx); ctx.restore();
+
+        ctx.textAlign = 'center'; ctx.fillStyle = '#7a3e52'; ctx.font = '600 11px system-ui, sans-serif';
+        ctx.fillText('Enclose Mode [T]', -88, 25);
+        ctx.font = '10px system-ui, sans-serif'; ctx.fillStyle = '#6e5a47';
+        ctx.fillText('Loops & 8s (Seeds belong here)', -88, 39);
+
+        // Divider
+        ctx.strokeStyle = '#d6cbba'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, -34); ctx.lineTo(0, 42); ctx.stroke();
+
+        // Right side: Trace Path (Firefly -> Lacewing -> Firefly)
+        ctx.strokeStyle = '#416e83'; ctx.lineWidth = 1.8; ctx.setLineDash([6, 3]);
+        ctx.beginPath(); ctx.moveTo(25, -12); ctx.lineTo(145, -12); ctx.stroke(); ctx.setLineDash([]);
+        for (const [i, x] of [35, 85, 135].entries()) {
+          ctx.save(); ctx.translate(x, -12); ctx.scale(0.65, 0.65);
+          if (i === 1) drawLacewing(ctx, { lacePhase: 'rest', flapPhase: 0 });
+          else drawFirefly(ctx, { stateTime: 0.4, glowOffset: 0 });
+          ctx.restore();
+          ctx.textAlign = 'center'; ctx.fillStyle = '#315b73'; ctx.font = '10px system-ui';
+          ctx.fillText(`${i + 1}`, x, 9);
+        }
+        ctx.textAlign = 'center'; ctx.fillStyle = '#2b5570'; ctx.font = '600 11px system-ui, sans-serif';
+        ctx.fillText('Trace Mode [T]', 85, 25);
+        ctx.font = '10px system-ui, sans-serif'; ctx.fillStyle = '#5c4538';
+        ctx.fillText('Ordered 3-insect path', 85, 39);
+
+        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = 'italic 11px Mali, sans-serif';
+        ctx.fillText('Switch modes with [T] or Mode button. Seeds belong in Enclose.', 0, 57);
+        ctx.restore();
+      } else if (teachMidnight03) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 84);
+        // Brimstone butterfly on left
+        const brim = new Butterfly(-65, -8, 'brimstone'); brim.heading = -0.3; brim.draw(ctx);
+        // Snail on right
+        const sn = new Snail(65, -8); sn.draw(ctx);
+
+        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '600 12px system-ui, sans-serif';
+        ctx.fillText('Brimstone butterflies and the perimeter snail return.', 0, 22);
+        ctx.font = 'italic 11px Mali, sans-serif'; ctx.fillStyle = '#6e5a47';
+        ctx.fillText('Synthesize loops, figure-eights, traces, and a Nursery to complete the day.', 0, 38);
+        ctx.restore();
       }
 
       // Prompt
@@ -1531,16 +1704,33 @@ export class Game {
   drawLevelCompleteModal(ctx) {
     const lvl = this.currentLevel;
     const nextLevel = this.campaign.getNextLevel();
-    this.drawModalBox(ctx, 480, 280, (boxW, boxH) => {
+    const isMidnight12 = lvl.id === 'midnight-03';
+    const save = this.campaign.saveState;
+    const completedIds = save?.completedLevelIds || [];
+    const all12Completed = isMidnight12 && CAMPAIGN_LEVELS.every(l => completedIds.includes(l.id));
+    const modalHeight = isMidnight12 || Object.keys(this.campaign.objectiveProgress).length >= 4 ? 330 : 280;
+
+    this.drawModalBox(ctx, 480, modalHeight, (boxW, boxH) => {
       const isNarrow = boxW < 440;
       ctx.fillStyle = '#2b5028';
       ctx.font = isNarrow ? '600 22px Mali, sans-serif' : '600 27px Mali, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Visit Complete', 0, -boxH / 2 + 38);
+
+      if (all12Completed) {
+        ctx.fillText('Twelve Visits Complete', 0, -boxH / 2 + 38);
+      } else if (isMidnight12) {
+        ctx.fillText('Visit XII Complete', 0, -boxH / 2 + 38);
+      } else {
+        ctx.fillText('Visit Complete', 0, -boxH / 2 + 38);
+      }
 
       ctx.font = isNarrow ? 'italic 12px Mali, sans-serif' : 'italic 14px Mali, sans-serif';
       ctx.fillStyle = '#5a7857';
-      ctx.fillText(`${lvl.title} harmonized peacefully.`, 0, -boxH / 2 + 62);
+      if (all12Completed) {
+        ctx.fillText('The day harmonized peacefully across all twelve visits.', 0, -boxH / 2 + 62);
+      } else {
+        ctx.fillText(`${lvl.title} harmonized peacefully.`, 0, -boxH / 2 + 62);
+      }
 
       // Objectives recap
       ctx.textAlign = 'left';
@@ -1557,17 +1747,29 @@ export class Game {
       ctx.font = isNarrow ? '12px system-ui, sans-serif' : '13px system-ui, sans-serif';
       ctx.fillStyle = '#3d3428';
       const best = (this.campaign.saveState.bestScores && this.campaign.saveState.bestScores[lvl.id]) || this.score;
-      ctx.fillText(`Score: ${this.score} pts  (Best: ${best} pts)`, 0, startY + 12);
+
+      if (all12Completed) {
+        const totalRecord = CAMPAIGN_LEVELS.reduce((sum, l) => sum + (save?.bestScores?.[l.id] || 0), 0);
+        ctx.fillText(`Campaign Record: ${totalRecord} pts  (Visit XII: ${this.score} pts)`, 0, startY + 14);
+      } else {
+        ctx.fillText(`Score: ${this.score} pts  (Best: ${best} pts)`, 0, startY + 12);
+      }
 
       ctx.fillStyle = '#5c4538';
       ctx.font = isNarrow ? '600 12px system-ui, sans-serif' : '600 14px system-ui, sans-serif';
-      ctx.fillText(
-        nextLevel
-          ? (isNarrow ? `[ Tap for Next: ${nextLevel.title} ]` : `[ Click or Space for Next Visit: ${nextLevel.title} ]`)
-          : (isNarrow ? '[ Tap to Replay ]' : '[ Click or Press Space to Replay ]'),
-        0,
-        boxH / 2 - 24
-      );
+
+      let promptText;
+      if (all12Completed) {
+        promptText = isNarrow ? '[ Tap to Replay a Visit ]' : '[ Click or Press Space to Replay a Visit ]';
+      } else if (isMidnight12) {
+        promptText = isNarrow ? '[ Tap to Select a Visit ]' : '[ Click or Press Space to Select a Visit ]';
+      } else if (nextLevel) {
+        promptText = isNarrow ? `[ Tap for Next: ${nextLevel.title} ]` : `[ Click or Space for Next Visit: ${nextLevel.title} ]`;
+      } else {
+        promptText = isNarrow ? '[ Tap to Replay ]' : '[ Click or Press Space to Replay ]';
+      }
+
+      ctx.fillText(promptText, 0, boxH / 2 - 24);
     });
   }
 
