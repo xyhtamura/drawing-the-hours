@@ -785,19 +785,22 @@ console.log('--- Running String Sandbox Test Suite ---');
     const a = (i / 24) * Math.PI * 2;
     loopStroke.push({ x: 250 + Math.cos(a) * 100, y: 150 + Math.sin(a) * 100 });
   }
+  const loopLength = polylineLength(loopStroke);
+  assert.strictEqual(extractClosedPockets(loopStroke).length, 1, 'Case B stroke is a closed loop under rule 9');
   game.currentStroke = loopStroke;
-  game.strokeLength = 200;
-  game.activeBand = { name: 'Petite', cordHue: '#3a728b', color: '#416e83' };
+  game.strokeLength = loopLength;
+  game.activeBand = getLengthBand(loopLength);
   game.stringGesture = new StringGesture(loopStroke[0], 1200);
   game.stringGesture.points = [...loopStroke];
-  game.stringGesture.totalLength = 200;
+  game.stringGesture.totalLength = loopLength;
   game.stringGesture.threadBead(f4, 30);
   game.stringGesture.threadBead(l2, 90);
   game.stringGesture.threadBead(f5, 150);
 
   const prevScore = game.score;
   game.resolveCurrentStroke();
-  assert.strictEqual(game.score, prevScore + 240, 'Closed ordered trace awards 240 * 1.0 = 240 pts on Petite band');
+  assert.strictEqual(game.activeBand.name, 'Balanced', `A ${loopLength.toFixed(0)} px loop is in the Balanced band`);
+  assert.strictEqual(game.score, prevScore + 300, 'Closed ordered trace awards 240 * 1.25 = 300 pts on the Balanced band');
   assert.strictEqual(f4.state, 'harmonizing', 'f4 harmonizing');
   assert.strictEqual(l2.state, 'harmonizing', 'l2 harmonizing');
   assert.strictEqual(f5.state, 'harmonizing', 'f5 harmonizing');
@@ -826,8 +829,8 @@ console.log('--- Running String Sandbox Test Suite ---');
   assert.strictEqual(f6.state, 'roaming', 'Insects released back to roaming on mismatch');
   assert.strictEqual(l3.state, 'roaming', 'Insects released back to roaming on mismatch');
   assert.strictEqual(f7.state, 'roaming', 'Insects released back to roaming on mismatch');
-  assert.ok(game.feedbackBanner.text.includes('Wrong sequence'), 'Feedback banner reports wrong sequence');
-  assert.ok(game.feedbackBanner.text.includes('Trace requires: Firefly → Lacewing → Firefly'), 'Banner states required order');
+  assert.ok(game.feedbackBanner.text.startsWith('Wrong order: Lacewing → Firefly → Firefly'), 'Feedback banner reports wrong order');
+  assert.ok(game.feedbackBanner.text.includes('A Trace needs Firefly → Lacewing → Firefly'), 'Banner states required order');
 
   // Case D: Partial sequence (only firefly -> lacewing, 2/3)
   const f8 = new Insect(100, 100, 'firefly');
@@ -845,9 +848,26 @@ console.log('--- Running String Sandbox Test Suite ---');
 
   game.resolveCurrentStroke();
   assert.strictEqual(game.score, scoreBeforeWrong, 'Partial sequence awards no points');
-  assert.ok(game.feedbackBanner.text.includes('Threaded 2/3'), 'Banner reports 2/3 threaded');
+  assert.ok(game.feedbackBanner.text.startsWith('Trace incomplete: 2 of 3 threaded'), 'Banner reports 2 of 3 threaded');
   assert.strictEqual(f8.state, 'roaming', 'Released back to roaming');
   assert.strictEqual(l4.state, 'roaming', 'Released back to roaming');
+
+  // Case D2: a wrong order that stops short is reported as a wrong order, not as a count
+  const l6 = new Insect(100, 100, 'lacewing');
+  const f12 = new Insect(200, 100, 'firefly');
+  game.entities = [l6, f12];
+  game.isDrawing = true;
+  game.currentStroke = [{ x: 50, y: 100 }, { x: 150, y: 100 }, { x: 250, y: 100 }];
+  game.strokeLength = 200;
+  game.activeBand = getLengthBand(200);
+  game.stringGesture = new StringGesture(game.currentStroke[0], 1200);
+  game.stringGesture.points = [...game.currentStroke];
+  game.stringGesture.totalLength = 200;
+  game.stringGesture.threadBead(l6, 50);
+  game.stringGesture.threadBead(f12, 150);
+  game.resolveCurrentStroke();
+  assert.ok(game.feedbackBanner.text.startsWith('Wrong order: Lacewing → Firefly.'),
+    `Two beads out of order report a wrong order (got "${game.feedbackBanner.text}")`);
 
   // Case E: Extra bead (4 insects threaded)
   const f9 = new Insect(100, 100, 'firefly');
@@ -872,6 +892,119 @@ console.log('--- Running String Sandbox Test Suite ---');
   assert.ok(game.feedbackBanner.text.includes('Too many insects threaded'), 'Banner reports too many beads');
 
   console.log('✔ Trace as threading in sequence verified (order, matching, partial, extra, open/closed).');
+}
+
+// 19. A Trace drawn through the game's own pointer handlers
+{
+  const listeners = { window: {}, canvas: {} };
+  const hadWindow = 'window' in globalThis;
+  const hadDocument = 'document' in globalThis;
+  globalThis.window = { addEventListener: (type, fn) => { listeners.window[type] = fn; }, devicePixelRatio: 1 };
+  globalThis.document = {
+    querySelector: () => null,
+    getElementById: () => null,
+    addEventListener: () => {},
+    hidden: false,
+    documentElement: { dataset: {}, style: { setProperty: () => {}, removeProperty: () => {} } },
+  };
+  try {
+    const ctx = new Proxy({ measureText: () => ({ width: 10 }) }, {
+      get: (target, prop) => (prop in target ? target[prop] : () => {}),
+    });
+    const canvas = {
+      width: 960,
+      height: 640,
+      getContext: () => ctx,
+      addEventListener: (type, fn) => { listeners.canvas[type] = fn; },
+      setPointerCapture: () => {},
+      releasePointerCapture: () => {},
+      getBoundingClientRect: () => ({ left: 0, top: 0, width: 960, height: 640 }),
+    };
+    const game = new Game(canvas);
+    const pointer = (type, x, y) => {
+      const event = { pointerId: 1, isPrimary: true, button: 0, clientX: x, clientY: y, preventDefault() {} };
+      if (type === 'pointerdown') listeners.canvas.pointerdown(event);
+      else listeners.window[type](event);
+    };
+    const setup = () => {
+      game.initLevel('practice-string-trace');
+      game.state = 'PLAYING';
+      const f1 = new Insect(200, 300, 'firefly');
+      const lace = new Insect(400, 300, 'lacewing');
+      const f2 = new Insect(600, 300, 'firefly');
+      game.entities = [f1, lace, f2];
+      return { f1, lace, f2 };
+    };
+    const drawTo = (fromX, toX, y = 300) => {
+      const step = fromX < toX ? 8 : -8;
+      for (let x = fromX + step; step > 0 ? x <= toX : x >= toX; x += step) pointer('pointermove', x, y);
+    };
+
+    // Open line through firefly, lacewing, firefly from empty space.
+    let t = setup();
+    pointer('pointerdown', 120, 300);
+    drawTo(120, 300);
+    assert.strictEqual(game.feedbackBanner.text, 'Trace: Firefly (1/3)', 'Live banner after the first firefly');
+    drawTo(300, 680);
+    assert.strictEqual(game.feedbackBanner.text, 'Trace ready: Firefly → Lacewing → Firefly. Release to score.');
+    pointer('pointerup', 680, 300);
+    assert.ok(game.feedbackBanner.text.startsWith('Ordered Trace (+'), `Release scores a Trace (got "${game.feedbackBanner.text}")`);
+    assert.strictEqual(game.campaign.objectiveProgress.trace.current, 1, 'Trace objective advances');
+    assert.deepStrictEqual([t.f1.state, t.lace.state, t.f2.state], ['harmonizing', 'harmonizing', 'harmonizing']);
+
+    // Lacewing then firefly, released after two: live and release messages agree.
+    t = setup();
+    t.f1.x = 900;
+    pointer('pointerdown', 320, 300);
+    drawTo(320, 640);
+    const live = game.feedbackBanner.text;
+    pointer('pointerup', 640, 300);
+    assert.ok(live.startsWith('Wrong order: Lacewing → Firefly.'), `Live wrong-order banner (got "${live}")`);
+    assert.strictEqual(game.feedbackBanner.text, live, 'Release repeats the live wrong-order message');
+    assert.strictEqual(game.campaign.objectiveProgress.trace.current, 0, 'Wrong order scores nothing');
+
+    // A press that starts on the first firefly threads it first.
+    t = setup();
+    pointer('pointerdown', 200, 300);
+    drawTo(200, 680);
+    pointer('pointerup', 680, 300);
+    assert.ok(game.feedbackBanner.text.startsWith('Ordered Trace (+'), 'Starting on the first firefly still scores a Trace');
+  } finally {
+    if (!hadWindow) delete globalThis.window;
+    if (!hadDocument) delete globalThis.document;
+  }
+  console.log('✔ Trace through real pointer handlers: live banners, release, wrong order, and a press on the first firefly.');
+}
+
+// 20. Card text is fitted to the card at any width
+{
+  const calls = [];
+  let tx = 0;
+  const target = {
+    textAlign: 'center',
+    save() {},
+    restore() {},
+    translate(x) { tx += x; },
+    getTransform: () => ({ a: 1, e: tx }),
+    fillText(text, x, y, maxWidth) { calls.push({ text, x, maxWidth }); },
+  };
+  const ctx = new Proxy(target, { get: (t, prop) => (prop in t ? t[prop] : () => {}) });
+  const canvas = { getContext: () => ctx, getBoundingClientRect: () => ({ left: 0, top: 0, width: 359, height: 552 }) };
+  const game = new Game(canvas);
+  game.width = 359;
+  game.height = 552;
+  game.drawModalBox(ctx, 500, 300, () => {
+    ctx.fillText('A caption far wider than a phone-width card could ever show on one line', 0, 10);
+    ctx.textAlign = 'left';
+    ctx.fillText('Left aligned', -100, 30);
+  });
+  const cardInner = Math.min(500, 359 - 20) - 24;
+  assert.ok(calls[0].maxWidth <= cardInner + 1e-9, `Centered text is limited to the card (maxWidth ${calls[0].maxWidth})`);
+  assert.ok(Math.abs(calls[1].maxWidth - (cardInner / 2 + 100)) < 1e-9, 'Left-aligned text is limited to the room right of its start');
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(target, 'fillText'), true, 'The original fillText is restored after the card');
+  ctx.fillText('after', 0, 0);
+  assert.strictEqual(calls[2].maxWidth, undefined, 'Text outside a card is not limited');
+  console.log('✔ Card text is limited to the card width at phone width.');
 }
 
 console.log('--- All String Sandbox unit tests passed! ---');

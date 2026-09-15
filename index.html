@@ -105,14 +105,14 @@
         <span class="entry-badge" style="background:#fee2e2; color:#991b1b;">Caution</span>
         <div class="recipe-info">
           <h3>Threading &amp; Beads</h3>
-          <p>Drawing your line through an insect turns it into a bead on the cord and cancels the loop on release. Draw around creatures to enclose them.</p>
+          <p>Drawing your line through an insect threads it onto the cord as a bead. A threaded insect cancels the loop, except in a Trace: a firefly, a lacewing, then a different firefly, threaded in that order in one stroke. To enclose insects, draw around them.</p>
         </div>
       </div>
       <div class="recipe-entry">
         <span class="entry-badge" style="background:#fef3c7; color:#854d0e;">Closure</span>
         <div class="recipe-info">
           <h3>Visible Closure &amp; Cord Limit</h3>
-          <p>A loop closes where the cord visibly crosses itself or touches the drawn line (signaled by a warm glow and paper wash). Keep your stroke within the 1,200 px limit to prevent snapping.</p>
+          <p>A loop closes only where the cord crosses itself or lands on the drawn line. When it is closed, the cord glows and the loop fills. If the cord runs past the mark on the cord meter, it snaps.</p>
         </div>
       </div>
 
@@ -329,7 +329,9 @@
 
     const updateLevelUI = (level = game.currentLevel) => {
       document.getElementById('gesture-hint').textContent = level?.stringRules
-        ? 'The held cord is a wall. Avoid threading insects as beads. Keep stroke within length limit.'
+        ? (level.traceSequence
+          ? 'Thread a firefly, a lacewing, then another firefly in one stroke. Draw around insects for loops.'
+          : 'The held cord is a wall. Draw around insects; a line through an insect cancels the loop.')
         : (game.gestureMode === 'trace'
           ? 'Start in empty space. Trace through firefly, lacewing, then another firefly. Release to finish.'
           : (level?.hour === 'midnight'

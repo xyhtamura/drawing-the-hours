@@ -76,7 +76,14 @@ function installStubs() {
     set: () => true,
   });
   globalThis.window = { addEventListener: (type, fn) => { listeners.window[type] = fn; }, devicePixelRatio: 1 };
-  globalThis.document = { querySelector: () => null, addEventListener: noop, hidden: false };
+  // theme.js writes the chapter palette onto the root element when a level starts.
+  globalThis.document = {
+    querySelector: () => null,
+    getElementById: () => null,
+    addEventListener: noop,
+    hidden: false,
+    documentElement: { dataset: {}, style: { setProperty: noop, removeProperty: noop } },
+  };
   const canvas = {
     width: 960,
     height: 640,

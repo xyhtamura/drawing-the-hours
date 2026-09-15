@@ -14,6 +14,59 @@ Build STRING.md rule 7 (wind that changes direction) for Noon V–VI and roll st
 
 ## Activity
 
+2026-09-16 — Claude Code — Reviewed Antigravity's Dawn rollout and Trace
+threading and fixed the review items Xyh approved (1–5 and 7). Xyh playtested
+the Trace sandbox: success and failure both read clearly.
+
+Changes:
+
+- Card text fits the card at any width. `drawModalBox` gives every `fillText`
+  inside a card a `maxWidth` from its alignment and position, so the canvas
+  condenses a line that would overflow. Before this, at 359 px wide, the Dawn I
+  clock line, both Dawn II and Dawn III caption lines, and the Trace sandbox
+  sequence line ran past the card edge.
+- One `traceStatus()` result now drives the live banner, the release result, the
+  cord glow, and the bead markers; `traceFaultMessage()` writes both the live
+  and release fault text, reporting a wrong order before a count. Release after
+  "Lacewing → Firefly" said "Threaded 2/3" while the live banner said "Wrong
+  sequence"; both now say "Wrong order: Lacewing → Firefly. A Trace needs
+  Firefly → Lacewing → Firefly." Species names come from `SPECIES_CONFIG`
+  instead of four copies of the capitalising code, and the unreachable
+  duplicate-insect branch is gone. Messages lost the exclamation mark and dash.
+- Tests: test 18 case B now uses the real length of a loop that rule 9 closes
+  (627 px, Balanced band, 300 pts) instead of a fixed 200 px and a made-up band;
+  new case D2 checks the wrong-order-first message. New test 19 draws Traces
+  through the game's own pointer handlers: live banners, a scored open line, a
+  wrong order whose live and release messages match, and a press starting on the
+  first firefly. New test 20 checks the card text limit at phone width.
+- Player text: the Field Book no longer quotes 1,200 px and describes the snap
+  as the mark on the cord meter; its threading entry states the Trace exception;
+  the footer hint in string visits names Trace threading on Trace visits and
+  drops "avoid threading" elsewhere; the Dawn III card no longer quotes pixels.
+- STRING.md: status names the Trace sandbox, rule 1 points at
+  `constrainToWalls`, build steps 5 and 6 are marked done, and rule 4 records
+  Xyh's playtest.
+- The chapter palette commit made `theme.js` write to
+  `document.documentElement`, which broke the Node stubs in
+  `test/measure_string_sandbox.js` (it threw on start). Both it and test 19 now
+  stub `documentElement` and `getElementById`.
+
+Verification:
+
+- All four suites pass, including 20 string sandbox tests; `node --check` and
+  `git diff --check` pass. The measurement script ran three seeded runs per Dawn
+  visit at 1,200 px, all completed.
+- Live page, synthetic pen Pointer Events: measured every line drawn inside the
+  transition and ready cards of all 12 campaign visits and 5 practice levels,
+  303 lines at 359 px wide and 292 at 960 px, and none extended past the card's
+  inner edge. A lacewing-then-firefly stroke showed the same wrong-order message
+  while drawing and on release. The Trace sandbox and Dawn II footer hints and
+  both Field Book entries read as written above. No console errors.
+
+Not done: review item 6 (Dawn I no longer teaches that two kinds cannot share a
+loop; Dawn II's card shows no snail) is Xyh's call and unchanged. The handoff
+list's next item is still the Noon wind rule and string rollout.
+
 2026-09-16 — Codex — Applied Xyh's four chapter palettes from
 [new palettes.md](new%20palettes.md). The **Colors** button switches between
 **Default** (the selected chapter colors) and **Pure light** (the existing

@@ -3,7 +3,8 @@
 This document specifies the rules that replace the Enclose and Trace modes in
 Drawing the Hours with a single drawing gesture whose cord acts on the field
 while it is held. Xyh decided these rules on 2026-09-15. **Implemented in the
-String sandbox (`practice-string`) and Dawn I–III (`dawn-01`, `dawn-02`, `dawn-03`).**
+String sandbox (`practice-string`), the String Trace sandbox
+(`practice-string-trace`), and Dawn I–III (`dawn-01`, `dawn-02`, `dawn-03`).**
 The next build step is named in [NOTES.md](NOTES.md) and in the project's
 [ROADMAP.md](../ROADMAP.md) entry.
 
@@ -53,9 +54,10 @@ Each model therefore needs a swept, wall-aware step.
 
 **Failure mode:** a fast entity tunnels through a wall between frames. The
 damselfly dart moves at speed 3.2, about 192 px/s, which is 6 px per frame at
-30 fps. Check with a swept segment test, following `sweptContact` in
-`src/trace.js`, and with a unit test that drives a darting damselfly into a wall
-at a 30 fps timestep.
+30 fps. `constrainToWalls` in `src/string.js` sweeps each step on the hit
+circle (`sweptCircleSegmentIntersection`), and test 1 in
+`test/test_string_sandbox.js` drives a darting damselfly into a wall at a 30 fps
+timestep.
 
 Agent default: a flier that meets a wall turns away from it, and a seed stops
 against the wall and slides along it under wind.
@@ -124,7 +126,10 @@ exactly the visit's `traceSequence` (a firefly, a lacewing, then a different
 firefly) scores a Trace on release instead of being cancelled. The line may stay
 open or close. A Trace keeps its current scoring and tags: 240 base points times
 the length multiplier, advancing `trace` and `any`. Built and testable in
-`practice-string-trace` (String Trace Sandbox).
+`practice-string-trace` (String Trace Sandbox). Xyh playtested it on 2026-09-16:
+both a completed Trace and a failed one read clearly and feel right. A wrong
+order is reported before a count, so the message on release matches the one
+shown while drawing.
 
 Agent defaults, not yet confirmed by Xyh:
 
@@ -289,10 +294,11 @@ hold, the verbatim transition cards, and save IDs.
 4. **Done (2026-09-15)**: Xyh playtested and settled: 1,200 px single snap limit,
    hit radius threading distance, 2D bead movement freedom, salt grains on tap,
    and Midnight X–XII Trace as threading in sequence.
-5. **In Progress**: Roll out string rules to Dawn I–III (`dawn-01`, `dawn-02`,
+5. **Done (2026-09-15)**: Roll out string rules to Dawn I–III (`dawn-01`, `dawn-02`,
    `dawn-03`). Add `stringRules: true`, redraw ready-card diagrams (cord wall,
    threading cancellation, crossing closure), update Field Book and tests.
-6. Build Trace as threading in sequence (rule 4) for string visits.
+6. **Done (2026-09-16)**: Build Trace as threading in sequence (rule 4) for string
+   visits, testable in `practice-string-trace`.
 7. Build wind direction changes (rule 7) for Noon V–VI, and roll out string rules
    to Noon and Dusk.
 8. Roll out string rules to Midnight X–XII, remove modes, `gestureMode`, and

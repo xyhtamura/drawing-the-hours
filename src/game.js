@@ -28,6 +28,11 @@ import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } f
 // Drawn width of the held cord. Under string rules a tip that comes this close to
 // the cord overlaps it on screen, so it counts as closing (STRING.md, rule 9).
 const CORD_WIDTH = 4.5;
+
+/** Species name for interface text, for example 'firefly' → 'Firefly'. */
+function speciesLabel(kind) {
+  return SPECIES_CONFIG[kind]?.shortName || kind.charAt(0).toUpperCase() + kind.slice(1);
+}
 import { StringGesture, TapTracker, pointAndTangentAtArcLength, constrainToWalls, MAX_CORD_LENGTH } from './string.js';
 
 function drawRoundedRect(ctx, x, y, w, h, r) {
@@ -663,27 +668,15 @@ export class Game {
           return;
         }
 
-        if (this.currentLevel?.traceSequence) {
-          const order = this.stringGesture.threadingOrder;
-          if (order.length !== this.lastReportedTraceCount) {
-            this.lastReportedTraceCount = order.length;
-            const seq = this.currentLevel.traceSequence;
-            const seqText = seq.map(k => k.charAt(0).toUpperCase() + k.slice(1)).join(' → ');
-            if (order.length > 0 && order.length <= seq.length) {
-              const matchesSoFar = order.every((e, i) => e.kind === seq[i]);
-              const gotText = order.map(e => e.kind.charAt(0).toUpperCase() + e.kind.slice(1)).join(' → ');
-              if (matchesSoFar) {
-                if (order.length === seq.length) {
-                  this.showFeedback(`Trace ready: ${gotText} — release to score!`, 'success', 3.0);
-                } else {
-                  this.showFeedback(`Trace: ${gotText} (${order.length}/${seq.length})`, 'info', 2.0);
-                }
-              } else {
-                this.showFeedback(`Wrong sequence (${gotText}). Trace requires: ${seqText}.`, 'warning', 2.5);
-              }
-            } else if (order.length > seq.length) {
-              this.showFeedback(`Too many insects threaded. Trace requires: ${seqText}.`, 'warning', 2.5);
-            }
+        const trace = this.traceStatus();
+        if (trace && trace.order.length !== this.lastReportedTraceCount) {
+          this.lastReportedTraceCount = trace.order.length;
+          if (trace.complete) {
+            this.showFeedback(`Trace ready: ${trace.threaded}. Release to score.`, 'success', 3.0);
+          } else if (trace.matchesSoFar) {
+            this.showFeedback(`Trace: ${trace.threaded} (${trace.order.length}/${trace.sequence.length})`, 'info', 2.0);
+          } else {
+            this.showFeedback(this.traceFaultMessage(trace), 'warning', 2.5);
           }
         }
       }
@@ -697,6 +690,35 @@ export class Game {
         }
       }
     }
+  }
+
+  /**
+   * Progress of the held stroke towards the visit's Trace sequence (STRING.md
+   * rule 4), or null outside string visits with a `traceSequence`. The pointer
+   * update, release, cord glow, and bead markers all read this one result.
+   */
+  traceStatus() {
+    const sequence = this.currentLevel?.stringRules ? this.currentLevel.traceSequence : null;
+    if (!sequence?.length) return null;
+    const order = this.stringGesture?.threadingOrder || [];
+    const prefixMatches = order.slice(0, sequence.length).every((e, i) => e.kind === sequence[i]);
+    const matchesSoFar = prefixMatches && order.length <= sequence.length;
+    return {
+      sequence,
+      order,
+      prefixMatches,
+      matchesSoFar,
+      complete: matchesSoFar && order.length === sequence.length,
+      required: sequence.map(speciesLabel).join(' → '),
+      threaded: order.map(e => speciesLabel(e.kind)).join(' → '),
+    };
+  }
+
+  /** A wrong order is reported before a count, so live and release messages agree. */
+  traceFaultMessage(trace) {
+    if (!trace.prefixMatches) return `Wrong order: ${trace.threaded}. A Trace needs ${trace.required}.`;
+    if (trace.order.length > trace.sequence.length) return `Too many insects threaded. A Trace needs ${trace.required}.`;
+    return `Trace incomplete: ${trace.order.length} of ${trace.sequence.length} threaded. A Trace needs ${trace.required}.`;
   }
 
   breakCord(message = 'The cord broke.') {
@@ -746,17 +768,11 @@ export class Game {
       this.recoilAlpha = 1.0;
       this.lastEvaluatedPockets = [];
 
-      const seq = this.currentLevel.traceSequence;
-      if (seq && seq.length > 0) {
-        const beadEntities = this.stringGesture.threadingOrder;
-        const uniqueEntities = new Set(beadEntities);
-        const seqText = seq.map(k => k.charAt(0).toUpperCase() + k.slice(1)).join(' → ');
+      const trace = this.traceStatus();
+      if (trace) {
+        const beadEntities = [...trace.order];
 
-        const isExactMatch = beadEntities.length === seq.length &&
-          uniqueEntities.size === beadEntities.length &&
-          beadEntities.every((e, i) => e.kind === seq[i]);
-
-        if (isExactMatch) {
+        if (trace.complete) {
           const band = getLengthBand(this.strokeLength);
           const multiplier = band.name === 'Petite' ? 1 : band.name === 'Balanced' ? 1.25 : 1.5;
           const result = {
@@ -775,20 +791,7 @@ export class Game {
           return;
         }
 
-        // Trace mismatch / fault
-        let faultMsg;
-        if (uniqueEntities.size !== beadEntities.length) {
-          faultMsg = `Trace requires different insects: ${seqText}.`;
-        } else if (beadEntities.length < seq.length) {
-          faultMsg = `Trace requires: ${seqText}. Threaded ${beadEntities.length}/${seq.length}.`;
-        } else if (beadEntities.length > seq.length) {
-          faultMsg = `Too many insects threaded. Trace requires: ${seqText}.`;
-        } else {
-          const gotText = beadEntities.map(e => e.kind.charAt(0).toUpperCase() + e.kind.slice(1)).join(' → ');
-          faultMsg = `Wrong sequence (${gotText}). Trace requires: ${seqText}.`;
-        }
-
-        this.showFeedback(faultMsg, 'warning');
+        this.showFeedback(this.traceFaultMessage(trace), 'warning');
         audio.playFrayFault();
         this.stringGesture.releaseBeads();
         this.currentStroke = [];
@@ -1506,12 +1509,7 @@ export class Game {
       const isClosed = Boolean(this.activePockets && this.activePockets.length > 0);
       const hasBeads = Boolean(this.currentLevel?.stringRules && this.stringGesture?.hasBeads);
 
-      const isTraceLevel = Boolean(this.currentLevel?.stringRules && this.currentLevel?.traceSequence);
-      const traceOrder = this.stringGesture?.threadingOrder || [];
-      const traceSeq = this.currentLevel?.traceSequence || [];
-      const isTraceReady = isTraceLevel && traceOrder.length === traceSeq.length &&
-        new Set(traceOrder).size === traceOrder.length &&
-        traceOrder.every((e, i) => e.kind === traceSeq[i]);
+      const isTraceReady = Boolean(this.traceStatus()?.complete);
 
       ctx.save();
 
@@ -1618,14 +1616,16 @@ export class Game {
 
   drawBeadMarkers(ctx) {
     if (!this.isDrawing || !this.stringGesture || !this.stringGesture.hasBeads) return;
-    const isTraceLevel = Boolean(this.currentLevel?.stringRules && this.currentLevel?.traceSequence);
-    const traceOrder = this.stringGesture.threadingOrder || [];
-    const traceSeq = this.currentLevel?.traceSequence || [];
+    const trace = this.traceStatus();
+    const isTraceLevel = Boolean(trace);
+    const traceOrder = trace?.order || [];
     ctx.save();
     for (const bead of this.stringGesture.beads) {
       const ent = bead.entity;
       const orderIdx = traceOrder.indexOf(ent);
-      const isMatchingBead = isTraceLevel && orderIdx >= 0 && orderIdx < traceSeq.length && ent.kind === traceSeq[orderIdx];
+      // A bead is marked as matching only while every bead up to it is in order.
+      const isMatchingBead = isTraceLevel && orderIdx >= 0 && orderIdx < trace.sequence.length
+        && traceOrder.slice(0, orderIdx + 1).every((e, i) => e.kind === trace.sequence[i]);
       const markerHue = isTraceLevel ? (isMatchingBead ? themeColor('trace', '#315b73') : themeColor('balanced', '#c85a32')) : themeColor('balanced', '#c85a32');
 
       // Hit circle indicator around the bug
@@ -2137,7 +2137,7 @@ export class Game {
 
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
         ctx.fillText('Close the loop by crossing the cord over itself or landing on the line.', 0, 41);
-        ctx.fillText('Trio of Flight: enclose three different kinds (shared limit: 1,200 px).', 0, 56);
+        ctx.fillText('Trio of Flight: three different kinds in one loop. Past the meter mark, the cord snaps.', 0, 56);
         ctx.restore();
       } else if (teachStringTrace) {
         ctx.save(); ctx.translate(0, boxH / 2 - 112);
@@ -2519,7 +2519,31 @@ export class Game {
     drawRoundedRect(ctx, -actualW / 2 + 8, -actualH / 2 + 8, actualW - 16, actualH - 16, 10);
     ctx.stroke();
 
-    contentFn(actualW, actualH);
+    // Card text never runs past the card edge. Each fillText inside the card gets
+    // a maxWidth from its alignment and position, and the canvas condenses any
+    // line that would otherwise overflow, however narrow the viewport.
+    const dpr = this.dpr || 1;
+    const left = cx - actualW / 2 + 12;
+    const right = cx + actualW / 2 - 12;
+    const hadOwnFill = Object.prototype.hasOwnProperty.call(ctx, 'fillText');
+    const baseFill = ctx.fillText;
+    ctx.fillText = (text, x, y, maxWidth) => {
+      const m = typeof ctx.getTransform === 'function' ? ctx.getTransform() : null;
+      if (!m || !m.a) return baseFill.call(ctx, text, x, y, maxWidth);
+      const scale = m.a / dpr;
+      const absX = (m.e + m.a * x) / dpr;
+      const align = ctx.textAlign;
+      const room = align === 'center' ? 2 * Math.min(absX - left, right - absX)
+        : (align === 'right' || align === 'end') ? absX - left : right - absX;
+      const limit = Math.max(1, room / scale);
+      return baseFill.call(ctx, text, x, y, maxWidth === undefined ? limit : Math.min(maxWidth, limit));
+    };
+    try {
+      contentFn(actualW, actualH);
+    } finally {
+      if (hadOwnFill) ctx.fillText = baseFill;
+      else delete ctx.fillText;
+    }
     ctx.restore();
   }
 }
