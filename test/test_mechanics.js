@@ -519,7 +519,8 @@ console.log('--- Running Drawing the Hours Test Suite ---');
 // 9. Campaign Registry and Hour I Verbatim Text Integrity
 {
   assert.strictEqual(CAMPAIGN_LEVELS.length, 12, '12 campaign levels authored');
-  assert.strictEqual(PRACTICE_LEVELS.length, 5, 'Practice includes Midnight');
+  assert.strictEqual(PRACTICE_LEVELS.length, 6, 'Practice includes Midnight and String Sandbox');
+  assert.ok(PRACTICE_LEVELS.some(p => p.id === 'practice-string'), 'String sandbox present in practice');
 
   // Verify Dawn levels verbatim transition texts per first12levels.md
   const dawn1 = CAMPAIGN_LEVELS[0];

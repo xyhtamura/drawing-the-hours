@@ -297,11 +297,13 @@
     });
 
     const updateLevelUI = (level = game.currentLevel) => {
-      document.getElementById('gesture-hint').textContent = game.gestureMode === 'trace'
-        ? 'Start in empty space. Trace through firefly, lacewing, then another firefly. Release to finish.'
-        : (level?.hour === 'midnight'
-          ? 'Draw around insects. Seeds belong in Enclose. Cross line for two lobes.'
-          : 'Draw around insects. Cross your line to make two pockets.');
+      document.getElementById('gesture-hint').textContent = level?.stringRules
+        ? 'The held cord is a wall. Avoid threading insects as beads. Keep stroke within length limit.'
+        : (game.gestureMode === 'trace'
+          ? 'Start in empty space. Trace through firefly, lacewing, then another firefly. Release to finish.'
+          : (level?.hour === 'midnight'
+            ? 'Draw around insects. Seeds belong in Enclose. Cross line for two lobes.'
+            : 'Draw around insects. Cross your line to make two pockets.'));
       if (btnVisit && level) {
         if (level.hourLabel && level.hourLabel.startsWith('Practice')) {
           btnVisit.textContent = `🌿 Sandbox: ${level.number}`;

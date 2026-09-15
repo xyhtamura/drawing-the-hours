@@ -1,5 +1,6 @@
 import { updateLacewing, drawLacewing } from './lacewing.js';
 import { curbSeamY } from './geometry.js';
+import { stepEntityWithWalls } from './string.js';
 /**
  * Drawing the Hours — Inhabitants of the Meadow
  * Procedural paper entities with distinct morphology and flight physics:
@@ -113,10 +114,17 @@ export class Insect {
     this.hoverRemaining = 1.4 + Math.random() * 0.6;
     this.isHovering = false; // specific to damselfly
     this.arcSign = Math.random() < 0.5 ? 1 : -1; // specific to hawkmoth
+    this.crossesCord = false;
+    this.isBead = false;
   }
 
-  update(dt, bounds) {
+  update(dt, bounds, windVx = 0, walls = []) {
     this.stateTime += dt;
+
+    if (this.state === 'bead') {
+      this.flapPhase += (this.config?.flutterFreq || 16) * dt;
+      return;
+    }
 
     if (this.state === 'harmonizing') {
       this.flapPhase += 28 * dt;
@@ -138,6 +146,13 @@ export class Insect {
       this.y += Math.sin(this.heading) * this.speed * 60 * dt;
       this.alpha = Math.max(0, 1.0 - this.stateTime / 1.0);
       return;
+    }
+
+    // Cord wall collision support
+    if (!this.crossesCord && walls && walls.length > 0 && this.state === 'roaming') {
+      if (stepEntityWithWalls(this, dt, bounds, windVx, walls)) {
+        return;
+      }
     }
 
     // --- SPECIES-SPECIFIC MOVEMENT DYNAMICS ---
@@ -651,14 +666,25 @@ export class DandelionSeed {
     this.state = 'roaming';
     this.stateTime = 0;
     this.alpha = 0.92;
+    this.crossesCord = false;
+    this.isBead = false;
   }
 
-  update(dt, bounds, windVx = 0) {
+  update(dt, bounds, windVx = 0, walls = []) {
     this.stateTime += dt;
+
+    if (this.state === 'bead') return;
 
     if (this.state === 'harmonizing') {
       this.alpha = Math.max(0, 1.0 - this.stateTime / 0.8);
       return;
+    }
+
+    // Cord wall collision support (sliding along wall under wind)
+    if (!this.crossesCord && walls && walls.length > 0 && this.state === 'roaming') {
+      if (stepEntityWithWalls(this, dt, bounds, windVx, walls)) {
+        return;
+      }
     }
 
     this.phase += dt * 2.0;
@@ -752,6 +778,7 @@ export class Snail {
     this.vx = route === 'seam' ? 0.2 : 0.12;
     this.state = 'roaming';
     this.bobPhase = 0;
+    this.crossesCord = true;
   }
 
   update(dt, bounds) {

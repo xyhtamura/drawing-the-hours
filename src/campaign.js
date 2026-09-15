@@ -474,6 +474,38 @@ PRACTICE_LEVELS.push({
   id: 'practice-midnight', title: 'The window corner', hourLabel: 'Practice · Midnight',
 });
 
+PRACTICE_LEVELS.push({
+  id: 'practice-string',
+  number: 'S',
+  title: 'String sandbox',
+  hour: 'dawn',
+  hourLabel: 'Practice · String Sandbox',
+  scene: 'curb',
+  transitionText: 'An open sandbox practicing one-gesture string rules: cord walls, threading, and cord snapping.',
+  durationSeconds: 120,
+  population: {
+    brimstone: 2,
+    damselfly: 2,
+    hawkmoth: 0,
+    seed: 3,
+    snail: 1,
+    lacewing: 0,
+    firefly: 0,
+  },
+  motionScale: 0.85,
+  objectives: {
+    any: 5,
+    seedWing: 2,
+  },
+  instruction: 'The held cord is a wall. Avoid threading insects as beads. Draw within the cord length limit.',
+  designNote: 'String sandbox practice verge with Dawn II cast and one-gesture rules.',
+  gestures: ['string'],
+  stringRules: true,
+  maxCordLength: 1000,
+  wind: null,
+  snailRoute: 'seam',
+});
+
 export const OBJECTIVE_LABELS = {
   any: 'Combinations',
   single: 'Single Loops',

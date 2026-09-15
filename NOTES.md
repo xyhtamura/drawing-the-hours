@@ -10,9 +10,30 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Build the String sandbox practice verge described in [STRING.md](STRING.md): cord walls, threading, cord snapping, and tap detection.
+Playtest the String sandbox verge with Xyh to settle bead passing, tap behavior, and cord length limits before re-authoring the twelve visits.
 
 ## Activity
+
+2026-09-15 — Antigravity — Built the String sandbox practice verge per STRING.md with Dawn II cast and isolated one-gesture rules.
+
+- Added `src/string.js`: swept segment collision detection, flier reflection, seed sliding along wall tangents, tip swept contact threading, bead sliding with tangent projection, end clamping [0, L], bead order preservation, long cord snapping at `maxCordLength`, and tap tracking (<= 250ms within r + 8px).
+- Added `practice-string` to `PRACTICE_LEVELS` in `src/campaign.js` with Dawn II cast (2 Brimstones, 2 Damselflies, 3 seeds, 1 seam snail), `stringRules: true`, and `maxCordLength: 1000`. Campaign visits remain unchanged.
+- Updated `Insect`, `DandelionSeed`, and `Snail` in `src/entities.js` with `crossesCord` properties and swept wall stepping.
+- Integrated string rules into `src/game.js`: pointer events track taps and threading, entity simulation loop passes wall segments, held cord updates beads, loop evaluation cancels enclosure when beads are present ("An insect was threaded on the cord, so the loop does not count."), and HUD cord meter draws visible snap notch at `maxCordLength`.
+- Added `test/test_string_sandbox.js` verifying: dart tunneling at 30 fps, bead order under sliding, clamping at ends, one-bead figure cancellation, snap at limit, and tap thresholds.
+- Added `test/measure_string_sandbox.js` measuring pair/trio availability, thread rate, and snap rate at limits 800 px, 1,000 px, and 1,200 px.
+
+Verification:
+- `node test/test_string_sandbox.js`: all 6 unit test scenarios PASS.
+- `node test/test_mechanics.js`, `node test/test_dusk.js`, `node test/test_midnight.js`: all PASS.
+- Measurement results across 3 runs of 60s:
+  - 800 px limit: first pair 4.98s, pair success 13.7%, pair snap 82.4%, trio snap 99.1%.
+  - 1000 px limit: first pair 0.71s, pair success 27.2%, pair snap 62.2%, trio success 6.3%, pair thread 7.7%.
+  - 1200 px limit: first pair 0.53s, pair success 37.4%, pair snap 43.9%, trio success 8.3%, pair thread 15.5%.
+
+Undone / Open for Xyh:
+- Playtest the live String sandbox to settle whether beads may pass each other, tap behavior in gameplay, and whether 1,000 px is the right baseline cord limit.
+- Later step: extend walls to remaining movement models (hawkmoth, hoverfly, lacewing, firefly) and re-author Midnight X–XII objectives without Trace.
 
 2026-09-15 — Claude Code — Recorded Xyh's decision to replace the Enclose and
 Trace modes with one drawing gesture, in [STRING.md](STRING.md). No code

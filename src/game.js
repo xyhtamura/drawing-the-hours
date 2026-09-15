@@ -22,6 +22,7 @@ import { audio } from './audio.js';
 import { createDawnArt, wrapText } from './dawn-art.js';
 import { createNoonArt } from './noon-art.js';
 import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } from './campaign.js';
+import { StringGesture, TapTracker } from './string.js';
 
 function drawRoundedRect(ctx, x, y, w, h, r) {
   if (ctx.roundRect) {
@@ -48,7 +49,7 @@ export class Game {
 
     this.width = 960;
     this.height = 640;
-    this.dpr = window.devicePixelRatio || 1;
+    this.dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
 
     // Campaign Manager
     this.campaign = new CampaignManager();
@@ -70,6 +71,9 @@ export class Game {
     this.lastPointerPos = { x: 0, y: 0 };
     this.lastPointerTime = 0;
     this.activePointerId = undefined;
+    this.tapTracker = new TapTracker();
+    this.stringGesture = null;
+    this.lastTap = null;
 
     // Transient feedback & visuals
     this.recoilStroke = null;
@@ -99,7 +103,9 @@ export class Game {
     this.bindEvents();
 
     this.lastFrameTime = performance.now();
-    requestAnimationFrame(this.loop.bind(this));
+    if (typeof requestAnimationFrame !== 'undefined') {
+      requestAnimationFrame(this.loop.bind(this));
+    }
   }
 
   initCanvas() {
@@ -169,7 +175,9 @@ export class Game {
 
     this.cancelStroke();
     this.currentLevel = level || this.campaign.currentLevel;
-    this.gestureMode = this.currentLevel.gestures?.[0] || 'enclose';
+    this.gestureMode = this.currentLevel.stringRules ? 'string' : (this.currentLevel.gestures?.[0] || 'enclose');
+    this.stringGesture = null;
+    this.tapTracker?.cancel();
     this.campaign.initProgress(this.currentLevel);
 
     if (this.activePointerId !== undefined) {
@@ -457,6 +465,7 @@ export class Game {
   }
 
   bindEvents() {
+    if (typeof window === 'undefined') return;
     window.addEventListener('resize', () => this.resize());
 
     const getPos = (e) => {
@@ -485,6 +494,12 @@ export class Game {
       this.activeBand = getLengthBand(0);
       this.lastPointerPos = pos;
       this.lastPointerTime = performance.now();
+      if (this.currentLevel?.stringRules) {
+        this.tapTracker.onPress(pos, performance.now(), this.entities);
+        this.stringGesture = new StringGesture(pos, this.entities, this.currentLevel.maxCordLength || 1000);
+      } else {
+        this.stringGesture = null;
+      }
       this.trace = this.gestureMode === 'trace'
         ? new TraceGesture(pos, this.entities, this.currentLevel.traceSequence) : null;
       if (this.trace?.fault) this.showFeedback(this.trace.fault, 'warning');
@@ -495,7 +510,21 @@ export class Game {
       if (!this.isDrawing || !ownsPointer(e) || this.state !== 'PLAYING') return;
       e.preventDefault();
       const samples = e.getCoalescedEvents?.();
-      for (const sample of samples?.length ? samples : [e]) this.samplePointer(getPos(sample));
+      for (const sample of samples?.length ? samples : [e]) {
+        const samplePos = getPos(sample);
+        if (this.currentLevel?.stringRules) {
+          this.tapTracker.onMove(samplePos);
+          if (this.tapTracker.candidate?.startedOnTarget && this.stringGesture) {
+            const cand = this.tapTracker.candidate;
+            if (cand.maxDisplacement > (cand.target.radius + 8)) {
+              if (!this.stringGesture.beads.some(b => b.entity === cand.target)) {
+                this.stringGesture.threadBead(cand.target, 0);
+              }
+            }
+          }
+        }
+        this.samplePointer(samplePos);
+      }
     };
     const onPointerUp = e => {
       if (!this.isDrawing || !ownsPointer(e)) return;
@@ -503,8 +532,21 @@ export class Game {
       if (this.state !== 'PLAYING' || this.clock.remainingSeconds <= 0 || this.victoryDelay > 0) {
         this.cancelStroke(); return;
       }
+      const endPos = getPos(e);
+      if (this.currentLevel?.stringRules) {
+        const tapRes = this.tapTracker.onRelease(endPos, performance.now());
+        if (tapRes.isTap) {
+          this.cancelStroke();
+          this.lastTap = tapRes;
+          return;
+        }
+        if (tapRes.startedOnTarget && tapRes.duration > 250 && tapRes.maxDisplacement <= (tapRes.target.radius + 8)) {
+          this.cancelStroke();
+          return;
+        }
+      }
       // Include the release position even when no final move event was sent.
-      this.samplePointer(getPos(e), true);
+      this.samplePointer(endPos, true);
       this.isDrawing = false;
       try { this.canvas.releasePointerCapture(e.pointerId); } catch (_) {}
       this.activePointerId = undefined;
@@ -534,6 +576,11 @@ export class Game {
     if (pointerId !== undefined) {
       try { this.canvas.releasePointerCapture(pointerId); } catch (_) {}
     }
+    if (this.stringGesture) {
+      this.stringGesture.releaseBeads();
+      this.stringGesture = null;
+    }
+    this.tapTracker?.cancel();
     this.trace = null;
     this.currentStroke = [];
     this.strokeLength = 0;
@@ -571,8 +618,30 @@ export class Game {
       const dt = (now - this.lastPointerTime) / 1000;
       audio.updateDrawingSpeed(dt > 0 ? dist / dt : 0);
       this.lastPointerTime = now;
+
+      if (this.currentLevel?.stringRules && this.stringGesture) {
+        const sampleRes = this.stringGesture.sample(pos, this.entities, force);
+        if (sampleRes.snapped) {
+          this.breakCord('The cord snapped. Keep your stroke shorter.');
+          return;
+        }
+      }
+
       if (this.gestureMode !== 'trace') this.checkCordHazards(this.currentStroke.slice(-2));
     }
+  }
+
+  breakCord(message = 'The cord broke.') {
+    const stroke = [...this.currentStroke];
+    if (this.stringGesture) {
+      this.stringGesture.releaseBeads();
+    }
+    this.cancelStroke();
+    this.recoilStroke = stroke;
+    this.recoilAlpha = 1;
+    this.lastEvaluatedPockets = [];
+    audio.playFrayFault();
+    this.showFeedback(message, 'warning');
   }
 
   /**
@@ -585,13 +654,7 @@ export class Game {
     const hazard = this.entities.find(e => e.type === 'hazard' && e.state !== 'departing'
       && polylineTouchesDisk(points, e.x, e.y, e.radius + 3));
     if (!hazard) return false;
-    const stroke = [...this.currentStroke];
-    this.cancelStroke();
-    this.recoilStroke = stroke;
-    this.recoilAlpha = 1;
-    this.lastEvaluatedPockets = [];
-    audio.playFrayFault();
-    this.showFeedback('The snail broke the cord. Draw around it.', 'warning');
+    this.breakCord('The snail broke the cord. Draw around it.');
     return true;
   }
 
@@ -605,6 +668,17 @@ export class Game {
       this.recoilAlpha = 1;
       if (result?.valid) this.acceptDrawing(result, []);
       else if (result) { this.showFeedback(result.message, 'warning'); audio.playFrayFault(); }
+      this.currentStroke = [];
+      this.strokeLength = 0;
+      return;
+    }
+    if (this.currentLevel?.stringRules && this.stringGesture?.hasBeads) {
+      const strokePoints = [...this.currentStroke];
+      this.recoilStroke = strokePoints;
+      this.recoilAlpha = 1.0;
+      this.showFeedback('An insect was threaded on the cord, so the loop does not count.', 'warning');
+      audio.playFrayFault();
+      this.stringGesture.releaseBeads();
       this.currentStroke = [];
       this.strokeLength = 0;
       return;
@@ -838,9 +912,13 @@ export class Game {
         ? (this.currentLevel.wind.seedSpeedPlayWidthsPerSecond || 0.08) * this.width
         : 0;
 
+      const walls = (this.isDrawing && this.currentLevel?.stringRules && this.stringGesture)
+        ? this.stringGesture.wallSegments
+        : [];
+
       for (let i = this.entities.length - 1; i >= 0; i--) {
         const ent = this.entities[i];
-        ent.update(dt, bounds, ent.type === 'seed' ? windVx : 0);
+        ent.update(dt, bounds, ent.type === 'seed' ? windVx : 0, walls);
         if (['passage', 'window'].includes(this.currentLevel.scene) && ent.type === 'butterfly' && ent.state === 'roaming') {
           const r = duskSafeArea(bounds);
           if (ent.kind !== 'lacewing') {
@@ -856,6 +934,10 @@ export class Game {
         if (ent.alpha <= 0.01 && (ent.state === 'departing' || ent.state === 'harmonizing')) {
           this.entities.splice(i, 1);
         }
+      }
+
+      if (this.isDrawing && this.stringGesture) {
+        this.stringGesture.updateBeads(dt);
       }
 
       if (this.isDrawing && this.gestureMode === 'trace') this.sampleTrace();
@@ -1002,6 +1084,7 @@ export class Game {
     }
 
     this.drawTraceTargets(ctx);
+    this.drawBeadMarkers(ctx);
 
     // 6. Translucent Paper Wind Streamlines
     this.drawWindStreaks(ctx);
@@ -1245,6 +1328,31 @@ export class Game {
     ctx.restore();
   }
 
+  drawBeadMarkers(ctx) {
+    if (!this.isDrawing || !this.stringGesture || !this.stringGesture.hasBeads) return;
+    ctx.save();
+    for (const bead of this.stringGesture.beads) {
+      const ent = bead.entity;
+      ctx.strokeStyle = '#c85a32';
+      ctx.lineWidth = 2.2;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.arc(ent.x, ent.y, ent.radius + 4, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Small bead knot marker
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#fef3c7';
+      ctx.strokeStyle = '#92400e';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(ent.x, ent.y - ent.radius - 4, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   drawHUD(ctx) {
     ctx.save();
     const isNarrow = (this.width < 560);
@@ -1306,6 +1414,17 @@ export class Game {
         ctx.fill();
       }
 
+      if (this.currentLevel?.maxCordLength) {
+        const snapRatio = Math.min(1.0, this.currentLevel.maxCordLength / 1400);
+        const snapX = cx - meterW / 2 + 2 + (meterW - 4) * snapRatio;
+        ctx.strokeStyle = '#c85a32';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(snapX, meterY + 2);
+        ctx.lineTo(snapX, meterY + meterH - 2);
+        ctx.stroke();
+      }
+
       ctx.fillStyle = '#4a4235';
       ctx.font = '600 9.5px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
@@ -1342,6 +1461,17 @@ export class Game {
         ctx.beginPath();
         drawRoundedRect(ctx, cx - meterW / 2 + 2, 26, (meterW - 4) * fillRatio, meterH - 4, 7);
         ctx.fill();
+      }
+
+      if (this.currentLevel?.maxCordLength) {
+        const snapRatio = Math.min(1.0, this.currentLevel.maxCordLength / 1400);
+        const snapX = cx - meterW / 2 + 2 + (meterW - 4) * snapRatio;
+        ctx.strokeStyle = '#c85a32';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(snapX, 26);
+        ctx.lineTo(snapX, 40);
+        ctx.stroke();
       }
 
       ctx.fillStyle = '#4a4235';
