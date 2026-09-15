@@ -13,6 +13,7 @@ import {
   getLengthBand,
   extractPockets,
   pointInPolygon,
+  polylineTouchesDisk,
 } from './geometry.js';
 import { Butterfly, DandelionSeed, Snail, SPECIES_CONFIG, drawFirefly } from './entities.js';
 import { evaluateDrawing } from './recipes.js';
@@ -124,8 +125,8 @@ export class Game {
       // Keep active entities within new canvas bounds
       for (const ent of this.entities) {
         if (ent.type === 'hazard') {
-          ent.y = this.height - 35;
           ent.x = Math.max(30, Math.min(this.width - 30, ent.x));
+          ent.update(0, { width: this.width, height: this.height });
         } else {
           ent.x = Math.max(16, Math.min(this.width - 16, ent.x));
           ent.y = Math.max(16, Math.min(this.height - 16, ent.y));
@@ -336,7 +337,9 @@ export class Game {
       // Snail
       const snailCount = pop.snail || 0;
       for (let i = 0; i < snailCount; i++) {
-        this.entities.push(new Snail(this.width * 0.5, this.height - 35));
+        const snail = new Snail(this.width * 0.5, this.height - 35, this.currentLevel.snailRoute);
+        snail.update(0, { width: this.width, height: this.height });
+        this.entities.push(snail);
       }
     }
 
@@ -398,7 +401,9 @@ export class Game {
             this.entities.push(new DandelionSeed(-15, 60 + Math.random() * (this.height - 120)));
           }
         } else if (item.kind === 'snail') {
-          this.entities.push(new Snail(this.width * 0.5, this.height - 35));
+          const snail = new Snail(this.width * 0.5, this.height - 35, this.currentLevel.snailRoute);
+          snail.update(0, { width: this.width, height: this.height });
+          this.entities.push(snail);
         } else {
           const edge = Math.random();
           let sx = 20, sy = 20;
@@ -433,6 +438,22 @@ export class Game {
 
   showFeedback(text, type = 'info', duration = 2.4) {
     this.feedbackBanner = { text, type, timer: duration };
+  }
+
+  /** Visits flagged clockStartsOnFirstCombination hold the clock until the first accepted drawing. */
+  isClockHeld() {
+    return !!this.currentLevel?.clockStartsOnFirstCombination && this.harmoniesCount === 0;
+  }
+
+  /** Fault text that does not suggest a figure the current visit cannot supply. */
+  explainFault(result) {
+    const pop = this.currentLevel?.population || {};
+    const flierKinds = Object.entries(pop).filter(([k, n]) => n > 0 && k !== 'seed' && k !== 'snail').length;
+    if (this.currentLevel?.hour === 'dawn' && flierKinds < 3
+        && result.faultType === 'MISMATCH' && result.message?.startsWith('Two mismatched')) {
+      return 'Two different kinds cannot share a loop. Loop a matching pair.';
+    }
+    return result.message || 'Irregular grouping';
   }
 
   bindEvents() {
@@ -537,6 +558,7 @@ export class Game {
   }
 
   samplePointer(pos, force = false) {
+    if (!this.isDrawing) return;
     this.sampleTrace(pos);
     this.lastPointerPos = pos;
     const last = this.currentStroke.at(-1);
@@ -549,7 +571,28 @@ export class Game {
       const dt = (now - this.lastPointerTime) / 1000;
       audio.updateDrawingSpeed(dt > 0 ? dist / dt : 0);
       this.lastPointerTime = now;
+      if (this.gestureMode !== 'trace') this.checkCordHazards(this.currentStroke.slice(-2));
     }
+  }
+
+  /**
+   * A snail touching the unfinished enclosure cord breaks the stroke at once.
+   * Pointer samples test the newest segment; each update tests the whole cord,
+   * so a snail crawling into a held line also breaks it.
+   */
+  checkCordHazards(points = this.currentStroke) {
+    if (!this.isDrawing || this.gestureMode === 'trace') return false;
+    const hazard = this.entities.find(e => e.type === 'hazard' && e.state !== 'departing'
+      && polylineTouchesDisk(points, e.x, e.y, e.radius + 3));
+    if (!hazard) return false;
+    const stroke = [...this.currentStroke];
+    this.cancelStroke();
+    this.recoilStroke = stroke;
+    this.recoilAlpha = 1;
+    this.lastEvaluatedPockets = [];
+    audio.playFrayFault();
+    this.showFeedback('The snail broke the cord. Draw around it.', 'warning');
+    return true;
   }
 
   resolveCurrentStroke() {
@@ -613,7 +656,7 @@ export class Game {
         this.showFeedback('Loop did not close — trace back or cross over.', 'hint');
       } else {
         audio.playFrayFault();
-        this.showFeedback(result.message || 'Irregular grouping', 'warning');
+        this.showFeedback(this.explainFault(result), 'warning');
       }
     }
 
@@ -743,7 +786,7 @@ export class Game {
         }
       }
 
-      this.clock.update(dt);
+      if (!this.isClockHeld()) this.clock.update(dt);
       if (this.clock.isExpired && this.victoryDelay <= 0) {
         this.cancelStroke();
         this.state = 'GAMEOVER';
@@ -816,6 +859,7 @@ export class Game {
       }
 
       if (this.isDrawing && this.gestureMode === 'trace') this.sampleTrace();
+      else if (this.isDrawing) this.checkCordHazards();
       this.maintainPopulation(dt);
     } else {
       audio.stopCicadas();
@@ -1220,7 +1264,7 @@ export class Game {
 
       ctx.fillStyle = '#8a7f70';
       ctx.font = '500 10px system-ui, -apple-system, sans-serif';
-      ctx.fillText('Clock', 52, 40);
+      ctx.fillText(this.isClockHeld() ? 'Waiting' : 'Clock', 52, 40);
 
       // Top-Right: Objective & Score
       const objEntries = Object.entries(this.campaign.objectiveProgress);
@@ -1280,7 +1324,7 @@ export class Game {
 
       ctx.fillStyle = '#8a7f70';
       ctx.font = '500 11px system-ui, -apple-system, sans-serif';
-      ctx.fillText('Dandelion Clock', 74, 52);
+      ctx.fillText(this.isClockHeld() ? 'Starts after first loop' : 'Dandelion Clock', 74, 52);
 
       const cx = this.width / 2;
       ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
@@ -1401,7 +1445,9 @@ export class Game {
       const textWidth = ctx.measureText(this.feedbackBanner.text).width;
       const boxW = Math.min(this.width - 24, Math.max(180, textWidth + 30));
       const boxH = 32;
-      const by = this.height - 54;
+      // Below the HUD, trace line, and wind badge: the canvas bottom can sit below
+      // the fold (a 720 px window ends the 640 px canvas at 779 px).
+      const by = isNarrow ? 128 : 108;
       const cx = this.width / 2;
 
       ctx.beginPath();
@@ -1466,8 +1512,12 @@ export class Game {
     const teachSeedTrio = lvl.id === 'noon-03';
     const teachMidnight02 = lvl.id === 'midnight-02';
     const teachMidnight03 = lvl.id === 'midnight-03';
-    const hasDiagram = teachTrace || teachLacewing || teachDusk02 || teachDusk03 || teachCounterpart || teachNursery || teachSeedTrio || teachMidnight02 || teachMidnight03;
-    const modalHeight = (teachMidnight02 || teachMidnight03) ? 445 : (hasDiagram ? 415 : 310);
+    const teachDawn01 = lvl.id === 'dawn-01';
+    const teachDawn02 = lvl.id === 'dawn-02';
+    const teachDawn03 = lvl.id === 'dawn-03';
+    const hasDiagram = teachDawn01 || teachDawn02 || teachDawn03 || teachTrace || teachLacewing || teachDusk02 || teachDusk03 || teachCounterpart || teachNursery || teachSeedTrio || teachMidnight02 || teachMidnight03;
+    const teachDawn = teachDawn01 || teachDawn02 || teachDawn03;
+    const modalHeight = (teachMidnight02 || teachMidnight03 || teachDawn) ? 445 : (hasDiagram ? 415 : 310);
 
     this.drawModalBox(ctx, 500, modalHeight, (boxW, boxH) => {
       const isNarrow = boxW < 440;
@@ -1509,9 +1559,54 @@ export class Game {
       // Duration note
       ctx.font = 'italic 11.5px Mali, sans-serif';
       ctx.fillStyle = '#8a7e6f';
-      ctx.fillText(`Dandelion Clock: ${lvl.durationSeconds} seconds`, padX, startY + 8);
+      ctx.fillText(`Dandelion Clock: ${lvl.durationSeconds} seconds${lvl.clockStartsOnFirstCombination ? ', starting after your first loop' : ''}`, padX, startY + 8);
 
-      if (teachTrace) {
+      if (teachDawn01) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 108);
+        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(-48, -4, 62, 34, 0, 0, Math.PI * 2); ctx.stroke();
+        const a = new Butterfly(-72, -4, 'brimstone'); a.heading = -0.4; a.draw(ctx);
+        const b = new Butterfly(-26, -4, 'brimstone'); b.heading = 0.4; b.draw(ctx);
+        const d = new Butterfly(70, -4, 'damselfly'); d.heading = -Math.PI / 2; d.draw(ctx);
+        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
+        ctx.fillText('Draw a loop around two insects of the same kind and close it.', 0, 41);
+        ctx.fillText('Two different kinds cannot share a loop.', 0, 56);
+        ctx.restore();
+      } else if (teachDawn02) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 108);
+        // Left: Seed & Wing loop
+        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(-78, -4, 56, 32, 0, 0, Math.PI * 2); ctx.stroke();
+        const fly = new Butterfly(-98, -4, 'brimstone'); fly.heading = -0.4; fly.draw(ctx);
+        ctx.save(); ctx.translate(-56, -6); ctx.scale(0.85, 0.85);
+        new DandelionSeed(0, 0).draw(ctx); ctx.restore();
+        // Right: the snail on its seam, with a cord broken where it touched
+        ctx.strokeStyle = 'rgba(150,132,118,.6)'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(22, 8); ctx.quadraticCurveTo(78, -2, 140, 10); ctx.stroke();
+        new Snail(80, 0).draw(ctx);
+        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(30, -34); ctx.quadraticCurveTo(52, -24, 62, -10); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(98, -10); ctx.quadraticCurveTo(110, -26, 132, -34); ctx.stroke();
+        ctx.strokeStyle = '#b54a4a'; ctx.lineWidth = 1.4;
+        for (const [x, s] of [[62, 1], [98, -1]]) {
+          ctx.beginPath(); ctx.moveTo(x, -10); ctx.lineTo(x + 5 * s, -3); ctx.moveTo(x, -10); ctx.lineTo(x + 7 * s, -12); ctx.stroke();
+        }
+        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
+        ctx.fillText('Seed & Wing: one insect and one seed in a loop.', 0, 41);
+        ctx.fillText('A cord that touches the snail breaks. Draw around it.', 0, 56);
+        ctx.restore();
+      } else if (teachDawn03) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 108);
+        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(0, -4, 96, 34, 0, 0, Math.PI * 2); ctx.stroke();
+        const f1 = new Butterfly(-50, -4, 'brimstone'); f1.heading = -0.4; f1.draw(ctx);
+        const f2 = new Butterfly(0, -4, 'damselfly'); f2.heading = -Math.PI / 2; f2.draw(ctx);
+        const f3 = new Butterfly(50, -4, 'hawkmoth'); f3.heading = 0.4; f3.draw(ctx);
+        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
+        ctx.fillText('Trio: a Brimstone, a damselfly, and the new Roseate Hawkmoth in one loop.', 0, 41);
+        ctx.fillText('Trio loops are wide. The snail still breaks a cord that touches it.', 0, 56);
+        ctx.restore();
+      } else if (teachTrace) {
         ctx.save(); ctx.translate(0, boxH / 2 - 112);
         ctx.strokeStyle = '#416e83'; ctx.lineWidth = 2; ctx.setLineDash([7, 4]);
         ctx.beginPath(); ctx.moveTo(-120, 8); ctx.lineTo(110, 8); ctx.stroke(); ctx.setLineDash([]);

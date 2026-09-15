@@ -51,6 +51,33 @@ export function getLengthBand(length) {
 }
 
 /**
+ * Paving seam crawled by Dawn snails: a gentle wave at 58% of the field height,
+ * below the HUD and above the curb.
+ */
+export function curbSeamY(x, width, height) {
+  return height * 0.58 + Math.sin((x / Math.max(1, width)) * Math.PI * 5) * 14;
+}
+
+/**
+ * True when any segment of the polyline passes within `radius` of (cx, cy).
+ * A single point counts as a zero-length segment.
+ */
+export function polylineTouchesDisk(points, cx, cy, radius) {
+  if (!points || points.length === 0) return false;
+  const r2 = radius * radius;
+  if (points.length === 1) return (points[0].x - cx) ** 2 + (points[0].y - cy) ** 2 <= r2;
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], b = points[i];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    const t = len2 > 0 ? Math.max(0, Math.min(1, ((cx - a.x) * dx + (cy - a.y) * dy) / len2)) : 0;
+    const px = a.x + t * dx - cx, py = a.y + t * dy - cy;
+    if (px * px + py * py <= r2) return true;
+  }
+  return false;
+}
+
+/**
  * Line segment intersection between segment (p1, p2) and (p3, p4).
  * Returns { x, y, t, u } if they intersect strictly within (0, 1), else null.
  */

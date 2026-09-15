@@ -31,54 +31,26 @@
       "objectives": {
         "single": 4
       },
-      "instruction": "Draw four single-loop combinations. Matching pairs count.",
-      "designNote": "Two Brimstones make the first available pair; no hazards or seed distraction.",
+      "instruction": "Draw four loops, each around two insects of the same kind.",
+      "designNote": "Two Brimstones make the first available pair; no hazards or seed distraction. The clock waits for the first loop.",
       "gestures": [
         "enclose"
       ],
-      "wind": null
+      "wind": null,
+      "clockStartsOnFirstCombination": true
     },
     {
       "id": "dawn-02",
       "number": 2,
-      "title": "The curbside patch",
-      "hour": "dawn",
-      "scene": "curb",
-      "transitionText": "I like to watch the insects here, in this patch by the curbside.",
-      "durationSeconds": 80,
-      "population": {
-        "brimstone": 2,
-        "damselfly": 2,
-        "hawkmoth": 2,
-        "seed": 0,
-        "snail": 0,
-        "lacewing": 0,
-        "firefly": 0
-      },
-      "motionScale": 0.85,
-      "objectives": {
-        "any": 4,
-        "trio": 2
-      },
-      "instruction": "Make four combinations, including two three-species trios.",
-      "designNote": "Introduce the third silhouette; keep the same curb and route marker.",
-      "gestures": [
-        "enclose"
-      ],
-      "wind": null
-    },
-    {
-      "id": "dawn-03",
-      "number": 3,
       "title": "Something in the air",
       "hour": "dawn",
       "scene": "curb",
-      "transitionText": "Maybe I have an overactive imagination.",
+      "transitionText": "I like to watch the insects here, in this patch by the curbside.",
       "durationSeconds": 85,
       "population": {
         "brimstone": 2,
         "damselfly": 2,
-        "hawkmoth": 2,
+        "hawkmoth": 0,
         "seed": 3,
         "snail": 1,
         "lacewing": 0,
@@ -89,12 +61,43 @@
         "any": 5,
         "seedWing": 2
       },
-      "instruction": "Make five combinations, including two Seed & Wing loops.",
-      "designNote": "Add airborne seeds and one bottom-edge snail; matching successful arcs make the first ambiguity of magic.",
+      "instruction": "Make five combinations, including two loops with one insect and one seed. Draw around the snail.",
+      "designNote": "Add airborne seeds and a mid-field snail whose touch breaks the cord; keep the two familiar insects.",
       "gestures": [
         "enclose"
       ],
-      "wind": null
+      "wind": null,
+      "snailRoute": "seam"
+    },
+    {
+      "id": "dawn-03",
+      "number": 3,
+      "title": "The curbside patch",
+      "hour": "dawn",
+      "scene": "curb",
+      "transitionText": "Maybe I have an overactive imagination.",
+      "durationSeconds": 90,
+      "population": {
+        "brimstone": 2,
+        "damselfly": 2,
+        "hawkmoth": 2,
+        "seed": 0,
+        "snail": 1,
+        "lacewing": 0,
+        "firefly": 0
+      },
+      "motionScale": 0.85,
+      "objectives": {
+        "any": 4,
+        "trio": 2
+      },
+      "instruction": "Make four combinations, including two loops with three different kinds of insect.",
+      "designNote": "Introduce the Roseate Hawkmoth for wide trio loops while the mid-field snail keeps crawling.",
+      "gestures": [
+        "enclose"
+      ],
+      "wind": null,
+      "snailRoute": "seam"
     },
     {
       "id": "noon-01",

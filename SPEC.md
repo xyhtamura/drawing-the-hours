@@ -64,7 +64,7 @@ Evaluated atomically on release using standard raycasting point-in-polygon tests
 | **Azure** | Butterfly | Body `#30424f`, Wings `#8ecae6` / `#70b2d6`, Edge `#529bc4`, Mark `#219ebc` | Size 19, Speed 1.4, Flap 18 Hz. Swift, agile flight with sharper turning radius and rapid wingbeats. | Quick flier. Demands anticipation or wider gestures. |
 | **Roseate** | Butterfly | Body `#4f303e`, Wings `#f7b2bd` / `#ee9ca7`, Edge `#e2808e`, Mark `#d1536b` | Size 20, Speed 0.95, Flap 12 Hz. Gentle hovering flutter, lingering near clover patches. | Slower flier. Ideal anchor for mixed trios and multi-pocket lobes. |
 | **Dandelion Seed** | Airborne Seed | Feathery white pappus (`#f8f5eb`), slender stalk (`#a89d87`), dark achene (`#655743`) | Radius 14. Drifts diagonally with ambient breeze ($v_x \approx 0.5–0.9$, $v_y \approx 0.15–0.35 + 0.4\sin(2t)$). Gracefully wraps across screen boundaries. | Passive airborne traveler. Pairs with butterflies or fills dedicated nursery lobes. |
-| **Snail** | Ground Hazard | Spiral paper shell (`#a67c52`), cream foot (`#eddcc8`), delicate eye stalks | Radius 16, Speed 0.12. Crawls slowly along the lower meadow verge; reverses at boundaries. | Ground hazard. If caught in a flight gesture, its heavy shell snarls and breaks the cord. |
+| **Snail** | Ground Hazard | Spiral paper shell (`#a67c52`), cream foot (`#eddcc8`), delicate eye stalks | Radius 16. Speed 0.12 along the lower verge, or 0.2 along the mid-field paving seam in Dawn II–III (`snailRoute: 'seam'`); reverses at boundaries. | Ground hazard. An unfinished enclosure cord within 19 px of its center breaks at once; a pocket that contains it fails. |
 
 ---
 

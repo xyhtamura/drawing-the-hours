@@ -1,4 +1,5 @@
 import { updateLacewing, drawLacewing } from './lacewing.js';
+import { curbSeamY } from './geometry.js';
 /**
  * Drawing the Hours — Inhabitants of the Meadow
  * Procedural paper entities with distinct morphology and flight physics:
@@ -740,13 +741,15 @@ export class DandelionSeed {
 }
 
 export class Snail {
-  constructor(x, y) {
+  /** route: 'edge' keeps to the bottom verge; 'seam' crawls the Dawn paving seam mid-field. */
+  constructor(x, y, route = 'edge') {
     this.type = 'hazard';
     this.kind = 'snail';
     this.x = x;
     this.y = y;
     this.radius = 16;
-    this.vx = 0.12;
+    this.route = route;
+    this.vx = route === 'seam' ? 0.2 : 0.12;
     this.state = 'roaming';
     this.bobPhase = 0;
   }
@@ -754,7 +757,9 @@ export class Snail {
   update(dt, bounds) {
     this.bobPhase += dt * 1.5;
     this.x += this.vx * 60 * dt;
-    this.y = bounds.height - 35;
+    this.y = this.route === 'seam'
+      ? curbSeamY(this.x, bounds.width, bounds.height)
+      : bounds.height - 35;
 
     if (this.x > bounds.width - 40) {
       this.vx = -Math.abs(this.vx);

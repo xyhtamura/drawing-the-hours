@@ -229,9 +229,9 @@ Xyh's confirmed order. No extra narrative lines are required.
 
 | Level | Hour and title | Learning or application | Scene treatment |
 | --- | --- | --- | --- |
-| 1 | Dawn — Before the bus | Four single loops; matching pairs are sufficient. | A narrow curb, grass seam, and the lower edge of a bus-stop post; spacious center. |
-| 2 | Dawn — The curbside patch | Four combinations, including two three-kind trios. | Same patch, third flier silhouette introduced; no new hazard. |
-| 3 | Dawn — Something in the air | Five combinations, including two Seed & Wing loops. | Seed drift beside a drain-edge plant and the first perimeter snail. |
+| 1 | Dawn — Before the bus | Four single loops around matching pairs; the clock starts after the first loop. | A narrow curb, grass seam, and the lower edge of a bus-stop post; spacious center. |
+| 2 | Dawn — Something in the air | Five combinations, including two Seed & Wing loops. | Seed drift, and the first snail crawling a paving seam through the middle of the field. |
+| 3 | Dawn — The curbside patch | Four combinations, including two three-kind trios. | Same patch, third flier silhouette introduced; the seam snail stays. |
 | 4 | Noon — Lunch in the atrium | Four combinations, including three Counterpart Pairs. | Planting beside pale paving; teach one different flier in each lobe. |
 | 5 | Noon — For now | Four figure-eights, including two Nurseries (1 flier + 1 seed); introduce warned gusts. | Choose when to close around drifting seeds. |
 | 6 | Noon — The glass and the leaves | Four combinations, including two Seed & Trio loops, with breeze. | Glass seams frame single-loop groupings. |
@@ -349,3 +349,23 @@ Keep firefly visibility readable enough to draw; decide the pulse timing through
 playtesting. Six insect types across the campaign are sufficient for this plan;
 seeds and snails add other interactions. Introduce one new insect per later hour
 and reuse familiar ones so the changing hour remains legible.
+
+## Dawn revision, 2026-09-15
+
+Xyh swapped the mechanics of Visits II and III. Each transition line stays in
+its slot and keeps its save ID; the titles moved with their mechanics. Visit II,
+*Something in the air*, adds seeds and the first snail to the two familiar
+insects. Visit III, *The curbside patch*, introduces the Roseate Hawkmoth for
+wide trio loops. Dawn now ends on its hardest visit instead of its easiest.
+
+At Dawn the snail crawls a visible paving seam through the middle of the field
+(`snailRoute: 'seam'`). Later snails keep the bottom-edge route. Everywhere, an
+unfinished enclosure cord that comes within 19 pixels of a snail's center breaks
+at once, with no score and no time change. This applies whether the pointer
+reaches the snail or the snail crawls into a held line. Trace mode keeps its
+own rule: touching a snail invalidates the trace on release.
+
+Visit I holds its clock until the first accepted drawing
+(`clockStartsOnFirstCombination`). All three Dawn ready cards carry diagrams.
+The feedback banner moved from the bottom of the field to below the top HUD,
+because the canvas bottom can sit below the fold.

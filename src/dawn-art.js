@@ -1,3 +1,5 @@
+import { curbSeamY } from './geometry.js';
+
 /** Cached, locally authored paper verge. Decoration never participates in hit tests. */
 export function createDawnArt(width, height, pixelRatio = 1) {
   const canvas = document.createElement('canvas');
@@ -28,6 +30,23 @@ export function createDawnArt(width, height, pixelRatio = 1) {
   ctx.beginPath(); ctx.moveTo(0, height - 19); ctx.lineTo(width, height - 19); ctx.stroke();
   for (let x = 66; x < width; x += 126) {
     ctx.beginPath(); ctx.moveTo(x, height - 19); ctx.lineTo(x + 3, height); ctx.stroke();
+  }
+  // A paving seam crosses the verge; Dawn snails crawl along it. Fixed spacing
+  // keeps the seeded random sequence for the grasses and flowers unchanged.
+  ctx.strokeStyle = 'rgba(150,132,118,.5)'; ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  for (let x = 0; x <= width + 6; x += 6) {
+    const y = curbSeamY(x, width, height);
+    if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.strokeStyle = '#aab98f'; ctx.lineWidth = 1;
+  for (let x = 41; x < width; x += 97) {
+    const y = curbSeamY(x, width, height);
+    ctx.beginPath();
+    ctx.moveTo(x, y); ctx.quadraticCurveTo(x - 4, y - 5, x - 2, y - 9);
+    ctx.moveTo(x + 2, y); ctx.quadraticCurveTo(x + 6, y - 4, x + 5, y - 8);
+    ctx.stroke();
   }
   // A small bus-stop marker sits outside the central gesture area.
   ctx.fillStyle = '#a6a69a'; ctx.fillRect(width - 17, 99, 3, 59);

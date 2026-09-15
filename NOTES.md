@@ -10,9 +10,78 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Overhaul Dawn: swap the mechanics of Visits II and III, add the mid-field cord-snapping snail, start Visit I's clock after the first loop, and add ready-card diagrams.
+Playtest the revised Dawn on a touch device and tune the Visit II–III clocks and the snail's speed.
 
 ## Activity
+
+2026-09-15 — Claude Code — Overhauled Dawn following the decisions in the entry
+below.
+
+Changes:
+
+- Swapped the mechanics of Dawn II and III in `src/campaign.js` and
+  `campaign-plan.json`; transition lines and save IDs did not move. Visit II,
+  *Something in the air*: two Brimstones, two damselflies, three seeds, one
+  snail; five combinations including two Seed & Wing; 85 s. Visit III, *The
+  curbside patch*: two each of Brimstone, damselfly, and hawkmoth, plus one
+  snail; four combinations including two trios; 90 s, up from 80 s because the
+  snail now shares the field.
+- `snailRoute: 'seam'` puts the Dawn II–III snail on a paving seam at 58% of the
+  field height (`curbSeamY` in `src/geometry.js`, drawn in `src/dawn-art.js`),
+  at speed 0.2 instead of 0.12. Later snails keep the bottom edge.
+- `Game.checkCordHazards` breaks an unfinished enclosure cord that comes within
+  19 px (radius + 3) of any snail, in every visit. Pointer samples test the
+  newest segment; each update tests the whole held cord, so a snail crawling
+  into a held line also breaks it. Nothing scores and the clock is unchanged;
+  the player lifts and draws again. `samplePointer` now returns when no stroke
+  is active, because coalesced samples can arrive after a break.
+- `clockStartsOnFirstCombination` holds Dawn I's clock until the first accepted
+  drawing, and the HUD label reads "Starts after first loop".
+- All three Dawn ready cards carry diagrams, at the 445 px card height.
+- The feedback banner moved from the canvas bottom to y 108 (wide) and y 128
+  (narrow).
+- In Dawn visits with fewer than three insect kinds, the mismatch message reads
+  "Two different kinds cannot share a loop. Loop a matching pair."
+- Updated the Field Book snail entry, the SPEC.md snail row, and the CAMPAIGN.md
+  level table, and added a Dawn revision section to CAMPAIGN.md.
+
+Verification:
+
+- `node test/test_mechanics.js` passes, including new block 10: Dawn records,
+  plan and runtime agreement for Dawn, seam bounds at 996×640 and 390×600, seam
+  snail tracking, the edge snail at y 605, and cord-contact cases.
+  `test_dusk.js`, `test_midnight.js`, `node --check` on every module, and
+  `git diff --check` pass. `test/dusk-browser.html` and
+  `test/midnight-browser.html` both report PASS after the input change.
+- Live page, synthetic pen Pointer Events: a stroke across the Dawn II snail
+  broke mid-stroke, showed the banner, and scored nothing after release. A held
+  vertical line 60 px ahead of the crawling snail broke after 3.43 s against a
+  predicted 3.42 s. Dawn I's clock stayed at 75 s through 10 s of play and read
+  77 s two seconds after the first Kindred Pair (75 + 4 − 2). The Dawn I
+  mismatch shows the new message. A touch stroke across the snail at 375×812
+  also broke the cord.
+- Screenshots: all three Dawn ready cards at desktop width, the Dawn II card at
+  375×812, and the Dawn II field at desktop and 375×812 showing the seam, the
+  snail, the broken-cord recoil, and the banner below the HUD.
+- Circle-fit proxy as in the entry below, now also excluding circles within the
+  snail's reach, 4 runs × 60 s: Dawn I pair 99%, radius 102 px; Dawn II Seed &
+  Wing 99%, 88 px, and pair 37%; Dawn III trio 54%, 190 px, and pair 63%. The
+  trio was available 97% of the time before the snail joined it. Dawn I's
+  radius differs from the earlier single run's 66 px; the earlier figure came
+  from one 60 s run.
+
+Not done:
+
+- No human or touch-device run. The 85 s and 90 s clocks and the 0.2 snail speed
+  are first guesses. The proxy does not model a cord's path crossing the seam,
+  which is where the snail is meant to interfere, so it understates the
+  snail's effect.
+- Dropped: adding the cord break to Trace mode. Trace already invalidates an
+  attempt that touches a snail, and a second rule there would change Midnight,
+  which Xyh finds challenging enough.
+- Still open from the review: failure flow (Level select, untimed practice,
+  hint), resume on reload, the Unlock All button, Midnight entries in the Field
+  Book, and the "morning breeze" game-over subtitle at every hour.
 
 2026-09-15 — Claude Code — Reviewed the twelve-visit day as a first player's run
 and as a small release, then agreed a Dawn overhaul with Xyh. No code changed in

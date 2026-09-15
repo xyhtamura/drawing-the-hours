@@ -12,7 +12,11 @@ import {
   pointInPolygon,
   segmentIntersection,
   polygonArea,
+  polylineTouchesDisk,
+  curbSeamY,
 } from '../src/geometry.js';
+import fs from 'node:fs';
+import { Snail } from '../src/entities.js';
 import { evaluateDrawing, RECIPE_TYPES } from '../src/recipes.js';
 import {
   deriveObjectiveTags,
@@ -538,6 +542,55 @@ console.log('--- Running Drawing the Hours Test Suite ---');
   }
 
   console.log('✔ Campaign registry, verbatim texts, and optionality of complex figure-eights verified.');
+}
+
+// 10. Dawn order: seeds and the seam snail in Visit II, the trio in Visit III
+{
+  const [dawn1, dawn2, dawn3] = CAMPAIGN_LEVELS;
+  assert.strictEqual(dawn1.clockStartsOnFirstCombination, true);
+  assert.strictEqual(dawn2.title, 'Something in the air');
+  assert.deepStrictEqual(dawn2.objectives, { any: 5, seedWing: 2 });
+  assert.strictEqual(dawn2.population.hawkmoth, 0);
+  assert.strictEqual(dawn2.population.seed, 3);
+  assert.strictEqual(dawn2.snailRoute, 'seam');
+  assert.strictEqual(dawn3.title, 'The curbside patch');
+  assert.deepStrictEqual(dawn3.objectives, { any: 4, trio: 2 });
+  assert.strictEqual(dawn3.population.hawkmoth, 2);
+  assert.strictEqual(dawn3.snailRoute, 'seam');
+
+  const plan = JSON.parse(fs.readFileSync(new URL('../campaign-plan.json', import.meta.url)));
+  for (const level of [dawn1, dawn2, dawn3]) {
+    const source = plan.levels.find(l => l.id === level.id);
+    for (const key of ['title', 'population', 'objectives', 'durationSeconds', 'motionScale',
+      'instruction', 'transitionText', 'snailRoute', 'clockStartsOnFirstCombination']) {
+      assert.deepStrictEqual(level[key], source[key], `${level.id}: plan and runtime ${key}`);
+    }
+  }
+
+  // The seam stays inside the field, below the HUD and above the curb.
+  for (const [w, h] of [[996, 640], [390, 600]]) {
+    for (let x = 0; x <= w; x += 13) {
+      const y = curbSeamY(x, w, h);
+      assert.ok(y > 140 && y < h - 60, `seam y ${y} inside ${w}x${h}`);
+    }
+    const snail = new Snail(w / 2, 0, 'seam');
+    for (let i = 0; i < 600; i++) snail.update(1 / 60, { width: w, height: h });
+    assert.ok(Math.abs(snail.y - curbSeamY(snail.x, w, h)) < 1e-9, 'seam snail follows the seam');
+    assert.ok(snail.x > w / 2, 'seam snail advances');
+  }
+  const edgeSnail = new Snail(200, 0);
+  edgeSnail.update(0, { width: 996, height: 640 });
+  assert.strictEqual(edgeSnail.y, 605, 'later snails keep the bottom-edge route');
+
+  // Cord contact with the snail's disk.
+  const cord = [{ x: 0, y: 0 }, { x: 100, y: 0 }];
+  assert.strictEqual(polylineTouchesDisk(cord, 50, 18, 19), true, 'segment passes within reach');
+  assert.strictEqual(polylineTouchesDisk(cord, 50, 20, 19), false, 'segment passes outside');
+  assert.strictEqual(polylineTouchesDisk(cord, 118, 0, 19), true, 'endpoint within reach');
+  assert.strictEqual(polylineTouchesDisk([{ x: 5, y: 5 }], 0, 0, 19), true, 'single point');
+  assert.strictEqual(polylineTouchesDisk([], 0, 0, 19), false, 'empty stroke');
+
+  console.log('✔ Dawn visit order, seam snail route, and cord contact verified.');
 }
 
 console.log('--- All tests passed! ---');
