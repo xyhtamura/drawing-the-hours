@@ -1,3 +1,4 @@
+import { themeColor, themeKey, setThemeHour } from './theme.js';
 import { TraceGesture } from './trace.js';
 import { createMidnightArt } from './midnight-art.js';
 import { createDuskArt } from './dusk-art.js';
@@ -182,6 +183,7 @@ export class Game {
 
     this.cancelStroke();
     this.currentLevel = level || this.campaign.currentLevel;
+    setThemeHour(this.currentLevel.hour);
     this.gestureMode = this.currentLevel.stringRules ? 'string' : (this.currentLevel.gestures?.[0] || 'enclose');
     this.stringGesture = null;
     this.tapTracker?.cancel();
@@ -1231,7 +1233,7 @@ export class Game {
 
   drawMeadowFloor(ctx) {
     if (this.currentLevel?.scene === 'window') {
-      const key = `${this.width}:${this.height}:${this.dpr}`;
+      const key = `${themeKey()}:${this.width}:${this.height}:${this.dpr}`;
       if (this.midnightArtKey !== key) {
         this.midnightArt = createMidnightArt(this.width, this.height, this.dpr);
         this.midnightArtKey = key;
@@ -1240,7 +1242,7 @@ export class Game {
       return;
     }
     if (this.currentLevel?.scene === 'passage') {
-      const key = `${this.width}:${this.height}:${window.devicePixelRatio || 1}`;
+      const key = `${themeKey()}:${this.width}:${this.height}:${window.devicePixelRatio || 1}`;
       if (this.duskArtKey !== key) {
         this.duskArt = createDuskArt(this.width, this.height, window.devicePixelRatio || 1);
         this.duskArtKey = key;
@@ -1249,7 +1251,7 @@ export class Game {
       return;
     }
     if (this.currentLevel?.scene === 'atrium') {
-      const key = `${this.width}:${this.height}:${window.devicePixelRatio || 1}`;
+      const key = `${themeKey()}:${this.width}:${this.height}:${window.devicePixelRatio || 1}`;
       if (this.noonArtKey !== key) {
         this.noonArt = createNoonArt(this.width, this.height, window.devicePixelRatio || 1);
         this.noonArtKey = key;
@@ -1258,7 +1260,7 @@ export class Game {
       return;
     }
     if (this.currentLevel?.scene === 'curb') {
-      const key = `${this.width}:${this.height}:${window.devicePixelRatio || 1}`;
+      const key = `${themeKey()}:${this.width}:${this.height}:${window.devicePixelRatio || 1}`;
       if (this.dawnArtKey !== key) {
         this.dawnArt = createDawnArt(this.width, this.height, window.devicePixelRatio || 1);
         this.dawnArtKey = key;
@@ -1546,7 +1548,7 @@ export class Game {
       }
 
       // Main dyed cotton cord strand
-      ctx.strokeStyle = this.gestureMode === 'trace' ? (this.trace?.fault ? '#a23f4b' : '#416e83') : band.cordHue;
+      ctx.strokeStyle = this.gestureMode === 'trace' ? (this.trace?.fault ? '#a23f4b' : themeColor('trace', '#416e83')) : themeColor(band.name.toLowerCase(), band.cordHue);
       if (this.gestureMode === 'trace') ctx.setLineDash([10, 4]);
       ctx.lineWidth = 3.8;
       ctx.lineCap = 'round';
@@ -1566,7 +1568,7 @@ export class Game {
 
       // Drawing head ring (pulses gently when closed or trace is ready)
       const tip = pts[pts.length - 1];
-      ctx.fillStyle = isTraceReady ? '#416e83' : (isClosed ? (hasBeads ? '#d46b43' : '#7fad5a') : band.color);
+      ctx.fillStyle = isTraceReady ? themeColor('trace', '#416e83') : (isClosed ? (hasBeads ? '#d46b43' : '#7fad5a') : themeColor(band.name.toLowerCase(), band.color));
       ctx.beginPath();
       ctx.arc(tip.x, tip.y, (isTraceReady || isClosed) ? 5.2 : 4, 0, Math.PI * 2);
       ctx.fill();
@@ -1581,12 +1583,12 @@ export class Game {
     for (const entity of this.entities) {
       if (entity.state === 'harmonizing' || entity.state === 'departing') continue;
       const index = this.trace?.contacts.indexOf(entity) ?? -1;
-      ctx.strokeStyle = index >= 0 ? '#315b73' : 'rgba(53,76,92,.4)';
+      ctx.strokeStyle = index >= 0 ? themeColor('trace', '#315b73') : themeColor('trace', 'rgba(53,76,92,.4)');
       ctx.lineWidth = index >= 0 ? 2 : 1;
       ctx.beginPath(); ctx.arc(entity.x, entity.y, entity.radius, 0, Math.PI * 2); ctx.stroke();
       if (index >= 0) {
-        ctx.fillStyle = '#315b73'; ctx.beginPath(); ctx.arc(entity.x + entity.radius, entity.y - entity.radius, 9, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#fff'; ctx.font = '600 11px system-ui'; ctx.textAlign = 'center';
+        ctx.fillStyle = themeColor('trace', '#315b73'); ctx.beginPath(); ctx.arc(entity.x + entity.radius, entity.y - entity.radius, 9, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = themeColor('panel', '#fff'); ctx.font = '600 11px system-ui'; ctx.textAlign = 'center';
         ctx.fillText(String(index + 1), entity.x + entity.radius, entity.y - entity.radius + 4);
       }
     }
@@ -1624,7 +1626,7 @@ export class Game {
       const ent = bead.entity;
       const orderIdx = traceOrder.indexOf(ent);
       const isMatchingBead = isTraceLevel && orderIdx >= 0 && orderIdx < traceSeq.length && ent.kind === traceSeq[orderIdx];
-      const markerHue = isTraceLevel ? (isMatchingBead ? '#315b73' : '#c85a32') : '#c85a32';
+      const markerHue = isTraceLevel ? (isMatchingBead ? themeColor('trace', '#315b73') : themeColor('balanced', '#c85a32')) : themeColor('balanced', '#c85a32');
 
       // Hit circle indicator around the bug
       ctx.strokeStyle = markerHue;
@@ -1679,7 +1681,7 @@ export class Game {
       // Tier 1: Left Clock, Right Objectives
       this.clock.draw(ctx, 28, 28, 18);
 
-      ctx.fillStyle = '#4a4235';
+      ctx.fillStyle = themeColor('ink', '#4a4235');
       ctx.font = '600 13px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'left';
       const secondsLeft = Math.ceil(this.clock.remainingSeconds);
@@ -1687,7 +1689,7 @@ export class Game {
       const ss = String(secondsLeft % 60).padStart(2, '0');
       ctx.fillText(`${mm}:${ss}`, 52, 28);
 
-      ctx.fillStyle = '#8a7f70';
+      ctx.fillStyle = themeColor('muted', '#8a7f70');
       ctx.font = '500 10px system-ui, -apple-system, sans-serif';
       ctx.fillText(this.isClockHeld() ? 'Waiting' : 'Clock', 52, 40);
 
@@ -1699,20 +1701,20 @@ export class Game {
       const lvlTitle = this.currentLevel ? `${this.currentLevel.title}` : `Wave ${this.currentWave}`;
 
       ctx.textAlign = 'right';
-      ctx.fillStyle = '#4a4235';
+      ctx.fillStyle = themeColor('ink', '#4a4235');
       ctx.font = '600 11px system-ui, -apple-system, sans-serif';
       const objectiveLines = wrapText(ctx, objText, this.width - 126);
       objectiveLines.forEach((line, i) => ctx.fillText(line, this.width - 16, 26 + i * 14));
       const extraHUDHeight = (objectiveLines.length - 1) * 14;
 
-      ctx.fillStyle = '#7a6c57';
+      ctx.fillStyle = themeColor('muted', '#7a6c57');
       ctx.font = 'italic 10.5px Mali, sans-serif';
       ctx.fillText(`${lvlTitle} • ${this.score} pts`, this.width - 16, 40 + extraHUDHeight);
 
       // Tier 2: Centered Stroke Length Band Meter (compact, below top row)
       const cx = this.width / 2;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-      ctx.strokeStyle = '#dcd4c5';
+      ctx.fillStyle = themeColor('panel', 'rgba(255, 255, 255, 0.75)');
+      ctx.strokeStyle = themeColor('edge', '#dcd4c5');
       ctx.lineWidth = 1.1;
       const meterW = Math.min(140, this.width - 60);
       const meterH = 15;
@@ -1725,7 +1727,7 @@ export class Game {
 
       const fillRatio = Math.min(1.0, this.strokeLength / 1400);
       if (fillRatio > 0.01) {
-        ctx.fillStyle = this.activeBand.color;
+        ctx.fillStyle = themeColor(this.activeBand.name.toLowerCase(), this.activeBand.color);
         ctx.beginPath();
         drawRoundedRect(ctx, cx - meterW / 2 + 2, meterY + 2, (meterW - 4) * fillRatio, meterH - 4, 5);
         ctx.fill();
@@ -1734,7 +1736,7 @@ export class Game {
       if (this.currentLevel?.stringRules) {
         const snapRatio = Math.min(1.0, (this.currentLevel.maxCordLength ?? MAX_CORD_LENGTH) / 1400);
         const snapX = cx - meterW / 2 + 2 + (meterW - 4) * snapRatio;
-        ctx.strokeStyle = '#c85a32';
+        ctx.strokeStyle = themeColor('balanced', '#c85a32');
         ctx.lineWidth = 1.6;
         ctx.beginPath();
         ctx.moveTo(snapX, meterY + 2);
@@ -1742,7 +1744,7 @@ export class Game {
         ctx.stroke();
       }
 
-      ctx.fillStyle = '#4a4235';
+      ctx.fillStyle = themeColor('ink', '#4a4235');
       ctx.font = '600 9.5px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(`CORD: ${this.activeBand.name.toUpperCase()}`, cx, meterY + 11);
@@ -1750,7 +1752,7 @@ export class Game {
       // --- STANDARD WIDESCREEN HUD LAYOUT ---
       this.clock.draw(ctx, 42, 40, 24);
 
-      ctx.fillStyle = '#4a4235';
+      ctx.fillStyle = themeColor('ink', '#4a4235');
       ctx.font = '600 14px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'left';
       const secondsLeft = Math.ceil(this.clock.remainingSeconds);
@@ -1758,13 +1760,13 @@ export class Game {
       const ss = String(secondsLeft % 60).padStart(2, '0');
       ctx.fillText(`${mm}:${ss}`, 74, 38);
 
-      ctx.fillStyle = '#8a7f70';
+      ctx.fillStyle = themeColor('muted', '#8a7f70');
       ctx.font = '500 11px system-ui, -apple-system, sans-serif';
       ctx.fillText(this.isClockHeld() ? 'Starts after first loop' : 'Dandelion Clock', 74, 52);
 
       const cx = this.width / 2;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-      ctx.strokeStyle = '#dcd4c5';
+      ctx.fillStyle = themeColor('panel', 'rgba(255, 255, 255, 0.7)');
+      ctx.strokeStyle = themeColor('edge', '#dcd4c5');
       ctx.lineWidth = 1.2;
       const meterW = 160, meterH = 18;
       ctx.beginPath();
@@ -1774,7 +1776,7 @@ export class Game {
 
       const fillRatio = Math.min(1.0, this.strokeLength / 1400);
       if (fillRatio > 0.01) {
-        ctx.fillStyle = this.activeBand.color;
+        ctx.fillStyle = themeColor(this.activeBand.name.toLowerCase(), this.activeBand.color);
         ctx.beginPath();
         drawRoundedRect(ctx, cx - meterW / 2 + 2, 26, (meterW - 4) * fillRatio, meterH - 4, 7);
         ctx.fill();
@@ -1783,7 +1785,7 @@ export class Game {
       if (this.currentLevel?.stringRules) {
         const snapRatio = Math.min(1.0, (this.currentLevel.maxCordLength ?? MAX_CORD_LENGTH) / 1400);
         const snapX = cx - meterW / 2 + 2 + (meterW - 4) * snapRatio;
-        ctx.strokeStyle = '#c85a32';
+        ctx.strokeStyle = themeColor('balanced', '#c85a32');
         ctx.lineWidth = 1.8;
         ctx.beginPath();
         ctx.moveTo(snapX, 26);
@@ -1791,7 +1793,7 @@ export class Game {
         ctx.stroke();
       }
 
-      ctx.fillStyle = '#4a4235';
+      ctx.fillStyle = themeColor('ink', '#4a4235');
       ctx.font = '600 11px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(`CORD: ${this.activeBand.name.toUpperCase()}`, cx, 37);
@@ -1803,22 +1805,22 @@ export class Game {
       const lvlTitle = this.currentLevel ? `${this.currentLevel.title}` : `Wave ${this.currentWave}`;
 
       ctx.textAlign = 'right';
-      ctx.fillStyle = '#4a4235';
+      ctx.fillStyle = themeColor('ink', '#4a4235');
       ctx.font = '600 12.5px system-ui, -apple-system, sans-serif';
       ctx.fillText(objText, this.width - 24, 34);
 
-      ctx.fillStyle = '#7a6c57';
+      ctx.fillStyle = themeColor('muted', '#7a6c57');
       ctx.font = 'italic 11px Mali, sans-serif';
       ctx.fillText(lvlTitle, this.width - 24, 49);
 
-      ctx.fillStyle = '#8a7f70';
+      ctx.fillStyle = themeColor('muted', '#8a7f70');
       ctx.font = '500 11px system-ui, -apple-system, sans-serif';
       ctx.fillText(`Score: ${this.score}`, this.width - 24, 64);
     }
 
     if (this.gestureMode === 'trace') {
       ctx.save(); ctx.textAlign = 'center';
-      ctx.font = '600 11px system-ui, sans-serif'; ctx.fillStyle = '#315b73';
+      ctx.font = '600 11px system-ui, sans-serif'; ctx.fillStyle = themeColor('trace', '#315b73');
       const y = isNarrow ? 104 : 88;
       ctx.fillText('TRACE: Firefly → Lacewing → Firefly', this.width / 2, y);
       ctx.font = '11px system-ui, sans-serif';
@@ -1828,7 +1830,7 @@ export class Game {
       ctx.restore();
     } else if (this.currentLevel?.gestures?.length > 1) {
       ctx.save(); ctx.textAlign = 'center';
-      ctx.font = '600 11px system-ui, sans-serif'; ctx.fillStyle = '#85485e';
+      ctx.font = '600 11px system-ui, sans-serif'; ctx.fillStyle = themeColor('petite', '#85485e');
       const y = isNarrow ? 104 : 88;
       ctx.fillText('ENCLOSE: Loops & Figure-Eights (Press [T] for Trace)', this.width / 2, y);
       ctx.restore();
@@ -1917,17 +1919,17 @@ export class Game {
 
       // Hour subtitle
       ctx.font = isNarrow ? '600 11px system-ui, sans-serif' : '600 12px system-ui, sans-serif';
-      ctx.fillStyle = '#8a7d6d';
+      ctx.fillStyle = themeColor('muted', '#8a7d6d');
       ctx.textAlign = 'center';
       ctx.fillText((lvl.hourLabel || 'DAWN · VISIT').toUpperCase(), 0, -boxH / 2 + 38);
 
       // Title
-      ctx.fillStyle = '#2c251d';
+      ctx.fillStyle = themeColor('ink', '#2c251d');
       ctx.font = isNarrow ? '600 23px Mali, sans-serif' : '600 27px Mali, sans-serif';
       ctx.fillText(lvl.title, 0, -boxH / 2 + 66);
 
       // Decorative divider
-      ctx.strokeStyle = '#d6cbba';
+      ctx.strokeStyle = themeColor('edge', '#d6cbba');
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(-boxW * 0.28, -boxH / 2 + 82);
@@ -1936,13 +1938,13 @@ export class Game {
 
       // Verbatim transition text
       ctx.font = isNarrow ? '400 18px Mali, sans-serif' : '400 21px Mali, sans-serif';
-      ctx.fillStyle = '#3a3227';
+      ctx.fillStyle = themeColor('ink', '#3a3227');
       const lines = wrapText(ctx, lvl.transitionText, boxW - 64);
       const lineHeight = isNarrow ? 27 : 30;
       lines.forEach((line, i) => ctx.fillText(line, 0, 7 + (i - (lines.length - 1) / 2) * lineHeight));
 
       // Prompt
-      ctx.fillStyle = '#5c4538';
+      ctx.fillStyle = themeColor('ink', '#5c4538');
       ctx.font = isNarrow ? '600 12px system-ui, sans-serif' : '600 14px system-ui, sans-serif';
       ctx.fillText(isNarrow ? '[ Tap to Continue ]' : '[ Click anywhere or press Space to Continue ]', 0, boxH / 2 - 24);
     });
@@ -1971,26 +1973,26 @@ export class Game {
       const isNarrow = boxW < 440;
 
       // Header
-      ctx.fillStyle = '#3a3429';
+      ctx.fillStyle = themeColor('ink', '#3a3429');
       ctx.font = isNarrow ? '600 22px Mali, sans-serif' : '600 27px Mali, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(lvl.title, 0, -boxH / 2 + 36);
 
       // Subtitle
       ctx.font = isNarrow ? 'italic 12px Mali, sans-serif' : 'italic 13px Mali, sans-serif';
-      ctx.fillStyle = '#7a6f5f';
+      ctx.fillStyle = themeColor('muted', '#7a6f5f');
       ctx.fillText(lvl.hourLabel || 'Dawn · Visit', 0, -boxH / 2 + 58);
 
       // Instruction
       ctx.font = isNarrow ? '12px system-ui, sans-serif' : '13px system-ui, sans-serif';
-      ctx.fillStyle = '#4c4234';
+      ctx.fillStyle = themeColor('ink', '#4c4234');
       const instructionLines = wrapText(ctx, lvl.instruction, boxW - 48);
       instructionLines.forEach((line, i) => ctx.fillText(line, 0, -boxH / 2 + 88 + i * 17));
 
       // Objectives box
       ctx.textAlign = 'left';
       ctx.font = isNarrow ? '600 11.5px system-ui, sans-serif' : '600 12.5px system-ui, sans-serif';
-      ctx.fillStyle = '#2c251d';
+      ctx.fillStyle = themeColor('ink', '#2c251d');
       const padX = -boxW / 2 + (isNarrow ? 22 : 36);
       let startY = -boxH / 2 + 124 + (instructionLines.length - 1) * 17;
 
@@ -1998,7 +2000,7 @@ export class Game {
       startY += 19;
 
       ctx.font = isNarrow ? '12px system-ui, sans-serif' : '13px system-ui, sans-serif';
-      ctx.fillStyle = '#4c4234';
+      ctx.fillStyle = themeColor('ink', '#4c4234');
       for (const [k, obj] of Object.entries(this.campaign.objectiveProgress)) {
         ctx.fillText(`• ${obj.label}: ${obj.current} / ${obj.target}`, padX + 8, startY);
         startY += 21;
@@ -2006,13 +2008,13 @@ export class Game {
 
       // Duration note
       ctx.font = 'italic 11.5px Mali, sans-serif';
-      ctx.fillStyle = '#8a7e6f';
+      ctx.fillStyle = themeColor('muted', '#8a7e6f');
       ctx.fillText(`Dandelion Clock: ${lvl.durationSeconds} seconds${lvl.clockStartsOnFirstCombination ? ', starting after your first loop' : ''}`, padX, startY + 8);
 
       if (teachDawn01) {
         ctx.save(); ctx.translate(0, boxH / 2 - 108);
         // Cord drawn as a curved wall with open gap at the top right
-        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2.4;
+        ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2.4;
         ctx.beginPath();
         ctx.moveTo(14, -16);
         ctx.quadraticCurveTo(24, 18, -20, 24);
@@ -2021,11 +2023,11 @@ export class Game {
         ctx.stroke();
 
         // Start point pip at (-14, -28)
-        ctx.fillStyle = '#ac647e';
+        ctx.fillStyle = themeColor('petite', '#ac647e');
         ctx.beginPath(); ctx.arc(-14, -28, 2.5, 0, Math.PI * 2); ctx.fill();
 
         // Drawing tip / pointer at (14, -16)
-        ctx.fillStyle = '#ac647e';
+        ctx.fillStyle = themeColor('petite', '#ac647e');
         ctx.beginPath(); ctx.arc(14, -16, 4, 0, Math.PI * 2); ctx.fill();
 
         // Dashed gap line showing open space to close
@@ -2049,19 +2051,19 @@ export class Game {
         // Bystander outside the wall
         const d = new Butterfly(68, -4, 'damselfly'); d.heading = -Math.PI / 2; d.draw(ctx);
 
-        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
         ctx.fillText('The held cord is a wall: fliers cannot cross it while you draw.', 0, 41);
         ctx.fillText('Close the loop before insects escape through the open gap.', 0, 56);
         ctx.restore();
       } else if (teachDawn02) {
         ctx.save(); ctx.translate(0, boxH / 2 - 108);
         // Left: Valid Seed & Wing loop
-        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
         ctx.beginPath(); ctx.ellipse(-80, -6, 50, 28, 0, 0, Math.PI * 2); ctx.stroke();
         const fly = new Butterfly(-100, -6, 'brimstone'); fly.heading = -0.4; fly.draw(ctx);
         ctx.save(); ctx.translate(-62, -6); ctx.scale(0.85, 0.85);
         new DandelionSeed(0, 0).draw(ctx); ctx.restore();
-        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '10.5px system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '10.5px system-ui, sans-serif';
         ctx.fillText('Valid Seed & Wing', -80, 28);
 
         // Right: Threaded bead cancellation warning
@@ -2082,10 +2084,10 @@ export class Game {
         ctx.moveTo(116, -22); ctx.lineTo(106, -12);
         ctx.stroke();
 
-        ctx.textAlign = 'center'; ctx.fillStyle = '#852b2b'; ctx.font = '10.5px system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('petite', '#852b2b'); ctx.font = '10.5px system-ui, sans-serif';
         ctx.fillText('Threaded (loop cancelled)', 78, 28);
 
-        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
         ctx.fillText('Touching an insect threads it as a bead on the cord and cancels the loop.', 0, 43);
         ctx.fillText('Draw around creatures to enclose them. (The seam snail breaks the cord.)', 0, 58);
         ctx.restore();
@@ -2111,7 +2113,7 @@ export class Game {
         ctx.save();
         ctx.shadowColor = 'rgba(212, 163, 89, 0.55)';
         ctx.shadowBlur = 8;
-        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2.4;
+        ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2.4;
         ctx.beginPath();
         ctx.moveTo(82, 12);
         ctx.quadraticCurveTo(88, -6, 78, -18);
@@ -2133,14 +2135,14 @@ export class Game {
         const f2 = new Butterfly(-4, -6, 'damselfly'); f2.heading = -Math.PI / 2; f2.draw(ctx);
         const f3 = new Butterfly(46, -6, 'hawkmoth'); f3.heading = 0.4; f3.draw(ctx);
 
-        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
         ctx.fillText('Close the loop by crossing the cord over itself or landing on the line.', 0, 41);
         ctx.fillText('Trio of Flight: enclose three different kinds (shared limit: 1,200 px).', 0, 56);
         ctx.restore();
       } else if (teachStringTrace) {
         ctx.save(); ctx.translate(0, boxH / 2 - 112);
         // Cord line threading three insects
-        ctx.strokeStyle = '#416e83'; ctx.lineWidth = 2.4;
+        ctx.strokeStyle = themeColor('trace', '#416e83'); ctx.lineWidth = 2.4;
         ctx.beginPath(); ctx.moveTo(-110, 8); ctx.lineTo(110, 8); ctx.stroke();
         for (const [i, x] of [-70, 0, 70].entries()) {
           ctx.save(); ctx.translate(x, 8); ctx.scale(0.8, 0.8);
@@ -2148,52 +2150,52 @@ export class Game {
           else drawFirefly(ctx, { stateTime: 0.4, glowOffset: 0 });
           ctx.restore();
           // Bead pip on the cord
-          ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#315b73'; ctx.lineWidth = 1.4;
+          ctx.fillStyle = '#ffffff'; ctx.strokeStyle = themeColor('trace', '#315b73'); ctx.lineWidth = 1.4;
           ctx.beginPath(); ctx.arc(x, 8, 3.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
           // Badge
-          ctx.fillStyle = '#315b73'; ctx.beginPath(); ctx.arc(x + 14, 8 - 14, 8, 0, Math.PI * 2); ctx.fill();
-          ctx.fillStyle = '#fff'; ctx.font = '600 10px system-ui'; ctx.textAlign = 'center';
+          ctx.fillStyle = themeColor('trace', '#315b73'); ctx.beginPath(); ctx.arc(x + 14, 8 - 14, 8, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = themeColor('panel', '#fff'); ctx.font = '600 10px system-ui'; ctx.textAlign = 'center';
           ctx.fillText(String(i + 1), x + 14, 8 - 10.5);
 
-          ctx.textAlign = 'center'; ctx.fillStyle = '#315b73'; ctx.font = '11px system-ui';
+          ctx.textAlign = 'center'; ctx.fillStyle = themeColor('trace', '#315b73'); ctx.font = '11px system-ui';
           ctx.fillText(`${i + 1}. ${i === 1 ? 'Lacewing' : 'Firefly'}`, x, 34);
         }
-        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui';
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui';
         ctx.fillText('Thread three insects in sequence: Firefly → Lacewing → different Firefly.', 0, 56);
         ctx.fillText('Line may stay open or close. Release after the third to score.', 0, 71);
         ctx.restore();
       } else if (teachTrace) {
         ctx.save(); ctx.translate(0, boxH / 2 - 112);
-        ctx.strokeStyle = '#416e83'; ctx.lineWidth = 2; ctx.setLineDash([7, 4]);
+        ctx.strokeStyle = themeColor('trace', '#416e83'); ctx.lineWidth = 2; ctx.setLineDash([7, 4]);
         ctx.beginPath(); ctx.moveTo(-120, 8); ctx.lineTo(110, 8); ctx.stroke(); ctx.setLineDash([]);
         for (const [i, x] of [-80, 0, 80].entries()) {
           ctx.save(); ctx.translate(x, 0); ctx.scale(0.8, 0.8);
           if (i === 1) drawLacewing(ctx, { lacePhase: 'rest', flapPhase: 0 });
           else drawFirefly(ctx, { stateTime: 0.4, glowOffset: 0 });
           ctx.restore();
-          ctx.textAlign = 'center'; ctx.fillStyle = '#315b73'; ctx.font = '11px system-ui';
+          ctx.textAlign = 'center'; ctx.fillStyle = themeColor('trace', '#315b73'); ctx.font = '11px system-ui';
           ctx.fillText(`${i + 1}. ${i === 1 ? 'Lacewing' : 'Firefly'}`, x, 37);
         }
-        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui';
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui';
         ctx.fillText('Start in empty space. Touch three different insects.', 0, 59);
         ctx.fillText('Release after the third. The line can stay open.', 0, 74);
         ctx.restore();
       } else if (teachLacewing) {
         ctx.save(); ctx.translate(0, boxH / 2 - 94);
-        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, 0);
         ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
         ctx.bezierCurveTo(100, -65, 100, 65, 0, 0); ctx.stroke();
         ctx.save(); ctx.translate(-46, -5); ctx.scale(0.7, 0.7);
         drawLacewing(ctx, { lacePhase: 'rest', flapPhase: 0 }); ctx.restore();
         const fly = new Butterfly(46, 0, 'hoverfly'); fly.heading = -Math.PI / 2; fly.draw(ctx);
-        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
         ctx.fillText('One lacewing and one hoverfly, in separate pockets.', 0, 41);
         ctx.fillText('Lacewings rest on each leaf for 1.5 seconds.', 0, 56);
         ctx.restore();
       } else if (teachDusk02) {
         ctx.save(); ctx.translate(0, boxH / 2 - 94);
-        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, 0);
         ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
         ctx.bezierCurveTo(100, -65, 100, 65, 0, 0); ctx.stroke();
@@ -2202,7 +2204,7 @@ export class Game {
         ctx.save(); ctx.translate(46, -2); ctx.scale(0.85, 0.85);
         new DandelionSeed(0, 0).draw(ctx);
         ctx.restore();
-        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
         ctx.fillText('Nursery Polarity: 1 flier in one lobe, 1 seed in the other.', 0, 41);
         ctx.fillText('Also make a lacewing Counterpart Pair; cicadas pause intermittently.', 0, 56);
         ctx.restore();
@@ -2214,53 +2216,53 @@ export class Game {
         const fly1 = new Butterfly(-72, -6, 'brimstone'); fly1.heading = -0.4; fly1.draw(ctx);
         const fly2 = new Butterfly(-52, 6, 'hoverfly'); fly2.heading = 0.5; fly2.draw(ctx);
         // Right: figure-eight
-        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(60, -2);
         ctx.bezierCurveTo(20, -45, 20, 41, 60, -2);
         ctx.bezierCurveTo(100, -45, 100, 41, 60, -2); ctx.stroke();
         const fly3 = new Butterfly(40, -2, 'damselfly'); fly3.heading = -Math.PI / 2; fly3.draw(ctx);
         const fly4 = new Butterfly(80, -2, 'hawkmoth'); fly4.heading = Math.PI / 2; fly4.draw(ctx);
-        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
         ctx.fillText('Switch between gestures: 3 single loops and 2 figure-eights.', 0, 41);
         ctx.fillText('Dense field with 8 fliers; keep clear of the perimeter snail.', 0, 56);
         ctx.restore();
       } else if (teachCounterpart) {
         ctx.save(); ctx.translate(0, boxH / 2 - 84);
-        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, 0);
         ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
         ctx.bezierCurveTo(100, -65, 100, 65, 0, 0); ctx.stroke();
-        ctx.fillStyle = '#f1d152'; ctx.beginPath(); ctx.ellipse(-46, 0, 11, 15, -.4, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#eab765'; ctx.beginPath(); ctx.ellipse(46, 0, 8, 13, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = themeColor('brimstone', '#f1d152'); ctx.beginPath(); ctx.ellipse(-46, 0, 11, 15, -.4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = themeColor('hoverfly', '#eab765'); ctx.beginPath(); ctx.ellipse(46, 0, 8, 13, 0, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#5d493a'; for (const y of [-6, 0, 6]) ctx.fillRect(40, y, 12, 3);
-        ctx.fillStyle = '#5c4538'; ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('One different insect in each pocket', 0, 42);
         ctx.restore();
       } else if (teachNursery) {
         ctx.save(); ctx.translate(0, boxH / 2 - 84);
-        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, 0);
         ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
         ctx.bezierCurveTo(100, -65, 100, 65, 0, 0); ctx.stroke();
         // Left lobe: 1 Brimstone
-        ctx.fillStyle = '#f1d152'; ctx.beginPath(); ctx.ellipse(-46, 0, 11, 15, -0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = themeColor('brimstone', '#f1d152'); ctx.beginPath(); ctx.ellipse(-46, 0, 11, 15, -0.4, 0, Math.PI * 2); ctx.fill();
         ctx.strokeStyle = '#5d493a'; ctx.lineWidth = 1; ctx.stroke();
         // Right lobe: 1 Dandelion seed
         const sx = 46, sy = 0;
         ctx.fillStyle = '#faf7ed'; ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#8a7e6b'; ctx.lineWidth = 0.8;
+        ctx.strokeStyle = themeColor('seed', '#8a7e6b'); ctx.lineWidth = 0.8;
         ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + 7, sy + 9); ctx.stroke();
         ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.stroke();
-        ctx.fillStyle = '#655543'; ctx.beginPath(); ctx.ellipse(sx + 7, sy + 9, 1.5, 3, 0.6, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#5c4538'; ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillStyle = themeColor('seed', '#655543'); ctx.beginPath(); ctx.ellipse(sx + 7, sy + 9, 1.5, 3, 0.6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('Nursery Polarity: 1 flier in one lobe, 1 seed in the other', 0, 39);
-        ctx.fillStyle = '#6e5a47'; ctx.font = 'italic 11px Mali, sans-serif';
+        ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
         ctx.fillText('🍃 2-second rightward breeze gusts will drift seeds across the glass', 0, 54);
         ctx.restore();
       } else if (teachSeedTrio) {
         ctx.save(); ctx.translate(0, boxH / 2 - 84);
         // Single loop cord (circle)
-        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
+        ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.ellipse(0, 2, 78, 38, 0, 0, Math.PI * 2);
         ctx.stroke();
@@ -2268,31 +2270,31 @@ export class Game {
         // 1 Seed at center-top
         const sx = 0, sy = -14;
         ctx.fillStyle = '#faf7ed'; ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#8a7e6b'; ctx.lineWidth = 0.8;
+        ctx.strokeStyle = themeColor('seed', '#8a7e6b'); ctx.lineWidth = 0.8;
         ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + 7, sy + 9); ctx.stroke();
         ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.stroke();
-        ctx.fillStyle = '#655543'; ctx.beginPath(); ctx.ellipse(sx + 7, sy + 9, 1.5, 3, 0.6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = themeColor('seed', '#655543'); ctx.beginPath(); ctx.ellipse(sx + 7, sy + 9, 1.5, 3, 0.6, 0, Math.PI * 2); ctx.fill();
 
         // 1 Brimstone butterfly at bottom-left
-        ctx.fillStyle = '#f1d152'; ctx.beginPath(); ctx.ellipse(-44, 12, 9, 13, -0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = themeColor('brimstone', '#f1d152'); ctx.beginPath(); ctx.ellipse(-44, 12, 9, 13, -0.4, 0, Math.PI * 2); ctx.fill();
 
         // 1 Amber hoverfly at bottom-center
-        ctx.fillStyle = '#eab765'; ctx.beginPath(); ctx.ellipse(0, 14, 6, 10, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = themeColor('hoverfly', '#eab765'); ctx.beginPath(); ctx.ellipse(0, 14, 6, 10, 0, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#5d493a'; for (const y of [10, 14, 18]) ctx.fillRect(-4, y, 8, 2);
 
         // 1 Roseate hawkmoth at bottom-right
         ctx.fillStyle = '#de99a5'; ctx.beginPath(); ctx.ellipse(44, 12, 7, 12, 0.4, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#a8b894'; ctx.beginPath(); ctx.ellipse(44, 6, 4, 8, 0.8, 0, Math.PI * 2); ctx.fill();
 
-        ctx.fillStyle = '#5c4538'; ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('1 seed and 3 distinct insects in a loop (Seed & Trio)', 0, 39);
-        ctx.fillStyle = '#6e5a47'; ctx.font = 'italic 11px Mali, sans-serif';
+        ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
         ctx.fillText('🍃 Periodic atrium breeze gusts will carry seeds rightward', 0, 54);
         ctx.restore();
       } else if (teachMidnight02) {
         ctx.save(); ctx.translate(0, boxH / 2 - 96);
         // Left side: Enclose Loop (Seed & Wing + Kindred)
-        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 1.8;
+        ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 1.8;
         ctx.beginPath();
         ctx.ellipse(-88, -12, 54, 28, -0.15, 0, Math.PI * 2);
         ctx.stroke();
@@ -2302,32 +2304,32 @@ export class Game {
         ctx.save(); ctx.translate(-68, -12); ctx.scale(0.8, 0.8);
         new DandelionSeed(0, 0).draw(ctx); ctx.restore();
 
-        ctx.textAlign = 'center'; ctx.fillStyle = '#7a3e52'; ctx.font = '600 11px system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('petite', '#7a3e52'); ctx.font = '600 11px system-ui, sans-serif';
         ctx.fillText('Enclose Mode [T]', -88, 25);
-        ctx.font = '10px system-ui, sans-serif'; ctx.fillStyle = '#6e5a47';
+        ctx.font = '10px system-ui, sans-serif'; ctx.fillStyle = themeColor('muted', '#6e5a47');
         ctx.fillText('Loops & 8s (Seeds belong here)', -88, 39);
 
         // Divider
-        ctx.strokeStyle = '#d6cbba'; ctx.lineWidth = 1;
+        ctx.strokeStyle = themeColor('edge', '#d6cbba'); ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(0, -34); ctx.lineTo(0, 42); ctx.stroke();
 
         // Right side: Trace Path (Firefly -> Lacewing -> Firefly)
-        ctx.strokeStyle = '#416e83'; ctx.lineWidth = 1.8; ctx.setLineDash([6, 3]);
+        ctx.strokeStyle = themeColor('trace', '#416e83'); ctx.lineWidth = 1.8; ctx.setLineDash([6, 3]);
         ctx.beginPath(); ctx.moveTo(25, -12); ctx.lineTo(145, -12); ctx.stroke(); ctx.setLineDash([]);
         for (const [i, x] of [35, 85, 135].entries()) {
           ctx.save(); ctx.translate(x, -12); ctx.scale(0.65, 0.65);
           if (i === 1) drawLacewing(ctx, { lacePhase: 'rest', flapPhase: 0 });
           else drawFirefly(ctx, { stateTime: 0.4, glowOffset: 0 });
           ctx.restore();
-          ctx.textAlign = 'center'; ctx.fillStyle = '#315b73'; ctx.font = '10px system-ui';
+          ctx.textAlign = 'center'; ctx.fillStyle = themeColor('trace', '#315b73'); ctx.font = '10px system-ui';
           ctx.fillText(`${i + 1}`, x, 9);
         }
-        ctx.textAlign = 'center'; ctx.fillStyle = '#2b5570'; ctx.font = '600 11px system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('trace', '#2b5570'); ctx.font = '600 11px system-ui, sans-serif';
         ctx.fillText('Trace Mode [T]', 85, 25);
-        ctx.font = '10px system-ui, sans-serif'; ctx.fillStyle = '#5c4538';
+        ctx.font = '10px system-ui, sans-serif'; ctx.fillStyle = themeColor('ink', '#5c4538');
         ctx.fillText('Ordered 3-insect path', 85, 39);
 
-        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = 'italic 11px Mali, sans-serif';
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = 'italic 11px Mali, sans-serif';
         ctx.fillText('Switch modes with [T] or Mode button. Seeds belong in Enclose.', 0, 57);
         ctx.restore();
       } else if (teachMidnight03) {
@@ -2337,16 +2339,16 @@ export class Game {
         // Snail on right
         const sn = new Snail(65, -8); sn.draw(ctx);
 
-        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '600 12px system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '600 12px system-ui, sans-serif';
         ctx.fillText('Brimstone butterflies and the perimeter snail return.', 0, 22);
-        ctx.font = 'italic 11px Mali, sans-serif'; ctx.fillStyle = '#6e5a47';
+        ctx.font = 'italic 11px Mali, sans-serif'; ctx.fillStyle = themeColor('muted', '#6e5a47');
         ctx.fillText('Synthesize loops, figure-eights, traces, and a Nursery to complete the day.', 0, 38);
         ctx.restore();
       }
 
       // Prompt
       ctx.textAlign = 'center';
-      ctx.fillStyle = '#5c4538';
+      ctx.fillStyle = themeColor('ink', '#5c4538');
       ctx.font = isNarrow ? '600 12px system-ui, sans-serif' : '600 14px system-ui, sans-serif';
       ctx.fillText(isNarrow ? '[ Tap to Begin Visit ]' : '[ Click anywhere or press Space to Begin ]', 0, boxH / 2 - 24);
     });
@@ -2363,7 +2365,7 @@ export class Game {
 
     this.drawModalBox(ctx, 480, modalHeight, (boxW, boxH) => {
       const isNarrow = boxW < 440;
-      ctx.fillStyle = '#2b5028';
+      ctx.fillStyle = themeColor('vein', '#2b5028');
       ctx.font = isNarrow ? '600 22px Mali, sans-serif' : '600 27px Mali, sans-serif';
       ctx.textAlign = 'center';
 
@@ -2376,7 +2378,7 @@ export class Game {
       }
 
       ctx.font = isNarrow ? 'italic 12px Mali, sans-serif' : 'italic 14px Mali, sans-serif';
-      ctx.fillStyle = '#5a7857';
+      ctx.fillStyle = themeColor('vein', '#5a7857');
       if (all12Completed) {
         ctx.fillText('The day harmonized peacefully across all twelve visits.', 0, -boxH / 2 + 62);
       } else {
@@ -2388,7 +2390,7 @@ export class Game {
       const padX = -boxW / 2 + 36;
       let startY = -boxH / 2 + 96;
       ctx.font = '500 13px system-ui, sans-serif';
-      ctx.fillStyle = '#2f6932';
+      ctx.fillStyle = themeColor('vein', '#2f6932');
       for (const [k, obj] of Object.entries(this.campaign.objectiveProgress)) {
         ctx.fillText(`✔ ${obj.label}: ${obj.current} / ${obj.target}`, padX, startY);
         startY += 22;
@@ -2396,7 +2398,7 @@ export class Game {
 
       ctx.textAlign = 'center';
       ctx.font = isNarrow ? '12px system-ui, sans-serif' : '13px system-ui, sans-serif';
-      ctx.fillStyle = '#3d3428';
+      ctx.fillStyle = themeColor('ink', '#3d3428');
       const best = (this.campaign.saveState.bestScores && this.campaign.saveState.bestScores[lvl.id]) || this.score;
 
       if (all12Completed) {
@@ -2406,7 +2408,7 @@ export class Game {
         ctx.fillText(`Score: ${this.score} pts  (Best: ${best} pts)`, 0, startY + 12);
       }
 
-      ctx.fillStyle = '#5c4538';
+      ctx.fillStyle = themeColor('ink', '#5c4538');
       ctx.font = isNarrow ? '600 12px system-ui, sans-serif' : '600 14px system-ui, sans-serif';
 
       let promptText;
@@ -2428,17 +2430,17 @@ export class Game {
     const lvl = this.currentLevel;
     this.drawModalBox(ctx, 450, 260, (boxW, boxH) => {
       const isNarrow = boxW < 400;
-      ctx.fillStyle = '#3a3429';
+      ctx.fillStyle = themeColor('ink', '#3a3429');
       ctx.font = isNarrow ? '600 22px Mali, sans-serif' : 'bold 20px Mali, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Quiet Interval — Paused', 0, -boxH / 2 + 38);
 
       ctx.font = isNarrow ? 'italic 12px Mali, sans-serif' : 'italic 13px Mali, sans-serif';
-      ctx.fillStyle = '#7a6f5f';
+      ctx.fillStyle = themeColor('muted', '#7a6f5f');
       ctx.fillText(lvl.title, 0, -boxH / 2 + 58);
 
       ctx.font = isNarrow ? '12px system-ui, -apple-system, sans-serif' : '13px system-ui, -apple-system, sans-serif';
-      ctx.fillStyle = '#54483a';
+      ctx.fillStyle = themeColor('ink', '#54483a');
       ctx.fillText('Remaining Time: ' + Math.ceil(this.clock.remainingSeconds) + 's', 0, -10);
 
       // Objectives progress
@@ -2447,7 +2449,7 @@ export class Game {
       ctx.fillText(objText, 0, 14);
       ctx.fillText('Current Score: ' + this.score + ' pts', 0, 38);
 
-      ctx.fillStyle = '#785b46';
+      ctx.fillStyle = themeColor('muted', '#785b46');
       ctx.font = isNarrow ? '600 12px system-ui, -apple-system, sans-serif' : '600 14px system-ui, -apple-system, sans-serif';
       ctx.fillText(isNarrow ? '[ Tap to Resume ]' : '[ Press Space or Click Pause to Resume ]', 0, boxH / 2 - 22);
     });
@@ -2457,24 +2459,24 @@ export class Game {
     const lvl = this.currentLevel;
     this.drawModalBox(ctx, 450, 260, (boxW, boxH) => {
       const isNarrow = boxW < 440;
-      ctx.fillStyle = '#6e3535';
+      ctx.fillStyle = themeColor('petite', '#6e3535');
       ctx.font = isNarrow ? '600 22px Mali, sans-serif' : '600 27px Mali, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('The Hour Has Passed', 0, -boxH / 2 + 38);
 
       ctx.font = isNarrow ? 'italic 12px Mali, sans-serif' : 'italic 14px Mali, sans-serif';
-      ctx.fillStyle = '#8f5c5c';
+      ctx.fillStyle = themeColor('muted', '#8f5c5c');
       ctx.fillText('The dandelion seeds took flight into the morning breeze.', 0, -boxH / 2 + 60);
 
       ctx.font = isNarrow ? '12px system-ui, -apple-system, sans-serif' : '13px system-ui, -apple-system, sans-serif';
-      ctx.fillStyle = '#42372b';
+      ctx.fillStyle = themeColor('ink', '#42372b');
 
       const objEntries = Object.entries(this.campaign.objectiveProgress);
       const objText = objEntries.map(([k, o]) => `${o.label}: ${o.current}/${o.target}`).join(' • ');
       ctx.fillText(objText, 0, 0);
       ctx.fillText(`Score: ${this.score} points`, 0, 26);
 
-      ctx.fillStyle = '#5c4538';
+      ctx.fillStyle = themeColor('ink', '#5c4538');
       ctx.font = isNarrow ? '600 12px system-ui, -apple-system, sans-serif' : '600 14px system-ui, -apple-system, sans-serif';
       ctx.fillText(isNarrow ? '[ Tap to Retry Visit ]' : '[ Click or Press Space to Retry Visit ]', 0, boxH / 2 - 22);
     });
@@ -2502,8 +2504,8 @@ export class Game {
     ctx.fill();
 
     // Paper card body
-    ctx.fillStyle = '#fbf8ee';
-    ctx.strokeStyle = '#d8ccb6';
+    ctx.fillStyle = themeColor('panel', '#fbf8ee');
+    ctx.strokeStyle = themeColor('edge', '#d8ccb6');
     ctx.lineWidth = 1.8;
     ctx.beginPath();
     drawRoundedRect(ctx, -actualW / 2, -actualH / 2, actualW, actualH, 14);
@@ -2511,7 +2513,7 @@ export class Game {
     ctx.stroke();
 
     // Inner delicate border
-    ctx.strokeStyle = '#ece3d2';
+    ctx.strokeStyle = themeColor('edge', '#ece3d2');
     ctx.lineWidth = 1.0;
     ctx.beginPath();
     drawRoundedRect(ctx, -actualW / 2 + 8, -actualH / 2 + 8, actualW - 16, actualH - 16, 10);

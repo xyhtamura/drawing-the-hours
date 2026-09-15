@@ -1,3 +1,4 @@
+import { themeColor } from './theme.js';
 import { updateLacewing, drawLacewing } from './lacewing.js';
 import { curbSeamY } from './geometry.js';
 /**
@@ -293,16 +294,16 @@ export class Insect {
     ctx.beginPath(); ctx.ellipse(3, 7, 13, 17, 0, 0, Math.PI * 2); ctx.fill();
     for (const side of [-1, 1]) {
       ctx.save(); ctx.scale(side * flutter, 1);
-      ctx.fillStyle = this.config.wingColor; ctx.strokeStyle = this.config.wingEdge; ctx.lineWidth = 1;
+      ctx.fillStyle = themeColor(this.kind, this.config.wingColor); ctx.strokeStyle = themeColor('outline', this.config.wingEdge); ctx.lineWidth = 1;
       ctx.beginPath(); ctx.ellipse(12, -1, 8, 15, -0.7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(3, -7); ctx.lineTo(18, 7); ctx.stroke(); ctx.restore();
     }
-    ctx.fillStyle = this.config.bodyAccent;
+    ctx.fillStyle = themeColor(this.kind === 'hoverfly' ? 'hoverfly' : 'body', this.config.bodyAccent);
     ctx.beginPath(); ctx.ellipse(0, 5, 7, 12, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.save(); ctx.clip(); ctx.fillStyle = this.config.bodyColor;
+    ctx.save(); ctx.clip(); ctx.fillStyle = themeColor('body', this.config.bodyColor);
     for (const y of [0, 7, 14]) ctx.fillRect(-8, y, 16, 3);
     ctx.restore();
-    ctx.fillStyle = this.config.bodyColor;
+    ctx.fillStyle = themeColor('body', this.config.bodyColor);
     ctx.beginPath(); ctx.ellipse(0, -7, 7, 6, 0, 0, Math.PI * 2); ctx.fill();
     for (const x of [-4, 4]) {
       ctx.fillStyle = '#967757'; ctx.beginPath(); ctx.ellipse(x, -12, 3.5, 4, 0, 0, Math.PI * 2); ctx.fill();
@@ -388,13 +389,13 @@ export class Insect {
     ctx.restore();
 
     // Body
-    ctx.fillStyle = this.config.bodyColor;
+    ctx.fillStyle = themeColor('body', this.config.bodyColor);
     ctx.beginPath();
     ctx.ellipse(0, 0, 2.5, size * 0.6, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // Antennae
-    ctx.strokeStyle = this.config.bodyColor;
+    ctx.strokeStyle = themeColor('body', this.config.bodyColor);
     ctx.lineWidth = 1.2;
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -407,8 +408,8 @@ export class Insect {
 
   drawFoldedButterflyWing(ctx, size) {
     // Forewing
-    ctx.fillStyle = this.config.wingColor;
-    ctx.strokeStyle = this.config.wingEdge;
+    ctx.fillStyle = themeColor(this.kind, this.config.wingColor);
+    ctx.strokeStyle = themeColor('outline', this.config.wingEdge);
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(1, -size * 0.2);
@@ -466,8 +467,8 @@ export class Insect {
     ctx.restore();
 
     // Slender needle abdomen (segmented paper strips)
-    ctx.fillStyle = this.config.bodyColor;
-    ctx.strokeStyle = this.config.bodyAccent;
+    ctx.fillStyle = themeColor('body', this.config.bodyColor);
+    ctx.strokeStyle = themeColor(this.kind === 'hoverfly' ? 'hoverfly' : 'body', this.config.bodyAccent);
     ctx.lineWidth = 0.8;
     ctx.beginPath();
     ctx.roundRect(-1.5, -size * 0.6, 3, size * 1.4, 1.5);
@@ -486,7 +487,7 @@ export class Insect {
     }
 
     // Head with bead eyes
-    ctx.fillStyle = this.config.bodyColor;
+    ctx.fillStyle = themeColor('body', this.config.bodyColor);
     ctx.beginPath();
     ctx.arc(0, -size * 0.7, 2.8, 0, Math.PI * 2);
     ctx.fill();
@@ -515,8 +516,8 @@ export class Insect {
   }
 
   drawSingleDamselflyWing(ctx, length, isForewing) {
-    ctx.fillStyle = isForewing ? this.config.wingColor : this.config.wingAltColor;
-    ctx.strokeStyle = this.config.wingEdge;
+    ctx.fillStyle = isForewing ? themeColor(this.kind, this.config.wingColor) : this.config.wingAltColor;
+    ctx.strokeStyle = themeColor('outline', this.config.wingEdge);
     ctx.lineWidth = 1.0;
 
     ctx.beginPath();
@@ -572,8 +573,8 @@ export class Insect {
     ctx.restore();
 
     // Plump velvety body (thorax + tapered abdomen)
-    ctx.fillStyle = this.config.bodyColor;
-    ctx.strokeStyle = this.config.bodyAccent;
+    ctx.fillStyle = themeColor('body', this.config.bodyColor);
+    ctx.strokeStyle = themeColor(this.kind === 'hoverfly' ? 'hoverfly' : 'body', this.config.bodyAccent);
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.ellipse(0, 0, 4.2, size * 0.65, 0, 0, Math.PI * 2);
@@ -581,7 +582,7 @@ export class Insect {
     ctx.stroke();
 
     // Abdominal rose chevrons
-    ctx.fillStyle = this.config.wingColor;
+    ctx.fillStyle = themeColor(this.kind, this.config.wingColor);
     for (let c = 0; c < 3; c++) {
       const y = -size * 0.1 + c * (size * 0.18);
       ctx.beginPath();
@@ -606,8 +607,8 @@ export class Insect {
 
   drawSingleHawkmothWing(ctx, size) {
     // Large swept delta forewing
-    ctx.fillStyle = this.config.wingColor;
-    ctx.strokeStyle = this.config.wingEdge;
+    ctx.fillStyle = themeColor(this.kind, this.config.wingColor);
+    ctx.strokeStyle = themeColor('outline', this.config.wingEdge);
     ctx.lineWidth = 1.2;
 
     ctx.beginPath();
@@ -725,7 +726,7 @@ export class DandelionSeed {
     ctx.ellipse(0, -9, 11, 8, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.strokeStyle = '#948c78';
+    ctx.strokeStyle = themeColor('seed', '#948c78');
     ctx.lineWidth = 1.1;
     const rayCount = 10;
     for (let i = 0; i < rayCount; i++) {
@@ -738,7 +739,7 @@ export class DandelionSeed {
     }
 
     // Slender stalk
-    ctx.strokeStyle = '#8a7f69';
+    ctx.strokeStyle = themeColor('seed', '#8a7f69');
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(0, -2);
@@ -746,7 +747,7 @@ export class DandelionSeed {
     ctx.stroke();
 
     // Dark seed achene
-    ctx.fillStyle = '#655743';
+    ctx.fillStyle = themeColor('seed', '#655743');
     ctx.beginPath();
     ctx.ellipse(0, 10, 1.8, 3.5, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -855,7 +856,7 @@ export function drawFirefly(ctx, insect) {
     halo.addColorStop(1, 'rgba(255,237,148,0)');
     ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(0, 8, 29, 0, Math.PI * 2); ctx.fill();
   }
-  ctx.strokeStyle = '#465e58'; ctx.lineWidth = 1.1;
+  ctx.strokeStyle = themeColor('outline', '#465e58'); ctx.lineWidth = 1.1;
   for (const side of [-1, 1]) {
     for (const y of [-5, 1, 7]) {
       ctx.beginPath(); ctx.moveTo(side * 5, y); ctx.lineTo(side * 12, y + 5); ctx.stroke();
@@ -863,8 +864,8 @@ export function drawFirefly(ctx, insect) {
     ctx.fillStyle = '#adc1b3'; ctx.beginPath();
     ctx.ellipse(side * 7, -1, 5, 13, side * 0.25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
   }
-  ctx.fillStyle = '#394955'; ctx.beginPath(); ctx.ellipse(0, 0, 6, 14, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#fff0ae'; ctx.beginPath(); ctx.ellipse(0, 9, 5, 6, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = '#394955'; ctx.beginPath(); ctx.ellipse(0, 9, 5, 6, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = themeColor('body', '#394955'); ctx.beginPath(); ctx.ellipse(0, 0, 6, 14, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = themeColor('firefly', '#fff0ae'); ctx.beginPath(); ctx.ellipse(0, 9, 5, 6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = themeColor('body', '#394955'); ctx.beginPath(); ctx.ellipse(0, 9, 5, 6, 0, 0, Math.PI * 2); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(-2, -12); ctx.lineTo(-6, -19); ctx.moveTo(2, -12); ctx.lineTo(6, -19); ctx.stroke();
 }

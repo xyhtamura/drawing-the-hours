@@ -1,3 +1,4 @@
+import { themeColor } from './theme.js';
 import { curbSeamY } from './geometry.js';
 
 /** Cached, locally authored paper verge. Decoration never participates in hit tests. */
@@ -11,9 +12,9 @@ export function createDawnArt(width, height, pixelRatio = 1) {
   let seed = 147;
   const random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
   const wash = ctx.createLinearGradient(0, 0, width, height);
-  wash.addColorStop(0, '#f9eae6');
-  wash.addColorStop(0.42, '#fcf8e9');
-  wash.addColorStop(1, '#e6edd9');
+  wash.addColorStop(0, themeColor('top', '#f9eae6'));
+  wash.addColorStop(0.42, themeColor('middle', '#fcf8e9'));
+  wash.addColorStop(1, themeColor('bottom', '#e6edd9'));
   ctx.fillStyle = wash;
   ctx.fillRect(0, 0, width, height);
   // Thin fibers are generated once, not randomized on each animation frame.
@@ -24,9 +25,9 @@ export function createDawnArt(width, height, pixelRatio = 1) {
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 1 + random() * 5, y + random()); ctx.stroke();
   }
   // A pavement lip and little seams establish the urban edge.
-  ctx.fillStyle = '#dbd4cf'; ctx.fillRect(0, height - 19, width, 19);
-  ctx.fillStyle = '#eee5db'; ctx.fillRect(0, height - 24, width, 5);
-  ctx.strokeStyle = '#b9aaa1'; ctx.lineWidth = 1;
+  ctx.fillStyle = themeColor('edge', '#dbd4cf'); ctx.fillRect(0, height - 19, width, 19);
+  ctx.fillStyle = themeColor('edge', '#eee5db'); ctx.fillRect(0, height - 24, width, 5);
+  ctx.strokeStyle = themeColor('edge', '#b9aaa1'); ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(0, height - 19); ctx.lineTo(width, height - 19); ctx.stroke();
   for (let x = 66; x < width; x += 126) {
     ctx.beginPath(); ctx.moveTo(x, height - 19); ctx.lineTo(x + 3, height); ctx.stroke();
@@ -40,7 +41,7 @@ export function createDawnArt(width, height, pixelRatio = 1) {
     if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
   }
   ctx.stroke();
-  ctx.strokeStyle = '#aab98f'; ctx.lineWidth = 1;
+  ctx.strokeStyle = themeColor('vein', '#aab98f'); ctx.lineWidth = 1;
   for (let x = 41; x < width; x += 97) {
     const y = curbSeamY(x, width, height);
     ctx.beginPath();
@@ -63,7 +64,7 @@ export function createDawnArt(width, height, pixelRatio = 1) {
   for (let i = 0; i < Math.ceil(width / 11); i++) {
     const x = random() * width, y = height - 23;
     const h = 10 + random() * 24;
-    ctx.fillStyle = ['#9eae83', '#bac69e', '#d0d8b4'][i % 3];
+    ctx.fillStyle = [themeColor('leaf', '#9eae83'), themeColor('leaf', '#bac69e'), themeColor('leaf', '#d0d8b4')][i % 3];
     ctx.beginPath(); ctx.moveTo(x - 3, y);
     ctx.quadraticCurveTo(x - 10, y - h * .65, x - 5, y - h);
     ctx.quadraticCurveTo(x + 1, y - h * .5, x + 3, y); ctx.fill();
@@ -71,7 +72,7 @@ export function createDawnArt(width, height, pixelRatio = 1) {
   for (let i = 0; i < 16; i++) {
     const side = i % 2, x = side ? width - 8 - random() * 15 : 8 + random() * 15;
     const y = 115 + random() * Math.max(1, height - 170);
-    ctx.strokeStyle = '#a8b38d'; ctx.lineWidth = 1;
+    ctx.strokeStyle = themeColor('vein', '#a8b38d'); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(x, y + 16); ctx.quadraticCurveTo(x + 6, y + 8, x, y); ctx.stroke();
     const r = 2.5 + random() * 2;
     ctx.fillStyle = i % 3 ? '#efd0d4' : '#fffbed';

@@ -1,3 +1,4 @@
+import { themeColor } from './theme.js';
 /** Shared geometry for the visible leaves and their resting insects. */
 export function duskSafeArea({ width, height }) {
   const margin = Math.min(70, width * 0.18);
@@ -53,7 +54,7 @@ export function drawLacewing(ctx, insect) {
   ctx.scale(spread, 1);
   for (const side of [-1, 1]) {
     ctx.save(); ctx.scale(side, 1);
-    ctx.fillStyle = '#e5f4de'; ctx.strokeStyle = '#3f7158'; ctx.lineWidth = 1;
+    ctx.fillStyle = themeColor('lacewing', '#e5f4de'); ctx.strokeStyle = themeColor('outline', '#3f7158'); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0, -9);
     ctx.bezierCurveTo(25, -12, 26, 19, 8, 24);
     ctx.quadraticCurveTo(2, 10, 0, -9); ctx.fill(); ctx.stroke();
@@ -64,7 +65,7 @@ export function drawLacewing(ctx, insect) {
     ctx.stroke(); ctx.restore();
   }
   ctx.restore();
-  ctx.strokeStyle = '#405c49'; ctx.lineWidth = 2;
+  ctx.strokeStyle = themeColor('body', '#405c49'); ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(0, 20); ctx.stroke();
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(0, -10); ctx.quadraticCurveTo(-4, -23, -10, -25);

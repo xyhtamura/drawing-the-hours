@@ -1,5 +1,20 @@
 /* Drawing the Hours — Meadow Paper Aesthetic Styles */
 
+/* Default mode uses the selected chapter palette. Light mode keeps the rules below. */
+html[data-color-mode="default"] body { background-image: none; }
+html[data-color-mode="default"] .brand h1 { color: var(--text-dark); }
+html[data-color-mode="default"] button:hover { background: var(--panel-bg); border-color: var(--text-muted); }
+html[data-color-mode="default"] button:focus-visible { outline-color: var(--text-dark); }
+html[data-color-mode="default"] #btn-visit,
+html[data-color-mode="default"] #btn-gesture-mode,
+html[data-color-mode="default"] .close-btn,
+html[data-color-mode="default"] .visit-item {
+  background: var(--panel-bg); color: var(--text-dark); border-color: var(--border-paper);
+}
+html[data-color-mode="default"] .visit-item:hover { border-color: var(--text-muted); }
+html[data-color-mode="default"][data-hour="dusk"],
+html[data-color-mode="default"][data-hour="midnight"] { color-scheme: dark; }
+
 :root {
   --bg-cream: #f4efe2;
   --panel-bg: #fdfbf7;

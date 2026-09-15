@@ -14,6 +14,33 @@ Build STRING.md rule 7 (wind that changes direction) for Noon V–VI and roll st
 
 ## Activity
 
+2026-09-16 — Codex — Applied Xyh's four chapter palettes from
+[new palettes.md](new%20palettes.md). The **Colors** button switches between
+**Default** (the selected chapter colors) and **Pure light** (the existing
+canvas colors and CSS). Default is selected on first use; the preference is
+saved independently of campaign progress. Switching colors preserves the visit,
+entities, clock, and drawing. Chapter changes retain the chosen mode.
+
+`src/palettes.js` holds the 88 selected values. `src/theme.js` resolves color
+roles and updates CSS variables. Canvas scenery caches include the mode and
+hour, so switching rebuilds the background immediately. Scene washes, framing,
+foliage, insect bodies and primary colors, seeds, cords, target rings, HUD text,
+and cards use the selected roles. Secondary wing shades, decorative details,
+and semantic success/error panels retain their existing colors. Midnight's
+warm window wash is reduced in Default mode to preserve the dark field.
+
+Checked all 88 values against the supplied file. The mechanics, Dusk, Midnight,
+and string sandbox Node suites pass, as do module syntax and `git diff --check`.
+`test/theme-browser.html` runs the actual game in Edge: all four chapter
+backgrounds change and restore exactly, toggling preserves the visit, and the
+preference survives reload and chapter changes. The first browser assertion
+compared the whole canvas, including randomly generated teaching insects;
+changed it to compare the deterministic cached scenery. Inspected desktop
+Default and Pure light Midnight cards and a 390-pixel Default field; the narrow
+page also passes a horizontal-overflow check. Review images are ignored in
+`.browser-check/`. A full player run and real-device touch checks remain open.
+The next gameplay task remains the Noon wind and string-rule rollout above.
+
 2026-09-16 — Antigravity — Built Trace as threading in sequence (STRING.md Rule 4) for string visits, with live feedback, Ready diagram, and String Trace sandbox.
 
 - Added String Trace sandbox (`practice-string-trace`) to `PRACTICE_LEVELS` in `src/campaign.js`: Midnight window scene, cast of 3 fireflies, 2 lacewings, 1 snail; `stringRules: true`, `gestures: ['string']`, `traceSequence: ['firefly', 'lacewing', 'firefly']`, and objectives `{ any: 4, trace: 3 }`.

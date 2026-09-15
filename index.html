@@ -16,6 +16,7 @@
       <div class="sub" id="header-sub">Dawn · Before the bus</div>
     </div>
     <div class="controls">
+      <button id="btn-color-mode" aria-label="Pure light colors" aria-pressed="false" title="Switch between chapter palettes and pure light colors">Colors: Default</button>
       <button id="btn-visit" title="Garden Visits &amp; Hours (W)">
         🌿 Visit: Dawn 1
       </button>
@@ -228,6 +229,7 @@
   </div>
 
   <script type="module">
+    import { getColorMode, setColorMode } from './src/theme.js';
     import { Game } from './src/game.js';
     import { audio } from './src/audio.js';
     import { CAMPAIGN_LEVELS, PRACTICE_LEVELS, PLAYABLE_LEVEL_IDS, CampaignSaveManager } from './src/campaign.js';
@@ -236,6 +238,10 @@
     // Finish local font loading before measuring canvas text. Failure uses fallbacks.
     await Promise.allSettled([document.fonts.load('400 18px Mali'), document.fonts.load('600 22px Mali')]);
     const game = new Game(canvas);
+    document.getElementById('btn-color-mode').addEventListener('click', () => {
+      setColorMode(getColorMode() === 'default' ? 'light' : 'default');
+      game.render();
+    });
     window.game = game; // handle for playtesting from the console
 
     const btnVisit = document.getElementById('btn-visit');
