@@ -660,4 +660,65 @@ console.log('--- Running String Sandbox Test Suite ---');
   console.log('✔ Beads keep their own movement within their radius of the cord and between its ends.');
 }
 
+// 17. Dawn I–III campaign visits adopt string rules
+{
+  const canvas = {
+    getContext: () => ({
+      measureText: () => ({ width: 10 }),
+      scale: () => {},
+    }),
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 960, height: 640 }),
+  };
+  const game = new Game(canvas);
+
+  for (const id of ['dawn-01', 'dawn-02', 'dawn-03']) {
+    game.initLevel(id);
+    game.state = 'PLAYING';
+    assert.strictEqual(game.currentLevel.stringRules, true, `${id} has stringRules: true`);
+    assert.deepStrictEqual(game.currentLevel.gestures, ['string'], `${id} has gestures: ['string']`);
+    assert.strictEqual(game.currentLevel.maxCordLength, undefined, `${id} uses shared 1200 px limit`);
+    assert.strictEqual(game.gestureMode, 'string', `${id} activates string gestureMode`);
+
+    // In string visits, findPockets uses extractClosedPockets (Rule 9)
+    // A circle ending 20 px short must not close
+    const openStroke = [];
+    for (let i = 0; i <= 20; i++) {
+      const a = (i / 24) * Math.PI * 2;
+      openStroke.push({ x: 300 + Math.cos(a) * 50, y: 300 + Math.sin(a) * 50 });
+    }
+    game.currentStroke = openStroke;
+    const openPockets = game.findPockets(openStroke);
+    assert.strictEqual(openPockets.length, 0, `${id}: loop ending short has 0 pockets under rule 9`);
+
+    // A loop that crosses itself closes 1 pocket
+    const crossedStroke = [...openStroke];
+    for (let i = 21; i <= 26; i++) {
+      const a = (i / 24) * Math.PI * 2;
+      crossedStroke.push({ x: 300 + Math.cos(a) * 50, y: 300 + Math.sin(a) * 50 });
+    }
+    game.currentStroke = crossedStroke;
+    const closedPockets = game.findPockets(crossedStroke);
+    assert.strictEqual(closedPockets.length, 1, `${id}: crossed loop closes 1 pocket under rule 9`);
+  }
+
+  // Verify bead cancellation in Dawn 1
+  game.initLevel('dawn-01');
+  game.state = 'PLAYING';
+  const b1 = new Insect(200, 200, 'brimstone');
+  const b2 = new Insect(220, 200, 'brimstone');
+  game.entities = [b1, b2];
+  game.isDrawing = true;
+  game.stringGesture = new StringGesture({ x: 150, y: 200 }, 1200);
+  game.currentStroke = [{ x: 150, y: 200 }, { x: 200, y: 200 }, { x: 250, y: 200 }];
+  game.stringGesture.points = [...game.currentStroke];
+  game.stringGesture.totalLength = 100;
+  game.stringGesture.threadBead(b1, 50);
+  assert.strictEqual(game.stringGesture.hasBeads, true);
+  game.resolveCurrentStroke();
+  assert.strictEqual(game.score, 0, 'Threading cancels enclosure in Dawn 1');
+  assert.strictEqual(game.feedbackBanner.text, 'An insect was threaded on the cord, so the loop does not count.');
+
+  console.log('✔ Dawn I–III campaign visits adopt string rules, rule 9 closure, and bead cancellation.');
+}
+
 console.log('--- All String Sandbox unit tests passed! ---');

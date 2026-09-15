@@ -549,21 +549,32 @@ console.log('--- Running Drawing the Hours Test Suite ---');
 {
   const [dawn1, dawn2, dawn3] = CAMPAIGN_LEVELS;
   assert.strictEqual(dawn1.clockStartsOnFirstCombination, true);
+  assert.strictEqual(dawn1.stringRules, true);
+  assert.deepStrictEqual(dawn1.gestures, ['string']);
+  assert.strictEqual(dawn1.maxCordLength, undefined);
+
   assert.strictEqual(dawn2.title, 'Something in the air');
   assert.deepStrictEqual(dawn2.objectives, { any: 5, seedWing: 2 });
   assert.strictEqual(dawn2.population.hawkmoth, 0);
   assert.strictEqual(dawn2.population.seed, 3);
   assert.strictEqual(dawn2.snailRoute, 'seam');
+  assert.strictEqual(dawn2.stringRules, true);
+  assert.deepStrictEqual(dawn2.gestures, ['string']);
+  assert.strictEqual(dawn2.maxCordLength, undefined);
+
   assert.strictEqual(dawn3.title, 'The curbside patch');
   assert.deepStrictEqual(dawn3.objectives, { any: 4, trio: 2 });
   assert.strictEqual(dawn3.population.hawkmoth, 2);
   assert.strictEqual(dawn3.snailRoute, 'seam');
+  assert.strictEqual(dawn3.stringRules, true);
+  assert.deepStrictEqual(dawn3.gestures, ['string']);
+  assert.strictEqual(dawn3.maxCordLength, undefined);
 
   const plan = JSON.parse(fs.readFileSync(new URL('../campaign-plan.json', import.meta.url)));
   for (const level of [dawn1, dawn2, dawn3]) {
     const source = plan.levels.find(l => l.id === level.id);
     for (const key of ['title', 'population', 'objectives', 'durationSeconds', 'motionScale',
-      'instruction', 'transitionText', 'snailRoute', 'clockStartsOnFirstCombination']) {
+      'instruction', 'transitionText', 'snailRoute', 'clockStartsOnFirstCombination', 'stringRules', 'gestures']) {
       assert.deepStrictEqual(level[key], source[key], `${level.id}: plan and runtime ${key}`);
     }
   }

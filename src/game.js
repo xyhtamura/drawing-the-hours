@@ -1899,48 +1899,131 @@ export class Game {
 
       if (teachDawn01) {
         ctx.save(); ctx.translate(0, boxH / 2 - 108);
-        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.ellipse(-48, -4, 62, 34, 0, 0, Math.PI * 2); ctx.stroke();
-        const a = new Butterfly(-72, -4, 'brimstone'); a.heading = -0.4; a.draw(ctx);
-        const b = new Butterfly(-26, -4, 'brimstone'); b.heading = 0.4; b.draw(ctx);
-        const d = new Butterfly(70, -4, 'damselfly'); d.heading = -Math.PI / 2; d.draw(ctx);
+        // Cord drawn as a curved wall with open gap at the top right
+        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(14, -16);
+        ctx.quadraticCurveTo(24, 18, -20, 24);
+        ctx.quadraticCurveTo(-78, 22, -74, -8);
+        ctx.quadraticCurveTo(-66, -32, -14, -28);
+        ctx.stroke();
+
+        // Start point pip at (-14, -28)
+        ctx.fillStyle = '#ac647e';
+        ctx.beginPath(); ctx.arc(-14, -28, 2.5, 0, Math.PI * 2); ctx.fill();
+
+        // Drawing tip / pointer at (14, -16)
+        ctx.fillStyle = '#ac647e';
+        ctx.beginPath(); ctx.arc(14, -16, 4, 0, Math.PI * 2); ctx.fill();
+
+        // Dashed gap line showing open space to close
+        ctx.save();
+        ctx.setLineDash([3, 3]);
+        ctx.strokeStyle = 'rgba(172, 100, 126, 0.45)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(14, -16); ctx.lineTo(-14, -28); ctx.stroke();
+        ctx.restore();
+
+        // Insects inside: two Brimstones
+        const a = new Butterfly(-48, -12, 'brimstone'); a.heading = 0.3; a.draw(ctx);
+        const b = new Butterfly(-22, 6, 'brimstone'); b.heading = 0.8; b.draw(ctx);
+
+        // Wall deflection bounce mark inside the wall
+        ctx.save();
+        ctx.strokeStyle = '#9c8e7e'; ctx.lineWidth = 1.2; ctx.setLineDash([2, 2]);
+        ctx.beginPath(); ctx.moveTo(-36, 14); ctx.lineTo(-58, 16); ctx.lineTo(-44, 2); ctx.stroke();
+        ctx.restore();
+
+        // Bystander outside the wall
+        const d = new Butterfly(68, -4, 'damselfly'); d.heading = -Math.PI / 2; d.draw(ctx);
+
         ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
-        ctx.fillText('Draw a loop around two insects of the same kind and close it.', 0, 41);
-        ctx.fillText('Two different kinds cannot share a loop.', 0, 56);
+        ctx.fillText('The held cord is a wall: fliers cannot cross it while you draw.', 0, 41);
+        ctx.fillText('Close the loop before insects escape through the open gap.', 0, 56);
         ctx.restore();
       } else if (teachDawn02) {
         ctx.save(); ctx.translate(0, boxH / 2 - 108);
-        // Left: Seed & Wing loop
+        // Left: Valid Seed & Wing loop
         ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.ellipse(-78, -4, 56, 32, 0, 0, Math.PI * 2); ctx.stroke();
-        const fly = new Butterfly(-98, -4, 'brimstone'); fly.heading = -0.4; fly.draw(ctx);
-        ctx.save(); ctx.translate(-56, -6); ctx.scale(0.85, 0.85);
+        ctx.beginPath(); ctx.ellipse(-80, -6, 50, 28, 0, 0, Math.PI * 2); ctx.stroke();
+        const fly = new Butterfly(-100, -6, 'brimstone'); fly.heading = -0.4; fly.draw(ctx);
+        ctx.save(); ctx.translate(-62, -6); ctx.scale(0.85, 0.85);
         new DandelionSeed(0, 0).draw(ctx); ctx.restore();
-        // Right: the snail on its seam, with a cord broken where it touched
-        ctx.strokeStyle = 'rgba(150,132,118,.6)'; ctx.lineWidth = 1.4;
-        ctx.beginPath(); ctx.moveTo(22, 8); ctx.quadraticCurveTo(78, -2, 140, 10); ctx.stroke();
-        new Snail(80, 0).draw(ctx);
-        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(30, -34); ctx.quadraticCurveTo(52, -24, 62, -10); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(98, -10); ctx.quadraticCurveTo(110, -26, 132, -34); ctx.stroke();
-        ctx.strokeStyle = '#b54a4a'; ctx.lineWidth = 1.4;
-        for (const [x, s] of [[62, 1], [98, -1]]) {
-          ctx.beginPath(); ctx.moveTo(x, -10); ctx.lineTo(x + 5 * s, -3); ctx.moveTo(x, -10); ctx.lineTo(x + 7 * s, -12); ctx.stroke();
-        }
+        ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '10.5px system-ui, sans-serif';
+        ctx.fillText('Valid Seed & Wing', -80, 28);
+
+        // Right: Threaded bead cancellation warning
+        ctx.strokeStyle = '#b85c38'; ctx.lineWidth = 2; // terracotta warning
+        ctx.beginPath(); ctx.ellipse(78, -6, 50, 28, 0, 0, Math.PI * 2); ctx.stroke();
+        const d = new Butterfly(78, -6, 'damselfly'); d.heading = -Math.PI / 2; d.draw(ctx);
+
+        // Bead indicator on cord: ring around insect + white bead pip + cancel cross
+        ctx.strokeStyle = 'rgba(184, 92, 56, 0.7)'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(78, -6, 18, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(78, -6, 3, 0, Math.PI * 2); ctx.fill();
+
+        // Cancellation badge at top-right of the bead
+        ctx.strokeStyle = '#b54a4a'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(106, -22); ctx.lineTo(116, -12);
+        ctx.moveTo(116, -22); ctx.lineTo(106, -12);
+        ctx.stroke();
+
+        ctx.textAlign = 'center'; ctx.fillStyle = '#852b2b'; ctx.font = '10.5px system-ui, sans-serif';
+        ctx.fillText('Threaded (loop cancelled)', 78, 28);
+
         ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
-        ctx.fillText('Seed & Wing: one insect and one seed in a loop.', 0, 41);
-        ctx.fillText('A cord that touches the snail breaks. Draw around it.', 0, 56);
+        ctx.fillText('Touching an insect threads it as a bead on the cord and cancels the loop.', 0, 43);
+        ctx.fillText('Draw around creatures to enclose them. (The seam snail breaks the cord.)', 0, 58);
         ctx.restore();
       } else if (teachDawn03) {
         ctx.save(); ctx.translate(0, boxH / 2 - 108);
-        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.ellipse(0, -4, 96, 34, 0, 0, Math.PI * 2); ctx.stroke();
-        const f1 = new Butterfly(-50, -4, 'brimstone'); f1.heading = -0.4; f1.draw(ctx);
-        const f2 = new Butterfly(0, -4, 'damselfly'); f2.heading = -Math.PI / 2; f2.draw(ctx);
-        const f3 = new Butterfly(50, -4, 'hawkmoth'); f3.heading = 0.4; f3.draw(ctx);
+
+        // Enclosed area wash
+        ctx.save();
+        ctx.fillStyle = 'rgba(220, 240, 205, 0.35)';
+        ctx.beginPath();
+        ctx.ellipse(0, -6, 94, 30, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Watermark loop sign in centroid
+        ctx.strokeStyle = 'rgba(100, 140, 70, 0.45)'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.arc(0, -6, 8, 0, Math.PI * 2); ctx.stroke();
+        for (const [px, py] of [[-10, -6], [10, -6], [0, -16], [0, 4]]) {
+          ctx.beginPath(); ctx.arc(px, py, 1.2, 0, Math.PI * 2); ctx.stroke();
+        }
+
+        // Cord with visible crossing at right edge
+        ctx.save();
+        ctx.shadowColor = 'rgba(212, 163, 89, 0.55)';
+        ctx.shadowBlur = 8;
+        ctx.strokeStyle = '#ac647e'; ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(82, 12);
+        ctx.quadraticCurveTo(88, -6, 78, -18);
+        ctx.quadraticCurveTo(40, -38, -10, -36);
+        ctx.quadraticCurveTo(-94, -34, -94, -6);
+        ctx.quadraticCurveTo(-94, 22, -10, 24);
+        ctx.quadraticCurveTo(50, 24, 88, 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // Highlight the crossing point
+        ctx.strokeStyle = '#7c9a62'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(84, 4, 6, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(84, 4, 2, 0, Math.PI * 2); ctx.fill();
+
+        // Trio insects inside
+        const f1 = new Butterfly(-54, -6, 'brimstone'); f1.heading = -0.4; f1.draw(ctx);
+        const f2 = new Butterfly(-4, -6, 'damselfly'); f2.heading = -Math.PI / 2; f2.draw(ctx);
+        const f3 = new Butterfly(46, -6, 'hawkmoth'); f3.heading = 0.4; f3.draw(ctx);
+
         ctx.textAlign = 'center'; ctx.fillStyle = '#5c4538'; ctx.font = '11px system-ui, sans-serif';
-        ctx.fillText('Trio: a Brimstone, a damselfly, and the new Roseate Hawkmoth in one loop.', 0, 41);
-        ctx.fillText('Trio loops are wide. The snail still breaks a cord that touches it.', 0, 56);
+        ctx.fillText('Close the loop by crossing the cord over itself or landing on the line.', 0, 41);
+        ctx.fillText('Trio of Flight: enclose three different kinds (shared limit: 1,200 px).', 0, 56);
         ctx.restore();
       } else if (teachTrace) {
         ctx.save(); ctx.translate(0, boxH / 2 - 112);

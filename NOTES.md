@@ -10,9 +10,30 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Update STRING.md with the String sandbox decisions it lacks, the first item of the handoff list in the newest Claude Code entry below.
+Build Trace as threading in sequence (STRING.md rule 4) for string visits, the next item of the handoff list in NOTES.md.
 
 ## Activity
+
+2026-09-15 — Antigravity — Updated STRING.md with settled sandbox decisions, and rolled out string rules to Dawn I–III (dawn-01, dawn-02, dawn-03).
+
+- STRING.md documentation: updated Rule 8 (Tap) with visual-only stationary salt grain placement (`game.saltGrains`), 14 px ground taps, press held on target > 250 ms stroke cancellation; updated Rule 9 with live closure signal (cord glow aura, paper wash shadow, watermark loop sign) and visible closure requirement without gap seam bridge; updated build order and status.
+- Campaign rollout: enabled `stringRules: true` and `gestures: ['string']` on `dawn-01`, `dawn-02`, and `dawn-03` in `src/campaign.js` and `campaign-plan.json`, with shared 1,200 px snap limit (`maxCordLength: undefined`).
+- Ready-card diagrams redrawn in `src/game.js`:
+  * Dawn I (`teachDawn01`): held cord as a curved wall, Brimstone wall bounce reflection, and open gap closing before escape.
+  * Dawn II (`teachDawn02`): valid Seed & Wing loop vs threaded Damselfly bead cancellation warning badge.
+  * Dawn III (`teachDawn03`): closed Trio loop with visible cord crossing intersection, live paper wash, watermark loop sign, and 1,200 px limit note.
+- Field Book in `index.html`: added "Drawing Practice & String Rules" section documenting the cord wall, threading cancellation, and visible closure / 1,200 px limit.
+- Extended test suite: updated `test/test_mechanics.js` block 10 checking `stringRules`, `gestures`, and undefined `maxCordLength` against `campaign-plan.json`; added test 17 in `test/test_string_sandbox.js` verifying Dawn I–III string rules, rule 9 closure, and bead cancellation.
+
+Verification:
+- `node test/test_string_sandbox.js`: 17/17 PASS.
+- `node test/test_mechanics.js`: 100% PASS.
+- `node test/test_dusk.js` & `node test/test_midnight.js`: 100% PASS.
+- `node test/measure_string_sandbox.js --visits dawn-01,dawn-02,dawn-03 --runs 5`: 5/5 completions at 1150+ px across all three Dawn visits.
+- `node --check` on all modules and `git diff --check`: clean.
+
+Undone / Next handoff item:
+- Build Trace as threading in sequence (STRING.md rule 4) for string visits (item 3 in Claude Code handoff list below).
 
 2026-09-15 — Claude Code — Recorded Xyh's answers to the measurement handoff and
 made the snap limit a single shared value. This handoff list replaces the one in

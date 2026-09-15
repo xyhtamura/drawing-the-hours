@@ -2,9 +2,10 @@
 
 This document specifies the rules that replace the Enclose and Trace modes in
 Drawing the Hours with a single drawing gesture whose cord acts on the field
-while it is held. Xyh decided these rules on 2026-09-15. **None of it is
-implemented yet.** The next build step is named in [NOTES.md](NOTES.md) and in
-the project's [ROADMAP.md](../ROADMAP.md) entry.
+while it is held. Xyh decided these rules on 2026-09-15. **Implemented in the
+String sandbox (`practice-string`) and Dawn I–III (`dawn-01`, `dawn-02`, `dawn-03`).**
+The next build step is named in [NOTES.md](NOTES.md) and in the project's
+[ROADMAP.md](../ROADMAP.md) entry.
 
 When built, these rules supersede the mode-switching control, the Trace contract
 in [MIDNIGHT.md](MIDNIGHT.md), and the "Midnight firefly and Trace mode" section
@@ -182,24 +183,28 @@ wind is open.
 
 ## 8. Tap
 
-A tap is a press and release that is short and whose pointer never leaves the
-circle of the target it pressed. It neither draws a cord nor threads. Day 1
-assigns no effect to a tap; its use is open.
+A tap is a short press that stays inside a target's circle (or on open ground).
+It neither draws a cord nor threads.
 
-Agent default thresholds, to be calibrated on touch hardware:
+Xyh decided on 2026-09-15 to try placing a stationary salt grain on tap as a
+visual-only mark (`game.saltGrains`, rendered in `drawSaltGrains`), with no
+gameplay effect yet.
+
+Thresholds:
 
 - The press lasts at most 250 ms.
-- The pointer stays within the target's hit radius plus 8 px of the press point.
-- The target is the entity under the press point at the moment of the press.
-
-Measure displacement from the press point, not from the insect's current
-position. A darting damselfly covers about 48 px in 250 ms, more than its own
-radius, so an insect-relative test would turn most taps on moving insects into
-threads.
-
-A press that stays inside the circle longer than the time limit does nothing on
-release (agent default). A press on empty space that does not move is also
-ignored.
+- For a target, the pointer stays within the target's hit radius plus 8 px of the
+  press point. The target is the entity under the press point at the moment of
+  the press.
+- For open ground (empty space), the pointer stays within 14 px of the press
+  point.
+- Measure displacement from the press point, not from the insect's current
+  position. A darting damselfly covers about 48 px in 250 ms, more than its own
+  radius, so an insect-relative test would turn most taps on moving insects into
+  threads.
+- A press starting on an insect that is held for more than 250 ms without moving
+  cancels the stroke, so it does nothing on release. A press on empty space held
+  without moving is ignored.
 
 ## 9. A cord closes only where it visibly closes
 
@@ -220,6 +225,25 @@ outermost closure, trims the stroke to that closed cycle, and finds single,
 lasso, and figure-eight pockets inside it. The live closure preview and release
 evaluation both call it. Campaign visits keep the 90 px end-to-start tolerance
 until they adopt these rules.
+
+### Live pre-release closure preview
+
+While drawing, each pointer sample evaluates `extractClosedPockets` to signal
+valid loop closure before the pointer lifts:
+
+- **Cord glow**: when closed, the cord strand radiates a warm golden luminous
+  aura (`shadowBlur: 12`, underglow line), or a terracotta warning aura if an
+  insect was threaded as a bead. The drawing head ring pulses green or rust.
+- **Paper wash shadow**: the enclosed pocket area fills with a translucent
+  watercolor wash (`drawLiveLoopPreview`: fresh meadow green
+  `rgba(220, 240, 205, 0.32)` when enclosing insects, warm parchment honey
+  `rgba(245, 235, 210, 0.25)` when empty, or terracotta if cancelled by a bead).
+- **Watermark loop sign**: each pocket's centroid displays a soft translucent
+  watermark sign (a botanical ring with four corner pips for single loops and
+  lassos; a double-petal infinity sign for figure-eights).
+- **Visible closure enforcement**: in string visits, closure requires an actual
+  crossing or tip landing within `CORD_WIDTH` (4.5 px); the 90 px gap tolerance
+  and dashed gap seam bridge from campaign enclose mode are removed.
 
 Archived: making the live closure check incremental, so that each pointer sample
 tests only the newest segment. Xyh judged the explicit rule enough, and the
@@ -252,28 +276,33 @@ hold, the verbatim transition cards, and save IDs.
 
 ## Build order
 
-1. Add a practice verge, **String sandbox**, with the Dawn II cast: Brimstones,
-   damselflies, seeds, and the seam snail. Implement walls for those movement
-   models, threading with sliding and clamping, bead cancellation, the
-   `maxCordLength` snap, and tap detection that only logs. Leave the campaign
-   unchanged.
-2. Test tunneling at dart speed, bead order under sliding, clamping at the ends,
-   a one-bead figure that scores nothing, a snap exactly at the limit, and the tap
-   thresholds against a short stroke.
-3. Measure in the live page: time to a pair and to a trio, the accidental thread
-   rate, and the snap rate at limits of 800, 1,000, and 1,200 px.
-4. Xyh plays the sandbox and settles the open questions below.
-5. Extend walls to the remaining movement models, re-author the twelve visits,
-   remove the modes, and update CAMPAIGN.md, MIDNIGHT.md, SPEC.md, the Field Book,
-   and ROADMAP.md.
+1. **Done (2026-09-15)**: Add a practice verge, **String sandbox**, with the Dawn
+   II cast: Brimstones, damselflies, seeds, and the seam snail. Implement walls,
+   hit-circle perimeter collision, threading with sliding and clamping, bead
+   cancellation, the single shared 1,200 px snap limit, and tap salt grains.
+2. **Done (2026-09-15)**: Test tunneling at dart speed, bead 2D movement and
+   order under sliding, clamping at the ends, bead cancellation, 1,200 px snap,
+   and tap thresholds.
+3. **Done (2026-09-15)**: Measure in full visit simulations across limits with
+   `test/measure_string_sandbox.js`.
+4. **Done (2026-09-15)**: Xyh playtested and settled: 1,200 px single snap limit,
+   hit radius threading distance, 2D bead movement freedom, salt grains on tap,
+   and Midnight X–XII Trace as threading in sequence.
+5. **In Progress**: Roll out string rules to Dawn I–III (`dawn-01`, `dawn-02`,
+   `dawn-03`). Add `stringRules: true`, redraw ready-card diagrams (cord wall,
+   threading cancellation, crossing closure), update Field Book and tests.
+6. Build Trace as threading in sequence (rule 4) for string visits.
+7. Build wind direction changes (rule 7) for Noon V–VI, and roll out string rules
+   to Noon and Dusk.
+8. Roll out string rules to Midnight X–XII, remove modes, `gestureMode`, and
+   mode buttons/shortcuts.
+9. Touch device playtest across the day.
 
 ## Open questions for Xyh
 
 - What a successful figure means in the fiction, given that insects are released.
 - Whether a stroke that threads the Trace sequence may also score what it
   encloses (agent default: no).
-- What a tap does, and from which visit.
-- Whether beads may pass each other, and whether seeds thread.
 - Whether the snap limit scales with field size.
 - Which later-day insects cross walls.
 - Whether hours other than Noon gain wind.
