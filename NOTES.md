@@ -10,9 +10,57 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Real-device gesture calibration, finger occlusion testing, and difficulty balancing across all twelve visits.
+Overhaul Dawn: swap the mechanics of Visits II and III, add the mid-field cord-snapping snail, start Visit I's clock after the first loop, and add ready-card diagrams.
 
 ## Activity
+
+2026-09-15 — Claude Code — Reviewed the twelve-visit day as a first player's run
+and as a small release, then agreed a Dawn overhaul with Xyh. No code changed in
+this entry.
+
+Findings:
+
+- Dawn I–III are the only visits whose ready cards have no diagram. Dawn I never
+  shows how to draw a loop, Dawn II neither shows nor names the hawkmoth, and
+  Dawn III does not mention the snail.
+- Measured in the live page with a circle-fit proxy: every 0.5 s across 60 s,
+  check whether a circle around the required insects, plus a 14 px margin
+  beyond each radius, excludes every other live entity. Population stays at
+  quota because nothing is captured. Dawn I: a clean same-kind pair in 100% of
+  samples, median smallest loop radius 66 px. Dawn II: trio 97%, radius 169 px.
+  Dawn III: Seed & Wing 100%, radius 86 px. Noon IV Counterpart Pair: 100%,
+  radius 65 px. Dawn's difficulty runs trivial, hard, easy. The Dawn III snail
+  crawls 35 px above the bottom edge (y 605 of 640) and was never in the way.
+  This is a proxy, not a human or touch run.
+- Xyh's playtest: the difficulty comes from insects crossing the line while it
+  is drawn, so enclosed insects escape and bystanders enter. Later chapters are
+  challenging enough without adding disruptors.
+- A real pointer loop around two Brimstones scored a Kindred Pair; a loop around
+  a Brimstone and a damselfly returned the mismatch message, which suggests a
+  trio before trios exist.
+- The feedback banner draws 54 px above the canvas bottom. In a 720 px-tall
+  window the canvas ends at 779 px, so fault explanations were below the fold.
+- The game-over subtitle says "morning breeze" at every hour. Failure offers
+  only Retry; Level select, untimed practice, and the 12-second hint from
+  CAMPAIGN.md are unbuilt. Reload always starts at Dawn I. The Unlock All button
+  is visible and all twelve visits are open. The Field Book shows Midnight
+  entries to a Dawn player.
+- As a release, the day totals 1,150 clock seconds, about 19 minutes, which
+  suits a small free game. A Dawn-only demo would show only single loops; the
+  figure-eight arrives at Visit IV.
+
+Decisions by Xyh:
+
+- Swap the mechanics of Dawn II and III. Xyh's lines and the save IDs stay in
+  their slots; titles move with their mechanics. Visit II takes seeds and the
+  snail; Visit III takes the hawkmoth trio.
+- Make the snail disruptive. At Dawn it crawls a seam through the middle of the
+  field, and a cord that touches it while being drawn breaks immediately.
+- Start Dawn I's clock only after the first successful loop.
+
+Proposed and not yet agreed: a Field Book that fills in as figures are taught or
+found, a strip of the day's stamps on the completion card, a use for stroke
+length bands, and signposting for optional figures.
 
 2026-09-15 — Antigravity — Implemented Hour IV: Midnight Visits XI and XII, explicit Enclose / Trace mode toggle UI, ready card diagrams, clearance-aware window spawning, and day completion view, completing the 12-visit authored campaign per MIDNIGHT.md and CAMPAIGN.md.
 - Enclose / Trace Mode UI: Added `#btn-gesture-mode` in controls bar with keyboard shortcut `[T]`. Explicit switching between Enclose and Trace modes via `setGestureMode()`; locked to Trace in Visit X, hidden in visits with Enclose only, and disabled while drawing or during victory delay. Added visible mode indicators on canvas HUD for Enclose as well as Trace, and updated footer keyboard hints.
