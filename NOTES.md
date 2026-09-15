@@ -10,9 +10,46 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Decide with Xyh how a threaded insect moves on the cord in the String sandbox: a straight slide to one end, as now, or movement within its hit circle.
+Rewrite `test/measure_string_sandbox.js` to simulate held cords with walls, a seeded random generator, and replacement, then re-measure the 1300 px snap limit.
 
 ## Activity
+
+2026-09-15 — Claude Code — Beads now keep their own movement within a region on
+the cord, following Xyh's decision; this closes blocker 2 from the review entry
+below.
+
+- Rule, recorded in STRING.md rule 3: a bead may be anywhere within its hit radius
+  of the cord, with its anchor between the cord's ends, a band twice the radius
+  wide along the whole cord. The insect's own movement model moves it each frame;
+  `StringGesture.updateBeads` turns the along-cord part of that step into anchor
+  movement and the across-cord part into movement within the radius. At the edge
+  of the band, at a cord end, or against a neighbouring bead, the step's blocked
+  component is reflected into the insect's heading, as at a wall. Beads still
+  cannot pass each other.
+- `Insect.update` no longer returns early for beads, except lacewings, which hold
+  still because their movement follows a leaf route. Seed beads keep drifting.
+  The fallback that invented movement from a frozen heading is removed.
+
+Verification:
+
+- `node test/test_string_sandbox.js`, new test 16, seeded: a Brimstone bead on a
+  560 px wavy cord for 20 s at 30 fps stays within its radius of the cord, moves
+  more than 100 px along it and more than its radius across it; a hoverfly bead
+  is still in more than 200 of 360 frames; a lacewing bead does not move; a seed
+  bead under wind drifts more than 20 px along the cord and stays within its
+  radius. Tests 2, 3, and 8 now move the insects themselves instead of relying on
+  the removed fallback, and test 8 also checks the turn back at the band edge. All
+  four suites, `node --check`, and `git diff --check` pass.
+- Live page, synthetic pen Pointer Events: a straight 480 px cord threaded a
+  Brimstone and a hoverfly. Over 5 s held, the Brimstone's anchor ranged over
+  129 px with at most 1.6 px across the cord, since its heading lay along the
+  cord; the hoverfly ranged over 52 px, up to 15.7 px across against its 17.1 px
+  radius, and was still in 247 of 300 frames. On release the banner read "An
+  insect was threaded on the cord, so the loop does not count", both insects
+  returned to roaming, and the score stayed 0. On a wavy cord the Brimstone's
+  distance from the cord peaked at exactly its 19.8 px radius.
+
+Open: blockers 3–5 from the review entry below.
 
 2026-09-15 — Claude Code — Replaced the String sandbox's 90 px closure
 tolerance with Xyh's explicit rule, recorded as rule 9 in [STRING.md](STRING.md).

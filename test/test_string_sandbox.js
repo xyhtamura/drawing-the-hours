@@ -21,7 +21,7 @@ import {
   pointAndTangentAtArcLength,
 } from '../src/string.js';
 import { Insect, DandelionSeed, Snail } from '../src/entities.js';
-import { extractClosedPockets } from '../src/geometry.js';
+import { extractClosedPockets, polylineLength } from '../src/geometry.js';
 import { Game } from '../src/game.js';
 
 console.log('--- Running String Sandbox Test Suite ---');
@@ -81,6 +81,8 @@ console.log('--- Running String Sandbox Test Suite ---');
 
   // Drive them towards each other for 10 seconds of simulation
   for (let step = 0; step < 100; step++) {
+    insectA.x += 5; // each insect's own movement carries it towards the other
+    insectB.x -= 5;
     gesture.updateBeads(0.1);
     assert.ok(gesture.beads[0].s <= gesture.beads[1].s, 'Bead A must never pass Bead B');
   }
@@ -104,6 +106,7 @@ console.log('--- Running String Sandbox Test Suite ---');
 
   // Push left past start
   for (let i = 0; i < 20; i++) {
+    insect.x -= 10;
     gesture.updateBeads(0.1);
   }
   assert.strictEqual(gesture.beads[0].s, 0, 'Bead must clamp at s=0');
@@ -112,6 +115,7 @@ console.log('--- Running String Sandbox Test Suite ---');
   // Reverse heading right past end
   insect.heading = 0;
   for (let i = 0; i < 50; i++) {
+    insect.x += 10;
     gesture.updateBeads(0.1);
   }
   assert.strictEqual(gesture.beads[0].s, 300, 'Bead must clamp at s=L (300)');
@@ -274,17 +278,19 @@ console.log('--- Running String Sandbox Test Suite ---');
   assert.strictEqual(gesture.beads[0].offsetY, 12, 'Bead offset recorded');
 
   // Move along cord
+  insect.x += 10;
   gesture.updateBeads(0.1);
   assert.strictEqual(insect.y, 112, 'Entity maintains vertical offset while sliding along cord');
   assert.ok(insect.x > 100, 'Entity slides forward along cord tangent');
 
-  // Now turn perpendicular (heading = PI/2) and drive towards radius boundary
-  insect.heading = Math.PI / 2;
+  // Now move perpendicular to the cord and drive towards the radius boundary
   for (let i = 0; i < 30; i++) {
+    insect.y += 5;
     gesture.updateBeads(0.1);
   }
   const offsetDist = Math.hypot(gesture.beads[0].offsetX, gesture.beads[0].offsetY);
   assert.ok(Math.abs(offsetDist - insect.radius) < 1e-4, 'Bead offset clamps exactly at hit circle radius');
+  assert.ok(Math.sin(insect.heading) < 0, 'Bead at the edge of its region turns back towards the cord');
 
   console.log('✔ Bead freedom of movement within hit circle verified.');
 }
@@ -561,6 +567,100 @@ console.log('--- Running String Sandbox Test Suite ---');
     'A figure-eight whose tip returns onto its start encloses both lobes');
 
   console.log('✔ Cord closes only by crossing itself or landing on the drawn cord.');
+}
+
+// 16. A bead keeps its own movement inside its region on the cord
+{
+  const bounds = { width: 960, height: 640 };
+  const realRandom = Math.random;
+  let seed = 11;
+  Math.random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  try {
+    const cord = [];
+    for (let x = 200; x <= 760; x += 8) cord.push({ x, y: 320 + 40 * Math.sin((x - 200) / 90) });
+    const cordLength = polylineLength(cord);
+    const distToCord = p => {
+      let best = Infinity;
+      for (let i = 1; i < cord.length; i++) {
+        const a = cord[i - 1], b = cord[i];
+        const wx = b.x - a.x, wy = b.y - a.y;
+        const t = Math.max(0, Math.min(1, ((p.x - a.x) * wx + (p.y - a.y) * wy) / (wx * wx + wy * wy)));
+        best = Math.min(best, Math.hypot(a.x + t * wx - p.x, a.y + t * wy - p.y));
+      }
+      return best;
+    };
+    const threaded = (entity, s) => {
+      const gesture = new StringGesture(cord[0], 1300);
+      gesture.points = cord.map(p => ({ ...p }));
+      gesture.totalLength = cordLength;
+      gesture.threadBead(entity, s);
+      return gesture;
+    };
+
+    // A Brimstone bead wanders for 20 s at 30 fps.
+    const brim = new Insect(480, 320, 'brimstone');
+    const g = threaded(brim, 280);
+    let minS = Infinity, maxS = -Infinity, minSide = Infinity, maxSide = -Infinity, maxDist = 0;
+    for (let f = 0; f < 600; f++) {
+      brim.update(1 / 30, bounds);
+      g.updateBeads(1 / 30, bounds);
+      const bead = g.beads[0];
+      minS = Math.min(minS, bead.s);
+      maxS = Math.max(maxS, bead.s);
+      const { point, tangent } = pointAndTangentAtArcLength(g.points, bead.s);
+      const side = (brim.x - point.x) * -tangent.y + (brim.y - point.y) * tangent.x;
+      minSide = Math.min(minSide, side);
+      maxSide = Math.max(maxSide, side);
+      maxDist = Math.max(maxDist, distToCord(brim));
+      assert.ok(bead.s >= 0 && bead.s <= cordLength, 'Bead anchor stays between the cord ends');
+    }
+    assert.ok(maxDist <= brim.radius + 1e-6, `Bead stays within its radius of the cord (max ${maxDist.toFixed(2)})`);
+    assert.ok(maxS - minS > 100, `Bead travels along the cord (range ${(maxS - minS).toFixed(0)} px)`);
+    assert.ok(maxSide - minSide > brim.radius, `Bead moves across the cord (range ${(maxSide - minSide).toFixed(1)} px)`);
+
+    // A threaded hoverfly still holds still between shifts.
+    const hov = new Insect(300, 320, 'hoverfly');
+    const gh = threaded(hov, 100);
+    let still = 0;
+    let last = { x: hov.x, y: hov.y };
+    for (let f = 0; f < 360; f++) {
+      hov.update(1 / 60, bounds);
+      gh.updateBeads(1 / 60, bounds);
+      if (Math.hypot(hov.x - last.x, hov.y - last.y) < 0.05) still++;
+      last = { x: hov.x, y: hov.y };
+    }
+    assert.ok(still > 200, `Threaded hoverfly holds between shifts (${still} of 360 frames still)`);
+
+    // A threaded lacewing holds its position instead of following its leaf route.
+    const lace = new Insect(0, 0, 'lacewing');
+    lace.update(0, bounds);
+    const gl = new StringGesture({ x: lace.x - 100, y: lace.y }, 1300);
+    gl.points = [{ x: lace.x - 100, y: lace.y }, { x: lace.x + 100, y: lace.y }];
+    gl.totalLength = 200;
+    gl.threadBead(lace, 100);
+    const at = { x: lace.x, y: lace.y };
+    for (let f = 0; f < 150; f++) {
+      lace.update(1 / 30, bounds);
+      gl.updateBeads(1 / 30, bounds);
+    }
+    assert.ok(Math.hypot(lace.x - at.x, lace.y - at.y) < 1e-6, 'Threaded lacewing holds still');
+
+    // A seed bead keeps drifting under wind but stays on the cord.
+    const seedBead = new DandelionSeed(400, 320);
+    const gs = threaded(seedBead, 200);
+    const startS = gs.beads[0].s;
+    let seedMax = 0;
+    for (let f = 0; f < 300; f++) {
+      seedBead.update(1 / 30, bounds, 100);
+      gs.updateBeads(1 / 30, bounds);
+      seedMax = Math.max(seedMax, distToCord(seedBead));
+    }
+    assert.ok(seedMax <= seedBead.radius + 1e-6, `Seed bead stays within its radius (max ${seedMax.toFixed(2)})`);
+    assert.ok(gs.beads[0].s - startS > 20, 'Seed bead drifts along the cord');
+  } finally {
+    Math.random = realRandom;
+  }
+  console.log('✔ Beads keep their own movement within their radius of the cord and between its ends.');
 }
 
 console.log('--- All String Sandbox unit tests passed! ---');

@@ -492,61 +492,74 @@ export class StringGesture {
   }
 
   /**
-   * Updates all beads sliding along the cord while allowing freedom of movement within hit radius.
-   * Projects intended entity velocities onto cord tangents, clamps to ends, preserves order.
+   * Keeps each bead inside its region on the cord (STRING.md, rule 3): within its
+   * hit radius of an anchor point on the cord, with the anchor between the cord's
+   * ends and in threading order. The insect's own update has already moved it this
+   * frame. The part of that step along the cord moves the anchor; the part across
+   * the cord moves the insect within its radius. A bead that meets the edge of its
+   * region turns back, as a flier does at a wall.
    */
   updateBeads(dt, bounds) {
     if (this.beads.length === 0 || this.points.length < 2) return;
 
-    for (let i = 0; i < this.beads.length; i++) {
-      const bead = this.beads[i];
+    for (const bead of this.beads) {
       const ent = bead.entity;
-
-      // Extract entity's movement step from ent.update or velocity
-      let moveX = 0;
-      let moveY = 0;
-      if (bead.prevX !== undefined && bead.prevY !== undefined) {
-        moveX = ent.x - bead.prevX;
-        moveY = ent.y - bead.prevY;
+      let moveX = ent.x - bead.prevX;
+      let moveY = ent.y - bead.prevY;
+      // A seed wrapping across the screen has not moved along the cord.
+      if (bounds && (Math.abs(moveX) > bounds.width / 2 || Math.abs(moveY) > bounds.height / 2)) {
+        moveX = 0;
+        moveY = 0;
       }
-      if (Math.hypot(moveX, moveY) < 1e-4) {
-        let speed = ent.config?.speed ? ent.config.speed * 60 : 60;
-        if (ent.kind === 'damselfly' && ent.isHovering) speed = 5;
-        else if (ent.kind === 'damselfly' && !ent.isHovering) speed = 3.2 * 60;
-        else if (ent.type === 'seed') speed = (ent.vx || 0.6) * 60;
-        moveX = Math.cos(ent.heading || 0) * speed * dt;
-        moveY = Math.sin(ent.heading || 0) * speed * dt;
-      }
-
-      const { point, tangent } = pointAndTangentAtArcLength(this.points, bead.s);
-
-      // Tangential component slides along the cord
-      const deltaS = moveX * tangent.x + moveY * tangent.y;
-      bead.s += deltaS;
-
-      // Normal / lateral component updates offset within bead radius
-      const normalX = -tangent.y;
-      const normalY = tangent.x;
-      const deltaNorm = moveX * normalX + moveY * normalY;
-      bead.offsetX += normalX * deltaNorm;
-      bead.offsetY += normalY * deltaNorm;
+      const { tangent } = pointAndTangentAtArcLength(this.points, bead.s);
+      const along = moveX * tangent.x + moveY * tangent.y;
+      bead.s += along;
+      bead.offsetX += moveX - tangent.x * along;
+      bead.offsetY += moveY - tangent.y * along;
+      bead.moveX = moveX;
+      bead.moveY = moveY;
+      bead.tangent = tangent;
     }
 
     // Clamp at ends and enforce bead order (cannot pass each other)
     for (let i = 0; i < this.beads.length; i++) {
+      const bead = this.beads[i];
       const minS = i === 0 ? 0 : this.beads[i - 1].s;
       const maxS = i === this.beads.length - 1 ? this.totalLength : this.beads[i + 1].s;
-      this.beads[i].s = Math.max(minS, Math.min(maxS, this.beads[i].s));
+      const clamped = Math.max(minS, Math.min(maxS, bead.s));
+      bead.blockedAlong = clamped !== bead.s;
+      bead.s = clamped;
     }
 
-    // Clamp offset to entity hit radius so bead stays within its hit circle of the line
     for (const bead of this.beads) {
       const ent = bead.entity;
       const r = ent.radius || 15;
+      let vx = bead.moveX;
+      let vy = bead.moveY;
+      let turned = false;
+
       const distOffset = Math.hypot(bead.offsetX, bead.offsetY);
       if (distOffset > r) {
-        bead.offsetX = (bead.offsetX / distOffset) * r;
-        bead.offsetY = (bead.offsetY / distOffset) * r;
+        const ux = bead.offsetX / distOffset;
+        const uy = bead.offsetY / distOffset;
+        bead.offsetX = ux * r;
+        bead.offsetY = uy * r;
+        const outward = vx * ux + vy * uy;
+        if (outward > 0) {
+          vx -= 2 * outward * ux;
+          vy -= 2 * outward * uy;
+          turned = true;
+        }
+      }
+      if (bead.blockedAlong) {
+        const alongV = vx * bead.tangent.x + vy * bead.tangent.y;
+        vx -= 2 * alongV * bead.tangent.x;
+        vy -= 2 * alongV * bead.tangent.y;
+        turned = true;
+      }
+      if (turned && ent.type !== 'seed' && Math.hypot(vx, vy) > 1e-6) {
+        ent.heading = Math.atan2(vy, vx);
+        ent.targetHeading = ent.heading;
       }
 
       const { point } = pointAndTangentAtArcLength(this.points, bead.s);

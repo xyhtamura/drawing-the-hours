@@ -121,7 +121,9 @@ export class Insect {
   update(dt, bounds) {
     this.stateTime += dt;
 
-    if (this.state === 'bead') {
+    // A bead keeps its own movement and StringGesture.updateBeads confines it to the
+    // cord. A lacewing's route is tied to its leaves, so a threaded lacewing holds still.
+    if (this.state === 'bead' && this.kind === 'lacewing') {
       this.flapPhase += (this.config?.flutterFreq || 16) * dt;
       return;
     }
@@ -667,7 +669,7 @@ export class DandelionSeed {
   update(dt, bounds, windVx = 0) {
     this.stateTime += dt;
 
-    if (this.state === 'bead') return;
+    // A seed bead keeps drifting; StringGesture.updateBeads confines it to the cord.
 
     if (this.state === 'harmonizing') {
       this.alpha = Math.max(0, 1.0 - this.stateTime / 0.8);

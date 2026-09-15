@@ -77,9 +77,16 @@ circle from outside. An insect that flies under a still pointer, or onto the tip
 between samples, does not thread; an insect that flies into an existing wall is
 blocked by rule 1.
 
-A bead moves only along the cord. Each update projects the bead's own intended
-motion onto the cord's local tangent. Beads are clamped at both ends of the cord.
-The order of beads is fixed by first contact, and sliding never changes it.
+A bead keeps its own movement inside a region on the cord (Xyh, 2026-09-15):
+every point within its hit radius of the cord, between the cord's ends. The region
+is a band twice the hit radius wide running the length of the cord, with rounded
+ends, so its area is about 2rL + πr² for hit radius r and cord length L. Each
+frame the insect's own movement model moves it first. The part of that step along
+the cord moves the bead's anchor along the cord, and the part across the cord
+moves the insect within its radius. A bead that meets the edge of its region
+turns back, as a flier does at a wall. Beads cannot pass each other, so the order
+of beads stays fixed by first contact. A threaded lacewing holds still, because
+its movement follows a route between leaves.
 
 On release, each bead is released from the position it slid to. Sliding matters
 for that reason: it changes where released insects end up.
