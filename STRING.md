@@ -8,10 +8,11 @@ String sandbox (`practice-string`), the String Trace sandbox
 The next build step is named in [NOTES.md](NOTES.md) and in the project's
 [ROADMAP.md](../ROADMAP.md) entry.
 
-When built, these rules supersede the mode-switching control, the Trace contract
-in [MIDNIGHT.md](MIDNIGHT.md), and the "Midnight firefly and Trace mode" section
-of [CAMPAIGN.md](CAMPAIGN.md). Until then, those documents describe the running
-game.
+For visits that use these rules, they supersede the mode-switching control, the
+Trace contract in [MIDNIGHT.md](MIDNIGHT.md), and the "Midnight firefly and Trace
+mode" section of [CAMPAIGN.md](CAMPAIGN.md). Noon through Midnight still run in
+Enclose or Trace mode, and for those visits CAMPAIGN.md and MIDNIGHT.md still
+describe the running game.
 
 ## Reason for the change
 
@@ -181,11 +182,35 @@ example by drawing every loop in the same rotational direction so the gap trails
 downwind. Gust direction varies within a visit so that one habit does not answer
 every gust. The warning phase shows the coming direction before the gust starts.
 
-Agent default: each visit with wind lists its directions, for example
-`directions: ['right', 'left']`. The attempt's seeded generator picks each
-gust's direction and never repeats one direction more than twice in a row. This
-applies to Noon V–VI, the visits that have wind today. Whether other hours gain
-wind is open.
+This applies to Noon V–VI (`noon-02`, `noon-03`), the visits that have wind.
+Whether other hours gain wind is open. Not built yet; the current wind blows
+right on every gust.
+
+Agent defaults for the build, not yet confirmed by Xyh:
+
+- **Data.** Each windy visit replaces `direction: 'right'` with
+  `directions: ['right', 'left']` in `src/campaign.js` and `campaign-plan.json`.
+  Period, warning, gust length, and seed speed stay as they are (12 s, 2 s, 2 s,
+  0.08 field widths per second).
+- **Choice.** The game picks the next gust's direction when the warning phase
+  starts, stores it on the game (for example `windDirection`), and never picks
+  the same direction more than twice in a row. It uses `Math.random`, which the
+  measurement script seeds; the game has no per-attempt seeded generator yet.
+  `initLevel` resets the direction and the run count.
+- **Everything that assumes rightward must follow the sign.** Seed displacement
+  (`windVx` in `Game.update`); seed lean (`DandelionSeed.update` leans only when
+  `windVx > 0`); seed wrapping (`DandelionSeed.update` wraps only off the right
+  and bottom edges, so a leftward gust would carry seeds off the left edge for
+  good); wind streaks (`spawnWindStreaks` and `updateWindStreaks` start at the
+  left and move right); planter leaves (`drawWindPlanters` leans both sides
+  toward the centre instead of downwind); the HUD badge ("Rightward Gust »»" in
+  `drawHUD`); and the Noon V and VI ready-card captions, which say the breeze
+  blows rightward.
+- **Warning copy** names the direction before the gust, for example "Gust
+  coming: blowing left" during the warning and "Gust: blowing left" during it.
+- **Walls need no change.** `constrainToWalls` sweeps the seed's actual step,
+  wind included, so seeds already slide along a held cord in either direction.
+- Panning the wind sounds toward the gust direction is optional.
 
 ## 8. Tap
 
@@ -273,10 +298,13 @@ hold, the verbatim transition cards, and save IDs.
 - Midnight X–XII keep their objectives (`trace: 3` in X, `trace: 2` in XI and
   XII). Each Trace is threaded in sequence under rule 4, so fireflies keep their
   role.
-- Walls hold enclosed insects, so enclosure objectives become easier. Clocks and
-  populations across all twelve visits need retuning once snap limits exist.
-- The Dawn ready-card diagrams added on 2026-09-15 show loops only. They need to
-  show walls and warn that threading cancels a loop.
+- Walls hold enclosed insects, so enclosure objectives become easier. With the
+  shared 1,200 px limit in place, clocks and populations can be retuned visit by
+  visit as each adopts these rules; Dawn I–III have not been retuned.
+- The Dawn ready-card diagrams were redrawn on 2026-09-15 for walls, threading,
+  and closure by crossing. Xyh kept them as they are on 2026-09-16, including the
+  loss of Dawn I's note that two kinds cannot share a loop and of the snail
+  picture on Dawn II's card.
 - The touch playtest of the revised Dawn clocks is deferred, because walls change
   the difficulty that playtest would have tuned.
 
@@ -304,6 +332,27 @@ hold, the verbatim transition cards, and save IDs.
 8. Roll out string rules to Midnight X–XII, remove modes, `gestureMode`, and
    mode buttons/shortcuts.
 9. Touch device playtest across the day.
+
+## Keeping this document current
+
+This file records what was decided about string visits and why. The code and
+tests are the authority for numbers and names, so a sentence here that disagrees
+with them is the stale one. Update this file in the same commit as the change it
+describes:
+
+- When a visit adopts these rules, add its ID to the status line at the top.
+  Test 21 in `test/test_string_sandbox.js` fails if a level with
+  `stringRules: true` is missing from that paragraph.
+- When a build step lands, mark it **Done** with its date under Build order.
+- When Xyh decides something, write it into the rule it changes, with "Xyh" and
+  the date, and delete the agent default or open question it settles. Leaving
+  both lets the next agent build the superseded version.
+- When an agent has to choose without Xyh, mark the choice **agent default** in
+  its rule and add the question under Open questions.
+- When a function, constant, or file named here is renamed or removed, search
+  this file for the old name and fix it.
+- Keep a measurement's method, date, and headline result here, and point to the
+  NOTES.md entry that holds the full table rather than copying it.
 
 ## Open questions for Xyh
 

@@ -10,9 +10,84 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Build STRING.md rule 7 (wind that changes direction) for Noon V–VI and roll string rules out to Noon and Dusk, the next item of the handoff list in NOTES.md.
+Build STRING.md rule 7, wind that changes direction, for Noon V–VI: item 1 of the handoff list in the newest Claude Code entry below.
 
 ## Activity
+
+2026-09-16 — Claude Code — Recorded Xyh's decision to keep the Dawn cards,
+brought STRING.md up to date, added a check that keeps its status line honest,
+and wrote the Noon wind handoff. No game code changed.
+
+- Xyh keeps the three Dawn ready cards as Antigravity redrew them, including the
+  loss of Dawn I's "two kinds cannot share a loop" line and Dawn II's snail
+  picture. Recorded under Consequences in STRING.md.
+- STRING.md: the introduction now says which visits the rules supersede and that
+  Noon through Midnight still run in modes; the Consequences list no longer asks
+  for Dawn diagrams or waits on a snap limit; rule 7 now specifies the Noon wind
+  build and names every place in the code that assumes a rightward gust.
+- New section "Keeping this document current" in STRING.md says what to update
+  in the same commit as each kind of change. The part that can be checked is a
+  check: test 21 in `test/test_string_sandbox.js` fails when a level with
+  `stringRules: true` is missing from the STRING.md status paragraph. That is
+  the drift the review on 2026-09-16 found.
+
+Verification: `node test/test_string_sandbox.js` passes all 21 tests. The same
+check, run by a scratch script on an in-memory copy of STRING.md with
+`practice-string-trace` removed from the status paragraph, reported that level as
+missing; the real file reports none. The other suites,
+`node --check`, and `git diff --check` pass.
+
+Handoff for the next agent, in order. It replaces the list in the 2026-09-15
+Claude Code entry. Follow "Keeping this document current" in STRING.md for every
+item.
+
+1. **Wind that changes direction, Noon V–VI.** Build STRING.md rule 7 as
+   specified there. The wind works in the current Enclose mode, so this does not
+   wait for the string rollout.
+   - Change `direction` to `directions: ['right', 'left']` for `noon-02` and
+     `noon-03` in `src/campaign.js` and `campaign-plan.json`.
+   - In `Game.update`, pick the next direction when the warning phase starts,
+     with no more than two of the same in a row, and reset it in `initLevel`.
+     Multiply `windVx` by the direction's sign.
+   - In `DandelionSeed.update` in `src/entities.js`, lean with the sign and wrap
+     seeds that leave the left edge back to the right.
+   - Mirror `spawnWindStreaks`, `updateWindStreaks`, and `drawWindStreaks` for a
+     leftward gust, and make `drawWindPlanters` lean leaves downwind.
+   - Replace the HUD badge text with direction-aware text, and the Noon V and VI
+     ready-card captions (`teachNursery`, `teachSeedTrio` in `src/game.js`) with
+     a line saying gusts change direction and the warning shows which way.
+   - Update the Noon breeze section of CAMPAIGN.md.
+   - Tests: extend the atrium wind test in `test/test_mechanics.js` for a leftward
+     gust's displacement, lean, and left-edge wrap, and add a `Game` test that runs
+     ten wind periods and checks both directions occur, no direction runs three
+     times, the badge text follows the direction, and seeds stay at quota.
+   - Done when those tests pass and, in the live page, `noon-02` shows both
+     directions within 60 s of play with its seed count staying at its quota.
+     Pane may be hidden; check by reading game state, not screenshots.
+2. **String rules for Noon IV–VI, one visit at a time.** Add `stringRules: true`
+   and `gestures: ['string']` in both data files. Noon's objectives are
+   figure-eights (`counterpartPair`, `figure8`, `nursery`), and under rule 9 the
+   outer lobe must close by crossing or landing on the cord: redraw the Noon
+   ready cards to show that. Add each ID to the STRING.md status line (test 21
+   enforces it) and extend test 17's pattern to the Noon IDs. The measurement
+   script's player draws circles only, so it cannot play Noon; either give it a
+   figure-eight path first or record Noon as unmeasured. Check hoverflies and
+   seeds under walls in the live page.
+3. **String rules for Dusk VII–IX**, the same way. Check that lacewings stop at
+   walls, that a threaded lacewing holds still, and that the Dusk VIII cicada
+   layer is unaffected.
+4. **String rules for Midnight X–XII** with Trace as threading in sequence, then
+   remove the modes: the Enclose / Trace button, the `T` shortcut,
+   `gestureMode`, `setGestureMode`, `TraceGesture`, and the Trace HUD line.
+   Redraw the Visit X and XI Trace cards for threading, and update CAMPAIGN.md,
+   MIDNIGHT.md, the Field Book, and the STRING.md removed/kept list. **Xyh:**
+   confirm first whether insects enclosed by a Trace stroke stay unscored.
+5. Playtest on a touch device across the day: closing by crossing, tap
+   thresholds, threading speed, the 1,200 px limit, and both wind directions.
+6. Remaining from the day-one review entry: failure flow (Level select, untimed
+   practice, hint), resuming on reload, the Unlock All button, Midnight entries
+   in the Field Book shown to Dawn players, and the "morning breeze" game-over
+   subtitle shown at every hour.
 
 2026-09-16 — Claude Code — Reviewed Antigravity's Dawn rollout and Trace
 threading and fixed the review items Xyh approved (1–5 and 7). Xyh playtested

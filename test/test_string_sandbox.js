@@ -10,6 +10,7 @@
  */
 
 import assert from 'node:assert';
+import fs from 'node:fs';
 import {
   sweptSegmentIntersection,
   findEarliestWallCollision,
@@ -1005,6 +1006,18 @@ console.log('--- Running String Sandbox Test Suite ---');
   ctx.fillText('after', 0, 0);
   assert.strictEqual(calls[2].maxWidth, undefined, 'Text outside a card is not limited');
   console.log('✔ Card text is limited to the card width at phone width.');
+}
+
+// 21. STRING.md's status line names every level that uses string rules
+{
+  const spec = fs.readFileSync(new URL('../STRING.md', import.meta.url), 'utf8');
+  const status = spec.split(/\r?\n\s*\r?\n/).find(paragraph => paragraph.includes('Implemented in'));
+  assert.ok(status, 'STRING.md has an "Implemented in" status paragraph');
+  for (const level of [...CAMPAIGN_LEVELS, ...PRACTICE_LEVELS].filter(l => l.stringRules)) {
+    assert.ok(status.includes(`\`${level.id}\``),
+      `STRING.md status paragraph must name ${level.id}, which uses string rules (see "Keeping this document current")`);
+  }
+  console.log('✔ STRING.md status line names every level with string rules.');
 }
 
 console.log('--- All String Sandbox unit tests passed! ---');
