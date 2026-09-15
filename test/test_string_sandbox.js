@@ -1068,4 +1068,90 @@ console.log('--- Running String Sandbox Test Suite ---');
   console.log('✔ STRING.md status line names every level with string rules.');
 }
 
+// 22. Noon IV–VI adopt string rules; a drawn figure-eight closes both pockets
+{
+  const noonIds = ['noon-01', 'noon-02', 'noon-03'];
+  const plan = JSON.parse(fs.readFileSync(new URL('../campaign-plan.json', import.meta.url)));
+  for (const id of [...noonIds, 'practice-noon']) {
+    const level = [...CAMPAIGN_LEVELS, ...PRACTICE_LEVELS].find(l => l.id === id);
+    assert.strictEqual(level.stringRules, true, `${id} uses string rules`);
+    assert.deepStrictEqual(level.gestures, ['string'], `${id} has gestures ['string']`);
+    assert.strictEqual(level.maxCordLength, undefined, `${id} uses the shared snap limit`);
+  }
+  for (const id of noonIds) {
+    const source = plan.levels.find(l => l.id === id);
+    assert.strictEqual(source.stringRules, true, `${id}: plan has stringRules`);
+    assert.deepStrictEqual(source.gestures, ['string'], `${id}: plan has gestures ['string']`);
+  }
+
+  const listeners = { window: {}, canvas: {} };
+  const hadWindow = 'window' in globalThis;
+  const hadDocument = 'document' in globalThis;
+  globalThis.window = { addEventListener: (type, fn) => { listeners.window[type] = fn; }, devicePixelRatio: 1 };
+  globalThis.document = {
+    querySelector: () => null,
+    getElementById: () => null,
+    addEventListener: () => {},
+    hidden: false,
+    documentElement: { dataset: {}, style: { setProperty: () => {}, removeProperty: () => {} } },
+  };
+  try {
+    const ctx = new Proxy({ measureText: () => ({ width: 10 }) }, {
+      get: (target, prop) => (prop in target ? target[prop] : () => {}),
+    });
+    const canvas = {
+      width: 960,
+      height: 640,
+      getContext: () => ctx,
+      addEventListener: (type, fn) => { listeners.canvas[type] = fn; },
+      setPointerCapture: () => {},
+      releasePointerCapture: () => {},
+      getBoundingClientRect: () => ({ left: 0, top: 0, width: 960, height: 640 }),
+    };
+    const game = new Game(canvas);
+    const pointer = (type, [x, y]) => {
+      const event = { pointerId: 1, isPrimary: true, button: 0, clientX: x, clientY: y, preventDefault() {} };
+      if (type === 'pointerdown') listeners.canvas.pointerdown(event);
+      else listeners.window[type](event);
+    };
+    // A figure-eight drawn from its waist; its right lobe holds x > 480.
+    const lemniscate = t => [480 + 150 * Math.sin(t), 320 + 80 * Math.sin(2 * t)];
+    const drawFigureEight = endT => {
+      pointer('pointerdown', lemniscate(0));
+      for (let t = 0.06; t < endT; t += 0.06) pointer('pointermove', lemniscate(t));
+      pointer('pointermove', lemniscate(endT));
+      pointer('pointerup', lemniscate(endT));
+    };
+    const setup = (id, left, right) => {
+      game.initLevel(id);
+      game.state = 'PLAYING';
+      game.entities = [left, right];
+    };
+
+    // Counterpart Pair: a Brimstone in one lobe and a hoverfly in the other, the cord run past its start.
+    setup('noon-01', new Insect(380, 320, 'brimstone'), new Insect(580, 320, 'hoverfly'));
+    drawFigureEight(Math.PI * 2 + 0.35);
+    assert.ok(game.feedbackBanner.text.startsWith('Counterpart Pair'),
+      `A closed figure-eight scores a Counterpart Pair (got "${game.feedbackBanner.text}")`);
+    assert.strictEqual(game.campaign.objectiveProgress.counterpartPair.current, 1);
+
+    // The same figure stopped short of its start closes one lobe only and scores nothing.
+    setup('noon-01', new Insect(380, 320, 'brimstone'), new Insect(580, 320, 'hoverfly'));
+    drawFigureEight(Math.PI * 2 - 0.4);
+    assert.strictEqual(game.campaign.objectiveProgress.counterpartPair.current, 0,
+      `A figure-eight left open at its start does not count (got "${game.feedbackBanner.text}")`);
+
+    // Nursery during Noon V: one flier and one seed in separate pockets.
+    setup('noon-02', new Insect(380, 320, 'hawkmoth'), new DandelionSeed(580, 320));
+    drawFigureEight(Math.PI * 2 + 0.35);
+    assert.ok(game.feedbackBanner.text.startsWith('Nursery Polarity'),
+      `A closed figure-eight scores a Nursery (got "${game.feedbackBanner.text}")`);
+    assert.strictEqual(game.campaign.objectiveProgress.nursery.current, 1);
+  } finally {
+    if (!hadWindow) delete globalThis.window;
+    if (!hadDocument) delete globalThis.document;
+  }
+  console.log('✔ Noon IV–VI use string rules; a drawn figure-eight closes both pockets only when it runs past its start.');
+}
+
 console.log('--- All String Sandbox unit tests passed! ---');

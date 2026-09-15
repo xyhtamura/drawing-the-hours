@@ -4,13 +4,15 @@ This document specifies the rules that replace the Enclose and Trace modes in
 Drawing the Hours with a single drawing gesture whose cord acts on the field
 while it is held. Xyh decided these rules on 2026-09-15. **Implemented in the
 String sandbox (`practice-string`), the String Trace sandbox
-(`practice-string-trace`), and Dawn I–III (`dawn-01`, `dawn-02`, `dawn-03`).**
+(`practice-string-trace`), Dawn I–III (`dawn-01`, `dawn-02`, `dawn-03`), and Noon
+IV–VI (`noon-01`, `noon-02`, `noon-03`, and Noon IV's practice copy
+`practice-noon`).**
 The next build step is named in [NOTES.md](NOTES.md) and in the project's
 [ROADMAP.md](../ROADMAP.md) entry.
 
 For visits that use these rules, they supersede the mode-switching control, the
 Trace contract in [MIDNIGHT.md](MIDNIGHT.md), and the "Midnight firefly and Trace
-mode" section of [CAMPAIGN.md](CAMPAIGN.md). Noon through Midnight still run in
+mode" section of [CAMPAIGN.md](CAMPAIGN.md). Dusk and Midnight still run in
 Enclose or Trace mode, and for those visits CAMPAIGN.md and MIDNIGHT.md still
 describe the running game.
 
@@ -350,7 +352,9 @@ hold, the verbatim transition cards, and save IDs.
 6. **Done (2026-09-16)**: Build Trace as threading in sequence (rule 4) for string
    visits, testable in `practice-string-trace`.
 7. **Done (2026-09-16)**: Build wind direction changes (rule 7) for Noon V–VI.
-   Rolling out string rules to Noon and Dusk follows.
+   Noon IV–VI adopted string rules the same day; Dusk follows. The measurement
+   script's player draws circles only, so Noon's figure-eight objectives are
+   unmeasured.
 8. Roll out string rules to Midnight X–XII, remove modes, `gestureMode`, and
    mode buttons/shortcuts.
 9. Touch device playtest across the day.

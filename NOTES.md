@@ -10,9 +10,71 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Roll the string rules out to Noon IV–VI, item 2 of the handoff list in the 2026-09-16 STRING.md upkeep entry below.
+Roll the string rules out to Dusk VII–IX, item 1 of the handoff list in the newest Claude Code entry below.
 
 ## Activity
+
+2026-09-16 — Claude Code — Rolled the string rules out to Noon IV–VI (handoff
+item 2 of the STRING.md upkeep entry below). Dusk, Midnight, and removing the
+modes are left for the next agent, as Xyh asked for the heavier work.
+
+- `noon-01`, `noon-02`, and `noon-03` set `stringRules: true` and
+  `gestures: ['string']` in `src/campaign.js` and `campaign-plan.json`;
+  `practice-noon`, a copy of `noon-01`, inherits both. STRING.md's status line
+  names all four, so test 21 passes.
+- The Noon ready cards now use the 445 px card height. Noon IV adds "Run the cord
+  back onto or across its start to close both pockets."; Noon V's first line
+  reads "Nursery: 1 flier and 1 seed in separate pockets. Cross your start to
+  close."; Noon VI's reads "Seed & Trio: 1 seed and 3 different insects in a
+  loop that crosses itself." The diagrams themselves are unchanged.
+- The measurement script's player draws circles only, so Noon's figure-eight
+  objectives are unmeasured; recorded in STRING.md build step 7.
+
+Verification:
+
+- New test 22 in `test/test_string_sandbox.js` checks the four levels' flags and
+  the plan, then draws a figure-eight through the game's own pointer handlers:
+  run past its start around a Brimstone and a hoverfly in `noon-01` it scores a
+  Counterpart Pair; stopped 0.4 rad short it scores nothing; around a hawkmoth
+  and a seed in `noon-02` it scores a Nursery. All four suites, `node --check`,
+  and `git diff --check` pass.
+- Live page: in `noon-01` the same figure-eight showed two closed pockets while
+  held; over 3 s of held play the Brimstone and hoverfly stayed in their lobes
+  (at most 56 px from the waist line against 80 px lobes), and release scored
+  "Counterpart Pair (+400 pts)". In `noon-02` a held figure-eight around a
+  hawkmoth and a seed lasted through a gust without the seed leaving its lobe, and
+  release scored "Nursery Polarity (+375 pts)". Every line on the Noon transition
+  and ready cards fit inside the card at 996 px and at 339 px wide.
+
+Not done: no touch playtest of closing a figure-eight by finger, and no
+retuning of Noon clocks or populations under walls.
+
+Handoff for the next agent, in order. It replaces the list in the 2026-09-16
+STRING.md upkeep entry. Follow "Keeping this document current" in STRING.md.
+
+1. **String rules for Dusk VII–IX**, one visit at a time, as Noon was done: set
+   `stringRules: true` and `gestures: ['string']` in both data files, add each ID
+   (and `practice-dusk`) to the STRING.md status line, add closure hints to the
+   Dusk ready cards (`teachLacewing`, `teachDusk02`, `teachDusk03` in
+   `src/game.js`), and extend test 22's pattern. In the live page, check that
+   lacewings stop at walls and resume their leaf route after release, that a
+   threaded lacewing holds still, and that the Dusk VIII cicada layer still plays.
+2. **String rules for Midnight X–XII.** The Trace is threading in sequence with
+   purity (STRING.md rule 4). Redraw the Visit X and XI Trace cards for
+   threading. Then remove the modes: the Enclose / Trace button, the `T`
+   shortcut, `gestureMode`, `setGestureMode`, `TraceGesture`, and the Trace HUD
+   line; update CAMPAIGN.md, MIDNIGHT.md, the Field Book, and the STRING.md
+   removed/kept list.
+3. **Figure-eights in the measurement script.** Give its player a figure-eight
+   path so Noon IV–V and Dusk can be measured, then re-measure the 1,300 px
+   limit across the day.
+4. Playtest on a touch device across the day: closing loops and figure-eights by
+   crossing, tap thresholds, threading speed, the 1,300 px limit, both wind
+   directions, and purity.
+5. Remaining from the day-one review entry: failure flow (Level select, untimed
+   practice, hint), resuming on reload, the Unlock All button, Midnight entries in
+   the Field Book shown to Dawn players, and the "morning breeze" game-over
+   subtitle shown at every hour.
 
 2026-09-16 — Claude Code — Built STRING.md rule 7, wind that changes direction,
 for Noon V–VI (handoff item 1). The visits still run in Enclose mode.

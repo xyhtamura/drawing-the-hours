@@ -124,7 +124,8 @@ export const CAMPAIGN_LEVELS = [
     },
     instruction: 'Make four combinations, including three figure-eights with one different insect in each pocket.',
     designNote: 'Teach the waist crossing using two kinds and open drawing space.',
-    gestures: ['enclose'],
+    gestures: ['string'],
+    stringRules: true,
     wind: null,
   },
   {
@@ -153,7 +154,8 @@ export const CAMPAIGN_LEVELS = [
     },
     instruction: 'Make four figure-eights, including two with 1 flier and 1 seed in separate pockets.',
     designNote: 'Introduce a two-second seed-moving gust after a visible warning.',
-    gestures: ['enclose'],
+    gestures: ['string'],
+    stringRules: true,
     wind: {
       periodSeconds: 12,
       warningSeconds: 2,
@@ -188,7 +190,8 @@ export const CAMPAIGN_LEVELS = [
     },
     instruction: 'Make four combinations, including two loops with a seed and three different insects.',
     designNote: 'Introduce the Seed & Trio circle (1 seed + 3 different species) in the sunlit atrium breeze.',
-    gestures: ['enclose'],
+    gestures: ['string'],
+    stringRules: true,
     wind: {
       periodSeconds: 12,
       warningSeconds: 2,

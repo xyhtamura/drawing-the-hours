@@ -128,8 +128,9 @@
       "instruction": "Make four combinations, including three figure-eights with one different insect in each pocket.",
       "designNote": "Teach the waist crossing using two kinds and large open drawing space.",
       "gestures": [
-        "enclose"
+        "string"
       ],
+      "stringRules": true,
       "wind": null
     },
     {
@@ -158,8 +159,9 @@
       "instruction": "Make four figure-eights, including two with 1 flier and 1 seed in separate pockets.",
       "designNote": "Introduce a two-second seed-moving gust after a visible warning; keep Nursery as the objective.",
       "gestures": [
-        "enclose"
+        "string"
       ],
+      "stringRules": true,
       "wind": {
         "periodSeconds": 12,
         "warningSeconds": 2,
@@ -194,8 +196,9 @@
       "instruction": "Make four combinations, including two loops with a seed and three different fliers.",
       "designNote": "Combine the established breeze with Seed & Trio circles (1 seed + 3 distinct species).",
       "gestures": [
-        "enclose"
+        "string"
       ],
+      "stringRules": true,
       "wind": {
         "periodSeconds": 12,
         "warningSeconds": 2,

@@ -2038,7 +2038,7 @@ export class Game {
     const teachDawn03 = lvl.id === 'dawn-03';
     const hasDiagram = teachDawn01 || teachDawn02 || teachDawn03 || teachStringTrace || teachTrace || teachLacewing || teachDusk02 || teachDusk03 || teachCounterpart || teachNursery || teachSeedTrio || teachMidnight02 || teachMidnight03;
     const teachDawn = teachDawn01 || teachDawn02 || teachDawn03;
-    const modalHeight = (teachMidnight02 || teachMidnight03 || teachDawn || teachStringTrace) ? 445 : (hasDiagram ? 415 : 310);
+    const modalHeight = (teachMidnight02 || teachMidnight03 || teachDawn || teachStringTrace || teachCounterpart || teachNursery || teachSeedTrio) ? 445 : (hasDiagram ? 415 : 310);
 
     this.drawModalBox(ctx, 500, modalHeight, (boxW, boxH) => {
       const isNarrow = boxW < 440;
@@ -2298,7 +2298,7 @@ export class Game {
         ctx.fillText('Dense field with 8 fliers; keep clear of the perimeter snail.', 0, 56);
         ctx.restore();
       } else if (teachCounterpart) {
-        ctx.save(); ctx.translate(0, boxH / 2 - 84);
+        ctx.save(); ctx.translate(0, boxH / 2 - 100);
         ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, 0);
         ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
@@ -2307,10 +2307,11 @@ export class Game {
         ctx.fillStyle = themeColor('hoverfly', '#eab765'); ctx.beginPath(); ctx.ellipse(46, 0, 8, 13, 0, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#5d493a'; for (const y of [-6, 0, 6]) ctx.fillRect(40, y, 12, 3);
         ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('One different insect in each pocket', 0, 42);
+        ctx.fillText('One different insect in each pocket.', 0, 42);
+        ctx.fillText('Run the cord back onto or across its start to close both pockets.', 0, 57);
         ctx.restore();
       } else if (teachNursery) {
-        ctx.save(); ctx.translate(0, boxH / 2 - 84);
+        ctx.save(); ctx.translate(0, boxH / 2 - 100);
         ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, 0);
         ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
@@ -2326,12 +2327,12 @@ export class Game {
         ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.stroke();
         ctx.fillStyle = themeColor('seed', '#655543'); ctx.beginPath(); ctx.ellipse(sx + 7, sy + 9, 1.5, 3, 0.6, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('Nursery Polarity: 1 flier in one lobe, 1 seed in the other', 0, 39);
+        ctx.fillText('Nursery: 1 flier and 1 seed in separate pockets. Cross your start to close.', 0, 39);
         ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
         ctx.fillText('🍃 2-second gusts drift seeds. The warning shows which way they blow.', 0, 54);
         ctx.restore();
       } else if (teachSeedTrio) {
-        ctx.save(); ctx.translate(0, boxH / 2 - 84);
+        ctx.save(); ctx.translate(0, boxH / 2 - 100);
         // Single loop cord (circle)
         ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
         ctx.beginPath();
@@ -2358,7 +2359,7 @@ export class Game {
         ctx.fillStyle = '#a8b894'; ctx.beginPath(); ctx.ellipse(44, 6, 4, 8, 0.8, 0, Math.PI * 2); ctx.fill();
 
         ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('1 seed and 3 distinct insects in a loop (Seed & Trio)', 0, 39);
+        ctx.fillText('Seed & Trio: 1 seed and 3 different insects in a loop that crosses itself.', 0, 39);
         ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
         ctx.fillText('🍃 Gusts change direction. The warning shows which way they blow.', 0, 54);
         ctx.restore();
