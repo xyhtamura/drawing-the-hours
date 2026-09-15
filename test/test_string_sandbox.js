@@ -347,4 +347,45 @@ console.log('--- Running String Sandbox Test Suite ---');
   console.log('✔ Practice-string snap limit is 1300 px (Extended band max).');
 }
 
+// 11. Live loop closure detection before release
+{
+  const canvas = {
+    getContext: () => ({
+      measureText: () => ({ width: 10 }),
+      scale: () => {},
+    }),
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 960, height: 640 }),
+  };
+  const game = new Game(canvas);
+  game.initLevel('practice-string');
+  game.state = 'PLAYING';
+
+  // Start drawing at (200, 100)
+  game.isDrawing = true;
+  game.currentStroke = [{ x: 200, y: 100 }];
+  game.activePockets = [];
+
+  // Draw semi-circle (open arc, not closed)
+  for (let i = 1; i <= 8; i++) {
+    const angle = (i / 16) * Math.PI * 2;
+    game.samplePointer({ x: 200 + Math.sin(angle) * 70, y: 170 - Math.cos(angle) * 70 }, true);
+  }
+  assert.strictEqual(game.activePockets.length, 0, 'Open arc must not signal closed loop');
+
+  // Complete circle bringing tip back near start (within closeDist 90px)
+  for (let i = 9; i <= 16; i++) {
+    const angle = (i / 16) * Math.PI * 2;
+    game.samplePointer({ x: 200 + Math.sin(angle) * 70, y: 170 - Math.cos(angle) * 70 }, true);
+  }
+  assert.ok(game.activePockets.length > 0, 'Closed loop must populate activePockets before release');
+  assert.strictEqual(game.activePockets[0].type, 'single', 'Detected as single closed loop');
+  assert.ok(game.activePockets[0].area >= 900, 'Loop area meets threshold');
+
+  // Cancelling stroke clears live signal
+  game.cancelStroke();
+  assert.strictEqual(game.activePockets.length, 0, 'Active pockets cleared when stroke ends');
+
+  console.log('✔ Live loop closure signal before release verified.');
+}
+
 console.log('--- All String Sandbox unit tests passed! ---');

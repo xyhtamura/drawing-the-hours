@@ -10,9 +10,27 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Playtest revised String sandbox with hit-circle walls, bead freedom of movement within radius, salt grains, and 1300 px cord limit before authoring Day 1 campaign visits.
+Playtest String sandbox live loop closure preview (shadow, watercolor wash, watermark loop sign, cord glow) with Xyh before authoring Day 1 campaign visits.
 
 ## Activity
+
+2026-09-15 — Antigravity — Added live loop closure signal before release: cord glow, paper wash shadow, and watermark loop sign.
+
+- Live closure detection: while drawing (`this.isDrawing`), `samplePointer` tests `extractPockets(currentStroke, { closeDist: 90, minArea: 900 })` live into `this.activePockets`, matching the exact closure criteria used on release.
+- Cord closure glow: when a stroke qualifies as closed, the drawn cord strand radiates a warm golden luminous aura (`shadowColor`, `shadowBlur: 12`, underglow line) or a terracotta warning aura if an insect was threaded as a bead. Drawing head ring pulses green/rust.
+- Loop paper wash & shadow (`drawLiveLoopPreview`): enclosed loop area fills with a translucent botanical watercolor wash (fresh meadow green `rgba(220, 240, 205, 0.32)` when enclosing insects, warm parchment honey `rgba(245, 235, 210, 0.25)` when empty, or muted terracotta if cancelled by bead) with delicate dashed inner boundary.
+- Watermark loop sign: pocket centroid renders a soft translucent watermark sign (pressed botanical ring with 4 corner pips for single loops/lassos; double-petal infinity sign for figure-eights).
+- Gap seam bridge: for single loops, a dashed seam connects the pointer tip to the stroke origin with a glowing start pip.
+- Added unit test 11 in `test/test_string_sandbox.js` verifying live loop closure signal on open arc vs closed circle, and cleanup on stroke end.
+
+Verification:
+- `node test/test_string_sandbox.js`: 11/11 PASS.
+- `node test/test_mechanics.js`: 100% PASS.
+- `node test/test_dusk.js` & `node test/test_midnight.js`: 100% PASS.
+
+Undone / Open for Xyh:
+- Playtest live loop closure preview (glow, wash, watermark sign, seam bridge) on tablet/browser.
+- Next phase: extend string rules to remaining species and re-author 12 campaign visits.
 
 2026-09-15 — Antigravity — Refined String sandbox per Xyh's playtest feedback: hit-circle walls, bead movement freedom, salt grains, and 1300 px snap limit.
 

@@ -75,6 +75,7 @@ export class Game {
     this.stringGesture = null;
     this.lastTap = null;
     this.saltGrains = [];
+    this.activePockets = [];
 
     // Transient feedback & visuals
     this.recoilStroke = null;
@@ -493,6 +494,7 @@ export class Game {
       this.isDrawing = true;
       this.currentStroke = [pos];
       this.strokeLength = 0;
+      this.activePockets = [];
       this.activeBand = getLengthBand(0);
       this.lastPointerPos = pos;
       this.lastPointerTime = performance.now();
@@ -595,6 +597,7 @@ export class Game {
     this.trace = null;
     this.currentStroke = [];
     this.strokeLength = 0;
+    this.activePockets = [];
     this.activeBand = getLengthBand(0);
     audio.stopDrawingRustle();
     this.onDrawingStateChanged?.(false);
@@ -638,7 +641,14 @@ export class Game {
         }
       }
 
-      if (this.gestureMode !== 'trace') this.checkCordHazards(this.currentStroke.slice(-2));
+      if (this.gestureMode !== 'trace') {
+        this.checkCordHazards(this.currentStroke.slice(-2));
+        if (this.currentStroke.length >= 5) {
+          this.activePockets = extractPockets(this.currentStroke, { closeDist: 90, minArea: 900 });
+        } else {
+          this.activePockets = [];
+        }
+      }
     }
   }
 
@@ -1083,6 +1093,9 @@ export class Game {
       this.drawPocketFills(ctx);
     }
 
+    // 2b. Live Closed Loop Preview (Shadow, Watercolor Wash & Loop Sign)
+    this.drawLiveLoopPreview(ctx);
+
     // 3. Pressed Paper Stamps
     this.drawStamps(ctx);
 
@@ -1230,6 +1243,115 @@ export class Game {
     ctx.restore();
   }
 
+  drawLiveLoopPreview(ctx) {
+    if (!this.isDrawing || !this.activePockets || this.activePockets.length === 0) return;
+
+    ctx.save();
+    const hasBeads = Boolean(this.currentLevel?.stringRules && this.stringGesture?.hasBeads);
+
+    for (const pocket of this.activePockets) {
+      const poly = pocket.polygon;
+      if (!poly || poly.length < 3) continue;
+
+      // Count non-hazard roaming entities currently inside the loop
+      const enclosedCount = this.entities.filter(entity => {
+        if (entity.state === 'departing' || entity.state === 'harmonizing' || entity.type === 'hazard') return false;
+        return pointInPolygon({ x: entity.x, y: entity.y }, poly);
+      }).length;
+
+      // 1. Soft botanical watercolor paper wash & shadow inside closed loop
+      ctx.beginPath();
+      ctx.moveTo(poly[0].x, poly[0].y);
+      for (let i = 1; i < poly.length; i++) {
+        ctx.lineTo(poly[i].x, poly[i].y);
+      }
+      ctx.closePath();
+
+      if (hasBeads) {
+        ctx.fillStyle = 'rgba(215, 185, 170, 0.22)';
+        ctx.strokeStyle = 'rgba(195, 110, 80, 0.45)';
+      } else if (enclosedCount > 0) {
+        ctx.fillStyle = 'rgba(220, 240, 205, 0.32)';
+        ctx.strokeStyle = 'rgba(105, 145, 75, 0.55)';
+      } else {
+        ctx.fillStyle = 'rgba(245, 235, 210, 0.25)';
+        ctx.strokeStyle = 'rgba(180, 155, 120, 0.45)';
+      }
+
+      ctx.fill();
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([5, 4]);
+      ctx.stroke();
+
+      // 2. Translucent watermark loop sign at centroid
+      const centroid = pocket.centroid;
+      if (centroid) {
+        ctx.save();
+        ctx.translate(centroid.x, centroid.y);
+        ctx.setLineDash([]);
+
+        if (pocket.type === 'figure8_lobeA' || pocket.type === 'figure8_lobeB') {
+          // Infinity figure-eight sign
+          const signHue = hasBeads ? 'rgba(180, 100, 70, 0.35)' : 'rgba(130, 160, 95, 0.45)';
+          ctx.strokeStyle = signHue;
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.ellipse(-7, 0, 7, 5, 0, 0, Math.PI * 2);
+          ctx.ellipse(7, 0, 7, 5, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = signHue;
+          ctx.beginPath();
+          ctx.arc(0, 0, 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Pressed botanical loop ring with corner pips
+          const signHue = hasBeads ? 'rgba(180, 100, 70, 0.35)' : 'rgba(125, 155, 95, 0.45)';
+          ctx.strokeStyle = signHue;
+          ctx.lineWidth = 1.3;
+          ctx.beginPath();
+          ctx.arc(0, 0, 14, 0, Math.PI * 2);
+          ctx.stroke();
+
+          for (let a = 0; a < 4; a++) {
+            const ang = (a * Math.PI) / 2;
+            ctx.beginPath();
+            ctx.arc(Math.cos(ang) * 14, Math.sin(ang) * 14, 2, 0, Math.PI * 2);
+            ctx.fillStyle = signHue;
+            ctx.fill();
+          }
+
+          ctx.beginPath();
+          ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+          ctx.fillStyle = signHue;
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // 3. Delicate closure seam bridge for single loop
+      if (pocket.type === 'single' && this.currentStroke.length >= 2) {
+        const start = this.currentStroke[0];
+        const tip = this.currentStroke[this.currentStroke.length - 1];
+        ctx.save();
+        ctx.strokeStyle = hasBeads ? 'rgba(195, 110, 80, 0.65)' : 'rgba(120, 165, 90, 0.75)';
+        ctx.lineWidth = 2.0;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(tip.x, tip.y);
+        ctx.lineTo(start.x, start.y);
+        ctx.stroke();
+
+        ctx.fillStyle = hasBeads ? '#d46b43' : '#7fad5a';
+        ctx.beginPath();
+        ctx.arc(start.x, start.y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    ctx.restore();
+  }
+
   drawStamps(ctx) {
     for (const s of this.stamps) {
       ctx.save();
@@ -1279,8 +1401,16 @@ export class Game {
     if (this.isDrawing && this.currentStroke.length >= 2) {
       const pts = this.currentStroke;
       const band = this.activeBand;
+      const isClosed = Boolean(this.activePockets && this.activePockets.length > 0);
+      const hasBeads = Boolean(this.currentLevel?.stringRules && this.stringGesture?.hasBeads);
 
       ctx.save();
+
+      // Cord closure luminous aura when loop qualifies as closed
+      if (isClosed) {
+        ctx.shadowColor = hasBeads ? 'rgba(215, 90, 50, 0.75)' : 'rgba(240, 195, 75, 0.85)';
+        ctx.shadowBlur = 12;
+      }
 
       // Cord contact shadow
       ctx.strokeStyle = 'rgba(40, 45, 30, 0.16)';
@@ -1293,6 +1423,13 @@ export class Game {
         ctx.lineTo(pts[i].x + 2, pts[i].y + 3);
       }
       ctx.stroke();
+
+      // Soft luminous under-glow along cord if closed
+      if (isClosed) {
+        ctx.strokeStyle = hasBeads ? 'rgba(215, 90, 50, 0.35)' : 'rgba(245, 205, 80, 0.45)';
+        ctx.lineWidth = 6.5;
+        ctx.stroke();
+      }
 
       // Main dyed cotton cord strand
       ctx.strokeStyle = this.gestureMode === 'trace' ? (this.trace?.fault ? '#a23f4b' : '#416e83') : band.cordHue;
@@ -1313,11 +1450,11 @@ export class Game {
       ctx.setLineDash([6, 5]);
       ctx.stroke();
 
-      // Drawing head ring
+      // Drawing head ring (pulses gently when closed)
       const tip = pts[pts.length - 1];
-      ctx.fillStyle = band.color;
+      ctx.fillStyle = isClosed ? (hasBeads ? '#d46b43' : '#7fad5a') : band.color;
       ctx.beginPath();
-      ctx.arc(tip.x, tip.y, 4, 0, Math.PI * 2);
+      ctx.arc(tip.x, tip.y, isClosed ? 5.2 : 4, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.restore();
