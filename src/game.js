@@ -109,6 +109,8 @@ export class Game {
     this.windPhase = 'calm'; // 'calm' | 'warning' | 'gust'
     this.prevWindPhase = 'calm';
     this.windStreaks = [];
+    this.windDirection = 1; // +1 blows right, -1 blows left (STRING.md rule 7)
+    this.windDirectionRun = 0;
 
     this.initCanvas();
     this.initDecorations();
@@ -219,6 +221,8 @@ export class Game {
     this.windPhase = 'calm';
     this.prevWindPhase = 'calm';
     this.windStreaks = [];
+    this.windDirection = 1;
+    this.windDirectionRun = 0;
     audio.stopCicadas();
 
     const mScale = this.currentLevel.motionScale || 1.0;
@@ -1042,6 +1046,7 @@ export class Game {
 
         if (phase !== this.windPhase) {
           if (phase === 'warning') {
+            this.chooseWindDirection();
             audio.playWindWarning();
           } else if (phase === 'gust') {
             audio.playWindGust();
@@ -1063,9 +1068,7 @@ export class Game {
       audio.updateCicadas(dt, isCicadaLevel && this.state === 'PLAYING');
 
       const bounds = { width: this.width, height: this.height };
-      const windVx = (this.windPhase === 'gust' && this.currentLevel?.wind)
-        ? (this.currentLevel.wind.seedSpeedPlayWidthsPerSecond || 0.08) * this.width
-        : 0;
+      const windVx = this.windVelocity();
 
       const walls = (this.isDrawing && this.currentLevel?.stringRules && this.stringGesture)
         ? this.stringGesture.wallSegments
@@ -1128,39 +1131,74 @@ export class Game {
     }
   }
 
+  /**
+   * Picks the next gust's direction from the visit's `wind.directions` when a
+   * warning starts, so the warning can show it. The same direction never comes
+   * more than twice in a row (STRING.md rule 7).
+   */
+  chooseWindDirection() {
+    const wind = this.currentLevel?.wind;
+    const names = wind?.directions || [wind?.direction || 'right'];
+    const signs = [...new Set(names.map(name => (name === 'left' ? -1 : 1)))];
+    let next = signs[Math.floor(Math.random() * signs.length)];
+    if (signs.length > 1 && next === this.windDirection && this.windDirectionRun >= 2) next = -next;
+    this.windDirectionRun = (next === this.windDirection) ? this.windDirectionRun + 1 : 1;
+    this.windDirection = next;
+  }
+
+  /** Signed horizontal seed speed from the current gust, in px/s. */
+  windVelocity() {
+    if (this.windPhase !== 'gust' || !this.currentLevel?.wind) return 0;
+    return (this.currentLevel.wind.seedSpeedPlayWidthsPerSecond || 0.08) * this.width * this.windDirection;
+  }
+
+  windBadgeText() {
+    const way = this.windDirection < 0 ? 'left' : 'right';
+    return this.windPhase === 'gust'
+      ? `💨 Gust: blowing ${way} ${this.windDirection < 0 ? '««' : '»»'}`
+      : `🍃 Gust coming: blowing ${way}`;
+  }
+
   spawnWindStreaks() {
     this.windStreaks = [];
+    const dir = this.windDirection;
     const count = 7;
     for (let i = 0; i < count; i++) {
+      const offset = 40 + Math.random() * 240;
       this.windStreaks.push({
-        x: -40 - Math.random() * 240,
+        x: dir > 0 ? -offset : this.width + offset,
         y: 60 + Math.random() * (this.height - 140),
         length: 90 + Math.random() * 140,
         speed: this.width * (0.65 + Math.random() * 0.35),
         alpha: 0.22 + Math.random() * 0.28,
         curveOffset: (Math.random() - 0.5) * 16,
+        dir,
       });
     }
   }
 
   updateWindStreaks(dt) {
+    const dir = this.windDirection;
     if (this.windPhase === 'warning' && this.windStreaks.length < 3 && Math.random() < 0.08) {
       this.windStreaks.push({
-        x: -50,
+        x: dir > 0 ? -50 : this.width + 50,
         y: 80 + Math.random() * (this.height - 160),
         length: 60 + Math.random() * 80,
         speed: this.width * 0.32,
         alpha: 0.14,
         curveOffset: (Math.random() - 0.5) * 12,
+        dir,
       });
     }
 
     for (let i = this.windStreaks.length - 1; i >= 0; i--) {
       const s = this.windStreaks[i];
-      s.x += s.speed * dt;
-      if (s.x > this.width + 40) {
-        if (this.windPhase === 'gust') {
-          s.x = -s.length - Math.random() * 100;
+      s.x += s.speed * s.dir * dt;
+      // A streak runs downwind from s.x by its length; it is gone once s.x leaves the far edge.
+      const gone = s.dir > 0 ? s.x > this.width + 40 : s.x < -40;
+      if (gone) {
+        if (this.windPhase === 'gust' && s.dir === dir) {
+          s.x = dir > 0 ? -s.length - Math.random() * 100 : this.width + s.length + Math.random() * 100;
           s.y = 60 + Math.random() * (this.height - 140);
         } else {
           this.windStreaks.splice(i, 1);
@@ -1186,7 +1224,7 @@ export class Game {
         const dir = side ? -1 : 1;
         ctx.save();
         ctx.translate(x + dir * 11, y);
-        ctx.rotate(sway * dir);
+        ctx.rotate(sway * this.windDirection); // both planters lean downwind
         ctx.fillStyle = i % 2 ? 'rgba(180, 198, 158, 0.75)' : 'rgba(145, 173, 136, 0.75)';
         ctx.beginPath();
         ctx.ellipse(0, 0, 4.5, 10, dir * 0.7, 0, Math.PI * 2);
@@ -1207,7 +1245,8 @@ export class Game {
       ctx.lineWidth = 2.4;
       ctx.beginPath();
       ctx.moveTo(s.x, s.y);
-      ctx.quadraticCurveTo(s.x + s.length * 0.5, s.y + s.curveOffset, s.x + s.length, s.y);
+      const dir = s.dir || 1;
+      ctx.quadraticCurveTo(s.x + s.length * 0.5 * dir, s.y + s.curveOffset, s.x + s.length * dir, s.y);
       ctx.stroke();
 
       ctx.strokeStyle = `rgba(215, 228, 220, ${s.alpha * 0.85})`;
@@ -1873,7 +1912,7 @@ export class Game {
       const cx = this.width / 2;
       const isGust = this.windPhase === 'gust';
       const isNarrow = this.width < 560;
-      const badgeText = isGust ? '💨 Atrium Breeze: Rightward Gust »»' : '🍃 Breeze Warning: Gust Approaching';
+      const badgeText = this.windBadgeText();
       const bg = isGust ? 'rgba(232, 246, 228, 0.94)' : 'rgba(254, 247, 230, 0.94)';
       const border = isGust ? '#8ab583' : '#d8b97e';
       const textCol = isGust ? '#234f21' : '#684d1e';
@@ -2289,7 +2328,7 @@ export class Game {
         ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('Nursery Polarity: 1 flier in one lobe, 1 seed in the other', 0, 39);
         ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
-        ctx.fillText('🍃 2-second rightward breeze gusts will drift seeds across the glass', 0, 54);
+        ctx.fillText('🍃 2-second gusts drift seeds. The warning shows which way they blow.', 0, 54);
         ctx.restore();
       } else if (teachSeedTrio) {
         ctx.save(); ctx.translate(0, boxH / 2 - 84);
@@ -2321,7 +2360,7 @@ export class Game {
         ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('1 seed and 3 distinct insects in a loop (Seed & Trio)', 0, 39);
         ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
-        ctx.fillText('🍃 Periodic atrium breeze gusts will carry seeds rightward', 0, 54);
+        ctx.fillText('🍃 Gusts change direction. The warning shows which way they blow.', 0, 54);
         ctx.restore();
       } else if (teachMidnight02) {
         ctx.save(); ctx.translate(0, boxH / 2 - 96);

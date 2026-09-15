@@ -164,7 +164,7 @@
         "periodSeconds": 12,
         "warningSeconds": 2,
         "gustSeconds": 2,
-        "direction": "right",
+        "directions": ["right", "left"],
         "seedSpeedPlayWidthsPerSecond": 0.08
       }
     },
@@ -200,7 +200,7 @@
         "periodSeconds": 12,
         "warningSeconds": 2,
         "gustSeconds": 2,
-        "direction": "right",
+        "directions": ["right", "left"],
         "seedSpeedPlayWidthsPerSecond": 0.08
       }
     },

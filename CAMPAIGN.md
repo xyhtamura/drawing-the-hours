@@ -88,8 +88,10 @@ at midnight. Final levels mix learned actions. These are proposed features.
 ### Noon breeze: levels 5–6
 
 Repeat eight calm seconds, two warning seconds, and two gust seconds. A wind
-indicator and leaning leaves announce a rightward gust. During it, add 0.08
-playable-field widths per second to seed horizontal movement. Existing drift
+indicator and leaning leaves announce each gust and the direction it will blow.
+Gusts blow right or left, and the same direction never comes more than twice in
+a row ([STRING.md](STRING.md) rule 7, 2026-09-16). During a gust, move seeds 0.08
+playable-field widths per second in its direction. Existing drift
 continues; no wind force acts on insects, cord, or pointer. Pause stops the
 cycle. Seed exit and quota-based re-entry remain visible. Containment uses
 positions at release, so waiting through a gust is a valid strategy. Level 5

@@ -710,6 +710,66 @@ console.log('--- All tests passed! ---');
   fly.update(1.0, bounds, gustVx);
   assert.deepStrictEqual([fly.x, fly.y], [200, 200], 'Insects must not be affected by wind force');
 
+  // Leftward gust: displacement, lean, and wrap off the left edge
+  const leftSeed = new DandelionSeed(500, 300);
+  leftSeed.vx = 0.5;
+  leftSeed.tilt = 0;
+  leftSeed.update(1.0, bounds, -gustVx);
+  assert.ok(Math.abs(leftSeed.x - 450) < 0.001, `A leftward gust carries a seed 50 px left net of drift (x=${leftSeed.x})`);
+  assert.ok(leftSeed.tilt < 0, 'A seed leans left in a leftward gust');
+  const edgeSeed = new DandelionSeed(-25, 300);
+  edgeSeed.vx = 0.5;
+  edgeSeed.update(0.2, bounds, -gustVx);
+  assert.strictEqual(edgeSeed.x, bounds.width + 20, 'A seed blown off the left edge wraps to the right');
+
+  // Direction-changing gusts over ten wind periods (STRING.md rule 7)
+  const { Game } = await import('../src/game.js');
+  const plan = JSON.parse(fs.readFileSync(new URL('../campaign-plan.json', import.meta.url)));
+  const realRandom = Math.random;
+  let rngState = 5;
+  Math.random = () => ((rngState = (rngState * 1664525 + 1013904223) >>> 0) / 4294967296);
+  try {
+    for (const id of ['noon-02', 'noon-03']) {
+      const level = CAMPAIGN_LEVELS.find(l => l.id === id);
+      assert.deepStrictEqual(level.wind.directions, ['right', 'left'], `${id} lists both gust directions`);
+      assert.deepStrictEqual(plan.levels.find(l => l.id === id).wind.directions, level.wind.directions,
+        `${id}: plan and runtime gust directions agree`);
+
+      const game = new Game({
+        getContext: () => ({ measureText: () => ({ width: 10 }), scale: () => {} }),
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 960, height: 640 }),
+      });
+      game.initLevel(id);
+      game.state = 'PLAYING';
+      game.clock.totalSeconds = 10000;
+      game.clock.remainingSeconds = 10000;
+      const gusts = [];
+      let lastPhase = game.windPhase;
+      for (let f = 0; f < 10 * 12 * 30; f++) {
+        game.update(1 / 30);
+        if (game.windPhase === 'gust' && lastPhase !== 'gust') {
+          gusts.push(game.windDirection);
+          assert.strictEqual(Math.sign(game.windVelocity()), game.windDirection, `${id}: gust velocity follows the chosen direction`);
+          assert.ok(game.windBadgeText().includes(game.windDirection < 0 ? 'blowing left' : 'blowing right'),
+            `${id}: badge names the gust direction`);
+        }
+        lastPhase = game.windPhase;
+        for (const seed of game.entities) {
+          if (seed.type !== 'seed' || seed.state !== 'roaming') continue;
+          assert.ok(seed.x >= -40 && seed.x <= game.width + 40, `${id}: seed stays on the field (x=${seed.x.toFixed(1)})`);
+        }
+      }
+      assert.strictEqual(gusts.length, 10, `${id}: ten gusts in ten wind periods`);
+      assert.ok(gusts.includes(1) && gusts.includes(-1), `${id}: both directions occur (${gusts.join(',')})`);
+      for (let i = 2; i < gusts.length; i++) {
+        assert.ok(!(gusts[i] === gusts[i - 1] && gusts[i] === gusts[i - 2]),
+          `${id}: no direction three times in a row (${gusts.join(',')})`);
+      }
+    }
+  } finally {
+    Math.random = realRandom;
+  }
+
   console.log('✔ Atrium wind acceleration on seeds and flier immunity verified.');
 }
 

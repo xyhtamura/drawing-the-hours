@@ -683,16 +683,19 @@ export class DandelionSeed {
     this.x += (this.vx * 60 + windVx) * dt;
     this.y += (this.vy + waveY) * 60 * dt;
 
-    // Lean slightly into active breeze
-    if (windVx > 0) {
-      this.tilt = Math.min(0.48, this.tilt + dt * 0.75);
+    // Lean with an active gust, whichever way it blows
+    if (windVx !== 0) {
+      this.tilt = Math.max(-0.48, Math.min(0.48, this.tilt + Math.sign(windVx) * dt * 0.75));
     } else {
       this.tilt = Math.max(-0.25, Math.min(0.25, this.tilt * (1 - dt * 1.5)));
     }
 
-    // Wrap around gracefully
+    // Wrap around gracefully; a leftward gust can carry seeds off the left edge
     if (this.x > bounds.width + 30) {
       this.x = -20;
+      this.y = 50 + Math.random() * (bounds.height - 100);
+    } else if (this.x < -30) {
+      this.x = bounds.width + 20;
       this.y = 50 + Math.random() * (bounds.height - 100);
     }
     if (this.y > bounds.height + 30) {

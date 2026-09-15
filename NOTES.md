@@ -10,9 +10,39 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Build STRING.md rule 7, wind that changes direction, for Noon V–VI: item 1 of the handoff list in the newest Claude Code entry below.
+Roll the string rules out to Noon IV–VI, item 2 of the handoff list in the 2026-09-16 STRING.md upkeep entry below.
 
 ## Activity
+
+2026-09-16 — Claude Code — Built STRING.md rule 7, wind that changes direction,
+for Noon V–VI (handoff item 1). The visits still run in Enclose mode.
+
+- `noon-02` and `noon-03` list `directions: ['right', 'left']` in `src/campaign.js`
+  and `campaign-plan.json`. `Game.chooseWindDirection` picks the next direction
+  when each warning starts and never allows three of one direction in a row;
+  `initLevel` resets it. `Game.windVelocity` signs the seed speed, and
+  `Game.windBadgeText` names the direction: "Gust coming: blowing left" during
+  the warning, "Gust: blowing left ««" during the gust.
+- Seeds lean with the gust either way and now wrap off the left edge back to the
+  right; before this a leftward gust would have carried them off for good. Wind
+  streaks travel downwind and both planters lean downwind. The Noon V and VI
+  ready-card captions say gusts change direction. CAMPAIGN.md's Noon breeze
+  section and STRING.md rule 7 and build step 7 are updated.
+- Left out: panning the wind sounds by direction.
+
+Verification:
+
+- `node test/test_mechanics.js`: the atrium wind test now checks a leftward
+  gust's 50 px net displacement, left lean, and left-edge wrap, the plan and
+  runtime directions, and, for each windy visit under a seeded `Math.random`, ten
+  wind periods with ten gusts, both directions present, no direction three times
+  running, velocity and badge following the direction, and every roaming seed
+  inside the field. All four suites and `node --check` pass.
+- Live page, 60 s of simulated play each: `noon-02` gusts ran right, right,
+  left, right, left and `noon-03` right, left, left, right, left; all four badge
+  texts appeared; seeds moved a net −469 and −502 px across left-gust frames; no
+  seed sample fell outside the field, and seeds on the field never dropped below
+  quota after the first two seconds.
 
 2026-09-16 — Claude Code — Recorded Xyh's Dawn playtest and two decisions:
 recipe purity and a 1,300 px snap limit.

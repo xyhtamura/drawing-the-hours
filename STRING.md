@@ -202,10 +202,13 @@ downwind. Gust direction varies within a visit so that one habit does not answer
 every gust. The warning phase shows the coming direction before the gust starts.
 
 This applies to Noon V–VI (`noon-02`, `noon-03`), the visits that have wind.
-Whether other hours gain wind is open. Not built yet; the current wind blows
-right on every gust.
+Whether other hours gain wind is open. Built on 2026-09-16 in Enclose mode, before
+Noon adopts the string rules; `Game.chooseWindDirection`, `Game.windVelocity`,
+and `Game.windBadgeText` hold the logic, and the atrium wind test in
+`test/test_mechanics.js` runs ten wind periods per windy visit.
 
-Agent defaults for the build, not yet confirmed by Xyh:
+Agent defaults as built, not yet confirmed by Xyh. The list names what was
+changed from the earlier rightward-only wind:
 
 - **Data.** Each windy visit replaces `direction: 'right'` with
   `directions: ['right', 'left']` in `src/campaign.js` and `campaign-plan.json`.
@@ -229,7 +232,7 @@ Agent defaults for the build, not yet confirmed by Xyh:
   coming: blowing left" during the warning and "Gust: blowing left" during it.
 - **Walls need no change.** `constrainToWalls` sweeps the seed's actual step,
   wind included, so seeds already slide along a held cord in either direction.
-- Panning the wind sounds toward the gust direction is optional.
+- Panning the wind sounds toward the gust direction was left out.
 
 ## 8. Tap
 
@@ -346,8 +349,8 @@ hold, the verbatim transition cards, and save IDs.
    threading cancellation, crossing closure), update Field Book and tests.
 6. **Done (2026-09-16)**: Build Trace as threading in sequence (rule 4) for string
    visits, testable in `practice-string-trace`.
-7. Build wind direction changes (rule 7) for Noon V–VI, and roll out string rules
-   to Noon and Dusk.
+7. **Done (2026-09-16)**: Build wind direction changes (rule 7) for Noon V–VI.
+   Rolling out string rules to Noon and Dusk follows.
 8. Roll out string rules to Midnight X–XII, remove modes, `gestureMode`, and
    mode buttons/shortcuts.
 9. Touch device playtest across the day.
