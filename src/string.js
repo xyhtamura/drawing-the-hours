@@ -12,7 +12,6 @@
  */
 
 import { distance, polylineLength } from './geometry.js';
-import { sweptContact } from './trace.js';
 
 /**
  * Returns array of segments from polyline points: [{ p1, p2 }, ...]
@@ -280,129 +279,92 @@ export function findEarliestWallCollision(p0, p1, radiusOrWalls, maybeWalls) {
   return earliest;
 }
 
-/**
- * Stepping an entity with swept wall constraints:
- * - Flier (Brimstone, Damselfly, etc.): bounces off wall, reflects velocity, turns heading
- * - Seed: stops at wall, slides along wall tangent under remaining velocity / wind
- */
-export function stepEntityWithWalls(entity, dt, bounds, windVx = 0, walls = []) {
-  if (entity.crossesCord || !walls || walls.length === 0 || entity.state !== 'roaming') {
-    return false; // Standard movement applies
-  }
+function segmentDistanceSq(px, py, a, b) {
+  const wx = b.x - a.x;
+  const wy = b.y - a.y;
+  const len2 = wx * wx + wy * wy;
+  const t = len2 > 1e-12 ? Math.max(0, Math.min(1, ((px - a.x) * wx + (py - a.y) * wy) / len2)) : 0;
+  const dx = a.x + t * wx - px;
+  const dy = a.y + t * wy - py;
+  return dx * dx + dy * dy;
+}
 
-  const p0 = { x: entity.x, y: entity.y };
-  let vx = 0;
-  let vy = 0;
+function overlapsWall(x, y, radius, walls) {
+  const limit = Math.max(0, radius - 0.05);
+  return walls.some(w => segmentDistanceSq(x, y, w.p1, w.p2) < limit * limit);
+}
+
+/**
+ * First parameter t in [0, 1] at which segment a -> b enters the disk (center c,
+ * radius r) from outside, or null. A segment that starts inside the disk has not
+ * entered it, so it returns null.
+ */
+export function segmentEntersDisk(a, b, c, r) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const fx = a.x - c.x;
+  const fy = a.y - c.y;
+  const cc = fx * fx + fy * fy - r * r;
+  if (cc <= 0) return null;
+  const aa = dx * dx + dy * dy;
+  if (aa < 1e-12) return null;
+  const bb = 2 * (fx * dx + fy * dy);
+  const disc = bb * bb - 4 * aa * cc;
+  if (disc < 0) return null;
+  const t = (-bb - Math.sqrt(disc)) / (2 * aa);
+  return t >= 0 && t <= 1 ? t : null;
+}
+
+/**
+ * Corrects a step that the entity's own movement model has already taken, so
+ * every species keeps its behaviour while a cord is held: hoverfly holds,
+ * hawkmoth arcs, lacewing leaf travel, firefly wander, and seed wrapping. The
+ * step from `from` to the entity's current position is swept against the walls
+ * on its hit circle and stopped at the first contact. Fliers reflect their
+ * heading; seeds keep the tangential part of the step and slide along the cord.
+ * Returns true when the step was corrected.
+ */
+export function constrainToWalls(entity, from, walls, bounds, dt = 0) {
+  if (entity.crossesCord || !walls || walls.length === 0 || entity.state !== 'roaming') return false;
+  const dx = entity.x - from.x;
+  const dy = entity.y - from.y;
+  if (dx * dx + dy * dy < 1e-12) return false;
+  // A seed wrapping from one screen edge to the other has no path to sweep.
+  if (Math.abs(dx) > bounds.width / 2 || Math.abs(dy) > bounds.height / 2) return false;
+
+  const radius = entity.radius || 0;
+  const hit = findEarliestWallCollision(from, { x: entity.x, y: entity.y }, radius, walls);
+  if (!hit) return false;
+
+  // Center at first contact, nudged 0.4 px back off the wall.
+  let x = from.x + dx * hit.t + hit.normal.x * 0.4;
+  let y = from.y + dy * hit.t + hit.normal.y * 0.4;
 
   if (entity.type === 'seed') {
-    entity.stateTime += dt;
-    entity.phase += dt * 2.0;
-    const waveY = Math.sin(entity.phase) * 0.4;
-    vx = entity.vx * 60 + windVx;
-    vy = (entity.vy + waveY) * 60;
-  } else if (entity.kind === 'damselfly') {
-    entity.flapPhase += entity.config.flutterFreq * dt;
-    entity.behaviorTimer -= dt;
-
-    if (entity.behaviorTimer <= 0) {
-      if (!entity.isHovering) {
-        entity.isHovering = true;
-        entity.behaviorTimer = 0.7 + Math.random() * 0.9;
-        entity.speed = 0.08;
-      } else {
-        entity.isHovering = false;
-        entity.behaviorTimer = 0.45 + Math.random() * 0.55;
-        entity.speed = 3.2; // fast dart
-        entity.targetHeading += (Math.random() - 0.5) * 2.2;
-      }
+    const along = (dx * hit.tangent.x + dy * hit.tangent.y) * (1 - hit.t);
+    const slid = { x: x + hit.tangent.x * along, y: y + hit.tangent.y * along };
+    if (!findEarliestWallCollision({ x, y }, slid, radius, walls)) {
+      x = slid.x;
+      y = slid.y;
     }
-
-    entity.applyBoundarySteering(bounds, 50);
-    entity.smoothTurn(8.0 * dt);
-
-    const jitterX = entity.isHovering ? (Math.random() - 0.5) * 0.6 : 0;
-    const jitterY = entity.isHovering ? (Math.random() - 0.5) * 0.6 : 0;
-    const scale = entity.motionScale || 1.0;
-
-    vx = (Math.cos(entity.heading) * entity.speed * scale + jitterX) * 60;
-    vy = (Math.sin(entity.heading) * entity.speed * scale + jitterY) * 60;
   } else {
-    // Brimstone / generic butterfly
-    entity.flapPhase += entity.config.flutterFreq * dt;
-    entity.behaviorTimer -= dt;
-
-    if (entity.behaviorTimer <= 0) {
-      if (Math.random() < 0.35) {
-        entity.behaviorTimer = 0.8 + Math.random() * 0.9;
-        entity.speed = entity.config.speed * 0.65;
-      } else {
-        entity.behaviorTimer = 1.2 + Math.random() * 1.6;
-        entity.speed = entity.config.speed * (0.85 + Math.random() * 0.35);
-        entity.targetHeading += (Math.random() - 0.5) * 1.8;
-      }
+    const dot = dx * hit.normal.x + dy * hit.normal.y;
+    entity.heading = Math.atan2(dy - 2 * dot * hit.normal.y, dx - 2 * dot * hit.normal.x);
+    entity.targetHeading = entity.heading;
+    // A lacewing's position comes from its route clock. Holding the clock while
+    // blocked makes it resume from the wall instead of jumping ahead on release.
+    if (entity.kind === 'lacewing' && entity.lacePhase === 'travel') {
+      entity.laceElapsed = Math.max(0, entity.laceElapsed - dt);
     }
-
-    entity.applyBoundarySteering(bounds, 65);
-    entity.smoothTurn(3.5 * dt);
-
-    const scale = entity.motionScale || 1.0;
-    vx = Math.cos(entity.heading) * entity.speed * scale * 60;
-    vy = Math.sin(entity.heading) * entity.speed * scale * 60;
   }
 
-  const p1 = {
-    x: p0.x + vx * dt,
-    y: p0.y + vy * dt,
-  };
-
-  const hit = findEarliestWallCollision(p0, p1, entity.radius, walls);
-
-  if (hit) {
-    if (entity.type === 'seed') {
-      // Seed stops at wall (hit circle touches wall) and slides along tangent
-      const stopX = hit.wallPoint.x + hit.normal.x * (entity.radius + 0.2);
-      const stopY = hit.wallPoint.y + hit.normal.y * (entity.radius + 0.2);
-
-      // Project remaining velocity onto tangent
-      const vTangent = vx * hit.tangent.x + vy * hit.tangent.y;
-      const remainingTime = (1 - hit.t) * dt;
-
-      entity.x = stopX + hit.tangent.x * vTangent * remainingTime;
-      entity.y = stopY + hit.tangent.y * vTangent * remainingTime;
-
-      // Check if sliding still penetrated any wall; if so clamp to stop point
-      const slideHit = findEarliestWallCollision({ x: stopX, y: stopY }, { x: entity.x, y: entity.y }, entity.radius, walls);
-      if (slideHit) {
-        entity.x = stopX;
-        entity.y = stopY;
-      }
-    } else {
-      // Flier stops at wall (hit circle touches wall) and turns/reflects away
-      entity.x = hit.wallPoint.x + hit.normal.x * (entity.radius + 0.4);
-      entity.y = hit.wallPoint.y + hit.normal.y * (entity.radius + 0.4);
-
-      // Reflect velocity across wall normal
-      const vDotN = vx * hit.normal.x + vy * hit.normal.y;
-      const rx = vx - 2 * vDotN * hit.normal.x;
-      const ry = vy - 2 * vDotN * hit.normal.y;
-
-      entity.heading = Math.atan2(ry, rx);
-      entity.targetHeading = entity.heading;
-    }
-
-    // Boundary clamp
-    entity.x = Math.max(12, Math.min(bounds.width - 12, entity.x));
-    entity.y = Math.max(12, Math.min(bounds.height - 12, entity.y));
-    return true;
+  // At a corner the corrected point can overlap a second wall; keep the old position.
+  if (overlapsWall(x, y, radius, walls) && !overlapsWall(from.x, from.y, radius, walls)) {
+    x = from.x;
+    y = from.y;
   }
-
-  // No collision: normal position update
-  entity.x = p1.x;
-  entity.y = p1.y;
-
-  // Boundary clamp
-  entity.x = Math.max(12, Math.min(bounds.width - 12, entity.x));
-  entity.y = Math.max(12, Math.min(bounds.height - 12, entity.y));
+  entity.x = Math.max(12, Math.min(bounds.width - 12, x));
+  entity.y = Math.max(12, Math.min(bounds.height - 12, y));
   return true;
 }
 
@@ -440,16 +402,11 @@ export function pointAndTangentAtArcLength(points, targetS) {
  * String Gesture controller managing active stroke, walls, beads, snapping, and taps.
  */
 export class StringGesture {
-  constructor(startPoint, entities, maxCordLength = 1300) {
+  constructor(startPoint, maxCordLength = 1300) {
     this.points = [{ ...startPoint }];
     this.totalLength = 0;
     this.maxCordLength = maxCordLength;
     this.beads = []; // [{ entity, s, offsetX, offsetY, prevX, prevY }]
-    this.previousTip = { ...startPoint };
-    this.previousEntities = new Map(
-      entities.filter(e => e.state !== 'harmonizing' && e.state !== 'departing')
-        .map(e => [e, { x: e.x, y: e.y, radius: e.radius }])
-    );
     this.snapped = false;
   }
 
@@ -462,10 +419,14 @@ export class StringGesture {
   }
 
   /**
-   * Samples a new pointer point.
-   * Checks tip swept contact to thread new beads, checks cord snap.
+   * Samples a new pointer point, then checks the snap limit and threading.
+   * Only pointer movement threads: the segment the tip just travelled threads an
+   * insect when it enters that insect's current hit circle from outside. An insect
+   * that flies under a still pointer, or onto the tip between samples, is not
+   * threaded. `exclude` skips the insect a press started on while that press can
+   * still become a tap.
    */
-  sample(point, entities, force = false) {
+  sample(point, entities, force = false, exclude = null) {
     if (this.snapped) return { snapped: true };
 
     const last = this.points[this.points.length - 1];
@@ -483,33 +444,19 @@ export class StringGesture {
         return { snapped: true, length: this.totalLength };
       }
 
-      // Check threading contacts against moving pointer tip
-      const currentEntities = new Map(
-        entities.filter(e => e.state !== 'harmonizing' && e.state !== 'departing' && e.type !== 'hazard')
-          .map(e => [e, { x: e.x, y: e.y, radius: e.radius }])
-      );
-
-      const hits = [];
-      for (const [entity, pos] of currentEntities) {
-        if (this.beads.some(b => b.entity === entity)) continue;
-
-        const before = this.previousEntities.get(entity);
-        const t = before
-          ? sweptContact(this.previousTip, point, before, pos, pos.radius)
-          : (distance(point, pos) <= pos.radius ? 1 : null);
-
-        if (t !== null) {
-          hits.push({ entity, t });
+      if (dist > 1e-6) {
+        const hits = [];
+        for (const entity of entities) {
+          if (entity === exclude || entity.type === 'hazard' || entity.state !== 'roaming') continue;
+          if (this.beads.some(b => b.entity === entity)) continue;
+          const t = segmentEntersDisk(last, point, entity, entity.radius);
+          if (t !== null) hits.push({ entity, t });
+        }
+        hits.sort((a, b) => a.t - b.t);
+        for (const hit of hits) {
+          this.threadBead(hit.entity, prevLength + hit.t * dist);
         }
       }
-
-      hits.sort((a, b) => a.t - b.t);
-      for (const hit of hits) {
-        this.threadBead(hit.entity, prevLength + hit.t * dist);
-      }
-
-      this.previousTip = { ...point };
-      this.previousEntities = currentEntities;
     }
 
     return { snapped: false, length: this.totalLength };

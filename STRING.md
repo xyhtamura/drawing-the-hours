@@ -71,9 +71,11 @@ still open.
 
 When the pointer tip passes through an insect's hit circle during a stroke, the
 insect becomes a bead on the cord. The hit circle is the visible target radius.
-Contact uses the swept relative-motion test in `src/trace.js`, so an insect that
-crosses the moving tip between pointer samples also threads. An insect that flies
-into an existing wall does not thread, because rule 1 blocks it first.
+Only pointer movement threads (Xyh, 2026-09-15): the segment the tip travels
+between samples threads an insect when it enters that insect's current hit
+circle from outside. An insect that flies under a still pointer, or onto the tip
+between samples, does not thread; an insect that flies into an existing wall is
+blocked by rule 1.
 
 A bead moves only along the cord. Each update projects the bead's own intended
 motion onto the cord's local tangent. Beads are clamped at both ends of the cord.

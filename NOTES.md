@@ -10,9 +10,89 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Playtest String sandbox live loop closure preview (shadow, watercolor wash, watermark loop sign, cord glow) with Xyh before authoring Day 1 campaign visits.
+Decide with Xyh what counts as a closed cord in the String sandbox, then make the live closure check incremental.
 
 ## Activity
+
+2026-09-15 — Claude Code — Reviewed the String sandbox for campaign rollout,
+recorded the findings, and fixed the wall step and threading.
+
+Review findings, measured before this entry's fixes:
+
+- Works in the live page with pointer events: a held loop kept a Brimstone pair
+  and a damselfly pair one body radius inside the cord for 5 s and scored a
+  Kindred Pair on release. A darting damselfly driven at a held line at 30 fps
+  bounced. A threaded insect cancelled the loop, a 1,400 px zigzag snapped at the
+  1300 px limit, and a tap placed a salt grain. One pointer sample, including the
+  live closure check, took 0.21 ms on average and 0.6 ms at most with 320 stroke
+  points on desktop; tablet cost is unmeasured.
+- Blocker 1, fixed below: while any cord was held, `stepEntityWithWalls`
+  replaced every species' movement, and its Brimstone branch stood in for
+  hawkmoth, hoverfly, lacewing, and firefly. With a short cord in a corner, the
+  hoverfly's stationary frames over 6 s fell from 298 to 0, hawkmoth turning fell
+  from 6.7 to 4.6 rad, and seeds stopped wrapping and piled at x 984 of 996.
+- Blocker 2, open: beads slide in a straight line at full species speed toward
+  one end of the cord. `Insect.update` returns early for beads, so the heading
+  never changes. Measured: arc position 100 → 289 px in 3 s at a constant heading
+  of 0.3, with the offset pinned at the hit radius. The movement within the hit
+  circle described in the Antigravity entry below does not occur.
+- Blocker 3, open: `test/measure_string_sandbox.js` never passes walls. It counts
+  a snap whenever two same-kind insects are too far apart for a circle within the
+  limit, has no replacement, reads only the first two insects of each kind, and is
+  unseeded; a rerun gave 43.5% pair success at 1300 px against the recorded 35.3%.
+  Its numbers do not support the 1300 px limit.
+- Blocker 4, open: STRING.md does not record the 1300 px limit, taps placing salt
+  grains, bead movement within the hit circle, 14 px ground taps, or cancelling a
+  press held on an insect.
+- Blocker 5, open: the campaign visits still use modes, and Midnight still
+  depends on Trace.
+
+Changes:
+
+- `constrainToWalls(entity, from, walls, bounds, dt)` in `src/string.js`
+  replaces `stepEntityWithWalls`. The game runs each entity's own update, then
+  sweeps that step on the hit circle against the walls and stops it at first
+  contact, 0.4 px clear. Fliers reflect their heading and seeds slide along the
+  cord. A blocked lacewing's route clock is held so it resumes from the wall. A
+  corrected point that would overlap a second wall at a corner keeps the previous
+  position, and a wrap jump larger than half the field is not swept.
+  `src/entities.js` no longer handles walls.
+- Threading follows Xyh's rule that only pointer movement threads. The segment the
+  tip travels threads an insect when it enters that insect's current hit circle
+  from outside (`segmentEntersDisk`). An insect under a still pointer, an insect
+  the tip is already inside, and a zero-length release sample do not thread. The
+  insect a press started on is excluded until the pointer leaves the tap radius.
+  `StringGesture` no longer takes an entity list. STRING.md rule 3 is updated.
+
+Verification:
+
+- `node test/test_string_sandbox.js`, 14 tests. New test 12 runs all six insect
+  kinds and a seed for 6 s under a seeded `Math.random`, with and without a cord
+  outside the field, and requires identical paths and a wrapping seed. New test
+  13 holds five flier kinds inside a closed 180 px square for 20 s at 30 fps,
+  slides a wind-driven seed into a corner, and stops a lacewing at a cord across
+  its leaf route, which then moves less than its radius plus 12 px on release. New
+  test 14 covers the threading cases. Tests 1 and 7 were rewritten for the new
+  function. `test_mechanics.js`, `test_dusk.js`, `test_midnight.js`,
+  `node --check` on every module, and `git diff --check` pass.
+- Live page, synthetic pen Pointer Events: with a far cord held for 6 s the
+  hoverfly had 298 stationary frames against 298 without, the seed wrapped, and
+  the hawkmoth kept turning (11.2 rad against 8.8 without, unseeded runs). Loops
+  held a Brimstone pair at 75.0 px against a 75.2 px limit and a damselfly pair
+  at 72.9 px against 73.4 px, both scoring a Kindred Pair. An insect placed on a
+  still tip for 30 frames was not threaded; moving the tip into another insect
+  threaded it. A press on a hovering damselfly made no bead inside its 29.6 px tap
+  radius and one bead after leaving it.
+
+Open:
+
+- Blockers 2–5.
+- Closure check. The live preview re-runs `extractPockets` on every pointer
+  sample, which tests every pair of segments. Checking only the newest segment
+  against earlier ones gives the same result at linear cost per sample. The rule
+  is a separate question: a cord counts as closed when its tip is within 90 px of
+  its start, while walls let insects leave through a gap that wide. Waiting on
+  Xyh.
 
 2026-09-15 — Antigravity — Added live loop closure signal before release: cord glow, paper wash shadow, and watermark loop sign.
 

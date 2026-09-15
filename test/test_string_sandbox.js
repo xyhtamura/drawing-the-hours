@@ -13,7 +13,8 @@ import assert from 'node:assert';
 import {
   sweptSegmentIntersection,
   findEarliestWallCollision,
-  stepEntityWithWalls,
+  constrainToWalls,
+  segmentEntersDisk,
   StringGesture,
   TapTracker,
   getWallSegments,
@@ -26,21 +27,27 @@ console.log('--- Running String Sandbox Test Suite ---');
 
 // 1. Dart tunneling at 30 fps
 {
-  const damselfly = new Insect(50, 100, 'damselfly');
+  const damselfly = new Insect(300, 300, 'damselfly');
   damselfly.speed = 3.2; // fast dart speed: 192 px/s
   damselfly.isHovering = false;
   damselfly.heading = 0; // facing straight right
+  damselfly.targetHeading = 0;
   damselfly.behaviorTimer = 10; // keep in dart mode
 
-  const wall = { p1: { x: 54, y: 50 }, p2: { x: 54, y: 150 } };
-  const walls = [wall];
+  const walls = [{ p1: { x: 340, y: 200 }, p2: { x: 340, y: 400 } }];
   const bounds = { width: 960, height: 640 };
   const dt = 1 / 30; // 30 fps timestep (~6.4 px movement per frame)
 
-  // Step towards the wall
-  const collided = stepEntityWithWalls(damselfly, dt, bounds, 0, walls);
+  let collided = false;
+  let maxX = damselfly.x;
+  for (let f = 0; f < 15; f++) {
+    const from = { x: damselfly.x, y: damselfly.y };
+    damselfly.update(dt, bounds);
+    collided = constrainToWalls(damselfly, from, walls, bounds, dt) || collided;
+    maxX = Math.max(maxX, damselfly.x);
+  }
   assert.strictEqual(collided, true, 'Damselfly must detect wall collision');
-  assert.ok(damselfly.x <= 54, `Damselfly must not cross wall at x=54 (actual x=${damselfly.x})`);
+  assert.ok(maxX <= 340 - damselfly.radius, `Damselfly hit circle must not cross the wall at x=340 (max x=${maxX})`);
   assert.ok(Math.cos(damselfly.heading) < 0, 'Damselfly heading must reflect away from the wall');
 
   console.log('✔ Dart tunneling at 30 fps caught by swept segment test.');
@@ -60,7 +67,7 @@ console.log('--- Running String Sandbox Test Suite ---');
     { x: 200, y: 100 },
     { x: 400, y: 100 },
   ];
-  const gesture = new StringGesture(cordPoints[0], [insectA, insectB], 1000);
+  const gesture = new StringGesture(cordPoints[0], 1000);
   gesture.points = cordPoints;
   gesture.totalLength = 400;
 
@@ -89,7 +96,7 @@ console.log('--- Running String Sandbox Test Suite ---');
   insect.heading = Math.PI; // heading left towards start of cord
   const cordPoints = [{ x: 0, y: 100 }, { x: 300, y: 100 }];
 
-  const gesture = new StringGesture(cordPoints[0], [insect], 1000);
+  const gesture = new StringGesture(cordPoints[0], 1000);
   gesture.points = cordPoints;
   gesture.totalLength = 300;
   gesture.threadBead(insect, 20);
@@ -165,7 +172,7 @@ console.log('--- Running String Sandbox Test Suite ---');
   game.strokeLength = 2 * Math.PI * r;
 
   // Initialize string gesture and thread the damselfly as a bead
-  game.stringGesture = new StringGesture(game.currentStroke[0], game.entities, 1000);
+  game.stringGesture = new StringGesture(game.currentStroke[0], 1000);
   game.stringGesture.points = [...game.currentStroke];
   game.stringGesture.totalLength = game.strokeLength;
   game.stringGesture.threadBead(d1, 50);
@@ -187,7 +194,7 @@ console.log('--- Running String Sandbox Test Suite ---');
 // 5. Snap exactly at maxCordLength limit
 {
   const entities = [new Insect(100, 100, 'brimstone')];
-  const gesture = new StringGesture({ x: 0, y: 100 }, entities, 800);
+  const gesture = new StringGesture({ x: 0, y: 100 }, 800);
 
   // Sample to 790 px
   const res1 = gesture.sample({ x: 790, y: 100 }, entities, true);
@@ -232,23 +239,17 @@ console.log('--- Running String Sandbox Test Suite ---');
 
 // 7. Hit circle collision: insect bounces on its hit circle perimeter
 {
-  const butterfly = new Insect(50, 100, 'brimstone');
+  const butterfly = new Insect(40, 100, 'brimstone');
   butterfly.heading = 0; // heading right towards wall at x=80
-  const wall = { p1: { x: 80, y: 50 }, p2: { x: 80, y: 150 } };
-  const walls = [wall];
+  const walls = [{ p1: { x: 80, y: 50 }, p2: { x: 80, y: 150 } }];
   const bounds = { width: 960, height: 640 };
-  const dt = 1 / 30;
 
-  // Move butterfly from x=50 towards wall
-  // Distance to wall is 30. Radius is butterfly.radius (~18).
-  // Once it collides, center must be at 80 - (butterfly.radius + 0.4)
-  stepEntityWithWalls(butterfly, dt, bounds, 0, walls);
-  // Force a large step towards wall
-  butterfly.x = 75;
-  const collided = stepEntityWithWalls(butterfly, dt, bounds, 0, walls);
+  // A step from x=40 to x=70 would put the hit circle (radius ~19.8) across the wall.
+  butterfly.x = 70;
+  const collided = constrainToWalls(butterfly, { x: 40, y: 100 }, walls, bounds, 1 / 30);
   assert.strictEqual(collided, true, 'Hit circle touches wall');
   const expectedCenterDist = butterfly.radius + 0.4;
-  assert.ok(Math.abs(80 - butterfly.x - expectedCenterDist) < 1.0,
+  assert.ok(Math.abs(80 - butterfly.x - expectedCenterDist) < 1e-6,
     `Center must stop at radius + 0.4 from wall (actual x=${butterfly.x})`);
   assert.ok(Math.cos(butterfly.heading) < 0, 'Velocity reflected away from wall');
 
@@ -260,7 +261,7 @@ console.log('--- Running String Sandbox Test Suite ---');
   const insect = new Insect(100, 112, 'brimstone'); // 12px vertical offset from y=100
   insect.heading = 0; // heading straight along cord tangent (x direction)
   const cordPoints = [{ x: 0, y: 100 }, { x: 300, y: 100 }];
-  const gesture = new StringGesture(cordPoints[0], [insect], 1300);
+  const gesture = new StringGesture(cordPoints[0], 1300);
   gesture.points = cordPoints;
   gesture.totalLength = 300;
 
@@ -386,6 +387,128 @@ console.log('--- Running String Sandbox Test Suite ---');
   assert.strictEqual(game.activePockets.length, 0, 'Active pockets cleared when stroke ends');
 
   console.log('✔ Live loop closure signal before release verified.');
+}
+
+// 12. A far cord leaves every species' own movement unchanged
+{
+  const bounds = { width: 960, height: 640 };
+  const farWalls = [{ p1: { x: -200, y: -200 }, p2: { x: -150, y: -200 } }];
+  const realRandom = Math.random;
+  const seeded = seed => () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const run = (make, walls) => {
+    Math.random = seeded(7);
+    const ent = make();
+    const path = [];
+    for (let f = 0; f < 360; f++) {
+      const from = { x: ent.x, y: ent.y };
+      ent.update(1 / 60, bounds, 0);
+      if (walls.length) constrainToWalls(ent, from, walls, bounds, 1 / 60);
+      path.push(ent.x, ent.y);
+    }
+    return path;
+  };
+  try {
+    const makers = {
+      brimstone: () => new Insect(300, 300, 'brimstone'),
+      damselfly: () => new Insect(300, 300, 'damselfly'),
+      hawkmoth: () => new Insect(300, 300, 'hawkmoth'),
+      hoverfly: () => new Insect(300, 300, 'hoverfly'),
+      lacewing: () => new Insect(300, 300, 'lacewing'),
+      firefly: () => new Insect(300, 300, 'firefly'),
+      seed: () => new DandelionSeed(930, 200),
+    };
+    for (const [name, make] of Object.entries(makers)) {
+      assert.deepStrictEqual(run(make, farWalls), run(make, []), `${name} moves identically with a far cord`);
+    }
+    const seedPath = run(makers.seed, farWalls);
+    assert.ok(seedPath.some((v, i) => i % 2 === 0 && v < 100), 'Seed still wraps from the right edge while a cord is held');
+  } finally {
+    Math.random = realRandom;
+  }
+  console.log('✔ Far cord leaves all six insect kinds and seed wrapping unchanged.');
+}
+
+// 13. A closed cord holds every kind, including hoverfly shifts and lacewing travel
+{
+  const bounds = { width: 960, height: 640 };
+  const square = getWallSegments([
+    { x: 390, y: 230 }, { x: 570, y: 230 }, { x: 570, y: 410 }, { x: 390, y: 410 }, { x: 390, y: 230 },
+  ]);
+  for (const kind of ['brimstone', 'damselfly', 'hawkmoth', 'hoverfly', 'firefly']) {
+    const ent = new Insect(480, 320, kind);
+    let maxOffset = 0;
+    for (let f = 0; f < 600; f++) {
+      const from = { x: ent.x, y: ent.y };
+      ent.update(1 / 30, bounds);
+      constrainToWalls(ent, from, square, bounds, 1 / 30);
+      maxOffset = Math.max(maxOffset, Math.abs(ent.x - 480), Math.abs(ent.y - 320));
+    }
+    assert.ok(maxOffset <= 90 - ent.radius + 1e-6,
+      `${kind} stays inside the cord for 20 s (max offset ${maxOffset.toFixed(2)}, limit ${(90 - ent.radius).toFixed(2)})`);
+  }
+
+  const seed = new DandelionSeed(480, 320);
+  for (let f = 0; f < 600; f++) {
+    const from = { x: seed.x, y: seed.y };
+    seed.update(1 / 30, bounds, 200);
+    constrainToWalls(seed, from, square, bounds, 1 / 30);
+  }
+  assert.ok(seed.x <= 570 - seed.radius + 1e-6 && seed.y <= 410 - seed.radius + 1e-6,
+    `Wind-driven seed slides into the corner and stays inside (x=${seed.x.toFixed(2)}, y=${seed.y.toFixed(2)})`);
+
+  // Lacewing travelling between its first two leaves meets a cord across its route.
+  const lacewing = new Insect(0, 0, 'lacewing');
+  const wall = getWallSegments([{ x: 480, y: 150 }, { x: 480, y: 330 }]);
+  let maxX = 0;
+  for (let f = 0; f < 240; f++) {
+    const from = { x: lacewing.x, y: lacewing.y };
+    lacewing.update(1 / 30, bounds);
+    if (f > 0) constrainToWalls(lacewing, from, wall, bounds, 1 / 30);
+    maxX = Math.max(maxX, lacewing.x);
+  }
+  assert.ok(maxX <= 480 - lacewing.radius + 1e-6, `Lacewing is held at the cord (max x=${maxX.toFixed(2)})`);
+  const held = { x: lacewing.x, y: lacewing.y };
+  lacewing.update(1 / 30, bounds);
+  const jump = Math.hypot(lacewing.x - held.x, lacewing.y - held.y);
+  assert.ok(jump < lacewing.radius + 12, `Lacewing resumes from the cord after release (jump ${jump.toFixed(1)} px)`);
+
+  console.log('✔ Closed cord holds five flier kinds, a wind-driven seed, and lacewing leaf travel.');
+}
+
+// 14. Only pointer movement threads
+{
+  const insect = new Insect(100, 100, 'brimstone');
+  const gesture = new StringGesture({ x: 40, y: 100 }, 1300);
+  gesture.sample({ x: 60, y: 100 }, [insect]);
+  assert.strictEqual(gesture.beads.length, 0, 'Tip stopping short of the hit circle does not thread');
+
+  // The insect flies onto the still tip, including the forced release sample.
+  insect.x = 60;
+  gesture.sample({ x: 61, y: 100 }, [insect]);
+  gesture.sample({ x: 60, y: 100 }, [insect], true);
+  assert.strictEqual(gesture.beads.length, 0, 'Insect under a still pointer is not threaded');
+
+  // Moving out of a circle the tip is already inside does not thread either.
+  gesture.sample({ x: 70, y: 100 }, [insect]);
+  assert.strictEqual(gesture.beads.length, 0, 'Leaving a hit circle does not thread');
+
+  // Moving into a circle from outside threads.
+  const second = new Insect(160, 100, 'damselfly');
+  gesture.sample({ x: 170, y: 100 }, [insect, second]);
+  assert.strictEqual(gesture.beads.length, 1, 'Tip entering a hit circle threads');
+  assert.strictEqual(gesture.beads[0].entity, second);
+
+  // The press target is skipped while the press can still become a tap.
+  const target = new Insect(330, 300, 'brimstone');
+  const pressed = new StringGesture({ x: 290, y: 300 }, 1300);
+  pressed.sample({ x: 340, y: 300 }, [target], false, target);
+  assert.strictEqual(pressed.beads.length, 0, 'Excluded tap target is not threaded');
+
+  assert.ok(Math.abs(segmentEntersDisk({ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 0 }, 2) - 0.3) < 1e-9,
+    'Entry parameter is where the segment first reaches the circle');
+  assert.strictEqual(segmentEntersDisk({ x: 5, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 0 }, 2), null,
+    'A segment that starts inside the circle has not entered it');
+  console.log('✔ Threading requires the pointer tip to move into a hit circle.');
 }
 
 console.log('--- All String Sandbox unit tests passed! ---');

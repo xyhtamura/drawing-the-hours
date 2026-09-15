@@ -1,6 +1,5 @@
 import { updateLacewing, drawLacewing } from './lacewing.js';
 import { curbSeamY } from './geometry.js';
-import { stepEntityWithWalls } from './string.js';
 /**
  * Drawing the Hours — Inhabitants of the Meadow
  * Procedural paper entities with distinct morphology and flight physics:
@@ -118,7 +117,8 @@ export class Insect {
     this.isBead = false;
   }
 
-  update(dt, bounds, windVx = 0, walls = []) {
+  // Cord walls are applied after this update by constrainToWalls in src/string.js.
+  update(dt, bounds) {
     this.stateTime += dt;
 
     if (this.state === 'bead') {
@@ -146,13 +146,6 @@ export class Insect {
       this.y += Math.sin(this.heading) * this.speed * 60 * dt;
       this.alpha = Math.max(0, 1.0 - this.stateTime / 1.0);
       return;
-    }
-
-    // Cord wall collision support
-    if (!this.crossesCord && walls && walls.length > 0 && this.state === 'roaming') {
-      if (stepEntityWithWalls(this, dt, bounds, windVx, walls)) {
-        return;
-      }
     }
 
     // --- SPECIES-SPECIFIC MOVEMENT DYNAMICS ---
@@ -670,7 +663,8 @@ export class DandelionSeed {
     this.isBead = false;
   }
 
-  update(dt, bounds, windVx = 0, walls = []) {
+  // Cord walls are applied after this update by constrainToWalls in src/string.js.
+  update(dt, bounds, windVx = 0) {
     this.stateTime += dt;
 
     if (this.state === 'bead') return;
@@ -678,13 +672,6 @@ export class DandelionSeed {
     if (this.state === 'harmonizing') {
       this.alpha = Math.max(0, 1.0 - this.stateTime / 0.8);
       return;
-    }
-
-    // Cord wall collision support (sliding along wall under wind)
-    if (!this.crossesCord && walls && walls.length > 0 && this.state === 'roaming') {
-      if (stepEntityWithWalls(this, dt, bounds, windVx, walls)) {
-        return;
-      }
     }
 
     this.phase += dt * 2.0;

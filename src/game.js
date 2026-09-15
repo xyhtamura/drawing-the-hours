@@ -22,7 +22,7 @@ import { audio } from './audio.js';
 import { createDawnArt, wrapText } from './dawn-art.js';
 import { createNoonArt } from './noon-art.js';
 import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } from './campaign.js';
-import { StringGesture, TapTracker, pointAndTangentAtArcLength } from './string.js';
+import { StringGesture, TapTracker, pointAndTangentAtArcLength, constrainToWalls } from './string.js';
 
 function drawRoundedRect(ctx, x, y, w, h, r) {
   if (ctx.roundRect) {
@@ -500,7 +500,7 @@ export class Game {
       this.lastPointerTime = performance.now();
       if (this.currentLevel?.stringRules) {
         this.tapTracker.onPress(pos, performance.now(), this.entities);
-        this.stringGesture = new StringGesture(pos, this.entities, this.currentLevel.maxCordLength || 1300);
+        this.stringGesture = new StringGesture(pos, this.currentLevel.maxCordLength || 1300);
       } else {
         this.stringGesture = null;
       }
@@ -634,7 +634,11 @@ export class Game {
       this.lastPointerTime = now;
 
       if (this.currentLevel?.stringRules && this.stringGesture) {
-        const sampleRes = this.stringGesture.sample(pos, this.entities, force);
+        // A press that started on an insect threads it only once it leaves the tap radius.
+        const cand = this.tapTracker.candidate;
+        const tapTarget = cand?.startedOnTarget && cand.maxDisplacement <= cand.target.radius + 8
+          ? cand.target : null;
+        const sampleRes = this.stringGesture.sample(pos, this.entities, force, tapTarget);
         if (sampleRes.snapped) {
           this.breakCord('The cord snapped. Keep your stroke shorter.');
           return;
@@ -939,7 +943,9 @@ export class Game {
 
       for (let i = this.entities.length - 1; i >= 0; i--) {
         const ent = this.entities[i];
-        ent.update(dt, bounds, ent.type === 'seed' ? windVx : 0, walls);
+        const from = walls.length ? { x: ent.x, y: ent.y } : null;
+        ent.update(dt, bounds, ent.type === 'seed' ? windVx : 0);
+        if (from) constrainToWalls(ent, from, walls, bounds, dt);
         if (['passage', 'window'].includes(this.currentLevel.scene) && ent.type === 'butterfly' && ent.state === 'roaming') {
           const r = duskSafeArea(bounds);
           if (ent.kind !== 'lacewing') {
