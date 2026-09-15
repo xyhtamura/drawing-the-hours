@@ -501,7 +501,7 @@ PRACTICE_LEVELS.push({
   designNote: 'String sandbox practice verge with Dawn II cast and one-gesture rules.',
   gestures: ['string'],
   stringRules: true,
-  maxCordLength: 1000,
+  maxCordLength: 1300,
   wind: null,
   snailRoute: 'seam',
 });

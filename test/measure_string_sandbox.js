@@ -177,7 +177,7 @@ function runMeasurement(limit, durationSeconds = 60, dt = 1 / 30) {
 
 console.log('=== String Sandbox Measurement Report ===\n');
 
-for (const limit of [800, 1000, 1200]) {
+for (const limit of [800, 1000, 1200, 1300]) {
   const runs = [];
   for (let r = 0; r < 3; r++) {
     runs.push(runMeasurement(limit, 60));

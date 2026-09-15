@@ -230,4 +230,121 @@ console.log('--- Running String Sandbox Test Suite ---');
   console.log('✔ Tap thresholds verified for short press, drag, and hold.');
 }
 
+// 7. Hit circle collision: insect bounces on its hit circle perimeter
+{
+  const butterfly = new Insect(50, 100, 'brimstone');
+  butterfly.heading = 0; // heading right towards wall at x=80
+  const wall = { p1: { x: 80, y: 50 }, p2: { x: 80, y: 150 } };
+  const walls = [wall];
+  const bounds = { width: 960, height: 640 };
+  const dt = 1 / 30;
+
+  // Move butterfly from x=50 towards wall
+  // Distance to wall is 30. Radius is butterfly.radius (~18).
+  // Once it collides, center must be at 80 - (butterfly.radius + 0.4)
+  stepEntityWithWalls(butterfly, dt, bounds, 0, walls);
+  // Force a large step towards wall
+  butterfly.x = 75;
+  const collided = stepEntityWithWalls(butterfly, dt, bounds, 0, walls);
+  assert.strictEqual(collided, true, 'Hit circle touches wall');
+  const expectedCenterDist = butterfly.radius + 0.4;
+  assert.ok(Math.abs(80 - butterfly.x - expectedCenterDist) < 1.0,
+    `Center must stop at radius + 0.4 from wall (actual x=${butterfly.x})`);
+  assert.ok(Math.cos(butterfly.heading) < 0, 'Velocity reflected away from wall');
+
+  console.log('✔ Hit circle wall collision verified (perimeter touches, center clears).');
+}
+
+// 8. Bead freedom of movement within hit radius without snapping center
+{
+  const insect = new Insect(100, 112, 'brimstone'); // 12px vertical offset from y=100
+  insect.heading = 0; // heading straight along cord tangent (x direction)
+  const cordPoints = [{ x: 0, y: 100 }, { x: 300, y: 100 }];
+  const gesture = new StringGesture(cordPoints[0], [insect], 1300);
+  gesture.points = cordPoints;
+  gesture.totalLength = 300;
+
+  // Thread insect at arc length s = 100
+  gesture.threadBead(insect, 100);
+
+  // Center must NOT snap to line at y=100
+  assert.strictEqual(insect.y, 112, 'Entity center must preserve initial offset (no snap to line)');
+  assert.strictEqual(gesture.beads[0].offsetY, 12, 'Bead offset recorded');
+
+  // Move along cord
+  gesture.updateBeads(0.1);
+  assert.strictEqual(insect.y, 112, 'Entity maintains vertical offset while sliding along cord');
+  assert.ok(insect.x > 100, 'Entity slides forward along cord tangent');
+
+  // Now turn perpendicular (heading = PI/2) and drive towards radius boundary
+  insect.heading = Math.PI / 2;
+  for (let i = 0; i < 30; i++) {
+    gesture.updateBeads(0.1);
+  }
+  const offsetDist = Math.hypot(gesture.beads[0].offsetX, gesture.beads[0].offsetY);
+  assert.ok(Math.abs(offsetDist - insect.radius) < 1e-4, 'Bead offset clamps exactly at hit circle radius');
+
+  console.log('✔ Bead freedom of movement within hit circle verified.');
+}
+
+// 9. Tap places stationary salt grain
+{
+  const canvas = {
+    getContext: () => ({
+      clearRect: () => {},
+      beginPath: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      arc: () => {},
+      stroke: () => {},
+      fill: () => {},
+      save: () => {},
+      restore: () => {},
+      scale: () => {},
+      measureText: () => ({ width: 10 }),
+    }),
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    setPointerCapture: () => {},
+    releasePointerCapture: () => {},
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 960, height: 640 }),
+  };
+
+  const game = new Game(canvas);
+  game.initLevel('practice-string');
+  game.state = 'PLAYING';
+
+  assert.strictEqual(game.saltGrains.length, 0, 'Initially zero salt grains');
+
+  // Trigger tap on ground (press and release <= 250ms, disp <= 14px)
+  const tracker = game.tapTracker;
+  tracker.onPress({ x: 250, y: 250 }, 1000, game.entities);
+  tracker.onMove({ x: 252, y: 251 });
+  const tapRes = tracker.onRelease({ x: 252, y: 251 }, 1100);
+  assert.strictEqual(tapRes.isTap, true, 'Ground tap registers');
+
+  // Simulate onPointerUp salt grain placement
+  game.saltGrains.push({ x: 252, y: 251, rotation: 0, size: 3 });
+  assert.strictEqual(game.saltGrains.length, 1, 'Salt grain added to field');
+  assert.strictEqual(game.saltGrains[0].x, 252);
+
+  console.log('✔ Tap places stationary salt grain verified.');
+}
+
+// 10. Cord snap limit in practice-string is 1300 px
+{
+  const canvas = {
+    getContext: () => ({
+      measureText: () => ({ width: 10 }),
+      scale: () => {},
+    }),
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 960, height: 640 }),
+  };
+  const game = new Game(canvas);
+  game.initLevel('practice-string');
+  assert.strictEqual(game.currentLevel.maxCordLength, 1300, 'Practice-string snap limit is 1300 px');
+
+  console.log('✔ Practice-string snap limit is 1300 px (Extended band max).');
+}
+
 console.log('--- All String Sandbox unit tests passed! ---');

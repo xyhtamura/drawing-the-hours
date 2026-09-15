@@ -22,7 +22,7 @@ import { audio } from './audio.js';
 import { createDawnArt, wrapText } from './dawn-art.js';
 import { createNoonArt } from './noon-art.js';
 import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } from './campaign.js';
-import { StringGesture, TapTracker } from './string.js';
+import { StringGesture, TapTracker, pointAndTangentAtArcLength } from './string.js';
 
 function drawRoundedRect(ctx, x, y, w, h, r) {
   if (ctx.roundRect) {
@@ -74,6 +74,7 @@ export class Game {
     this.tapTracker = new TapTracker();
     this.stringGesture = null;
     this.lastTap = null;
+    this.saltGrains = [];
 
     // Transient feedback & visuals
     this.recoilStroke = null;
@@ -178,6 +179,7 @@ export class Game {
     this.gestureMode = this.currentLevel.stringRules ? 'string' : (this.currentLevel.gestures?.[0] || 'enclose');
     this.stringGesture = null;
     this.tapTracker?.cancel();
+    this.saltGrains = [];
     this.campaign.initProgress(this.currentLevel);
 
     if (this.activePointerId !== undefined) {
@@ -496,7 +498,7 @@ export class Game {
       this.lastPointerTime = performance.now();
       if (this.currentLevel?.stringRules) {
         this.tapTracker.onPress(pos, performance.now(), this.entities);
-        this.stringGesture = new StringGesture(pos, this.entities, this.currentLevel.maxCordLength || 1000);
+        this.stringGesture = new StringGesture(pos, this.entities, this.currentLevel.maxCordLength || 1300);
       } else {
         this.stringGesture = null;
       }
@@ -538,6 +540,15 @@ export class Game {
         if (tapRes.isTap) {
           this.cancelStroke();
           this.lastTap = tapRes;
+          this.saltGrains.push({
+            x: endPos.x,
+            y: endPos.y,
+            rotation: Math.random() * Math.PI,
+            size: 2.8 + Math.random() * 0.8,
+          });
+          if (this.saltGrains.length > 80) {
+            this.saltGrains.shift();
+          }
           return;
         }
         if (tapRes.startedOnTarget && tapRes.duration > 250 && tapRes.maxDisplacement <= (tapRes.target.radius + 8)) {
@@ -937,7 +948,7 @@ export class Game {
       }
 
       if (this.isDrawing && this.stringGesture) {
-        this.stringGesture.updateBeads(dt);
+        this.stringGesture.updateBeads(dt, bounds);
       }
 
       if (this.isDrawing && this.gestureMode === 'trace') this.sampleTrace();
@@ -1077,6 +1088,9 @@ export class Game {
 
     // 4. Dynamic Atrium Planter Leaves Sway
     this.drawWindPlanters(ctx);
+
+    // 4b. Placed Salt Grains
+    this.drawSaltGrains(ctx);
 
     // 5. Inhabitants (Folded Butterflies, Seeds, Snail)
     for (const ent of this.entities) {
@@ -1328,25 +1342,58 @@ export class Game {
     ctx.restore();
   }
 
+  drawSaltGrains(ctx) {
+    if (!this.saltGrains || this.saltGrains.length === 0) return;
+    ctx.save();
+    for (const grain of this.saltGrains) {
+      ctx.save();
+      ctx.translate(grain.x, grain.y);
+      ctx.rotate(grain.rotation || 0);
+      const s = grain.size || 2.8;
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = 'rgba(180, 172, 160, 0.85)';
+      ctx.lineWidth = 0.7;
+      ctx.fillRect(-s / 2, -s / 2, s, s);
+      ctx.strokeRect(-s / 2, -s / 2, s, s);
+      // Subtle specular facet
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.fillRect(-s / 2 + 0.3, -s / 2 + 0.3, s * 0.45, s * 0.45);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
   drawBeadMarkers(ctx) {
     if (!this.isDrawing || !this.stringGesture || !this.stringGesture.hasBeads) return;
     ctx.save();
     for (const bead of this.stringGesture.beads) {
       const ent = bead.entity;
+      // Hit circle indicator around the bug
       ctx.strokeStyle = '#c85a32';
-      ctx.lineWidth = 2.2;
+      ctx.lineWidth = 2.0;
       ctx.setLineDash([4, 3]);
       ctx.beginPath();
-      ctx.arc(ent.x, ent.y, ent.radius + 4, 0, Math.PI * 2);
+      ctx.arc(ent.x, ent.y, ent.radius, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Small bead knot marker
+      // Find anchor point on the cord at bead.s
+      const { point } = pointAndTangentAtArcLength(this.stringGesture.points, bead.s);
+
+      // Subtle tether line from cord anchor point to insect center
       ctx.setLineDash([]);
-      ctx.fillStyle = '#fef3c7';
-      ctx.strokeStyle = '#92400e';
+      ctx.strokeStyle = 'rgba(200, 90, 50, 0.45)';
       ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.arc(ent.x, ent.y - ent.radius - 4, 4.5, 0, Math.PI * 2);
+      ctx.moveTo(point.x, point.y);
+      ctx.lineTo(ent.x, ent.y);
+      ctx.stroke();
+
+      // Small bead pip on the cord itself
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#c85a32';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 3.2, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
     }

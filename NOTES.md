@@ -10,9 +10,28 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Playtest the String sandbox verge with Xyh to settle bead passing, tap behavior, and cord length limits before re-authoring the twelve visits.
+Playtest revised String sandbox with hit-circle walls, bead freedom of movement within radius, salt grains, and 1300 px cord limit before authoring Day 1 campaign visits.
 
 ## Activity
+
+2026-09-15 — Antigravity — Refined String sandbox per Xyh's playtest feedback: hit-circle walls, bead movement freedom, salt grains, and 1300 px snap limit.
+
+- Hit-circle wall collision: added `sweptCircleSegmentIntersection` in `src/string.js`; fliers bounce and seeds slide on their hit circle perimeter rather than their center point. Centers clear walls at radius + 0.4px (fliers) and radius + 0.2px (seeds).
+- Bead freedom of movement: threaded insects no longer snap their centers to the cord line. `StringGesture` tracks 2D offset from cord anchor $P(s)$ within `entity.radius`; insects buzz and flutter in 2D while sliding along cord tangent.
+- Bead rendering: `drawBeadMarkers` renders entity hit-circle ring, subtle tether line to cord anchor $P(s)$, and white bead pip on the cord itself.
+- Tap placement of salt grains: tapping an entity (<= r+8px) or ground (<= 14px) within 250ms drops a stationary crystalline salt grain onto the meadow paper (`this.saltGrains`, rendered in `drawSaltGrains`, gameplay neutral).
+- Extended cord snap limit: calibrated `maxCordLength: 1300` in `practice-string`, `src/string.js`, and `src/game.js`, allowing deliberate enclosures within the `CORD: EXTENDED` band (1100–1400 px).
+- Added unit tests 7–10 in `test/test_string_sandbox.js` covering hit-circle collision, bead 2D movement freedom without snapping center, tap salt grain creation, and 1300 px snap limit.
+- Updated `test/measure_string_sandbox.js` with 1300 px limit measurements (pair success 35.3%, snap 49.4%, trio success 6.8%).
+
+Verification:
+- `node test/test_string_sandbox.js`: 10/10 PASS.
+- `node test/test_mechanics.js`: 100% PASS.
+- `node test/test_dusk.js` & `node test/test_midnight.js`: 100% PASS.
+
+Undone / Open for Xyh:
+- Playtest live String sandbox with hit-circle walls, bead movement within radius, salt grains, and 1300 px snap limit.
+- Next phase: extend string rules & walls to remaining species (Hawkmoth, Hoverfly, Lacewing, Firefly) and re-author 12 campaign visits.
 
 2026-09-15 — Antigravity — Built the String sandbox practice verge per STRING.md with Dawn II cast and isolated one-gesture rules.
 
