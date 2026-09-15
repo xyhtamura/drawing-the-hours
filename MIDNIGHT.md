@@ -2,8 +2,8 @@
 
 **Planned replacement, 2026-09-15:** [STRING.md](STRING.md) removes Trace mode
 and mode switching in favour of one drawing gesture. This document still
-describes the running game. When STRING.md is built, the Trace contract and the
-X–XII objectives below need replacing.
+describes the running game. When STRING.md is built, threading in sequence (STRING.md
+rule 4) replaces the Trace contract below; the X–XII objectives stay.
 
 2026-09-15. Visit X is implemented. Antigravity owns implementation of XI and
 XII; their revised records are present but remain outside `PLAYABLE_LEVEL_IDS`.

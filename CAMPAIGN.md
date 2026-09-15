@@ -16,7 +16,8 @@ decision to replace the Enclose and Trace modes with one drawing gesture: the
 held cord walls insects in, a pointer passing through an insect threads it, long
 cords snap, and a short press is a tap. It is not built. Until it is, this
 document describes the running game; once built, it supersedes the Trace and
-mode-switching sections below and requires new Midnight objectives.
+mode-switching sections below and turns each Trace into threading in sequence;
+the Midnight objectives stay.
 
 ## Story and setting
 
@@ -113,7 +114,7 @@ pending gesture calibration.
 ### Midnight firefly and Trace mode: levels 10–12
 
 Planned for replacement by [STRING.md](STRING.md), which removes Trace mode and
-leaves these visits without a Trace objective.
+keeps these objectives, with each Trace threaded in sequence.
 
 [Midnight implementation and handoff](MIDNIGHT.md) records the implemented
 Trace contract, revised populations, and Antigravity's XI–XII build sequence.

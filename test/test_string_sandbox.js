@@ -15,6 +15,7 @@ import {
   findEarliestWallCollision,
   constrainToWalls,
   segmentEntersDisk,
+  MAX_CORD_LENGTH,
   StringGesture,
   TapTracker,
   getWallSegments,
@@ -22,6 +23,7 @@ import {
 } from '../src/string.js';
 import { Insect, DandelionSeed, Snail } from '../src/entities.js';
 import { extractClosedPockets, polylineLength } from '../src/geometry.js';
+import { CAMPAIGN_LEVELS, PRACTICE_LEVELS } from '../src/campaign.js';
 import { Game } from '../src/game.js';
 
 console.log('--- Running String Sandbox Test Suite ---');
@@ -339,20 +341,15 @@ console.log('--- Running String Sandbox Test Suite ---');
   console.log('✔ Tap places stationary salt grain verified.');
 }
 
-// 10. Cord snap limit in practice-string is 1300 px
+// 10. One snap limit for every visit
 {
-  const canvas = {
-    getContext: () => ({
-      measureText: () => ({ width: 10 }),
-      scale: () => {},
-    }),
-    getBoundingClientRect: () => ({ left: 0, top: 0, width: 960, height: 640 }),
-  };
-  const game = new Game(canvas);
-  game.initLevel('practice-string');
-  assert.strictEqual(game.currentLevel.maxCordLength, 1300, 'Practice-string snap limit is 1300 px');
+  assert.strictEqual(MAX_CORD_LENGTH, 1200, 'The shared snap limit is 1200 px');
+  for (const level of [...CAMPAIGN_LEVELS, ...PRACTICE_LEVELS]) {
+    assert.strictEqual(level.maxCordLength, undefined, `${level.id} must not set its own snap limit`);
+  }
+  assert.strictEqual(new StringGesture({ x: 0, y: 0 }).maxCordLength, MAX_CORD_LENGTH, 'A cord defaults to the shared limit');
 
-  console.log('✔ Practice-string snap limit is 1300 px (Extended band max).');
+  console.log('✔ Every visit uses the shared 1200 px snap limit.');
 }
 
 // 11. Live loop closure detection before release

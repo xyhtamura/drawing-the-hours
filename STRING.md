@@ -91,6 +91,11 @@ its movement follows a route between leaves.
 On release, each bead is released from the position it slid to. Sliding matters
 for that reason: it changes where released insects end up.
 
+Xyh kept the hit radius as the threading distance after playtesting on
+2026-09-15: slowing the pointer near insects avoids threading. The scripted player
+in `test/measure_string_sandbox.js` cannot slow down or steer, which is why it
+threads on 19–56% of attempts.
+
 Open: whether beads may pass each other on the cord (agent default: they cannot),
 and whether seeds thread like fliers (agent default: they do).
 
@@ -99,7 +104,8 @@ that insect as the first bead. See rule 8 for the short press that stays inside.
 
 ## 4. A bead cancels the enclosure on Day 1
 
-Day 1 has no threading recipes. A figure with at least one bead scores nothing
+Day 1 has one threading recipe, the Trace below. Any other figure with at least
+one bead scores nothing
 when released: its pockets are not evaluated, no objective advances, and no time
 is added. The beads and any enclosed insects are released where they are. There
 is no score deduction, consistent with the existing campaign rule that mistakes
@@ -109,13 +115,34 @@ The cost of an accidental thread is therefore the lost attempt plus the
 relocated insects. Show the cause in the feedback banner, for example "An insect
 was threaded on the cord, so the loop does not count."
 
-Later days may add threading recipes: ordered chains, and figures that combine
+### Trace: threading in sequence
+
+Xyh decided on 2026-09-15 that Midnight X–XII keep their objectives and that a
+Trace becomes threading in sequence. A stroke whose beads, in threading order, are
+exactly the visit's `traceSequence` (a firefly, a lacewing, then a different
+firefly) scores a Trace on release instead of being cancelled. The line may stay
+open or close. A Trace keeps its current scoring and tags: 240 base points times
+the length multiplier, advancing `trace` and `any`. Not built yet.
+
+Agent defaults, not yet confirmed by Xyh:
+
+- A stroke that threads the sequence is judged only as a Trace; insects it
+  encloses are released and not scored.
+- Beads out of order, a partial sequence, or an extra bead cancel the stroke as
+  above, with a banner that names the required order.
+- The rule that a trace must start outside every target ring is dropped. A press
+  that starts on a firefly threads it first once the pointer leaves the tap radius.
+
+Later days may add further threading recipes, including figures that combine
 beads with pockets. Each needs its own evaluator and tests before a visit uses it.
 
 ## 5. Long cords snap
 
-Each visit sets `maxCordLength` in pixels. The cord meter fills toward a visible
-snap mark. When the stroke length passes the limit, the cord breaks at once in
+Every visit uses the same snap limit, `MAX_CORD_LENGTH` in `src/string.js`, which
+Xyh set to 1,200 px on 2026-09-15 as a consistent and forgiving length. No level
+record sets its own limit, and `test/test_string_sandbox.js` fails if one does;
+only the measurement script overrides the limit, inside its own level objects.
+The cord meter fills toward a visible snap mark. When the stroke length passes the limit, the cord breaks at once in
 the same way as a snail break: no score, beads released, walls removed. The
 existing length bands and their score multipliers stay, so a longer cord is worth
 more until it snaps.
@@ -127,7 +154,8 @@ rules with a scripted player that plans its loops under the limit; the 2026-09-1
 results are in [NOTES.md](NOTES.md). The limit bound only in Dawn III, the trio
 visit. At pointer speeds of 700 and 450 px/s, 1,150 px was the lowest tested limit
 that kept completions at the unlimited level, and trio completions fell at 900 px
-and below. The String sandbox uses 1300 px.
+and below. The chosen 1,200 px matched 1,150 and 1,300 px in all three Dawn visits
+(Dawn III: 30/30 at 700 px/s, 26/30 at 450 px/s) with 1–3 s of waiting per visit.
 
 Open: whether the limit scales with the field. A portrait field measured
 359×567 px and the desktop field 996×640 px on 2026-09-15, while the closure
@@ -200,20 +228,21 @@ current check measured 0.21 ms per sample at 320 stroke points on desktop.
 ## What the change removes and keeps
 
 Removed when built: the Enclose / Trace button, `gestureMode`,
-`setGestureMode`, the `T` shortcut, the mode line in the HUD and footer, the Trace
-ready-card diagrams for Visits X and XI, `traceSequence`, the `trace` objective,
-and the rule that a trace must start outside every target ring.
+`setGestureMode`, the `T` shortcut, the mode line in the HUD and footer,
+`TraceGesture` in `src/trace.js` once no visit uses Trace mode, and the rule that a
+trace must start outside every target ring. The Trace ready-card diagrams for
+Visits X and XI are redrawn for threading rather than removed.
 
 Kept: pocket extraction in `src/geometry.js`, the enclosure recipes in
-`src/recipes.js`, the swept contact test in `src/trace.js` (reused for
-threading), per-kind quotas and replacement, the seam snail, Visit I's clock
+`src/recipes.js`, `traceSequence` and the `trace` objective (a Trace is now threading in sequence,
+rule 4), per-kind quotas and replacement, the seam snail, Visit I's clock
 hold, the verbatim transition cards, and save IDs.
 
 ## Consequences for the twelve visits
 
-- Midnight X–XII are built around Trace objectives (`trace: 3` in X, `trace: 2`
-  in XI and XII). With no threading recipes on Day 1, those visits need new
-  objectives, and the firefly needs a role that does not depend on Trace.
+- Midnight X–XII keep their objectives (`trace: 3` in X, `trace: 2` in XI and
+  XII). Each Trace is threaded in sequence under rule 4, so fireflies keep their
+  role.
 - Walls hold enclosed insects, so enclosure objectives become easier. Clocks and
   populations across all twelve visits need retuning once snap limits exist.
 - The Dawn ready-card diagrams added on 2026-09-15 show loops only. They need to
@@ -241,9 +270,10 @@ hold, the verbatim transition cards, and save IDs.
 ## Open questions for Xyh
 
 - What a successful figure means in the fiction, given that insects are released.
-- What Midnight X–XII ask for, and what the firefly does, without Trace.
+- Whether a stroke that threads the Trace sequence may also score what it
+  encloses (agent default: no).
 - What a tap does, and from which visit.
 - Whether beads may pass each other, and whether seeds thread.
-- Whether `maxCordLength` scales with field size.
+- Whether the snap limit scales with field size.
 - Which later-day insects cross walls.
 - Whether hours other than Noon gain wind.

@@ -27,7 +27,7 @@ import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } f
 // Drawn width of the held cord. Under string rules a tip that comes this close to
 // the cord overlaps it on screen, so it counts as closing (STRING.md, rule 9).
 const CORD_WIDTH = 4.5;
-import { StringGesture, TapTracker, pointAndTangentAtArcLength, constrainToWalls } from './string.js';
+import { StringGesture, TapTracker, pointAndTangentAtArcLength, constrainToWalls, MAX_CORD_LENGTH } from './string.js';
 
 function drawRoundedRect(ctx, x, y, w, h, r) {
   if (ctx.roundRect) {
@@ -515,7 +515,7 @@ export class Game {
       this.lastPointerTime = performance.now();
       if (this.currentLevel?.stringRules) {
         this.tapTracker.onPress(pos, performance.now(), this.entities);
-        this.stringGesture = new StringGesture(pos, this.currentLevel.maxCordLength || 1300);
+        this.stringGesture = new StringGesture(pos, this.currentLevel.maxCordLength ?? MAX_CORD_LENGTH);
       } else {
         this.stringGesture = null;
       }
@@ -1620,8 +1620,8 @@ export class Game {
         ctx.fill();
       }
 
-      if (this.currentLevel?.maxCordLength) {
-        const snapRatio = Math.min(1.0, this.currentLevel.maxCordLength / 1400);
+      if (this.currentLevel?.stringRules) {
+        const snapRatio = Math.min(1.0, (this.currentLevel.maxCordLength ?? MAX_CORD_LENGTH) / 1400);
         const snapX = cx - meterW / 2 + 2 + (meterW - 4) * snapRatio;
         ctx.strokeStyle = '#c85a32';
         ctx.lineWidth = 1.6;
@@ -1669,8 +1669,8 @@ export class Game {
         ctx.fill();
       }
 
-      if (this.currentLevel?.maxCordLength) {
-        const snapRatio = Math.min(1.0, this.currentLevel.maxCordLength / 1400);
+      if (this.currentLevel?.stringRules) {
+        const snapRatio = Math.min(1.0, (this.currentLevel.maxCordLength ?? MAX_CORD_LENGTH) / 1400);
         const snapX = cx - meterW / 2 + 2 + (meterW - 4) * snapRatio;
         ctx.strokeStyle = '#c85a32';
         ctx.lineWidth = 1.8;

@@ -10,9 +10,82 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Update STRING.md with the String sandbox decisions it lacks, the first item of the handoff list in the 2026-09-15 measurement entry below.
+Update STRING.md with the String sandbox decisions it lacks, the first item of the handoff list in the newest Claude Code entry below.
 
 ## Activity
+
+2026-09-15 — Claude Code — Recorded Xyh's answers to the measurement handoff and
+made the snap limit a single shared value. This handoff list replaces the one in
+the measurement entry below.
+
+Decisions by Xyh:
+
+- One snap limit for every visit, 1,200 px, chosen as consistent and forgiving.
+- The hit radius stays the threading distance. In Xyh's playtest, slowing the
+  pointer near insects avoids threading, so the scripted player's 19–56% thread
+  rate overstates the difficulty; that player cannot slow down or steer.
+- Midnight X–XII keep their objectives. A Trace becomes threading in sequence:
+  a stroke whose beads, in order, match the visit's `traceSequence` scores a
+  Trace instead of being cancelled.
+
+Changes:
+
+- `MAX_CORD_LENGTH = 1200` in `src/string.js` is now the only snap limit.
+  `practice-string` no longer sets `maxCordLength`, the game and the HUD snap mark
+  read the constant, and test 10 in `test/test_string_sandbox.js` fails if any
+  campaign or practice level sets its own limit. The measurement script still
+  overrides the limit inside its own level objects.
+- STRING.md rules 3, 4, and 5 record the three decisions, including Trace as
+  threading in sequence with its unconfirmed agent defaults; its removed/kept
+  lists, consequences, and open questions now say the Midnight objectives stay.
+  CAMPAIGN.md and MIDNIGHT.md replacement notes say the same.
+
+Verification:
+
+- `node test/measure_string_sandbox.js --runs 30 --visits dawn-01,dawn-02,dawn-03
+  --limits 1150,1200,1300`, at 700 and 450 px/s. At 1,200 px every Dawn visit
+  completed as often as at 1,150 and 1,300 px, within one run: Dawn I 30/30 at both
+  speeds, Dawn II 30/30 and 29/30, Dawn III 30/30 and 26/30. Waiting for a short
+  enough loop was 1.0–1.8 s per visit at 700 px/s and 1.2–3.2 s at 450 px/s.
+- Live page: in `practice-string` a 1,190 px stroke stayed drawing with a limit of
+  1,200 and a 1,210 px stroke snapped with "The cord snapped. Keep your stroke
+  shorter." The HUD rendered without console errors. All four suites,
+  `node --check`, and `git diff --check` pass.
+
+Handoff for the next agent, in order. Items marked **Xyh** need Xyh's decision
+before building.
+
+1. Update STRING.md with the sandbox behaviour it does not describe: taps placing
+   a salt grain as a visual-only mark, 14 px ground taps, a press held on an
+   insect for more than 250 ms cancelling the stroke, and the live closure preview
+   (cord glow, paper wash, loop sign). Done when STRING.md agrees with
+   `src/string.js` and `src/game.js`.
+2. Roll the string rules out to Dawn I–III. Add `stringRules: true` to their
+   records in `src/campaign.js` and `campaign-plan.json`, with no per-visit limit.
+   Redraw the three Dawn ready-card diagrams to show the held cord as a wall, a
+   threaded insect cancelling a loop, and a loop closed by crossing. Update the
+   Field Book, extend `test/test_mechanics.js` block 10, and run the measurement
+   script and both browser harnesses. Keep `practice-string`.
+3. Build Trace as threading in sequence (STRING.md rule 4) for string visits: when
+   a released stroke has beads, compare their kinds in threading order with
+   `traceSequence` and accept a match through the existing Trace scoring and
+   `acceptDrawing` path; otherwise cancel as now, naming the required order. Test
+   a match, wrong order, a partial sequence, an extra bead, and an open and a
+   closed line. **Xyh:** confirm or change the agent defaults listed under the
+   rule, especially that enclosed insects are not scored in a Trace stroke.
+4. Build STRING.md rule 7, wind that changes direction, for Noon V–VI. Then roll
+   the string rules out to Noon and Dusk one visit at a time, checking hoverflies
+   and lacewings under walls in the live page.
+5. Roll the string rules out to Midnight X–XII using item 3. Redraw the Visit X
+   and XI Trace diagrams for threading. Then remove the Enclose / Trace modes, the
+   mode button, the `T` shortcut, `gestureMode`, and `TraceGesture`, and update
+   CAMPAIGN.md, MIDNIGHT.md, and the Field Book.
+6. Playtest on a touch device: closing by crossing, tap thresholds, threading
+   speed, and the 1,200 px limit.
+7. Remaining from the day-one review entry: failure flow (Level select, untimed
+   practice, hint), resuming on reload, the Unlock All button, Midnight entries in
+   the Field Book shown to Dawn players, and the "morning breeze" game-over
+   subtitle shown at every hour.
 
 2026-09-15 — Claude Code — Rewrote `test/measure_string_sandbox.js` so it plays
 whole visits under the string rules, re-measured the snap limit, and wrote the

@@ -14,6 +14,13 @@
 import { distance, polylineLength } from './geometry.js';
 
 /**
+ * Snap limit shared by every visit (Xyh, 2026-09-15; STRING.md rule 5). Level
+ * records must not set their own `maxCordLength`; test_string_sandbox.js fails if
+ * one does. Only the measurement script overrides it in its own level objects.
+ */
+export const MAX_CORD_LENGTH = 1200;
+
+/**
  * Returns array of segments from polyline points: [{ p1, p2 }, ...]
  */
 export function getWallSegments(points) {
@@ -402,7 +409,7 @@ export function pointAndTangentAtArcLength(points, targetS) {
  * String Gesture controller managing active stroke, walls, beads, snapping, and taps.
  */
 export class StringGesture {
-  constructor(startPoint, maxCordLength = 1300) {
+  constructor(startPoint, maxCordLength = MAX_CORD_LENGTH) {
     this.points = [{ ...startPoint }];
     this.totalLength = 0;
     this.maxCordLength = maxCordLength;
