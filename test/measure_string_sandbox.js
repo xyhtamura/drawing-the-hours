@@ -1,204 +1,274 @@
 /**
- * Measurement Script for String Sandbox (STRING.md Build Order Step 3)
+ * String sandbox measurement: plays Dawn visits under the one-gesture string rules
+ * with a scripted player and reports how the cord snap limit changes play.
  *
- * Measures:
- * - Time to a pair and to a trio / seed-wing
- * - Accidental thread rate (pointer tip crossing insect hit circles)
- * - Snap rate at limits of 800 px, 1,000 px, and 1,200 px
+ * The game runs as it does in the browser: `Game` and its pointer handlers, cord
+ * walls, threading, closure rule 9, snail breaks, snapping, replacement spawns,
+ * objectives, and the visit clock. Only the canvas, `window`, and `document` are
+ * stubbed, and nothing is rendered. `Math.random` is seeded per run, so every run
+ * is reproducible.
+ *
+ * The scripted player is a model, not a person. Whenever it is free it looks for
+ * the smallest loop around a group an unfinished objective needs (or a Kindred
+ * Pair while the Combinations count still has room) that has no other insect or
+ * seed inside it or on its path and keeps the snail out of reach. It skips loops
+ * longer than 97% of the limit, draws a circle at a steady pointer speed with a
+ * 3% wobble, carries on 0.5 rad past its start so the cord crosses itself, and
+ * waits 0.4 s before looking again. Insects keep moving while it draws and it does
+ * not steer. Read the results as comparisons between limits, not as human timings.
+ *
+ * Usage:
+ *   node test/measure_string_sandbox.js
+ *   node test/measure_string_sandbox.js --runs 20 --limits 900,1100,1300,none
+ *   node test/measure_string_sandbox.js --visits dawn-03 --speed 900
+ *   node test/measure_string_sandbox.js --json > string-measure.json
  */
 
-import { Insect, DandelionSeed, Snail } from '../src/entities.js';
-import { StringGesture } from '../src/string.js';
-import { distance, curbSeamY, polylineTouchesDisk } from '../src/geometry.js';
+import os from 'node:os';
+import { Game } from '../src/game.js';
+import { CAMPAIGN_LEVELS } from '../src/campaign.js';
 
-function runMeasurement(limit, durationSeconds = 60, dt = 1 / 30) {
-  const bounds = { width: 960, height: 640 };
+const args = process.argv.slice(2);
+const option = (name, fallback) => {
+  const i = args.indexOf(`--${name}`);
+  return i >= 0 && args[i + 1] !== undefined ? args[i + 1] : fallback;
+};
+const RUNS = Number(option('runs', 10));
+const LIMITS = option('limits', '800,1000,1150,1300,1600,none')
+  .split(',').map(v => (v === 'none' ? Infinity : Number(v)));
+const SPEED = Number(option('speed', 700)); // px per second along the loop
+const VISITS = option('visits', 'dawn-02,dawn-03').split(',');
+const JSON_OUT = args.includes('--json');
 
-  // Dawn II population: 2 brimstone, 2 damselfly, 3 seed, 1 snail
-  // Plus 1 hawkmoth to measure trio opportunities alongside pair and seed-wing
-  const entities = [
-    new Insect(150, 150, 'brimstone'),
-    new Insect(300, 200, 'brimstone'),
-    new Insect(200, 350, 'damselfly'),
-    new Insect(400, 300, 'damselfly'),
-    new Insect(500, 250, 'hawkmoth'),
-    new DandelionSeed(100, 200),
-    new DandelionSeed(350, 150),
-    new DandelionSeed(600, 400),
-    new Snail(480, curbSeamY(480, 960, 640), 'seam'),
-  ];
+const DT = 1 / 60;
+const MARGIN = 14;      // gap between a target's hit circle and the planned loop
+const PATH_CLEAR = 6;   // extra gap kept from bystanders and the snail's reach
+const OVERSHOOT = 0.5;  // radians drawn past the start so the cord crosses itself
+const WOBBLE = 0.03;    // radial wobble of the drawn circle, as a share of its radius
+const REACTION = 0.4;   // seconds between the end of one stroke and the next look
+const LIMIT_USE = 0.97; // the player plans loops at most this share of the limit
+const OUTCOMES = ['advanced', 'unchanged', 'contents', 'threaded', 'open', 'snail', 'snapped'];
 
-  let pairAttempts = 0;
-  let pairSuccesses = 0;
-  let pairSnaps = 0;
-  let pairThreads = 0;
-  let firstPairTime = null;
+try {
+  os.setPriority(0, os.constants.priority.PRIORITY_BELOW_NORMAL);
+} catch {
+  // Priority is a courtesy to the desktop; the measurement does not depend on it.
+}
 
-  let trioAttempts = 0;
-  let trioSuccesses = 0;
-  let trioSnaps = 0;
-  let trioThreads = 0;
-  let firstTrioTime = null;
-
-  let totalSimTime = 0;
-  let sampleTimer = 0;
-
-  const totalSteps = Math.floor(durationSeconds / dt);
-
-  for (let step = 0; step < totalSteps; step++) {
-    totalSimTime += dt;
-    sampleTimer += dt;
-
-    // Step entities
-    for (const ent of entities) {
-      ent.update(dt, bounds, 0, []);
-    }
-
-    // Every 0.5 seconds, sample candidate groupings
-    if (sampleTimer >= 0.5) {
-      sampleTimer = 0;
-
-      // 1. Check Pair opportunities (two of same flier species)
-      const fliers = entities.filter(e => e.type === 'butterfly' && e.state === 'roaming');
-      const brimstones = fliers.filter(e => e.kind === 'brimstone');
-      const damselflies = fliers.filter(e => e.kind === 'damselfly');
-
-      const pairCandidates = [];
-      if (brimstones.length >= 2) pairCandidates.push([brimstones[0], brimstones[1]]);
-      if (damselflies.length >= 2) pairCandidates.push([damselflies[0], damselflies[1]]);
-
-      for (const [a, b] of pairCandidates) {
-        pairAttempts++;
-        const mx = (a.x + b.x) / 2;
-        const my = (a.y + b.y) / 2;
-        const r = distance(a, b) / 2 + Math.max(a.radius, b.radius) + 14;
-        const circum = 2 * Math.PI * r;
-
-        // Generate circular polyline
-        const stroke = [];
-        const segs = 24;
-        for (let i = 0; i <= segs; i++) {
-          const th = (i / segs) * Math.PI * 2;
-          stroke.push({ x: mx + Math.cos(th) * r, y: my + Math.sin(th) * r });
-        }
-
-        // Check cord snap
-        if (circum > limit) {
-          pairSnaps++;
-          continue;
-        }
-
-        // Check snail hazard
-        const snail = entities.find(e => e.type === 'hazard');
-        if (snail && polylineTouchesDisk(stroke, snail.x, snail.y, snail.radius + 3)) {
-          continue;
-        }
-
-        // Check accidental threading (tip crossing other entities)
-        const others = entities.filter(e => e !== a && e !== b && e.type !== 'hazard');
-        let threaded = false;
-        for (let i = 1; i < stroke.length; i++) {
-          for (const other of others) {
-            if (polylineTouchesDisk([stroke[i - 1], stroke[i]], other.x, other.y, other.radius)) {
-              threaded = true;
-              break;
-            }
-          }
-          if (threaded) break;
-        }
-
-        if (threaded) {
-          pairThreads++;
-        } else {
-          pairSuccesses++;
-          if (firstPairTime === null) firstPairTime = totalSimTime;
-        }
-      }
-
-      // 2. Check Trio opportunities (3 distinct species)
-      const hawkmoths = fliers.filter(e => e.kind === 'hawkmoth');
-      if (brimstones.length >= 1 && damselflies.length >= 1 && hawkmoths.length >= 1) {
-        trioAttempts++;
-        const tA = brimstones[0], tB = damselflies[0], tC = hawkmoths[0];
-        const tmx = (tA.x + tB.x + tC.x) / 3;
-        const tmy = (tA.y + tB.y + tC.y) / 3;
-        const maxDist = Math.max(distance({ x: tmx, y: tmy }, tA), distance({ x: tmx, y: tmy }, tB), distance({ x: tmx, y: tmy }, tC));
-        const tr = maxDist + 22;
-        const tcircum = 2 * Math.PI * tr;
-
-        if (tcircum > limit) {
-          trioSnaps++;
-        } else {
-          const tstroke = [];
-          const tsegs = 28;
-          for (let i = 0; i <= tsegs; i++) {
-            const th = (i / tsegs) * Math.PI * 2;
-            tstroke.push({ x: tmx + Math.cos(th) * tr, y: tmy + Math.sin(th) * tr });
-          }
-
-          const snail = entities.find(e => e.type === 'hazard');
-          if (!snail || !polylineTouchesDisk(tstroke, snail.x, snail.y, snail.radius + 3)) {
-            const tothers = entities.filter(e => e !== tA && e !== tB && e !== tC && e.type !== 'hazard');
-            let tThreaded = false;
-            for (let i = 1; i < tstroke.length; i++) {
-              for (const other of tothers) {
-                if (polylineTouchesDisk([tstroke[i - 1], tstroke[i]], other.x, other.y, other.radius)) {
-                  tThreaded = true;
-                  break;
-                }
-              }
-              if (tThreaded) break;
-            }
-
-            if (tThreaded) {
-              trioThreads++;
-            } else {
-              trioSuccesses++;
-              if (firstTrioTime === null) firstTrioTime = totalSimTime;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return {
-    limit,
-    firstPairTime,
-    pairSuccessRate: (pairSuccesses / Math.max(1, pairAttempts)),
-    pairSnapRate: (pairSnaps / Math.max(1, pairAttempts)),
-    pairThreadRate: (pairThreads / Math.max(1, pairAttempts)),
-    firstTrioTime,
-    trioSuccessRate: (trioSuccesses / Math.max(1, trioAttempts)),
-    trioSnapRate: (trioSnaps / Math.max(1, trioAttempts)),
-    trioThreadRate: (trioThreads / Math.max(1, trioAttempts)),
+function mulberry32(seed) {
+  return () => {
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
 
-console.log('=== String Sandbox Measurement Report ===\n');
+function installStubs() {
+  const listeners = { window: {}, canvas: {} };
+  const noop = () => {};
+  const ctx = new Proxy({}, {
+    get: (_, prop) => {
+      if (prop === 'measureText') return () => ({ width: 10 });
+      if (prop === 'createLinearGradient' || prop === 'createRadialGradient') return () => ({ addColorStop: noop });
+      return noop;
+    },
+    set: () => true,
+  });
+  globalThis.window = { addEventListener: (type, fn) => { listeners.window[type] = fn; }, devicePixelRatio: 1 };
+  globalThis.document = { querySelector: () => null, addEventListener: noop, hidden: false };
+  const canvas = {
+    width: 960,
+    height: 640,
+    getContext: () => ctx,
+    addEventListener: (type, fn) => { listeners.canvas[type] = fn; },
+    removeEventListener: noop,
+    setPointerCapture: noop,
+    releasePointerCapture: noop,
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 960, height: 640 }),
+  };
+  return { canvas, listeners };
+}
 
-for (const limit of [800, 1000, 1200, 1300]) {
-  const runs = [];
-  for (let r = 0; r < 3; r++) {
-    runs.push(runMeasurement(limit, 60));
+function pointer(stubs, type, [x, y]) {
+  const event = { pointerId: 1, isPrimary: true, button: 0, clientX: x, clientY: y, preventDefault() {} };
+  if (type === 'pointerdown') stubs.listeners.canvas.pointerdown(event);
+  else stubs.listeners.window[type](event);
+}
+
+const isLive = e => e.state === 'roaming';
+
+function* candidateGroups(game) {
+  const live = game.entities.filter(isLive);
+  const fliers = live.filter(e => e.type === 'butterfly' || e.type === 'insect');
+  const seeds = live.filter(e => e.type === 'seed');
+  const progress = game.campaign.objectiveProgress;
+  const left = key => (progress[key] ? progress[key].target - progress[key].current : 0);
+  const specific = left('seedWing') + left('trio');
+
+  if (left('seedWing') > 0) {
+    for (const f of fliers) for (const s of seeds) yield [f, s];
   }
+  if (left('trio') > 0) {
+    for (let a = 0; a < fliers.length; a++) {
+      for (let b = a + 1; b < fliers.length; b++) {
+        for (let c = b + 1; c < fliers.length; c++) {
+          if (new Set([fliers[a].kind, fliers[b].kind, fliers[c].kind]).size === 3) yield [fliers[a], fliers[b], fliers[c]];
+        }
+      }
+    }
+  }
+  if (left('any') > specific || left('single') > 0 || left('pair') > 0) {
+    for (let a = 0; a < fliers.length; a++) {
+      for (let b = a + 1; b < fliers.length; b++) {
+        if (fliers[a].kind === fliers[b].kind) yield [fliers[a], fliers[b]];
+      }
+    }
+  }
+}
 
-  const avgFirstPair = runs.map(r => r.firstPairTime).filter(t => t !== null);
-  const avgFirstTrio = runs.map(r => r.firstTrioTime).filter(t => t !== null);
+function planLoop(members) {
+  const cx = members.reduce((sum, m) => sum + m.x, 0) / members.length;
+  const cy = members.reduce((sum, m) => sum + m.y, 0) / members.length;
+  const R = Math.max(...members.map(m => Math.hypot(m.x - cx, m.y - cy) + m.radius)) + MARGIN;
+  return { cx, cy, R, length: R * (Math.PI * 2 + OVERSHOOT) * (1 + WOBBLE / 2), members };
+}
 
-  const meanPairTime = avgFirstPair.length ? (avgFirstPair.reduce((a, b) => a + b, 0) / avgFirstPair.length).toFixed(2) + 's' : 'N/A';
-  const meanTrioTime = avgFirstTrio.length ? (avgFirstTrio.reduce((a, b) => a + b, 0) / avgFirstTrio.length).toFixed(2) + 's' : 'N/A';
+function isClean(loop, game) {
+  const edge = 16;
+  if (loop.cx - loop.R < edge || loop.cx + loop.R > game.width - edge) return false;
+  if (loop.cy - loop.R < edge || loop.cy + loop.R > game.height - edge) return false;
+  for (const e of game.entities) {
+    if (loop.members.includes(e) || e.state === 'departing' || e.state === 'harmonizing') continue;
+    const reach = e.type === 'hazard' ? e.radius + 3 : e.radius;
+    if (Math.hypot(e.x - loop.cx, e.y - loop.cy) <= loop.R + reach + PATH_CLEAR) return false;
+  }
+  return true;
+}
 
-  const avgPairSnap = (runs.reduce((a, b) => a + b.pairSnapRate, 0) / runs.length * 100).toFixed(1) + '%';
-  const avgPairThread = (runs.reduce((a, b) => a + b.pairThreadRate, 0) / runs.length * 100).toFixed(1) + '%';
-  const avgPairSuccess = (runs.reduce((a, b) => a + b.pairSuccessRate, 0) / runs.length * 100).toFixed(1) + '%';
+function pointOnStroke(stroke) {
+  const r = stroke.R * (1 + WOBBLE * Math.sin(3 * stroke.theta + stroke.phase));
+  return [stroke.cx + r * Math.cos(stroke.theta), stroke.cy + r * Math.sin(stroke.theta)];
+}
 
-  const avgTrioSnap = (runs.reduce((a, b) => a + b.trioSnapRate, 0) / runs.length * 100).toFixed(1) + '%';
-  const avgTrioThread = (runs.reduce((a, b) => a + b.trioThreadRate, 0) / runs.length * 100).toFixed(1) + '%';
-  const avgTrioSuccess = (runs.reduce((a, b) => a + b.trioSuccessRate, 0) / runs.length * 100).toFixed(1) + '%';
+const progressSum = game => Object.values(game.campaign.objectiveProgress).reduce((sum, o) => sum + o.current, 0);
 
-  console.log(`Limit: ${limit} px:`);
-  console.log(`  Pair: First=${meanPairTime}, Success=${avgPairSuccess}, Snap=${avgPairSnap}, Thread=${avgPairThread}`);
-  console.log(`  Trio: First=${meanTrioTime}, Success=${avgTrioSuccess}, Snap=${avgTrioSnap}, Thread=${avgTrioThread}`);
-  console.log('');
+function classify(game, before) {
+  const text = game.feedbackBanner.text || '';
+  if (text.startsWith('The cord snapped')) return 'snapped';
+  if (text.startsWith('The snail broke')) return 'snail';
+  if (text.startsWith('An insect was threaded')) return 'threaded';
+  if (text.startsWith('Loop did not close')) return 'open';
+  if (progressSum(game) > before.progress) return 'advanced';
+  if (game.score > before.score) return 'unchanged';
+  return 'contents';
+}
+
+function runVisit(stubs, visitId, limit, seed) {
+  Math.random = mulberry32(seed);
+  const game = new Game(stubs.canvas);
+  const base = CAMPAIGN_LEVELS.find(l => l.id === visitId);
+  if (!base) throw new Error(`Unknown visit ${visitId}`);
+  game.initLevel({ ...base, id: `measure-${visitId}`, stringRules: true, maxCordLength: limit });
+  game.state = 'PLAYING';
+
+  const stats = { attempts: 0, outcomes: Object.fromEntries(OUTCOMES.map(k => [k, 0])), lengths: [], waitingTooLong: 0, completedAt: null };
+  let t = 0;
+  let idle = REACTION;
+  let stroke = null;
+
+  while (game.state === 'PLAYING') {
+    if (game.victoryDelay > 0 && stats.completedAt === null) stats.completedAt = t;
+
+    if (!stroke && game.victoryDelay <= 0) {
+      idle += DT;
+      if (idle >= REACTION) {
+        let best = null;
+        let tooLong = false;
+        for (const members of candidateGroups(game)) {
+          const loop = planLoop(members);
+          if (!isClean(loop, game)) continue;
+          if (loop.length > limit * LIMIT_USE) { tooLong = true; continue; }
+          if (!best || loop.R < best.R) best = loop;
+        }
+        if (best) {
+          stroke = { ...best, theta: 0, phase: Math.random() * Math.PI * 2, before: { score: game.score, progress: progressSum(game) } };
+          game.feedbackBanner.text = '';
+          stats.attempts++;
+          stats.lengths.push(best.length);
+          pointer(stubs, 'pointerdown', pointOnStroke(stroke));
+        } else if (tooLong) {
+          stats.waitingTooLong += DT;
+        }
+      }
+    } else if (stroke) {
+      const end = Math.PI * 2 + OVERSHOOT;
+      stroke.theta = Math.min(end, stroke.theta + (SPEED / stroke.R) * DT);
+      if (game.isDrawing) pointer(stubs, 'pointermove', pointOnStroke(stroke));
+      if (!game.isDrawing || stroke.theta >= end) {
+        if (game.isDrawing) pointer(stubs, 'pointerup', pointOnStroke(stroke));
+        stats.outcomes[classify(game, stroke.before)]++;
+        stroke = null;
+        idle = 0;
+      }
+    }
+
+    game.update(DT);
+    t += DT;
+  }
+  stats.duration = base.durationSeconds;
+  return stats;
+}
+
+const percentile = (values, p) => {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))];
+};
+
+const stubs = installStubs();
+const startedAt = Date.now();
+const report = { runs: RUNS, speed: SPEED, limits: LIMITS.map(l => (Number.isFinite(l) ? l : 'none')), visits: {} };
+
+for (const visitId of VISITS) {
+  report.visits[visitId] = [];
+  for (const limit of LIMITS) {
+    const runs = [];
+    for (let seed = 1; seed <= RUNS; seed++) runs.push(runVisit(stubs, visitId, limit, seed));
+    const completed = runs.filter(r => r.completedAt !== null);
+    const attempts = runs.reduce((sum, r) => sum + r.attempts, 0);
+    const outcomes = Object.fromEntries(OUTCOMES.map(k => [k, runs.reduce((sum, r) => sum + r.outcomes[k], 0)]));
+    const lengths = runs.flatMap(r => r.lengths);
+    report.visits[visitId].push({
+      limit: Number.isFinite(limit) ? limit : 'none',
+      completed: completed.length,
+      medianCompletionSeconds: percentile(completed.map(r => r.completedAt), 0.5),
+      attemptsPerVisit: attempts / runs.length,
+      outcomeShare: Object.fromEntries(OUTCOMES.map(k => [k, attempts ? outcomes[k] / attempts : 0])),
+      waitingForShorterLoopSeconds: runs.reduce((sum, r) => sum + r.waitingTooLong, 0) / runs.length,
+      plannedLoopLengthP50: percentile(lengths, 0.5),
+      plannedLoopLengthP90: percentile(lengths, 0.9),
+      clockSeconds: runs[0].duration,
+    });
+  }
+}
+report.wallSeconds = (Date.now() - startedAt) / 1000;
+
+if (JSON_OUT) {
+  console.log(JSON.stringify(report, null, 2));
+} else {
+  const pct = v => `${(v * 100).toFixed(0)}%`.padStart(4);
+  const num = (v, d = 1) => (v === null ? '  -' : v.toFixed(d));
+  console.log(`String sandbox measurement: ${RUNS} seeded runs per row, pointer ${SPEED} px/s, ${report.wallSeconds.toFixed(1)} s wall time`);
+  for (const [visitId, rows] of Object.entries(report.visits)) {
+    console.log(`\n${visitId} (${rows[0].clockSeconds} s clock), string rules`);
+    console.log('limit  done  median s  tries  advanced unchanged contents threaded open snail snapped  wait s  loop p50/p90 px');
+    for (const r of rows) {
+      const o = r.outcomeShare;
+      console.log(`${String(r.limit).padStart(5)}  ${String(r.completed).padStart(2)}/${RUNS}  ${num(r.medianCompletionSeconds).padStart(8)}  ${r.attemptsPerVisit.toFixed(1).padStart(5)}` +
+        `  ${pct(o.advanced).padStart(8)} ${pct(o.unchanged).padStart(9)} ${pct(o.contents).padStart(8)} ${pct(o.threaded).padStart(8)}` +
+        ` ${pct(o.open)} ${pct(o.snail).padStart(5)} ${pct(o.snapped).padStart(7)}  ${r.waitingForShorterLoopSeconds.toFixed(1).padStart(6)}` +
+        `  ${num(r.plannedLoopLengthP50, 0)}/${num(r.plannedLoopLengthP90, 0)}`);
+    }
+  }
 }

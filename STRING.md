@@ -122,10 +122,12 @@ more until it snaps.
 
 Some later recipes will depend on cord length. Day 1 has none.
 
-Tuning reference: on 2026-09-15 the circle-fit proxy in [NOTES.md](NOTES.md)
-measured a median trio loop radius of 190 px in Dawn III, a circumference of
-about 1,190 px. A limit below that forces the player to wait for a tighter
-grouping.
+Tuning reference: `test/measure_string_sandbox.js` plays Dawn I–III under these
+rules with a scripted player that plans its loops under the limit; the 2026-09-15
+results are in [NOTES.md](NOTES.md). The limit bound only in Dawn III, the trio
+visit. At pointer speeds of 700 and 450 px/s, 1,150 px was the lowest tested limit
+that kept completions at the unlimited level, and trio completions fell at 900 px
+and below. The String sandbox uses 1300 px.
 
 Open: whether the limit scales with the field. A portrait field measured
 359×567 px and the desktop field 996×640 px on 2026-09-15, while the closure

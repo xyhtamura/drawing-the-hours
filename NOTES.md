@@ -10,9 +10,106 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Rewrite `test/measure_string_sandbox.js` to simulate held cords with walls, a seeded random generator, and replacement, then re-measure the 1300 px snap limit.
+Update STRING.md with the String sandbox decisions it lacks, the first item of the handoff list in the 2026-09-15 measurement entry below.
 
 ## Activity
+
+2026-09-15 — Claude Code — Rewrote `test/measure_string_sandbox.js` so it plays
+whole visits under the string rules, re-measured the snap limit, and wrote the
+handoff list for the next agent. No game code or limit changed; `practice-string`
+stays at 1300 px. This closes blocker 3 from the review entry below.
+
+The script:
+
+- Runs the real `Game` with its pointer handlers, walls, threading, closure rule 9,
+  snail breaks, snapping, replacement spawns, objectives, and clock. It stubs only
+  the canvas, `window`, and `document`, seeds `Math.random` for each run, and
+  lowers its own process priority. Two identical invocations printed identical
+  results.
+- Player model: when free, it picks the smallest circle around a group an
+  unfinished objective needs (Seed & Wing, trio, or a pair for Single Loops), or a
+  Kindred Pair while Combinations has room. The circle must have no other insect
+  or seed inside it or on its path, and must keep the snail out of reach. The
+  model plans loops at most 97% of the limit, draws at a constant pointer speed
+  with a 3% wobble, carries on 0.5 rad past the start so the cord crosses itself,
+  and waits 0.4 s between strokes. It does not steer, draw figure-eights, or react
+  while drawing. Because it plans under the limit it never snaps, so the limit
+  shows up as waiting time and lost completions rather than as a snap rate.
+- Usage: `node test/measure_string_sandbox.js [--runs N] [--limits 800,1000,none]
+  [--speed px/s] [--visits dawn-01,dawn-02,dawn-03] [--json]`. Thirty runs at
+  eight limits for Dawn II and III took 26 s at 700 px/s and 63 s at 450 px/s.
+
+Results, 30 seeded runs per row, each visit's own cast, objectives, and clock
+with string rules. Dawn III, the trio visit, is the one where the limit binds:
+
+| Limit (px) | 700 px/s: completed | waiting (s per visit) | 450 px/s: completed | waiting (s per visit) |
+| --- | --- | --- | --- | --- |
+| 700 | 14/30 | 16.1 | 9/30 | 21.7 |
+| 800 | 18/30 | 13.6 | 13/30 | 14.2 |
+| 900 | 27/30 | 6.5 | 19/30 | 11.5 |
+| 1000 | 30/30 | 4.4 | 24/30 | 8.4 |
+| 1150 | 30/30 | 2.0 | 26/30 | 4.1 |
+| 1300 | 30/30 | 1.3 | 26/30 | 2.4 |
+| 1600 | 30/30 | 0.2 | 27/30 | 0.4 |
+| none | 30/30 | 0.0 | 25/30 | 0.0 |
+
+- Dawn I completed 30/30 at every limit from 700 px at both speeds, with waiting
+  under 2.5 s per visit from 1000 px. Dawn II completed 27–30/30 at 700 px/s and
+  29–30/30 at 450 px/s at every limit, with waiting under 2 s from 1150 px.
+- Planned loop lengths with no limit, median and 90th percentile at 700 px/s:
+  Dawn I 770 and 1,356 px, Dawn II 688 and 1,238 px, Dawn III 892 and 1,493 px.
+- Outcomes across the three visits: threading ended 19–36% of attempts at
+  700 px/s and 33–56% at 450 px/s, far more than any other failure. The snail
+  ended 0–6%, no loop was left open, and nothing snapped, as the model guarantees.
+
+Reading:
+
+- Only the trio visit feels the limit. 1300 px costs no completions against no
+  limit and about 1–2.5 s of waiting per visit, so it barely shapes play. 1150 px
+  was the lowest tested limit that matched unlimited completions at both speeds.
+  1000 px kept every completion at 700 px/s but completed 24/30 at 450 px/s and
+  added 4–8 s of waiting. At 900 px and below, trio completions fell at both
+  speeds.
+- Slower drawing threads more, because the cord stays open longer while targets
+  and bystanders move into its path. Under this model, threading rather than
+  snapping is where the string rules cost attempts.
+- The model plans perfectly and never adapts. People steer mid-stroke, misjudge
+  length, and will snap where the model cannot, so a touch playtest still decides.
+
+Handoff for the next agent, in order. Items marked **Xyh** need Xyh's decision
+before anything is built.
+
+1. Update STRING.md with the sandbox decisions it lacks: the 1300 px practice
+   limit, with this entry as its tuning reference; taps placing a salt grain as a
+   visual-only mark; 14 px ground taps; a press held on an insect for more than
+   250 ms cancelling the stroke; and the live closure preview (cord glow, paper
+   wash, loop sign). Done when STRING.md agrees with `src/string.js` and
+   `src/game.js`.
+2. **Xyh:** choose `maxCordLength` for Dawn I–III from the table and bullets above.
+   Starting points the data supports: 1000 px for Dawn I and II, 1150 px for
+   Dawn III.
+3. **Xyh:** decide whether 19–56% of attempts ending threaded is the intended
+   difficulty, or whether threading should need the tip to pass closer to an
+   insect's center than its hit radius. Re-run this script after any change.
+4. Roll the string rules out to Dawn I–III. Add `stringRules: true` and the chosen
+   `maxCordLength` to their records in `src/campaign.js` and `campaign-plan.json`.
+   Redraw the three Dawn ready-card diagrams to show the held cord as a wall, a
+   threaded insect cancelling a loop, and a loop closed by crossing. Update the
+   Field Book, extend `test/test_mechanics.js` block 10 for the new fields, and
+   run this script and both browser harnesses. Keep `practice-string`.
+5. Build STRING.md rule 7, wind that changes direction, for Noon V–VI. Then roll
+   the string rules out to Noon and Dusk one visit at a time, checking hoverflies
+   and lacewings under walls in the live page; tests 12, 13, and 16 in
+   `test/test_string_sandbox.js` cover them only in isolation.
+6. **Xyh:** new objectives for Midnight X–XII and a role for fireflies without
+   Trace. Then remove the Enclose / Trace modes, the `trace` objective, the mode
+   button, and the `T` shortcut, and update CAMPAIGN.md and MIDNIGHT.md.
+7. Playtest on a touch device: closing by crossing, tap thresholds, and the chosen
+   limits.
+8. Remaining from the day-one review entry: failure flow (Level select, untimed
+   practice, hint), resuming on reload, the Unlock All button, Midnight entries in
+   the Field Book shown to Dawn players, and the "morning breeze" game-over
+   subtitle shown at every hour.
 
 2026-09-15 — Claude Code — Beads now keep their own movement within a region on
 the cord, following Xyh's decision; this closes blocker 2 from the review entry
