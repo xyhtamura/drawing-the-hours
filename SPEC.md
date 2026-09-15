@@ -152,6 +152,10 @@ The [previous spec](SPEC-before-campaign-20260914.md) preserves the 24-level
 proposal as history; later expansion is optional. Implementation next steps
 live in [NOTES.md](NOTES.md). The folder rename was completed on 2026-09-14.
 
+[STRING.md](STRING.md) specifies the planned single-gesture rules that will
+replace Enclose and Trace modes: cord walls, threading, snapping, and taps. They
+are not built yet.
+
 ---
 
 ## 7. Verification & Implementation Standards

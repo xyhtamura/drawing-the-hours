@@ -11,6 +11,13 @@ It is design data for the implementation, not a file the current game loads.
 This document defines how to interpret it. It supersedes the 24-level campaign
 in `SPEC.md`; twelve levels form a complete release, with later visits optional.
 
+**Planned replacement, 2026-09-15:** [STRING.md](STRING.md) records Xyh's
+decision to replace the Enclose and Trace modes with one drawing gesture: the
+held cord walls insects in, a pointer passing through an insect threads it, long
+cords snap, and a short press is a tap. It is not built. Until it is, this
+document describes the running game; once built, it supersedes the Trace and
+mode-switching sections below and requires new Midnight objectives.
+
 ## Story and setting
 
 The narrator waits for a bus, eats lunch, walks home with medicine, and wakes
@@ -104,6 +111,9 @@ requires a Nursery and a lacewing Counterpart Pair; mixed Echoes are deferred
 pending gesture calibration.
 
 ### Midnight firefly and Trace mode: levels 10–12
+
+Planned for replacement by [STRING.md](STRING.md), which removes Trace mode and
+leaves these visits without a Trace objective.
 
 [Midnight implementation and handoff](MIDNIGHT.md) records the implemented
 Trace contract, revised populations, and Antigravity's XI–XII build sequence.

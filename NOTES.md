@@ -10,9 +10,33 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Playtest the revised Dawn on a touch device and tune the Visit II–III clocks and the snail's speed.
+Build the String sandbox practice verge described in [STRING.md](STRING.md): cord walls, threading, cord snapping, and tap detection.
 
 ## Activity
+
+2026-09-15 — Claude Code — Recorded Xyh's decision to replace the Enclose and
+Trace modes with one drawing gesture, in [STRING.md](STRING.md). No code
+changed.
+
+- Xyh's rules: the held cord is a wall for fliers and seeds, with no kind
+  crossing on Day 1; insects are released, never captured; a pointer passing
+  through an insect threads it as a bead that slides along the cord and is
+  clamped at its ends; on Day 1 a bead cancels the whole figure and every insect
+  is released where it is; each visit gets a `maxCordLength` snap, and later
+  recipes may depend on length; wind changes direction within a visit so one
+  rotational habit cannot shelter every loop; a short press that stays inside a
+  target's circle is a tap, a separate gesture with no effect yet.
+- Agent defaults in STRING.md that Xyh has not confirmed: fliers turn away from
+  walls and seeds slide along them; beads cannot pass each other; seeds thread;
+  tap limits of 250 ms and hit radius plus 8 px, measured from the press point;
+  a seeded direction list for gusts.
+- Consequences recorded there: Midnight X–XII lose their Trace objectives and
+  need new ones; enclosure becomes easier, so all clocks need retuning after
+  snap limits exist; the Dawn diagrams need redrawing.
+- Deferred: the touch playtest of the revised Dawn clocks named in the previous
+  Next in Dev line, because walls change the difficulty it would have tuned.
+- Added planned-replacement notes to CAMPAIGN.md, MIDNIGHT.md, and SPEC.md.
+  Checked that every relative link in STRING.md resolves.
 
 2026-09-15 — Claude Code — Overhauled Dawn following the decisions in the entry
 below.
