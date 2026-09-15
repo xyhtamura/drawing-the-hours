@@ -21,6 +21,7 @@ import {
   pointAndTangentAtArcLength,
 } from '../src/string.js';
 import { Insect, DandelionSeed, Snail } from '../src/entities.js';
+import { extractClosedPockets } from '../src/geometry.js';
 import { Game } from '../src/game.js';
 
 console.log('--- Running String Sandbox Test Suite ---');
@@ -509,6 +510,57 @@ console.log('--- Running String Sandbox Test Suite ---');
   assert.strictEqual(segmentEntersDisk({ x: 5, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 0 }, 2), null,
     'A segment that starts inside the circle has not entered it');
   console.log('✔ Threading requires the pointer tip to move into a hit circle.');
+}
+
+// 15. A cord closes only where it visibly closes
+{
+  const circle = (cx, cy, r, a0, a1, step = 0.1) => {
+    const out = [];
+    for (let a = a0; a < a1; a += step) out.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+    out.push({ x: cx + Math.cos(a1) * r, y: cy + Math.sin(a1) * r });
+    return out;
+  };
+  const line = (x0, y0, x1, y1, step = 5) => {
+    const n = Math.max(1, Math.round(Math.hypot(x1 - x0, y1 - y0) / step));
+    return Array.from({ length: n + 1 }, (_, i) => ({ x: x0 + (x1 - x0) * i / n, y: y0 + (y1 - y0) * i / n }));
+  };
+  const opts = { touchDist: 4.5, minArea: 900 };
+  const discArea = Math.PI * 80 * 80;
+
+  assert.strictEqual(extractClosedPockets(circle(300, 300, 80, 0, Math.PI * 2 - 0.25), opts).length, 0,
+    'A loop ending 20 px short of its start encloses nothing');
+
+  const exact = extractClosedPockets(circle(300, 300, 80, 0, Math.PI * 2), opts);
+  assert.strictEqual(exact.length, 1, 'A tip returning onto the start closes');
+  assert.ok(Math.abs(exact[0].area - discArea) / discArea < 0.05, `Closed loop area ${exact[0].area.toFixed(0)}`);
+
+  const overshoot = extractClosedPockets(circle(300, 300, 80, 0, Math.PI * 2 + 0.4), opts);
+  assert.strictEqual(overshoot.length, 1, 'Crossing over the start closes');
+  assert.ok(Math.abs(overshoot[0].area - discArea) / discArea < 0.05, `Crossed loop area ${overshoot[0].area.toFixed(0)}`);
+
+  const box = (endY) => [
+    ...line(200, 300, 400, 300), ...line(400, 300, 400, 250).slice(1),
+    ...line(400, 250, 300, 250).slice(1), ...line(300, 250, 300, endY).slice(1),
+  ];
+  const touching = extractClosedPockets(box(300), opts);
+  assert.strictEqual(touching.length, 1, 'A tip landing on the middle of the cord closes');
+  assert.ok(Math.abs(touching[0].area - 5000) < 250, `T-closure area ${touching[0].area.toFixed(0)}`);
+  assert.strictEqual(extractClosedPockets(box(292), opts).length, 0,
+    'A tip stopping 8 px short of the cord encloses nothing');
+
+  const lemniscate = (t0, t1) => {
+    const out = [];
+    for (let t = t0; t <= t1 + 1e-9; t += 0.04) out.push({ x: 300 + 140 * Math.sin(t), y: 300 + 90 * Math.sin(2 * t) });
+    return out;
+  };
+  assert.strictEqual(extractClosedPockets(lemniscate(0.3, Math.PI * 2 - 0.3), opts).length, 0,
+    'A figure-eight passing its waist once, with both ends open, encloses nothing');
+  assert.strictEqual(extractClosedPockets(lemniscate(0.3, Math.PI * 2 + 0.15), opts).length, 1,
+    'A figure-eight whose outer lobe stays open encloses only the lobe its waist crossing closes');
+  assert.strictEqual(extractClosedPockets(lemniscate(0.3, Math.PI * 2 + 0.3), opts).length, 2,
+    'A figure-eight whose tip returns onto its start encloses both lobes');
+
+  console.log('✔ Cord closes only by crossing itself or landing on the drawn cord.');
 }
 
 console.log('--- All String Sandbox unit tests passed! ---');

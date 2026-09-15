@@ -164,6 +164,30 @@ A press that stays inside the circle longer than the time limit does nothing on
 release (agent default). A press on empty space that does not move is also
 ignored.
 
+## 9. A cord closes only where it visibly closes
+
+Xyh decided on 2026-09-15 that a cord encloses a pocket only when the drawing
+shows a closed shape. That happens when the cord crosses itself, when its tip
+lands on an earlier part of the drawn cord, or when its start lies on a later
+part. "Lands on" means the two drawn strokes overlap on screen: their centerlines
+come within the drawn cord width, `CORD_WIDTH` (4.5 px) in `src/game.js`. There
+is no distance-to-start tolerance, so a loop that ends 20 px short of its start
+encloses nothing. A figure-eight's outer lobe closes by the same rule.
+
+The rule agrees with the walls. A closed cord leaves no gap, so nothing the walls
+hold can leave a pocket the preview shows as closed; the smallest hit circle is a
+seed's, at 14 px radius.
+
+`extractClosedPockets` in `src/geometry.js` implements the rule. It takes the
+outermost closure, trims the stroke to that closed cycle, and finds single,
+lasso, and figure-eight pockets inside it. The live closure preview and release
+evaluation both call it. Campaign visits keep the 90 px end-to-start tolerance
+until they adopt these rules.
+
+Archived: making the live closure check incremental, so that each pointer sample
+tests only the newest segment. Xyh judged the explicit rule enough, and the
+current check measured 0.21 ms per sample at 320 stroke points on desktop.
+
 ## What the change removes and keeps
 
 Removed when built: the Enclose / Trace button, `gestureMode`,

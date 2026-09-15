@@ -186,6 +186,75 @@ export function simplifyPoints(points, minDist = 6) {
   return result;
 }
 
+function closestPointOnSegment(p, a, b) {
+  const wx = b.x - a.x;
+  const wy = b.y - a.y;
+  const len2 = wx * wx + wy * wy;
+  const t = len2 > 1e-12 ? Math.max(0, Math.min(1, ((p.x - a.x) * wx + (p.y - a.y) * wy) / len2)) : 0;
+  return { x: a.x + t * wx, y: a.y + t * wy };
+}
+
+/**
+ * Pockets under the one-gesture string rules (STRING.md, rule 9). A cord closes
+ * only where the drawing visibly closes: it crosses itself, its tip lands on an
+ * earlier part of the cord, or its start lies on a later part. "Lands on" means
+ * the centerlines come within `touchDist`, the drawn cord width. There is no
+ * distance-to-start tolerance. The outermost closure is chosen, the stroke is
+ * trimmed to that closed cycle, and extractPockets finds the single, lasso, or
+ * figure-eight pockets inside it, so a figure-eight's outer lobe must close the
+ * same way.
+ */
+export function extractClosedPockets(rawPoints, options = {}) {
+  const touchDist = options.touchDist ?? 4.5;
+  const minArea = options.minArea ?? 900;
+
+  const pts = simplifyPoints(rawPoints, 6);
+  if (pts.length < 4) return [];
+  const segCount = pts.length - 1;
+
+  let best = null;
+  const consider = (span, build) => {
+    if (!best || span > best.span) best = { span, build };
+  };
+
+  // Start and end meet.
+  if (distance(pts[0], pts[segCount]) <= touchDist) {
+    consider(segCount, () => [...pts.slice(0, segCount), { ...pts[0] }]);
+  }
+
+  // Self-crossings, including the last segment crossing the first.
+  for (let i = 0; i < segCount; i++) {
+    for (let j = i + 2; j < segCount; j++) {
+      const hit = segmentIntersection(pts[i], pts[i + 1], pts[j], pts[j + 1]);
+      if (hit) {
+        const X = { x: hit.x, y: hit.y };
+        consider(j - i, () => [X, ...pts.slice(i + 1, j + 1), { ...X }]);
+      }
+    }
+  }
+
+  // The tip lands on an earlier part of the cord.
+  const end = pts[segCount];
+  for (let k = 0; k <= segCount - 3; k++) {
+    const q = closestPointOnSegment(end, pts[k], pts[k + 1]);
+    if (distance(end, q) <= touchDist) {
+      consider(segCount - k, () => [q, ...pts.slice(k + 1), { ...q }]);
+    }
+  }
+
+  // The start lies on a later part of the cord.
+  const start = pts[0];
+  for (let k = 2; k < segCount; k++) {
+    const q = closestPointOnSegment(start, pts[k], pts[k + 1]);
+    if (distance(start, q) <= touchDist) {
+      consider(k + 1, () => [...pts.slice(0, k + 1), q, { ...pts[0] }]);
+    }
+  }
+
+  if (!best) return [];
+  return extractPockets(best.build(), { closeDist: Math.max(touchDist, 1e-3), minArea });
+}
+
 /**
  * Extract closed pockets from a continuous stroke.
  * Can detect:

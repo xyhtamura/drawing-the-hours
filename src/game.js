@@ -14,6 +14,7 @@ import {
   extractPockets,
   pointInPolygon,
   polylineTouchesDisk,
+  extractClosedPockets,
 } from './geometry.js';
 import { Butterfly, DandelionSeed, Snail, SPECIES_CONFIG, drawFirefly } from './entities.js';
 import { evaluateDrawing } from './recipes.js';
@@ -22,6 +23,10 @@ import { audio } from './audio.js';
 import { createDawnArt, wrapText } from './dawn-art.js';
 import { createNoonArt } from './noon-art.js';
 import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } from './campaign.js';
+
+// Drawn width of the held cord. Under string rules a tip that comes this close to
+// the cord overlaps it on screen, so it counts as closing (STRING.md, rule 9).
+const CORD_WIDTH = 4.5;
 import { StringGesture, TapTracker, pointAndTangentAtArcLength, constrainToWalls } from './string.js';
 
 function drawRoundedRect(ctx, x, y, w, h, r) {
@@ -467,6 +472,16 @@ export class Game {
     return result.message || 'Irregular grouping';
   }
 
+  /**
+   * String visits close a cord only where it visibly closes (STRING.md, rule 9);
+   * other visits keep the 90 px end-to-start tolerance.
+   */
+  findPockets(points) {
+    return this.currentLevel?.stringRules
+      ? extractClosedPockets(points, { touchDist: CORD_WIDTH, minArea: 900 })
+      : extractPockets(points, { closeDist: 90, minArea: 900 });
+  }
+
   bindEvents() {
     if (typeof window === 'undefined') return;
     window.addEventListener('resize', () => this.resize());
@@ -648,7 +663,7 @@ export class Game {
       if (this.gestureMode !== 'trace') {
         this.checkCordHazards(this.currentStroke.slice(-2));
         if (this.currentStroke.length >= 5) {
-          this.activePockets = extractPockets(this.currentStroke, { closeDist: 90, minArea: 900 });
+          this.activePockets = this.findPockets(this.currentStroke);
         } else {
           this.activePockets = [];
         }
@@ -722,7 +737,7 @@ export class Game {
     audio.playCordPluck(pluckPitch);
 
     // Extract enclosed pockets
-    const rawPockets = extractPockets(strokePoints, { closeDist: 90, minArea: 900 });
+    const rawPockets = this.findPockets(strokePoints);
 
     // Associate entities with pockets
     const pocketsWithEntities = rawPockets.map(pocket => {
@@ -1334,8 +1349,9 @@ export class Game {
         ctx.restore();
       }
 
-      // 3. Delicate closure seam bridge for single loop
-      if (pocket.type === 'single' && this.currentStroke.length >= 2) {
+      // 3. Delicate closure seam bridge for single loop. String visits close only
+      // where the cord visibly closes, so they draw no bridge across a gap.
+      if (pocket.type === 'single' && !this.currentLevel?.stringRules && this.currentStroke.length >= 2) {
         const start = this.currentStroke[0];
         const tip = this.currentStroke[this.currentStroke.length - 1];
         ctx.save();
@@ -1420,7 +1436,7 @@ export class Game {
 
       // Cord contact shadow
       ctx.strokeStyle = 'rgba(40, 45, 30, 0.16)';
-      ctx.lineWidth = 4.5;
+      ctx.lineWidth = CORD_WIDTH;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.beginPath();

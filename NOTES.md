@@ -10,9 +10,52 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Decide with Xyh what counts as a closed cord in the String sandbox, then make the live closure check incremental.
+Decide with Xyh how a threaded insect moves on the cord in the String sandbox: a straight slide to one end, as now, or movement within its hit circle.
 
 ## Activity
+
+2026-09-15 — Claude Code — Replaced the String sandbox's 90 px closure
+tolerance with Xyh's explicit rule, recorded as rule 9 in [STRING.md](STRING.md).
+
+- Rule: a cord encloses a pocket only when it crosses itself, its tip lands on an
+  earlier part of the drawn cord, or its start lies on a later part. "Lands on"
+  means the centerlines come within `CORD_WIDTH`, 4.5 px, which is now the
+  constant the cord's contact shadow is drawn with. A figure-eight's outer lobe
+  closes by the same rule. Xyh rejected a wider gap tolerance, including the
+  28 px seed-diameter proposal.
+- `extractClosedPockets` in `src/geometry.js` takes the outermost closure, trims
+  the stroke to that closed cycle, and runs the existing `extractPockets` inside
+  it. `Game.findPockets` uses it for string visits in both the live preview and
+  release evaluation; campaign visits keep the 90 px tolerance. The dashed seam
+  from tip to start is no longer drawn in string visits, because it bridged a gap
+  the rule no longer closes.
+- Archived by Xyh: making the live closure check incremental. The explicit rule is
+  enough, and the check measured 0.21 ms per sample at 320 stroke points in the
+  review entry below.
+
+Verification:
+
+- `node test/test_string_sandbox.js`, new test 15: a circle ending 20 px short of
+  its start encloses nothing; returning onto the start or crossing over it
+  encloses one pocket within 5% of the disc area; a tip landing on the middle of
+  the cord closes a 5,000 px² box to within 250 px², and stopping 8 px short
+  closes nothing; a figure-eight with both ends open encloses nothing, with its
+  outer lobe open encloses one lobe, and with its tip back on its start encloses
+  two. All four suites, `node --check`, and `git diff --check` pass.
+- Live page, synthetic pen Pointer Events around a Brimstone pair: a loop ending
+  20 px short showed no closure while held and returned "Loop did not close" on
+  release; an overshooting loop showed closure while held and scored a Kindred
+  Pair; a box path whose tip landed on its first side scored a Kindred Pair, and
+  the same path stopping 10 px short did not close. A screenshot of the held
+  overshooting loop shows the closed glow and wash. A 320-sample zigzag stroke
+  averaged 0.106 ms per pointer sample.
+
+Open:
+
+- A player now has to cross or touch the cord; the 90 px tolerance had been
+  added for hand-drawn loops left 76 px open. How often that fails by finger is
+  unmeasured until a touch playtest.
+- Blockers 2–5 from the review entry below.
 
 2026-09-15 — Claude Code — Reviewed the String sandbox for campaign rollout,
 recorded the findings, and fixed the wall step and threading.
