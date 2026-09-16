@@ -12,6 +12,7 @@ const check = (value, message) => { if (!value) throw new Error(message); };
 async function ready() {
   for (let i = 0; !frame.contentWindow.game && i < 200; i++) await new Promise(r => setTimeout(r, 20));
   check(frame.contentWindow.game, 'Game did not initialize');
+  frame.contentWindow.document.getElementById('btn-begin')?.click();
   return frame.contentWindow;
 }
 try {

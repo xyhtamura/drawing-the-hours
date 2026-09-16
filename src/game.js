@@ -1,3 +1,4 @@
+import { fitField, fieldPoint } from './viewport.js';
 import { themeColor, themeKey, setThemeHour } from './theme.js';
 import { createMidnightArt } from './midnight-art.js';
 import { createDuskArt } from './dusk-art.js';
@@ -187,26 +188,36 @@ export class Game {
     }
   }
 
-  initCanvas() {
-    const rect = this.canvas.getBoundingClientRect();
-    this.width = rect.width || 960;
-    this.height = rect.height || 640;
-
+  layoutCanvas() {
+    const viewport = (this.canvas.parentElement || this.canvas).getBoundingClientRect();
+    const field = fitField(viewport.width || 960, viewport.height || 640);
+    if (this.canvas.style) {
+      this.canvas.style.width = `${field.displayWidth}px`;
+      this.canvas.style.height = `${field.displayHeight}px`;
+    }
+    this.width = field.width; this.height = field.height;
+    this.displayScale = field.scale;
     this.canvas.width = this.width * this.dpr;
     this.canvas.height = this.height * this.dpr;
     this.ctx.scale(this.dpr, this.dpr);
   }
 
+  canvasPoint(clientX, clientY) {
+    return fieldPoint(clientX, clientY, this.canvas.getBoundingClientRect(), this.width, this.height);
+  }
+
+  initCanvas() { this.layoutCanvas(); }
+
   resize() {
     this.cancelStroke();
-    const rect = this.canvas.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      this.width = rect.width;
-      this.height = rect.height;
-      this.canvas.width = this.width * this.dpr;
-      this.canvas.height = this.height * this.dpr;
-      this.ctx.scale(this.dpr, this.dpr);
-
+    const oldWidth = this.width, oldHeight = this.height;
+    this.layoutCanvas();
+    // A window resize changes only display scale. Rotation changes field orientation.
+    if (oldWidth !== this.width || oldHeight !== this.height) {
+      for (const ent of this.entities) {
+        ent.x *= this.width / oldWidth;
+        ent.y *= this.height / oldHeight;
+      }
       // Keep active entities within new canvas bounds
       for (const ent of this.entities) {
         if (ent.type === 'hazard' || ent.type === 'terrain' || ent.type === 'plant') {
@@ -225,22 +236,7 @@ export class Game {
     }
   }
 
-  initDecorations() {
-    this.decorations = [];
-    // Scattered clover leaves and paper daisies along verges
-    const count = 28;
-    const vergeMargin = Math.min(100, this.width * 0.22);
-    for (let i = 0; i < count; i++) {
-      this.decorations.push({
-        x: (Math.random() < 0.5 ? Math.random() * vergeMargin : this.width - Math.random() * vergeMargin),
-        y: Math.random() * this.height,
-        size: 8 + Math.random() * 8,
-        type: Math.random() < 0.6 ? 'clover' : 'flower',
-        rotation: Math.random() * Math.PI * 2,
-        tint: Math.random() < 0.5 ? '#d2e3c8' : '#e6eedb',
-      });
-    }
-  }
+  initDecorations() { this.decorations = []; }
 
   initLevel(level = this.campaign.currentLevel) {
     if (typeof level === 'number') {
@@ -719,20 +715,16 @@ export class Game {
     window.addEventListener('resize', () => this.resize());
 
     const getPos = (e) => {
-      const rect = this.canvas.getBoundingClientRect();
       const clientX = e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
       const clientY = e.clientY ?? (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
-      return {
-        x: clientX - rect.left,
-        y: clientY - rect.top,
-      };
+      return this.canvasPoint(clientX, clientY);
     };
 
     const ownsPointer = e => this.activePointerId === e.pointerId;
     const onPointerDown = e => {
       if (this.isDrawing || e.isPrimary === false || (e.button !== undefined && e.button !== 0)) return;
       if (document.querySelector('.modal-overlay.active')) return;
-      if (this.state !== 'PLAYING' || this.victoryDelay > 0 || this.clock.remainingSeconds <= 0) return;
+      if (this.uiSuspended || this.state !== 'PLAYING' || this.victoryDelay > 0 || this.clock.remainingSeconds <= 0) return;
       e.preventDefault();
       // A press on the hint card dismisses it instead of starting a cord.
       if (this.hint && this.hintRect) {
@@ -1333,6 +1325,7 @@ export class Game {
       this.state = 'PLAYING';
       this.clock.isPaused = false;
     }
+    this.onStateChanged?.(this.state, this.currentLevel);
   }
 
   loop(timestamp) {
@@ -1346,6 +1339,7 @@ export class Game {
   }
 
   update(dt) {
+    if (this.uiSuspended) return;
     if (this.state === 'PLAYING') {
       if (this.victoryDelay > 0) {
         this.victoryDelay -= dt;
@@ -1621,7 +1615,7 @@ export class Game {
     this.drawStamps(ctx);
 
     // 4. Dynamic Atrium Planter Leaves Sway
-    this.drawWindPlanters(ctx);
+    // Edge planting removed; wind remains visible through drifting streaks.
 
     // 4b. Placed Salt Grains
     this.drawSaltGrains(ctx);
@@ -1646,7 +1640,7 @@ export class Game {
     // 7. Modals / Overlays
     if (this.state === 'TRANSITION') this.drawTransitionModal(ctx);
     else if (this.state === 'READY' || this.state === 'INTRO' || this.state === 'CARD') this.drawReadyModal(ctx);
-    else if (this.state === 'PAUSED') this.drawPausedModal(ctx);
+    else if (this.state === 'PAUSED' && !this.uiSuspended) this.drawPausedModal(ctx);
     else if (this.state === 'LEVEL_COMPLETE' || this.state === 'VICTORY') this.drawLevelCompleteModal(ctx);
     else if (this.state === 'GAMEOVER') this.drawGameOverModal(ctx);
   }
@@ -1696,47 +1690,6 @@ export class Game {
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, this.width, this.height);
 
-      // Gentle verge fence shadow at the top
-      ctx.save();
-      ctx.fillStyle = 'rgba(60, 75, 45, 0.045)';
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(this.width, 0);
-      ctx.lineTo(this.width, 45);
-      ctx.quadraticCurveTo(this.width * 0.5, 65, 0, 40);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // Subtle paper verge clover & flower decorations
-    for (const dec of this.decorations) {
-      ctx.save();
-      ctx.translate(dec.x, dec.y);
-      ctx.rotate(dec.rotation);
-      ctx.fillStyle = dec.tint;
-
-      if (dec.type === 'clover') {
-        const r = dec.size * 0.45;
-        for (let a = 0; a < 3; a++) {
-          const ang = (a * Math.PI * 2) / 3;
-          ctx.beginPath();
-          ctx.arc(Math.cos(ang) * r, Math.sin(ang) * r, r, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      } else {
-        // Little daisy
-        const r = dec.size * 0.5;
-        ctx.fillStyle = '#faf8ef';
-        ctx.beginPath();
-        ctx.arc(0, 0, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#f3cf55';
-        ctx.beginPath();
-        ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
     }
   }
 
@@ -2228,7 +2181,11 @@ export class Game {
 
   drawHUD(ctx) {
     ctx.save();
-    const isNarrow = (this.width < 560);
+    // Keep status text readable when the logical field shrinks on a phone.
+    const hudScale = Math.max(1, 1 / (this.displayScale || 1));
+    const width = this.width / hudScale, height = this.height / hudScale;
+    ctx.scale(hudScale, hudScale);
+    const isNarrow = width < height || width < 560;
 
     if (isNarrow) {
       // --- MOBILE / VERTICAL HUD LAYOUT ---
@@ -2257,20 +2214,20 @@ export class Game {
       ctx.textAlign = 'right';
       ctx.fillStyle = themeColor('ink', '#4a4235');
       ctx.font = '600 11px system-ui, -apple-system, sans-serif';
-      const objectiveLines = wrapText(ctx, objText, this.width - 126);
-      objectiveLines.forEach((line, i) => ctx.fillText(line, this.width - 16, 26 + i * 14));
+      const objectiveLines = wrapText(ctx, objText, width - 126);
+      objectiveLines.forEach((line, i) => ctx.fillText(line, width - 16, 26 + i * 14));
       const extraHUDHeight = (objectiveLines.length - 1) * 14;
 
       ctx.fillStyle = themeColor('muted', '#7a6c57');
       ctx.font = 'italic 10.5px Mali, sans-serif';
-      ctx.fillText(`${lvlTitle} • ${this.score} pts`, this.width - 16, 40 + extraHUDHeight);
+      ctx.fillText(`${lvlTitle} • ${this.score} pts`, width - 16, 40 + extraHUDHeight);
 
       // Tier 2: Centered Stroke Length Band Meter (compact, below top row)
-      const cx = this.width / 2;
+      const cx = width / 2;
       ctx.fillStyle = themeColor('panel', 'rgba(255, 255, 255, 0.75)');
       ctx.strokeStyle = themeColor('edge', '#dcd4c5');
       ctx.lineWidth = 1.1;
-      const meterW = Math.min(140, this.width - 60);
+      const meterW = Math.min(140, width - 60);
       const meterH = 15;
       const meterY = 52 + extraHUDHeight;
 
@@ -2323,7 +2280,7 @@ export class Game {
         52
       );
 
-      const cx = this.width / 2;
+      const cx = width / 2;
       ctx.fillStyle = themeColor('panel', 'rgba(255, 255, 255, 0.7)');
       ctx.strokeStyle = themeColor('edge', '#dcd4c5');
       ctx.lineWidth = 1.2;
@@ -2369,7 +2326,7 @@ export class Game {
       ctx.font = '600 12.5px system-ui, -apple-system, sans-serif';
       // Wrap inside the space right of the cord meter. A visit with five
       // requirements used to run its list back across the meter and the clock.
-      const objRight = this.width - 24;
+      const objRight = width - 24;
       const objWidth = Math.max(160, objRight - (cx + meterW / 2) - 16);
       const objectiveLines = wrapText(ctx, objText, objWidth);
       objectiveLines.forEach((line, i) => ctx.fillText(line, objRight, 34 + i * 15));
@@ -2386,9 +2343,9 @@ export class Game {
 
     // --- Wind Indicator Badge (Noon Visits V-VI) ---
     if (this.currentLevel?.wind && (this.windPhase === 'warning' || this.windPhase === 'gust')) {
-      const cx = this.width / 2;
+      const cx = width / 2;
       const isGust = this.windPhase === 'gust';
-      const isNarrow = this.width < 560;
+      const isNarrow = width < 560;
       const badgeText = this.windBadgeText();
       const bg = isGust ? 'rgba(232, 246, 228, 0.94)' : 'rgba(254, 247, 230, 0.94)';
       const border = isGust ? '#8ab583' : '#d8b97e';
@@ -2397,7 +2354,7 @@ export class Game {
       ctx.save();
       ctx.font = isNarrow ? '600 10.5px system-ui, sans-serif' : '600 11.5px system-ui, sans-serif';
       const tw = ctx.measureText(badgeText).width;
-      const bw = Math.min(this.width - 24, tw + 20);
+      const bw = Math.min(width - 24, tw + 20);
       const bh = isNarrow ? 19 : 22;
       const by = isNarrow ? 71 : 48;
 
@@ -2440,12 +2397,12 @@ export class Game {
 
       ctx.font = '500 13px system-ui, -apple-system, sans-serif';
       const textWidth = ctx.measureText(this.feedbackBanner.text).width;
-      const boxW = Math.min(this.width - 24, Math.max(180, textWidth + 30));
+      const boxW = Math.min(width - 24, Math.max(180, textWidth + 30));
       const boxH = 32;
       // Below the HUD, trace line, and wind badge: the canvas bottom can sit below
       // the fold (a 720 px window ends the 640 px canvas at 779 px).
       const by = isNarrow ? 128 : 108;
-      const cx = this.width / 2;
+      const cx = width / 2;
 
       ctx.beginPath();
       drawRoundedRect(ctx, cx - boxW / 2, by, boxW, boxH, 8);
@@ -3081,10 +3038,10 @@ export class Game {
 
         this.gameOverOptions.push({
           action: row.action,
-          x: this.width / 2 - rowW / 2,
-          y: this.height / 2 + rowY,
-          w: rowW,
-          h: rowH,
+          x: this.width / 2 - rowW / 2 * this.modalScale,
+          y: this.height / 2 + rowY * this.modalScale,
+          w: rowW * this.modalScale,
+          h: rowH * this.modalScale,
         });
         rowY += rowH + gap;
       }
@@ -3104,7 +3061,10 @@ export class Game {
 
     // Responsive clamping for narrow vertical viewports
     const actualW = Math.min(w, this.width - 20);
-    const actualH = Math.min(h, this.height - 24);
+    const actualH = h;
+    const cardScale = Math.min(1, (this.height - 24) / h);
+    this.modalScale = cardScale;
+    ctx.scale(cardScale, cardScale);
 
     // Paper card drop shadow
     ctx.fillStyle = 'rgba(20, 25, 15, 0.2)';
@@ -3132,8 +3092,8 @@ export class Game {
     // a maxWidth from its alignment and position, and the canvas condenses any
     // line that would otherwise overflow, however narrow the viewport.
     const dpr = this.dpr || 1;
-    const left = cx - actualW / 2 + 12;
-    const right = cx + actualW / 2 - 12;
+    const left = cx + (-actualW / 2 + 12) * cardScale;
+    const right = cx + (actualW / 2 - 12) * cardScale;
     const hadOwnFill = Object.prototype.hasOwnProperty.call(ctx, 'fillText');
     const baseFill = ctx.fillText;
     ctx.fillText = (text, x, y, maxWidth) => {

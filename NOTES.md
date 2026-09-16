@@ -10,7 +10,7 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Playtest the night jasmine at Midnight XII, and Noon IV–VI, on a touch device.
+Playtest the fixed-size field and pause-menu flow on touch devices, including Noon IV–VI and Midnight XII.
 
 ## Activity
 
@@ -1628,3 +1628,37 @@ Edge; screenshot is ignored under `.browser-check/flax.png`. Module syntax and
 `git diff --check` pass. Touch playtesting and regrowth balance remain open.
 The screenshot also shows the existing XII objective line overlapping the cord
 meter at desktop width; that unrelated HUD layout issue remains unfixed.
+
+
+2026-09-16 — Codex — Moved the app inside the stage. The title screen and pause
+menu carry Drawing the Hours; the playing field has no page header or footer.
+Pause sits at bottom right. The menu contains Resume, Visit Card, Visits, Field
+Book, Restart, and a Settings submenu for colors and sound. Hidden menus are
+inert, focus stays within the active menu, and closing submenus returns to the
+menu without resuming. The clock and entities freeze while any menu is open.
+Window blur opens the pause menu; a menu does not reset the saved visit.
+
+Removed decorative pavement, frames, verge flowers, and edge planting. Kept
+chapter washes and grain, lacewing resting leaves, and gameplay entities including
+webs, flax, and night jasmine. Removed the old forced-orientation control: the
+field follows the available screen orientation. Short canvas cards scale as a
+whole rather than collapsing their internal spacing; failure hit areas scale too.
+
+Xyh corrected the initial viewport-sized implementation before handoff: changing
+the viewport must not change density or invalidate pixel-based cord tuning.
+`src/viewport.js` fixes gameplay to 960×640 landscape or 640×960 portrait, equal
+area, uniformly fitted without cropping. Pointer input and canvas overlay clicks
+map from CSS pixels into logical units. Window resizing only changes display
+scale; rotation cancels the stroke, remaps positions, and reapplies anchored
+entity placement. Cord limits, hit radii, and speeds remain in logical units.
+HUD text compensates for downscaling; HTML menu controls retain CSS touch sizes.
+
+All six Node suites pass. `test/shell-browser.html` drove the actual page through
+title, menu, settings, Field Book, Visits, Resume, Visit Card, blur, and Restart.
+It checks frozen time and entities in menus, equal field area, uniform fit,
+unclipped bounds, and a 200-unit synthetic pointer stroke at 390×780, 1200×800,
+1600×900, and 844×390 viewports. Inspected desktop, portrait, short landscape,
+and title screenshots in headless Edge. Existing browser harnesses dismiss the
+new title screen before testing gameplay. Module syntax and diff whitespace
+checks pass. Manual full-day and physical touch playtests remain open, especially
+scaled insect sizes and the chosen portrait baseline. No cord tuning was changed.

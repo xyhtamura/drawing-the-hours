@@ -10,45 +10,42 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <div class="brand">
-      <h1>Drawing the Hours</h1>
-      <div class="sub" id="header-sub">Dawn · Before the bus</div>
-    </div>
-    <div class="controls">
-      <button id="btn-color-mode" aria-label="Pure light colors" aria-pressed="false" title="Switch between chapter palettes and pure light colors">Colors: Default</button>
-      <button id="btn-visit" title="Garden Visits &amp; Hours (W)">
-        🌿 Visit: Dawn 1
-      </button>
-      <button id="btn-orientation" title="Switch orientation mode: Auto / Vertical / Horizontal (V)">
-        📱 View: Auto
-      </button>
-      <button id="btn-visit-card" title="Show this visit's card again (C)">
-        🗒 Visit Card
-      </button>
-      <button id="btn-fieldbook" title="View Field Book combinations (H)">
-        📖 Field Book
-      </button>
-      <button id="btn-audio" title="Toggle sound effects (M)">
-        🔊 Sound: On
-      </button>
-      <button id="btn-pause" title="Pause / Resume (Space)">
-        ⏸ Pause
-      </button>
-      <button id="btn-restart" title="Restart visit (R)">
-        ↺ Restart
-      </button>
-    </div>
-  </header>
-
-  <main class="stage-wrapper">
-    <canvas id="game-canvas"></canvas>
-  </main>
-
-  <footer>
-    <div id="gesture-hint">Draw around insects. Cross your line to make two pockets.</div>
-    <div>Keyboard: [Space] Pause / Advance &bull; [C] Visit Card &bull; [W] Visits &bull; [V] View &bull; [M] Sound &bull; [H] Field Book &bull; [R] Restart</div>
-  </footer>
+  <main class="stage-wrapper" aria-label="Drawing field">
+    <canvas id="game-canvas" tabindex="0" aria-label="Draw on the field"></canvas>
+    <button id="btn-pause" class="stage-pause" title="Open pause menu (Escape)">Pause</button>
+    <section id="title-screen" class="recipe-modal active" role="dialog" aria-modal="true" aria-labelledby="title-heading">
+      <div class="recipe-card shell-card">
+        <h1 id="title-heading">Drawing the Hours</h1>
+        <button id="btn-begin">Begin</button>
+      </div>
+    </section>
+    <section id="pause-menu" class="recipe-modal" role="dialog" aria-modal="true" aria-labelledby="menu-heading" hidden>
+      <div class="recipe-card shell-card">
+        <h1 id="menu-heading">Drawing the Hours</h1>
+        <p id="header-sub"></p>
+        <nav class="menu-buttons" aria-label="Pause menu">
+          <button id="btn-resume">Resume</button>
+          <button id="btn-visit-card">Visit Card</button>
+          <button id="btn-visit">Visits</button>
+          <button id="btn-fieldbook">Field Book</button>
+          <button id="btn-settings">Settings</button>
+          <button id="btn-restart">Restart visit</button>
+        </nav>
+        <p id="gesture-hint"></p>
+      </div>
+    </section>
+    <section id="settings-menu" class="recipe-modal" role="dialog" aria-modal="true" aria-labelledby="settings-heading" hidden>
+      <div class="recipe-card shell-card">
+        <h2 id="settings-heading">Settings</h2>
+        <div class="menu-buttons">
+          <button id="btn-color-mode" aria-label="Pure light colors" aria-pressed="false">Colors: Default</button>
+          <button id="btn-audio">Sound: On</button>
+          <button id="btn-settings-back">Back to menu</button>
+        </div>
+        <p>The field keeps its proportions and scales to fit your screen.</p>
+        <p>Space: pause or advance · C: visit card · W: visits · H: field book · M: sound · R: restart</p>
+      </div>
+    </section>
 
   <!-- Field Book Modal -->
   <div id="fieldbook-modal" class="recipe-modal" role="dialog" aria-modal="true">
@@ -229,7 +226,7 @@
         </div>
       </div>
 
-      <button id="btn-close-modal" class="close-btn">Return to the Verge</button>
+      <button id="btn-close-modal" class="close-btn">Back to menu</button>
     </div>
   </div>
 
@@ -261,10 +258,12 @@
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; gap:8px;">
         <button id="btn-unlock-all-visits" hidden style="background:#f4ece1; border:1px solid #d4c5b0; border-radius:6px; color:#5c4837; padding:7px 12px; font-size:0.8rem; cursor:pointer; font-family:inherit;">🔓 Unlock All in Save</button>
-        <button id="btn-close-visit-modal" class="close-btn" style="margin-top:0;">Return to Visit</button>
+        <button id="btn-close-visit-modal" class="close-btn" style="margin-top:0;">Back to menu</button>
       </div>
     </div>
   </div>
+
+  </main>
 
   <script type="module">
     import { getColorMode, setColorMode } from './src/theme.js';
@@ -283,7 +282,6 @@
     window.game = game; // handle for playtesting from the console
 
     const btnVisit = document.getElementById('btn-visit');
-    const btnOrientation = document.getElementById('btn-orientation');
     const btnFieldbook = document.getElementById('btn-fieldbook');
     const btnVisitCard = document.getElementById('btn-visit-card');
     const btnAudio = document.getElementById('btn-audio');
@@ -301,83 +299,12 @@
     const visitListPractice = document.getElementById('visit-list-practice');
     const headerSub = document.getElementById('header-sub');
 
-    // Orientation view setting: 'auto' | 'vertical' | 'horizontal'
-    const VIEW_STORAGE_KEY = 'drawing-the-hours-orientation';
-    let viewMode = localStorage.getItem(VIEW_STORAGE_KEY) || localStorage.getItem('relation-garden-orientation') || 'auto';
-
-    const applyViewMode = (mode) => {
-      viewMode = mode;
-      try {
-        localStorage.setItem(VIEW_STORAGE_KEY, mode);
-      } catch (_) {}
-
-      const isMobilePortrait = window.matchMedia('(max-width: 680px) and (orientation: portrait)').matches
-        || (window.innerHeight > window.innerWidth && window.innerWidth <= 768);
-
-      let effectiveVertical = false;
-      if (mode === 'vertical') {
-        effectiveVertical = true;
-      } else if (mode === 'horizontal') {
-        effectiveVertical = false;
-      } else {
-        // 'auto'
-        effectiveVertical = isMobilePortrait;
-      }
-
-      document.body.classList.toggle('is-vertical', effectiveVertical);
-      document.body.classList.toggle('is-horizontal', !effectiveVertical);
-
-      if (btnOrientation) {
-        if (mode === 'vertical') {
-          btnOrientation.textContent = '📱 View: Vertical';
-        } else if (mode === 'horizontal') {
-          btnOrientation.textContent = '💻 View: Horizontal';
-        } else {
-          btnOrientation.textContent = effectiveVertical ? '📱 View: Auto (Vert)' : '📱 View: Auto (Horiz)';
-        }
-      }
-
-      // Allow DOM style reflow then resize canvas
-      requestAnimationFrame(() => {
-        game.resize();
-      });
-    };
-
-    // Initialize layout mode
-    applyViewMode(viewMode);
-
-    btnOrientation.addEventListener('click', () => {
-      const nextMode = (viewMode === 'auto')
-        ? 'vertical'
-        : ((viewMode === 'vertical') ? 'horizontal' : 'auto');
-      applyViewMode(nextMode);
-    });
-
-    window.addEventListener('resize', () => {
-      if (viewMode === 'auto') {
-        applyViewMode('auto');
-      }
-    });
-
-    window.addEventListener('orientationchange', () => {
-      if (viewMode === 'auto') {
-        setTimeout(() => applyViewMode('auto'), 80);
-      }
-    });
-
     const updateLevelUI = (level = game.currentLevel) => {
       document.getElementById('gesture-hint').textContent = level?.traceSequence
         ? 'Thread firefly → lacewing → firefly in sequence to trace. Draw around insects to loop.'
         : 'The held cord is a wall. Draw around insects; crossing the cord closes the loop.';
-      if (btnVisit && level) {
-        if (level.hourLabel && level.hourLabel.startsWith('Practice')) {
-          btnVisit.textContent = `🌿 Sandbox: ${level.number}`;
-        } else if (level.hour === 'dawn') {
-          btnVisit.textContent = `🌿 Visit: Dawn ${level.number}`;
-        } else {
-          btnVisit.textContent = `🌿 Visit: ${level.number}`;
-        }
-      }
+      btnVisit.textContent = 'Visits';
+
       if (headerSub && level) {
         headerSub.textContent = `${level.hourLabel || 'Dawn'}: ${level.title}`;
       }
@@ -415,7 +342,7 @@
           }
 
           return `
-            <div class="visit-item ${isActive ? 'active' : ''} ${!isUnlocked ? 'locked' : ''}" data-level-id="${lvl.id}">
+            <div class="visit-item ${isActive ? 'active' : ''} ${!isUnlocked ? 'locked' : ''}" data-level-id="${lvl.id}" role="button" tabindex="${isUnlocked ? 0 : -1}">
               <div class="visit-item-main">
                 <div class="visit-item-title">${lvl.hourLabel}: ${lvl.title}</div>
                 <div class="visit-item-sub">${lvl.instruction}</div>
@@ -434,7 +361,7 @@
         visitListPractice.innerHTML = PRACTICE_LEVELS.filter(lvl => isHourReached(save, lvl.hour)).map(lvl => {
           const isActive = lvl.id === currentId;
           return `
-            <div class="visit-item ${isActive ? 'active' : ''}" data-level-id="${lvl.id}">
+            <div class="visit-item ${isActive ? 'active' : ''}" data-level-id="${lvl.id}" role="button" tabindex="0">
               <div class="visit-item-main">
                 <div class="visit-item-title">${lvl.hourLabel}: ${lvl.title}</div>
                 <div class="visit-item-sub">${lvl.instruction}</div>
@@ -450,6 +377,7 @@
       // Click handlers for unlocked items
       if (visitModal) {
         visitModal.querySelectorAll('.visit-item:not(.locked)').forEach(el => {
+          el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.code === 'Space') { e.preventDefault(); el.click(); } });
           el.addEventListener('click', () => {
             const lvlId = el.getAttribute('data-level-id');
             if (lvlId) {
@@ -475,190 +403,102 @@
       });
     };
 
-    game.onLevelChanged = (level) => {
-      updateLevelUI(level);
-      renderVisitModal();
-      applyFieldBookReveal();
-    };
-
-    game.onStateChanged = () => {
-      btnPause.textContent = (game.state === 'PAUSED') ? '▶ Resume' : '⏸ Pause';
-    };
-
-    // Advance or restart depending on state
-    const advanceOrRestart = () => {
-      if (modal && modal.classList.contains('active')) return;
-      if (visitModal && visitModal.classList.contains('active')) return;
-
-      if (game.state === 'TRANSITION' || game.state === 'READY' || game.state === 'CARD'
-        || game.state === 'LEVEL_COMPLETE' || game.state === 'GAMEOVER') {
-        game.advance();
-        btnPause.textContent = '⏸ Pause';
+    const panels = [...document.querySelectorAll('.recipe-modal')];
+    let activePanel = null;
+    let changingPanel = false;
+    const showPanel = (id) => {
+      changingPanel = true;
+      if (id) { game.cancelStroke(); audio.stopCicadas(); }
+      activePanel = id;
+      game.uiSuspended = Boolean(id);
+      for (const panel of panels) {
+        const open = panel.id === id;
+        panel.hidden = !open;
+        panel.classList.toggle('active', open);
+        panel.inert = !open;
       }
+      canvas.inert = Boolean(id);
+      btnPause.hidden = Boolean(id);
+      if (!id && game.state === 'PAUSED') game.togglePause();
+      changingPanel = false;
+      const panel = id && document.getElementById(id);
+      (panel?.querySelector('button:not([hidden]):not([disabled])') || canvas).focus({preventScroll:true});
     };
-
-    // Canvas click: failure-screen options and the hint card take the click first.
+    const openMenu = () => showPanel('pause-menu');
+    const toggleFieldbook = (open = activePanel !== 'fieldbook-modal') => {
+      applyFieldBookReveal(); showPanel(open ? 'fieldbook-modal' : 'pause-menu');
+    };
+    const toggleVisitModal = (open = activePanel !== 'visit-modal') => {
+      renderVisitModal(); showPanel(open ? 'visit-modal' : null);
+    };
+    game.onLevelChanged = (level) => {
+      updateLevelUI(level); renderVisitModal(); applyFieldBookReveal();
+    };
+    game.onStateChanged = () => {
+      if (!changingPanel && game.state === 'PAUSED' && !activePanel) openMenu();
+    };
+    const advanceOrRestart = () => {
+      if (activePanel) return;
+      if (['TRANSITION','READY','CARD','LEVEL_COMPLETE','GAMEOVER'].includes(game.state)) game.advance();
+    };
     canvas.addEventListener('click', (e) => {
-      if (modal && modal.classList.contains('active')) return;
-      if (visitModal && visitModal.classList.contains('active')) return;
-      const rect = canvas.getBoundingClientRect();
-      if (game.handleOverlayClick(e.clientX - rect.left, e.clientY - rect.top)) {
-        btnPause.textContent = '⏸ Pause';
+      if (activePanel) return;
+      const point = game.canvasPoint(e.clientX, e.clientY);
+      if (!game.handleOverlayClick(point.x, point.y)) advanceOrRestart();
+    });
+    const showVisitCard = () => {
+      showPanel(null);
+      if (game.state !== 'CARD') game.toggleVisitCard();
+    };
+    const restart = () => { game.startLevel(game.currentLevel); showPanel(null); };
+    document.getElementById('btn-begin').textContent = game.campaign.resumedFromSave ? 'Continue' : 'Begin';
+    document.getElementById('btn-begin').onclick = () => showPanel(null);
+    document.getElementById('btn-resume').onclick = () => showPanel(null);
+    document.getElementById('btn-settings').onclick = () => showPanel('settings-menu');
+    document.getElementById('btn-settings-back').onclick = openMenu;
+    btnPause.onclick = openMenu;
+    btnFieldbook.onclick = () => toggleFieldbook(true);
+    btnCloseModal.onclick = openMenu;
+    btnVisit.onclick = () => toggleVisitModal(true);
+    btnCloseVisitModal.onclick = openMenu;
+    btnVisitCard.onclick = showVisitCard;
+    btnRestart.onclick = restart;
+    btnAudio.onclick = () => {
+      btnAudio.textContent = audio.toggleMute() ? 'Sound: Off' : 'Sound: On';
+    };
+    btnUnlockAllVisits.onclick = () => {
+      game.campaign.unlockAll(); renderVisitModal(); applyFieldBookReveal();
+    };
+    window.addEventListener('keydown', (e) => {
+      if (activePanel) {
+        if (e.key === 'Tab') {
+          const buttons = [...document.getElementById(activePanel).querySelectorAll('button, [tabindex="0"]')]
+            .filter(el => !el.hidden && !el.disabled && el.getClientRects().length);
+          const first = buttons[0], last = buttons.at(-1);
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          if (activePanel === 'pause-menu') showPanel(null);
+          else if (activePanel !== 'title-screen') openMenu();
+        }
         return;
       }
-      advanceOrRestart();
-    });
-
-    // Toggle Field Book. Opening pauses the visit; closing resumes it, but only
-    // if the Field Book is what paused it.
-    let pausedByFieldbook = false;
-    const toggleFieldbook = (forceState) => {
-      const willOpen = (typeof forceState === 'boolean')
-        ? forceState
-        : !modal.classList.contains('active');
-
-      if (willOpen) {
-        if (visitModal && visitModal.classList.contains('active')) {
-          toggleVisitModal(false);
-        }
-        modal.classList.add('active');
-        pausedByFieldbook = (game.state === 'PLAYING');
-        if (pausedByFieldbook) {
-          game.togglePause();
-          btnPause.textContent = '▶ Resume';
-        }
-      } else {
-        modal.classList.remove('active');
-        if (pausedByFieldbook) {
-          pausedByFieldbook = false;
-          if (game.state === 'PAUSED') {
-            game.togglePause();
-            btnPause.textContent = '⏸ Pause';
-          }
-        }
-      }
-    };
-
-    btnFieldbook.addEventListener('click', () => toggleFieldbook());
-    btnCloseModal.addEventListener('click', () => toggleFieldbook(false));
-
-    // Toggle Visit Modal
-    let pausedByVisitModal = false;
-    const toggleVisitModal = (forceState) => {
-      if (!visitModal) return;
-      const willOpen = (typeof forceState === 'boolean')
-        ? forceState
-        : !visitModal.classList.contains('active');
-
-      if (willOpen) {
-        if (modal.classList.contains('active')) {
-          toggleFieldbook(false);
-        }
-        renderVisitModal();
-        visitModal.classList.add('active');
-        pausedByVisitModal = (game.state === 'PLAYING');
-        if (pausedByVisitModal) {
-          game.togglePause();
-          btnPause.textContent = '▶ Resume';
-        }
-      } else {
-        visitModal.classList.remove('active');
-        if (pausedByVisitModal) {
-          pausedByVisitModal = false;
-          if (game.state === 'PAUSED') {
-            game.togglePause();
-            btnPause.textContent = '⏸ Pause';
-          }
-        }
-      }
-    };
-
-    if (btnVisit) {
-      btnVisit.addEventListener('click', () => toggleVisitModal());
-    }
-    if (btnCloseVisitModal) {
-      btnCloseVisitModal.addEventListener('click', () => toggleVisitModal(false));
-    }
-    if (btnUnlockAllVisits) {
-      btnUnlockAllVisits.addEventListener('click', () => {
-        game.campaign.unlockAll();
-        renderVisitModal();
-        applyFieldBookReveal();
-      });
-    }
-
-    // Show the visit card again without restarting the visit
-    if (btnVisitCard) {
-      btnVisitCard.addEventListener('click', () => {
-        game.toggleVisitCard();
-        btnPause.textContent = '⏸ Pause';
-      });
-    }
-
-    // Audio toggle
-    btnAudio.addEventListener('click', () => {
-      const isMuted = audio.toggleMute();
-      btnAudio.textContent = isMuted ? '🔇 Sound: Off' : '🔊 Sound: On';
-    });
-
-    // Pause toggle
-    btnPause.addEventListener('click', () => {
-      game.togglePause();
-      btnPause.textContent = (game.state === 'PAUSED') ? '▶ Resume' : '⏸ Pause';
-    });
-
-    // Restart
-    btnRestart.addEventListener('click', () => {
-      game.startLevel(game.currentLevel);
-      btnPause.textContent = '⏸ Pause';
-    });
-
-    // Keyboard Shortcuts
-    window.addEventListener('keydown', (e) => {
-      if (e.key === ' ' || e.code === 'Space') {
+      if (e.target instanceof HTMLElement && e.target.closest('button')) return;
+      if (e.key === 'Escape') { e.preventDefault(); openMenu(); }
+      else if (e.code === 'Space') {
         e.preventDefault();
-        if (game.state === 'TRANSITION' || game.state === 'READY' || game.state === 'CARD'
-          || game.state === 'LEVEL_COMPLETE' || game.state === 'GAMEOVER') {
-          advanceOrRestart();
-        } else {
-          game.togglePause();
-          btnPause.textContent = (game.state === 'PAUSED') ? '▶ Resume' : '⏸ Pause';
-        }
-      } else if (e.key === 'w' || e.key === 'W') {
-        toggleVisitModal();
-      } else if (e.key === 'v' || e.key === 'V') {
-        const nextMode = (viewMode === 'auto')
-          ? 'vertical'
-          : ((viewMode === 'vertical') ? 'horizontal' : 'auto');
-        applyViewMode(nextMode);
-      } else if (e.key === 'm' || e.key === 'M') {
-        const isMuted = audio.toggleMute();
-        btnAudio.textContent = isMuted ? '🔇 Sound: Off' : '🔊 Sound: On';
-      } else if (e.key === 'r' || e.key === 'R') {
-        game.startLevel(game.currentLevel);
-        btnPause.textContent = '⏸ Pause';
-      } else if (e.key === 'c' || e.key === 'C') {
-        game.toggleVisitCard();
-        btnPause.textContent = '⏸ Pause';
-      } else if (e.key === 'h' || e.key === 'H') {
-        toggleFieldbook();
-      } else if (e.key === 'Escape') {
-        if (visitModal && visitModal.classList.contains('active')) {
-          toggleVisitModal(false);
-        } else if (modal && modal.classList.contains('active')) {
-          toggleFieldbook(false);
-        }
-      }
+        if (game.state === 'PLAYING') openMenu(); else advanceOrRestart();
+      } else if (e.key.toLowerCase() === 'w') toggleVisitModal(true);
+      else if (e.key.toLowerCase() === 'h') toggleFieldbook(true);
+      else if (e.key.toLowerCase() === 'c') showVisitCard();
+      else if (e.key.toLowerCase() === 'm') btnAudio.click();
+      else if (e.key.toLowerCase() === 'r') restart();
     });
-
-    game.onGestureModeChanged = () => updateLevelUI();
     game.onDrawingStateChanged = () => updateLevelUI();
     game.onOpenVisitModal = () => toggleVisitModal(true);
-
-    // Initial UI setup
-    updateLevelUI(game.currentLevel);
-    renderVisitModal();
-    applyFieldBookReveal();
+    updateLevelUI(game.currentLevel); renderVisitModal(); applyFieldBookReveal();
+    showPanel('title-screen');
 
     // Playtesting route: ?dev shows the save controls. Players never see them;
     // the console hooks below stay available either way.

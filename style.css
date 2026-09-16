@@ -390,168 +390,6 @@ footer {
   color: #797166;
 }
 
-/* =========================================================
-   Mobile Vertical / Portrait Layout & Orientation Overrides
-   ========================================================= */
-
-body.is-vertical {
-  padding: 8px 6px;
-  min-height: 100vh;
-  min-height: 100dvh;
-}
-
-body.is-vertical header {
-  max-width: 520px;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-  padding: 4px 6px;
-  margin-bottom: 8px;
-}
-
-body.is-vertical .brand {
-  text-align: center;
-}
-
-body.is-vertical .brand h1 {
-  font-size: 1.65rem;
-}
-
-body.is-vertical .brand .sub {
-  font-size: 0.8rem;
-}
-
-body.is-vertical .controls {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-}
-
-body.is-vertical .controls button {
-  padding: 6px 8px;
-  font-size: 0.78rem;
-  flex: 1 1 calc(33.333% - 6px);
-  min-width: 82px;
-  justify-content: center;
-}
-
-body.is-vertical .stage-wrapper {
-  max-width: 520px;
-  width: 100%;
-  height: calc(100vh - 175px);
-  height: calc(100dvh - 175px);
-  max-height: 840px;
-  min-height: 460px;
-  border-radius: 12px;
-}
-
-body.is-vertical canvas#game-canvas {
-  width: 100%;
-  height: 100%;
-}
-
-body.is-vertical footer {
-  max-width: 520px;
-  margin-top: 8px;
-  flex-direction: column;
-  gap: 3px;
-  text-align: center;
-  font-size: 0.72rem;
-  padding: 0 4px;
-}
-
-/* Automatic mobile portrait defaults when not explicitly forced horizontal */
-@media (max-width: 680px) and (orientation: portrait) {
-  body:not(.is-horizontal) {
-    padding: 8px 6px;
-    min-height: 100vh;
-    min-height: 100dvh;
-  }
-
-  body:not(.is-horizontal) header {
-    max-width: 520px;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    padding: 4px 6px;
-    margin-bottom: 8px;
-  }
-
-  body:not(.is-horizontal) .brand {
-    text-align: center;
-  }
-
-  body:not(.is-horizontal) .brand h1 {
-    font-size: 1.65rem;
-  }
-
-  body:not(.is-horizontal) .brand .sub {
-    font-size: 0.8rem;
-  }
-
-  body:not(.is-horizontal) .controls {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 6px;
-    width: 100%;
-  }
-
-  body:not(.is-horizontal) .controls button {
-    padding: 6px 8px;
-    font-size: 0.78rem;
-    flex: 1 1 calc(33.333% - 6px);
-    min-width: 82px;
-    justify-content: center;
-  }
-
-  body:not(.is-horizontal) .stage-wrapper {
-    max-width: 520px;
-    width: 100%;
-    height: calc(100vh - 175px);
-    height: calc(100dvh - 175px);
-    max-height: 840px;
-    min-height: 460px;
-    border-radius: 12px;
-  }
-
-  body:not(.is-horizontal) canvas#game-canvas {
-    width: 100%;
-    height: 100%;
-  }
-
-  body:not(.is-horizontal) footer {
-    max-width: 520px;
-    margin-top: 8px;
-    flex-direction: column;
-    gap: 3px;
-    text-align: center;
-    font-size: 0.72rem;
-    padding: 0 4px;
-  }
-}
-
-/* Compact Field Book on smaller screens */
-@media (max-width: 680px) and (orientation: portrait) {
-  body:not(.is-horizontal) {
-    height: 100dvh;
-    min-height: 580px;
-  }
-  body:not(.is-horizontal) header,
-  body:not(.is-horizontal) footer { flex-shrink: 0; }
-  body:not(.is-horizontal) .stage-wrapper {
-    flex: 1 1 auto;
-    height: auto;
-    min-height: 320px;
-  }
-  body:not(.is-horizontal) .stage-wrapper canvas {
-    position: absolute;
-    inset: 0;
-  }
-}
-
 @media (max-width: 600px) {
   .recipe-card {
     width: 95%;
@@ -583,4 +421,48 @@ body.is-vertical footer {
     font-size: 0.78rem;
     line-height: 1.3;
   }
+}
+
+
+/* The stage is the application viewport. Menus stay inside it. */
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { padding: 0; min-height: 0; display: block; }
+body .stage-wrapper {
+  position: fixed; inset: 0; width: 100%; height: 100dvh;
+  max-width: none; max-height: none; min-height: 0;
+  border: 0; border-radius: 0; box-shadow: none;
+}
+body .stage-wrapper canvas#game-canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%; outline: none;
+}
+.stage-pause {
+  position: absolute; right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom)); z-index: 10;
+  min-width: 68px; min-height: 44px; opacity: 0.9;
+}
+[hidden] { display: none !important; }
+.stage-wrapper > .recipe-modal {
+  position: absolute; transition: none;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+}
+.stage-wrapper > .recipe-modal:not(.active) { visibility: hidden; }
+.stage-wrapper .recipe-card { max-height: 100%; overscroll-behavior: contain; }
+.shell-card { max-width: 420px; text-align: center; }
+.shell-card h1 { font: 600 clamp(26px, 5vw, 40px) Mali, sans-serif; margin-bottom: 16px; }
+.shell-card p { color: var(--text-muted); font-size: .85rem; line-height: 1.5; margin: 14px 0; }
+.menu-buttons { display: grid; gap: 8px; margin: 16px 0; }
+.menu-buttons button, #btn-begin { justify-content: center; min-height: 44px; width: 100%; }
+@media (max-width: 680px) and (orientation: portrait) {
+  body { height: 100dvh; min-height: 0; }
+  body:not(.is-horizontal) .stage-wrapper {
+    width: 100%; max-width: none; height: 100dvh; max-height: none; min-height: 0; border-radius: 0;
+  }
+}
+
+#title-screen { background: var(--bg-cream); backdrop-filter: none; }
+#title-screen .recipe-card { border: 0; box-shadow: none; background: transparent; }
+
+/* Fit one fixed logical field inside the viewport; never stretch its axes. */
+body .stage-wrapper canvas#game-canvas {
+  inset: auto; left: 50%; top: 50%; transform: translate(-50%, -50%);
 }

@@ -188,9 +188,13 @@ and below. The chosen 1,200 px matched 1,150 and 1,300 px in all three Dawn visi
 In that 2026-09-15 run, the current 1,300 px gave the same Dawn III completions
 with 1.3–2.4 s of waiting per visit.
 
-Open: whether the limit scales with the field. A portrait field measured
-359×567 px and the desktop field 996×640 px on 2026-09-15, while the closure
-tolerance and length bands are fixed pixel values today.
+Xyh, 2026-09-16: field measurements must stay independent of the viewport.
+The logical field is 960×640 in landscape and 640×960 in portrait: equal area,
+rotated. The canvas scales uniformly to fit, with margins rather than cropping
+or stretching. Cord length, closure width, radii, and speeds use logical units;
+CSS pointer positions are converted into those units. The 1,300-unit snap limit
+therefore stays the same on every screen. These baseline dimensions are Codex's
+implementation choice; touch comfort still needs playtesting.
 
 ### A picked flax flower raises the limit for the next stroke
 
@@ -460,6 +464,6 @@ describes:
 ## Open questions for Xyh
 
 - What a successful figure means in the fiction, given that insects are released.
-- Whether the snap limit scales with field size.
+- Touch comfort of the fixed logical field and shared snap limit.
 - Which later-day insects cross walls.
 - Whether hours other than Noon gain wind.

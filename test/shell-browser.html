@@ -1,0 +1,75 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Stage shell browser check</title>
+<style>body{margin:0}iframe{border:0;width:100%;height:850px}pre{white-space:pre-wrap}</style>
+<pre id="result">RUNNING</pre><iframe src="../index.html"></iframe>
+<script type="module">
+const frame = document.querySelector('iframe');
+const params = new URLSearchParams(location.search);
+if (params.has('width')) frame.style.width = `${Number(params.get('width'))}px`;
+if (params.has('height')) frame.style.height = `${Number(params.get('height'))}px`;
+const check = (ok, message) => { if (!ok) throw Error(message); };
+try {
+  await new Promise(r => frame.addEventListener('load', r, {once:true}));
+  const w = frame.contentWindow, d = w.document;
+  for (let i=0; !w.game && i<100; i++) await new Promise(r=>setTimeout(r,20));
+  const g = w.game, click = id => d.getElementById(id).click();
+  check(g && g.uiSuspended, 'Title must suspend the game');
+  const rect = g.canvas.getBoundingClientRect();
+  const stage = d.querySelector('.stage-wrapper').getBoundingClientRect();
+  check(Math.abs(stage.width-w.innerWidth)<2 && Math.abs(stage.height-w.innerHeight)<2, 'Stage must fill viewport');
+  check(g.width*g.height === 960*640, 'Logical field area changed');
+  check(Math.abs(rect.width/g.width-rect.height/g.height)<.002, 'Field stretched');
+  check(!d.querySelector('header, footer'), 'External chrome remains');
+  click('btn-begin');
+  const originalWidth=frame.style.width, originalHeight=frame.style.height;
+  for (const [width,height] of [[390,780],[1200,800],[1600,900],[844,390]]) {
+    frame.style.width=`${width}px`; frame.style.height=`${height}px`; g.resize();
+    check(g.width*g.height===614400, 'Resize changed logical area');
+    const r=g.canvas.getBoundingClientRect();
+    check(Math.abs(r.width/g.width-r.height/g.height)<.002, 'Resize stretched field');
+    check(r.left>=-.1 && r.top>=-.1 && r.right<=width+.1 && r.bottom<=height+.1, 'Field cropped');
+    const point=g.canvasPoint(r.left+r.width/2,r.top+r.height/2);
+    check(Math.abs(point.x-g.width/2)<.01 && Math.abs(point.y-g.height/2)<.01, 'Pointer mapping shifted');
+    g.state='PLAYING'; g.entities=[]; g.victoryDelay=0; g.clock.remainingSeconds=100;
+    const pointer=(type,x,y)=>g.canvas.dispatchEvent(new w.PointerEvent(type,{
+      pointerId:7,isPrimary:true,button:0,bubbles:true,
+      clientX:r.left+x*r.width/g.width, clientY:r.top+y*r.height/g.height
+    }));
+    pointer('pointerdown',100,200); pointer('pointermove',300,200);
+    check(Math.abs(g.strokeLength-200)<.1, 'CSS scale changed measured cord length');
+    pointer('pointercancel',300,200);
+  }
+  frame.style.width=originalWidth; frame.style.height=originalHeight; g.resize();
+  g.startLevel('midnight-03'); g.state='PLAYING'; g.clock.isPaused=false;
+  click('btn-pause');
+  const seconds=g.clock.remainingSeconds;
+  const positions=g.entities.map(e=>[e.x,e.y]);
+  g.update(2);
+  check(g.clock.remainingSeconds===seconds, 'Menu clock advanced');
+  check(JSON.stringify(positions)===JSON.stringify(g.entities.map(e=>[e.x,e.y])), 'Menu entities moved');
+  click('btn-settings'); click('btn-color-mode'); click('btn-color-mode'); click('btn-settings-back');
+  check(g.uiSuspended, 'Settings back resumed the field');
+  click('btn-fieldbook'); click('btn-close-modal');
+  check(!d.getElementById('pause-menu').hidden && g.uiSuspended, 'Field book must return to menu');
+  click('btn-visit'); click('btn-close-visit-modal');
+  click('btn-resume');
+  check(!g.uiSuspended && g.state==='PLAYING', 'Resume failed');
+  g.update(.2); check(g.clock.remainingSeconds<seconds, 'Clock did not resume');
+  click('btn-pause'); click('btn-visit-card');
+  check(g.state==='CARD' && !g.uiSuspended, 'Visit card failed');
+  g.advance();
+  w.dispatchEvent(new w.Event('blur'));
+  check(g.uiSuspended && !d.getElementById('pause-menu').hidden, 'Blur must open menu');
+  click('btn-resume');
+  click('btn-pause'); click('btn-restart');
+  check(!g.uiSuspended && ['READY','TRANSITION'].includes(g.state), 'Restart failed');
+  check(d.documentElement.scrollWidth<=w.innerWidth, 'Horizontal overflow');
+  // Final screenshot can show the field, menu, or title.
+  g.state=params.has('card') ? 'READY' : 'PLAYING';
+  if (params.has('menu')) click('btn-pause');
+  if (params.has('title')) w.location.reload();
+  g.render();
+  document.getElementById('result').textContent='PASS: fixed field area, aspect fit, pointer/cord scaling, title, menus, resume, card, blur, restart';
+} catch(e) { document.getElementById('result').textContent=`FAIL: ${e.stack}`; }
+</script>

@@ -14,6 +14,7 @@ try {
   await new Promise(resolve => frame.addEventListener('load', resolve));
   const w = frame.contentWindow;
   for (let i = 0; !w.game && i < 100; i++) await new Promise(r => setTimeout(r, 20));
+  w.document.getElementById('btn-begin')?.click();
   const game = w.game;
   check(game, 'Game did not initialize');
   const { Insect } = await import('../src/entities.js');
@@ -46,7 +47,7 @@ try {
   const end = {x:xs[2] + 35, y};
   const event = (type, point, id = 1) => {
     const r = game.canvas.getBoundingClientRect();
-    const e = new w.PointerEvent(type, {clientX:r.left + point.x, clientY:r.top + point.y,
+    const e = new w.PointerEvent(type, {clientX:r.left + point.x * r.width / game.width, clientY:r.top + point.y * r.height / game.height,
       pointerId:id, pointerType:'pen', isPrimary:true, bubbles:true});
     (type === 'pointerdown' ? game.canvas : w).dispatchEvent(e);
   };

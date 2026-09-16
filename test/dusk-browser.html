@@ -15,6 +15,8 @@ try {
   await new Promise(resolve => frame.addEventListener('load', resolve));
   const w = frame.contentWindow;
   for (let i = 0; !w.game && i < 100; i++) await new Promise(r => setTimeout(r, 20));
+  w.document.getElementById('btn-begin')?.click();
+  w.document.getElementById('btn-begin')?.click();
   const game = w.game;
   check(game, 'Game did not initialize');
   const { Insect } = await import('../src/entities.js');
@@ -38,8 +40,8 @@ try {
   game.initLevel();
   const draw = points => {
     const rect = game.canvas.getBoundingClientRect();
-    const event = (type, p) => new w.PointerEvent(type, { clientX: rect.left + p.x,
-      clientY: rect.top + p.y, pointerId: 1, pointerType: 'mouse', isPrimary: true, bubbles: true });
+    const event = (type, p) => new w.PointerEvent(type, { clientX: rect.left + p.x * rect.width / game.width,
+      clientY: rect.top + p.y * rect.height / game.height, pointerId: 1, pointerType: 'mouse', isPrimary: true, bubbles: true });
     game.canvas.dispatchEvent(event('pointerdown', points[0]));
     for (const p of points.slice(1)) w.dispatchEvent(event('pointermove', p));
     w.dispatchEvent(event('pointerup', points.at(-1)));
