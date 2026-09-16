@@ -361,16 +361,17 @@ inside a flower and comes back through it both starts in it and crosses it.
 
 ### The night jasmine
 
-Added 2026-09-16 for Midnight XI–XII. The jasmine stands still, is never pocket
+Added 2026-09-16 for Midnight XII. The jasmine stands still, is never pocket
 content, and is never threaded. A stroke that is a **thread starter** on an open
 jasmine takes the first insect it threads: the cord ends there, that insect flies
 to the flower and settles on it for `JASMINE_STAY` (24 s), and the bloom is spent
 while its guest sits. It scores nothing and advances no objective.
 
-What it is for: the later Midnight visits mix required figures, and insects
-cluster, which makes a clean pocket hard to find. The jasmine buys one insect out
-of the cluster and leaves it stationary — a target that can be drawn around at
-leisure, and one fewer body in the crowd.
+What it is for: the last visit mixes every required figure, and insects cluster,
+which makes a clean pocket hard to find. The jasmine buys one insect out of the
+cluster and leaves it stationary — a target that can be drawn around at leisure,
+and one fewer body in the crowd. XI does without it: Xyh played that visit
+through unaided, and its ready card has enough to say already.
 
 A guest gathered into a drawing frees its flower early. When the stay ends the
 spent bloom closes and another opens `JASMINE_REGROW` (12 s) later, so the move

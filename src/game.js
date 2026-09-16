@@ -2889,21 +2889,18 @@ export class Game {
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
         ctx.fillText('No modes: thread to trace, or close the cord to loop.', 0, 55);
         ctx.fillText('A stroke cannot both thread and enclose.', 0, 70);
-        this.drawJasmineGlyph(ctx, -104, 30);
-        ctx.fillText('Begin a thread inside the jasmine: the first insect it crosses settles there for 24 s.', 0, 68);
         ctx.restore();
       } else if (teachMidnight03) {
         ctx.save(); ctx.translate(0, boxH / 2 - 96);
-        // Brimstone butterfly on left
-        const brim = new Butterfly(-65, -8, 'brimstone'); brim.heading = -0.3; brim.draw(ctx);
-        // Snail on right
-        const sn = new Snail(65, -8); sn.draw(ctx);
+        // Brimstone butterfly on left, night jasmine on right
+        const brim = new Butterfly(-72, -8, 'brimstone'); brim.heading = -0.3; brim.draw(ctx);
+        this.drawJasmineGlyph(ctx, 66, -6);
 
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '600 12px system-ui, sans-serif';
-        ctx.fillText('Brimstone butterflies and the perimeter snail return.', 0, 22);
+        ctx.fillText('Begin a thread inside the jasmine to settle one insect on it for 24 s.', 0, 22);
         ctx.font = '11px system-ui, sans-serif'; ctx.fillStyle = themeColor('muted', '#6e5a47');
-        ctx.fillText('Synthesize loops, figure-eights, traces, and a Nursery to complete the day.', 0, 38);
-        ctx.fillText('Draw around the snail. A stroke cannot both thread and enclose.', 0, 54);
+        ctx.fillText('It gathers nothing, but the insect holds still and the field thins by one.', 0, 38);
+        ctx.fillText('Brimstones and the snail return. A stroke cannot both thread and enclose.', 0, 54);
         ctx.restore();
       }
 
@@ -2941,8 +2938,6 @@ export class Game {
         ctx.fillText('Twelve Visits Complete', 0, -boxH / 2 + 38);
       } else if (isMidnight12) {
         ctx.fillText('Visit XII Complete', 0, -boxH / 2 + 38);
-        this.drawJasmineGlyph(ctx, -104, 30);
-        ctx.fillText('The jasmine stands to one side. A thread begun in it settles one insect for 24 s.', 0, 68);
       } else {
         ctx.fillText('Visit Complete', 0, -boxH / 2 + 38);
       }

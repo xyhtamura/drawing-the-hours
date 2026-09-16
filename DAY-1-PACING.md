@@ -130,7 +130,7 @@ Totals include seeds and snails. A dash means zero.
 | Hornet | Wanders like an insect; cuts a touching cord; invalid enclosure content | V | Returns in VI beside the webs |
 | Web patch | Static; cuts a touching cord; terrain, so valid inside a loop | VI | Two patches, placed by the level; the only fixed-path hazard |
 | Picked pod | Adds 400 px to the NEXT cord, kept 12 s; not a target | IV | Present through the hour; another grows 8 s after one is taken; flax, and also in VIII and XII |
-| Night jasmine | A thread begun in it settles the first insect it crosses for 24 s; not a target | XI | Also in XII; the bloom is spent while its guest sits and reopens 12 s after it closes |
+| Night jasmine | A thread begun in it settles the first insect it crosses for 24 s; not a target | XII | The only visit with one; the bloom is spent while its guest sits and reopens 12 s after it closes |
 
 The snail does return. Its later placement makes it less likely to intersect a useful
 drawing than the Dawn seam route. Presence and mechanical prominence are different.

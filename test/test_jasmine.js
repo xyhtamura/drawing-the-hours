@@ -50,22 +50,27 @@ const JASMINE_STAY = 24;
   console.log('✔ Thread starter, threaded, and thread ended are told apart.');
 }
 
-// 2. Both late Midnight visits carry one, and the plan agrees
+// 2. The last visit carries one, and the plan agrees
 {
   const plan = JSON.parse(fs.readFileSync(new URL('../campaign-plan.json', import.meta.url)));
-  for (const id of ['midnight-02', 'midnight-03']) {
-    const level = CAMPAIGN_LEVELS.find(l => l.id === id);
-    assert.equal(level.population.jasmine, 1, `${id} grows one jasmine`);
-    assert.equal(level.jasminePlaces.length, 1, `${id} says where it stands`);
-    const source = plan.levels.find(l => l.id === id);
-    assert.equal(source.population.jasmine, 1, `${id}: plan agrees on the jasmine`);
-    assert.deepEqual(JSON.parse(JSON.stringify(source.jasminePlaces)), level.jasminePlaces,
-      `${id}: plan agrees on where it stands`);
-  }
-  assert.equal(CAMPAIGN_LEVELS.find(l => l.id === 'midnight-01').population.jasmine, undefined,
-    'Midnight X stays sparse: no jasmine while tracing is being taught');
+  const twelve = CAMPAIGN_LEVELS.find(l => l.id === 'midnight-03');
+  assert.equal(twelve.population.jasmine, 1, 'Midnight XII grows one jasmine');
+  assert.equal(twelve.jasminePlaces.length, 1, 'Midnight XII says where it stands');
+  const source = plan.levels.find(l => l.id === 'midnight-03');
+  assert.equal(source.population.jasmine, 1, 'The plan agrees on the jasmine');
+  assert.deepEqual(JSON.parse(JSON.stringify(source.jasminePlaces)), twelve.jasminePlaces,
+    'The plan agrees on where it stands');
 
-  console.log('✔ The jasmine is authored into Midnight XI and XII only.');
+  // Xyh played XI through without it, so only the last visit has one.
+  for (const id of ['midnight-01', 'midnight-02']) {
+    const level = CAMPAIGN_LEVELS.find(l => l.id === id);
+    assert.equal(level.population.jasmine, undefined, `${id} grows no jasmine`);
+    assert.equal(level.jasminePlaces, undefined, `${id} places none`);
+    assert.equal(plan.levels.find(l => l.id === id).population.jasmine, undefined,
+      `${id}: the plan agrees there is none`);
+  }
+
+  console.log('✔ The jasmine is authored into Midnight XII alone.');
 }
 
 // The rest drives the real page code.
@@ -118,7 +123,7 @@ try {
 
   // 3. The take: the cord ends, the insect settles, nothing is scored
   {
-    game.initLevel('midnight-02');
+    game.initLevel('midnight-03');
     game.state = 'PLAYING';
     const jasmine = placeJasmine();
     const lacewing = new Insect(jasmine.x + 140, jasmine.y, 'lacewing');
@@ -169,7 +174,7 @@ try {
 
   // 6. A guest used in a drawing frees its flower early
   {
-    game.initLevel('midnight-02');
+    game.initLevel('midnight-03');
     game.state = 'PLAYING';
     const jasmine = placeJasmine();
     const hoverfly = new Insect(jasmine.x + 140, jasmine.y, 'hoverfly');
@@ -187,7 +192,7 @@ try {
 
   // 7. The flower itself is scenery
   {
-    game.initLevel('midnight-02');
+    game.initLevel('midnight-03');
     game.state = 'PLAYING';
     const jasmine = placeJasmine();
     const a = new Insect(jasmine.x - 60, jasmine.y + 80, 'firefly');

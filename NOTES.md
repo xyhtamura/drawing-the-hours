@@ -10,9 +10,30 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Playtest the night jasmine at Midnight XI–XII, and Noon IV–VI, on a touch device.
+Playtest the night jasmine at Midnight XII, and Noon IV–VI, on a touch device.
 
 ## Activity
+
+2026-09-16 — Claude Code — Moved the night jasmine to Midnight XII alone, on
+Xyh's call: XI is playable without it, and leaving it out gives that visit's card
+its space back.
+
+- `midnight-02` loses `jasmine` and `jasminePlaces`; its instruction and ready
+  card return to what they were. `midnight-03` keeps the flower at (0.18, 0.40),
+  the fullest field of the day.
+- **Fixed a misplacement from the entry below.** The XII jasmine line had landed
+  in the level-complete card rather than the XII ready card, and XI's line sat on
+  top of an existing line at the same height. XII's ready card now carries it, in
+  the space the "Brimstone butterflies and the perimeter snail return" line used
+  to take: the flower and the Brimstone are drawn side by side, the first line
+  teaches the flower, and the returning cast moves into the last line with the
+  purity reminder.
+
+Verification: `test/test_jasmine.js` now asserts the flower is authored into XII
+alone, with X and XI carrying none in both the runtime and the plan, and drives
+its behaviour checks through `midnight-03`. All seven suites, `node --check`, and
+`git diff --check` pass. In the live page, Midnight XII spawns one jasmine and XI
+none, and XI's ready card reads as it did before the flower was added.
 
 2026-09-16 — Claude Code — Added the night jasmine to Midnight XI–XII and named
 the three relations a stroke can have to an entity, after Xyh's playtest of the
