@@ -194,7 +194,7 @@
         "lacewing": 0,
         "firefly": 0,
         "hornet": 1,
-        "web": 2,
+        "web": 1,
         "bean": 1
       },
       "motionScale": 0.85,
@@ -202,8 +202,8 @@
         "any": 6,
         "seedTrio": 2
       },
-      "instruction": "Make six combinations, including two loops with a seed and three different insects. Webs and the hornet cut a cord they touch.",
-      "designNote": "The longest loop of the day against the webs, the hornet, and the breeze, and five more drawings around it. The bean is what makes the four-target loop reachable.",
+      "instruction": "Make six combinations, including two loops with a seed and three different insects. The web and the hornet cut a cord they touch.",
+      "designNote": "The longest loop of the day against the web, the hornet, and the breeze, and five more drawings around it. The bean is what makes the four-target loop reachable.",
       "gestures": [
         "string"
       ],
@@ -222,10 +222,6 @@
         [
           0.29,
           0.31
-        ],
-        [
-          0.71,
-          0.67
         ]
       ]
     },

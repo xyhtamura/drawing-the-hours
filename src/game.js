@@ -157,6 +157,9 @@ export class Game {
     this.stamps = [];
     this.feedbackBanner = { text: '', type: 'info', timer: 0 };
     this.victoryDelay = 0;
+    this.victoryTotalDelay = 0;
+    this.levelCompleteButton = null;
+    this.levelCompleteTimer = 0;
 
     // Meadow Entities
     this.entities = [];
@@ -275,6 +278,9 @@ export class Game {
     this.score = 0;
     this.harmoniesCount = 0;
     this.victoryDelay = 0;
+    this.victoryTotalDelay = 0;
+    this.levelCompleteButton = null;
+    this.levelCompleteTimer = 0;
     this.hintTimer = 0;
     this.hint = null;
     this.hintRect = null;
@@ -664,6 +670,14 @@ export class Game {
    * so the caller does not also advance the state.
    */
   handleOverlayClick(x, y) {
+    if (this.state === 'LEVEL_COMPLETE' || this.state === 'VICTORY') {
+      const b = this.levelCompleteButton;
+      if (b && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+        this.advance();
+        return true;
+      }
+      return true;
+    }
     if (this.state === 'GAMEOVER') {
       const option = this.gameOverOptions.find(
         o => x >= o.x && x <= o.x + o.w && y >= o.y && y <= o.y + o.h
@@ -1240,7 +1254,8 @@ export class Game {
 
     // Check level complete
     if (campResult.allComplete) {
-      this.victoryDelay = 1.0;
+      this.victoryDelay = 1.35;
+      this.victoryTotalDelay = 1.35;
     }
   }
 
@@ -1253,6 +1268,9 @@ export class Game {
     }
     this.initLevel(lvl);
     this.victoryDelay = 0;
+    this.victoryTotalDelay = 0;
+    this.levelCompleteButton = null;
+    this.levelCompleteTimer = 0;
     this.state = 'TRANSITION';
     if (typeof this.onLevelChanged === 'function') {
       this.onLevelChanged(this.currentLevel);
@@ -1345,6 +1363,7 @@ export class Game {
         this.victoryDelay -= dt;
         if (this.victoryDelay <= 0) {
           this.state = 'LEVEL_COMPLETE';
+          this.levelCompleteTimer = 0;
           this.campaign.recordVictory(this.score);
           if (typeof this.onLevelChanged === 'function') {
             this.onLevelChanged(this.currentLevel);
@@ -1445,6 +1464,9 @@ export class Game {
       this.maintainPopulation(dt);
     } else {
       audio.stopCicadas();
+      if (this.state === 'LEVEL_COMPLETE') {
+        this.levelCompleteTimer = (this.levelCompleteTimer || 0) + dt;
+      }
     }
 
     // Update feedback timer
@@ -1636,6 +1658,16 @@ export class Game {
     // 6. HUD & Banners
     this.drawHUD(ctx);
     this.drawHint(ctx);
+
+    // Soft parchment wash fade-out before the Visit Complete modal appears
+    if (this.state === 'PLAYING' && this.victoryDelay > 0 && this.victoryDelay < 1.05) {
+      const progress = Math.min(1, Math.max(0, (1.05 - this.victoryDelay) / 1.05));
+      const ease = progress * progress;
+      ctx.save();
+      ctx.fillStyle = themeColor('paperDim', `rgba(40, 32, 28, ${(ease * 0.52).toFixed(3)})`);
+      ctx.fillRect(0, 0, this.width, this.height);
+      ctx.restore();
+    }
 
     // 7. Modals / Overlays
     if (this.state === 'TRANSITION') this.drawTransitionModal(ctx);
@@ -2798,7 +2830,7 @@ export class Game {
         this.drawBeanGlyph(ctx, 62, -26);
         ctx.fillText('Seed & Trio: 1 seed and 3 different insects in one loop.', 0, 39);
         ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
-        ctx.fillText('Avoid webs and the hornet. Flax gives extra length to the next cord.', 0, 54);
+        ctx.fillText('Avoid the web and the hornet. Flax gives extra length to the next cord.', 0, 54);
         ctx.restore();
       } else if (teachMidnight02) {
         ctx.save(); ctx.translate(0, boxH / 2 - 96);
@@ -2883,7 +2915,11 @@ export class Game {
     const save = this.campaign.saveState;
     const completedIds = save?.completedLevelIds || [];
     const all12Completed = isMidnight12 && CAMPAIGN_LEVELS.every(l => completedIds.includes(l.id));
-    const modalHeight = isMidnight12 || Object.keys(this.campaign.objectiveProgress).length >= 4 ? 330 : 280;
+    const modalHeight = isMidnight12 || Object.keys(this.campaign.objectiveProgress).length >= 4 ? 340 : 290;
+
+    const modalAlpha = Math.min(1, (this.levelCompleteTimer || 0) / 0.25);
+    ctx.save();
+    ctx.globalAlpha = modalAlpha;
 
     this.drawModalBox(ctx, 480, modalHeight, (boxW, boxH) => {
       const isNarrow = boxW < 440;
@@ -2930,22 +2966,44 @@ export class Game {
         ctx.fillText(`Score: ${this.score} pts  (Best: ${best} pts)`, 0, startY + 12);
       }
 
-      ctx.fillStyle = themeColor('ink', '#5c4538');
-      ctx.font = isNarrow ? '600 12px system-ui, sans-serif' : '600 14px system-ui, sans-serif';
+      // Continue button
+      const btnH = isNarrow ? 32 : 36;
+      const btnW = Math.min(boxW - 48, 300);
+      const btnY = boxH / 2 - btnH - 18;
 
-      let promptText;
+      ctx.fillStyle = themeColor('panel', '#f4ede0');
+      ctx.strokeStyle = themeColor('edge', '#d0c3ab');
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      drawRoundedRect(ctx, -btnW / 2, btnY, btnW, btnH, 9);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = themeColor('ink', '#4a3a2e');
+      ctx.font = isNarrow ? '600 12px system-ui, -apple-system, sans-serif' : '600 13.5px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+
+      let btnLabel;
       if (all12Completed) {
-        promptText = isNarrow ? '[ Tap to Replay a Visit ]' : '[ Click or Press Space to Replay a Visit ]';
+        btnLabel = isNarrow ? 'Replay a Visit' : 'Replay a Visit (Space)';
       } else if (isMidnight12) {
-        promptText = isNarrow ? '[ Tap to Select a Visit ]' : '[ Click or Press Space to Select a Visit ]';
+        btnLabel = isNarrow ? 'Select a Visit' : 'Select a Visit (Space)';
       } else if (nextLevel) {
-        promptText = isNarrow ? `[ Tap for Next: ${nextLevel.title} ]` : `[ Click or Space for Next Visit: ${nextLevel.title} ]`;
+        btnLabel = isNarrow ? `Continue: ${nextLevel.title}` : `Continue to ${nextLevel.title} (Space)`;
       } else {
-        promptText = isNarrow ? '[ Tap to Replay ]' : '[ Click or Press Space to Replay ]';
+        btnLabel = isNarrow ? 'Replay Visit' : 'Replay Visit (Space)';
       }
 
-      ctx.fillText(promptText, 0, boxH / 2 - 24);
+      ctx.fillText(btnLabel, 0, btnY + btnH / 2 + 4.5);
+
+      this.levelCompleteButton = {
+        x: this.width / 2 - (btnW / 2) * this.modalScale,
+        y: this.height / 2 + btnY * this.modalScale,
+        w: btnW * this.modalScale,
+        h: btnH * this.modalScale,
+      };
     });
+    ctx.restore();
   }
 
   drawPausedModal(ctx) {

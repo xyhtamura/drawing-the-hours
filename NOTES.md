@@ -14,6 +14,19 @@ Playtest the fixed-size field and pause-menu flow on touch devices, including No
 
 ## Activity
 
+2026-09-17 — Antigravity — Added level completion fade-out wash, dedicated Continue button on Visit Complete card to prevent accidental advance, and reduced Noon VI web hazard to one web.
+
+- **Level fade-out before Visit Complete.** When all visit objectives are met, `victoryDelay` extends to 1.35 s: the player first sees the completion stamp and banner, then over the final 1.05 s the field, moving inhabitants, and HUD smoothly dim under a soft parchment wash (`rgba(40, 32, 28, ...)`). When the state changes to `LEVEL_COMPLETE`, the modal eases in over 0.25 s, removing the jarring snap.
+- **Dedicated Continue button on Visit Complete.** Replaced the generic prompt text with an explicit, tactile paper button box centered at the bottom of the card (`this.levelCompleteButton = { x, y, w, h }`). `handleOverlayClick` now intercepts clicks during `LEVEL_COMPLETE` and `VICTORY`: clicking inside the button triggers `advance()`, while clicking anywhere else on the canvas or background is swallowed, preventing accidental skips to the next visit on touch devices or stray clicks. Keyboard users can still press Space.
+- **Noon VI web hazard reduced to 1 web.** `noon-03` (`The glass and the leaves`) now strings 1 web instead of 2, positioned at [0.29, 0.31]. Level instructions and design notes updated to singular "The web and the hornet cut a cord they touch." in both `src/campaign.js` and `campaign-plan.json`; `teachNoon03` ready card updated to "Avoid the web and the hornet."
+
+Verification:
+- `test/test_noon.js`: updated to assert 1 web and 1 web patch for Noon VI; plan and runtime agreement verified.
+- `test/test_mechanics.js`: updated Noon VI web assertion to 1 web.
+- `test/test_flow.js`: added suite 8 verifying `LEVEL_COMPLETE` button hit-testing — clicking outside the Continue button is swallowed without advancing state or changing level, and clicking the Continue button advances to the next visit.
+- Real browser verification in headless Edge driving `index.html`: verified victory delay, parchment wash fade-out, Visit Complete Continue button layout, background click swallowing, and button click advancement to Visit II.
+- All seven unit test suites pass (`test_noon.js`, `test_flow.js`, `test_mechanics.js`, `test_dusk.js`, `test_midnight.js`, `test_jasmine.js`, `test_string_sandbox.js`), `node --check` syntax check passes on all modified files, and `git diff --check` passes cleanly.
+
 2026-09-16 — Claude Code — Moved the night jasmine to Midnight XII alone, on
 Xyh's call: XI is playable without it, and leaving it out gives that visit's card
 its space back.

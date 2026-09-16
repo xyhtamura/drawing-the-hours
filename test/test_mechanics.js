@@ -640,7 +640,7 @@ console.log('--- All tests passed! ---');
   const noon3 = campaign.setLevelById('noon-03');
   assert.strictEqual(noon3.transitionText, 'This atrium makes me feel calmer.');
   assert.deepStrictEqual(noon3.objectives, { any: 6, seedTrio: 2 });
-  assert.strictEqual(noon3.population.web, 2, 'Noon VI strings two webs across the atrium');
+  assert.strictEqual(noon3.population.web, 1, 'Noon VI strings one web across the atrium');
   assert.strictEqual(noon3.durationSeconds, 100);
   assert.strictEqual(noon3.wind.periodSeconds, 12);
   assert.strictEqual(campaign.getNextLevel().id, 'dusk-01');

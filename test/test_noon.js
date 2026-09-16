@@ -54,8 +54,8 @@ const noonLevels = CAMPAIGN_LEVELS.filter(l => l.hour === 'noon');
   for (const level of noonLevels) {
     assert.ok(level.objectives.any >= 6, `${level.id} asks for at least six combinations`);
   }
-  assert.equal(six.population.web, 2, 'Noon VI strings two webs');
-  assert.equal(six.webPatches.length, 2, 'Noon VI authors where the webs hang');
+  assert.equal(six.population.web, 1, 'Noon VI strings one web');
+  assert.equal(six.webPatches.length, 1, 'Noon VI authors where the web hangs');
   assert.deepEqual(
     JSON.parse(JSON.stringify(plan.levels.find(l => l.id === six.id).webPatches)),
     six.webPatches,

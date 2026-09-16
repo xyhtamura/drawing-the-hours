@@ -258,4 +258,36 @@ const { Game } = await import('../src/game.js');
   console.log('✔ Page gates for the save control, Field Book, and visit list verified.');
 }
 
+// 8. Visit complete Continue button and accidental advance prevention
+{
+  installStorage({});
+  const canvas = makeCanvas();
+  const game = new Game(canvas);
+  game.initLevel('dawn-01');
+  game.state = 'LEVEL_COMPLETE';
+  game.drawLevelCompleteModal(canvas.ctx);
+
+  assert.ok(game.levelCompleteButton, 'Visit complete modal records a Continue button rectangle');
+  const btn = game.levelCompleteButton;
+  assert.ok(btn.w > 0 && btn.h > 0, 'The Continue button has width and height');
+  assert.ok(btn.y >= 0 && btn.y + btn.h <= 640, 'The Continue button sits inside the canvas bounds');
+
+  // A click outside the button is swallowed (returns true) so the canvas listener does not advance
+  const oldLevel = game.currentLevel.id;
+  const swallowed = game.handleOverlayClick(10, 10);
+  assert.equal(swallowed, true, 'Click outside Continue button is swallowed on LEVEL_COMPLETE');
+  assert.equal(game.state, 'LEVEL_COMPLETE', 'Click outside Continue button does not advance state');
+  assert.equal(game.currentLevel.id, oldLevel, 'Level remains unchanged after click outside button');
+
+  // A click inside the Continue button advances the level
+  const btnHitX = btn.x + btn.w / 2;
+  const btnHitY = btn.y + btn.h / 2;
+  const used = game.handleOverlayClick(btnHitX, btnHitY);
+  assert.equal(used, true, 'Click inside Continue button is handled');
+  assert.notEqual(game.state, 'LEVEL_COMPLETE', 'Clicking Continue advances beyond LEVEL_COMPLETE');
+  assert.equal(game.currentLevel.id, 'dawn-02', 'Clicking Continue advances to the next visit');
+
+  console.log('✔ Visit complete Continue button and click swallowing verified.');
+}
+
 console.log('--- All flow tests passed! ---');
