@@ -228,7 +228,8 @@ export const CAMPAIGN_LEVELS = [
     },
     instruction: 'Make five combinations, including two figure-eights with a lacewing and a hoverfly in separate pockets.',
     designNote: 'Introduce paper lacewings that pause at visible leaf anchors.',
-    gestures: ['enclose'],
+    gestures: ['string'],
+    stringRules: true,
     wind: null,
   },
   {
@@ -258,7 +259,8 @@ export const CAMPAIGN_LEVELS = [
     },
     instruction: 'Make five combinations, including a Nursery (1 flier and 1 seed) and a lacewing Counterpart Pair.',
     designNote: 'Add seeds to the resting-insect field; defer mixed Echoes pending gesture calibration.',
-    gestures: ['enclose'],
+    gestures: ['string'],
+    stringRules: true,
     wind: null,
   },
   {
@@ -288,7 +290,8 @@ export const CAMPAIGN_LEVELS = [
     },
     instruction: 'Make six combinations, including three single loops and two figure-eights.',
     designNote: 'Require switching gestures amid eight fliers.',
-    gestures: ['enclose'],
+    gestures: ['string'],
+    stringRules: true,
     wind: null,
   },
 

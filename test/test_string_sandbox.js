@@ -26,6 +26,7 @@ import { Insect, DandelionSeed, Snail } from '../src/entities.js';
 import { extractClosedPockets, polylineLength, getLengthBand } from '../src/geometry.js';
 import { CAMPAIGN_LEVELS, PRACTICE_LEVELS } from '../src/campaign.js';
 import { Game } from '../src/game.js';
+import { leafAnchors } from '../src/lacewing.js';
 
 console.log('--- Running String Sandbox Test Suite ---');
 
@@ -1152,6 +1153,178 @@ console.log('--- Running String Sandbox Test Suite ---');
     if (!hadDocument) delete globalThis.document;
   }
   console.log('✔ Noon IV–VI use string rules; a drawn figure-eight closes both pockets only when it runs past its start.');
+}
+
+// 23. Dusk VII–IX adopt string rules; lacewings, nurseries, switching gestures, and walls
+{
+  const duskIds = ['dusk-01', 'dusk-02', 'dusk-03'];
+  const plan = JSON.parse(fs.readFileSync(new URL('../campaign-plan.json', import.meta.url)));
+  for (const id of [...duskIds, 'practice-dusk']) {
+    const level = [...CAMPAIGN_LEVELS, ...PRACTICE_LEVELS].find(l => l.id === id);
+    assert.strictEqual(level.stringRules, true, `${id} uses string rules`);
+    assert.deepStrictEqual(level.gestures, ['string'], `${id} has gestures ['string']`);
+    assert.strictEqual(level.maxCordLength, undefined, `${id} uses the shared snap limit`);
+  }
+  for (const id of duskIds) {
+    const source = plan.levels.find(l => l.id === id);
+    assert.strictEqual(source.stringRules, true, `${id}: plan has stringRules`);
+    assert.deepStrictEqual(source.gestures, ['string'], `${id}: plan has gestures ['string']`);
+  }
+
+  const listeners = { window: {}, canvas: {} };
+  const hadWindow = 'window' in globalThis;
+  const hadDocument = 'document' in globalThis;
+  globalThis.window = { addEventListener: (type, fn) => { listeners.window[type] = fn; }, devicePixelRatio: 1 };
+  globalThis.document = {
+    querySelector: () => null,
+    getElementById: () => null,
+    addEventListener: () => {},
+    hidden: false,
+    documentElement: { dataset: {}, style: { setProperty: () => {}, removeProperty: () => {} } },
+  };
+  try {
+    const ctx = new Proxy({ measureText: () => ({ width: 10 }) }, {
+      get: (target, prop) => (prop in target ? target[prop] : () => {}),
+    });
+    const canvas = {
+      width: 960,
+      height: 640,
+      getContext: () => ctx,
+      addEventListener: (type, fn) => { listeners.canvas[type] = fn; },
+      setPointerCapture: () => {},
+      releasePointerCapture: () => {},
+      getBoundingClientRect: () => ({ left: 0, top: 0, width: 960, height: 640 }),
+    };
+    const game = new Game(canvas);
+    const pointer = (type, [x, y]) => {
+      const event = { pointerId: 1, isPrimary: true, button: 0, clientX: x, clientY: y, preventDefault() {} };
+      if (type === 'pointerdown') listeners.canvas.pointerdown(event);
+      else listeners.window[type](event);
+    };
+
+    // A figure-eight drawn from its waist; left lobe x < 480, right lobe x > 480.
+    const lemniscate = t => [480 + 150 * Math.sin(t), 320 + 80 * Math.sin(2 * t)];
+    const drawFigureEight = endT => {
+      pointer('pointerdown', lemniscate(0));
+      for (let t = 0.06; t < endT; t += 0.06) pointer('pointermove', lemniscate(t));
+      pointer('pointermove', lemniscate(endT));
+      pointer('pointerup', lemniscate(endT));
+    };
+
+    // A single loop (circle) crossing itself
+    const drawSingleLoop = (cx = 300, cy = 300, r = 50) => {
+      pointer('pointerdown', [cx + r, cy]);
+      for (let a = 0.2; a <= Math.PI * 2 + 0.4; a += 0.2) {
+        pointer('pointermove', [cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+      }
+      pointer('pointerup', [cx + Math.cos(Math.PI * 2 + 0.4) * r, cy + Math.sin(Math.PI * 2 + 0.4) * r]);
+    };
+
+    // 1. Dusk 1 (dusk-01): Lacewing Counterpart Pair in figure-eight
+    game.initLevel('dusk-01');
+    game.state = 'PLAYING';
+    const lace = new Insect(380, 320, 'lacewing');
+    const hov = new Insect(580, 320, 'hoverfly');
+    game.entities = [lace, hov];
+    drawFigureEight(Math.PI * 2 + 0.35);
+    assert.ok(game.feedbackBanner.text.startsWith('Counterpart Pair'),
+      `Dusk 1 figure-eight scores Counterpart Pair (got "${game.feedbackBanner.text}")`);
+    assert.strictEqual(game.campaign.objectiveProgress.lacewingCounterpart.current, 1);
+
+    // Open figure-eight does not score
+    game.entities = [new Insect(380, 320, 'lacewing'), new Insect(580, 320, 'hoverfly')];
+    drawFigureEight(Math.PI * 2 - 0.4);
+    assert.strictEqual(game.campaign.objectiveProgress.lacewingCounterpart.current, 1,
+      'Open figure-eight in Dusk 1 does not advance objective');
+
+    // 2. Dusk 2 (dusk-02): Nursery Polarity (1 flier + 1 seed)
+    game.initLevel('dusk-02');
+    game.state = 'PLAYING';
+    game.entities = [new Insect(380, 320, 'brimstone'), new DandelionSeed(580, 320)];
+    drawFigureEight(Math.PI * 2 + 0.35);
+    assert.ok(game.feedbackBanner.text.startsWith('Nursery Polarity'),
+      `Dusk 2 figure-eight scores Nursery Polarity (got "${game.feedbackBanner.text}")`);
+    assert.strictEqual(game.campaign.objectiveProgress.nursery.current, 1);
+
+    // 3. Dusk 3 (dusk-03): Switching gestures (single loops and figure-eights)
+    game.initLevel('dusk-03');
+    game.state = 'PLAYING';
+    // Single loop around two brimstones
+    game.entities = [new Insect(285, 300, 'brimstone'), new Insect(315, 300, 'brimstone')];
+    drawSingleLoop(300, 300, 50);
+    assert.strictEqual(game.campaign.objectiveProgress.single.current, 1, 'Single loop advances single objective');
+
+    // Figure-eight around Brimstone and Hawkmoth
+    game.entities = [new Insect(380, 320, 'brimstone'), new Insect(580, 320, 'hawkmoth')];
+    drawFigureEight(Math.PI * 2 + 0.35);
+    assert.strictEqual(game.campaign.objectiveProgress.figure8.current, 1, 'Figure-eight advances figure8 objective');
+
+    // 4. Snail hazard: cord contacting snail breaks cord
+    game.initLevel('dusk-02');
+    game.state = 'PLAYING';
+    const snail = new Snail(300, 300);
+    game.entities = [snail];
+    pointer('pointerdown', [200, 300]);
+    pointer('pointermove', [300, 300]); // touches snail
+    assert.strictEqual(game.isDrawing, false, 'Touching snail breaks cord immediately');
+    assert.ok(game.feedbackBanner.text.includes('snail broke the cord'), 'Shows snail break banner');
+
+    // 5. Lacewing wall constraint and route resumption
+    game.initLevel('dusk-01');
+    game.state = 'PLAYING';
+    const travelLace = new Insect(0, 0, 'lacewing');
+    travelLace.leafIndex = 0;
+    travelLace.lacePhase = 'travel';
+    travelLace.laceElapsed = 0.5;
+    travelLace.motionScale = 1.0;
+    game.entities = [travelLace];
+    const anchors = leafAnchors({ width: 960, height: 640 });
+    const fromA = anchors[0], toA = anchors[1];
+    const midX = (fromA.x + toA.x) / 2;
+    travelLace.x = midX - 30;
+    travelLace.y = (fromA.y + toA.y) / 2;
+
+    // Draw cord wall across its path at midX
+    pointer('pointerdown', [midX, fromA.y - 50]);
+    pointer('pointermove', [midX, fromA.y + 50]);
+    assert.strictEqual(game.isDrawing, true);
+
+    // Update game simulation with held cord: lacewing stops before crossing midX
+    for (let f = 0; f < 10; f++) {
+      game.update(0.016);
+      assert.ok(travelLace.x < midX + travelLace.radius, 'Lacewing does not breach cord wall');
+    }
+    // Release cord
+    pointer('pointerup', [midX, fromA.y + 50]);
+    assert.strictEqual(game.isDrawing, false);
+    // After release, lacewing continues towards toA
+    const xAfterRelease = travelLace.x;
+    for (let f = 0; f < 20; f++) {
+      game.update(0.016);
+    }
+    assert.ok(travelLace.x > xAfterRelease, 'Lacewing resumes forward travel along route');
+
+    // 6. Threaded lacewing bead holds still
+    travelLace.state = 'roaming';
+    travelLace.isBead = false;
+    pointer('pointerdown', [travelLace.x, travelLace.y]);
+    // Move pointer through lacewing to thread it
+    pointer('pointermove', [travelLace.x + 30, travelLace.y]);
+    pointer('pointermove', [travelLace.x + 80, travelLace.y]);
+    assert.strictEqual(travelLace.state, 'bead', 'Lacewing threaded as bead');
+    const beadX = travelLace.x, beadY = travelLace.y;
+    // During held updates, lacewing bead stays with cord anchor
+    for (let f = 0; f < 10; f++) {
+      game.update(0.016);
+    }
+    assert.ok(Math.hypot(travelLace.x - beadX, travelLace.y - beadY) < 15, 'Threaded lacewing bead stays with cord anchor');
+    pointer('pointerup', [travelLace.x + 80, travelLace.y]);
+    assert.strictEqual(travelLace.state, 'roaming', 'Released back to roaming');
+  } finally {
+    if (!hadWindow) delete globalThis.window;
+    if (!hadDocument) delete globalThis.document;
+  }
+  console.log('✔ Dusk VII–IX adopt string rules; lacewings, nurseries, switching gestures, and wall stops verified.');
 }
 
 console.log('--- All String Sandbox unit tests passed! ---');

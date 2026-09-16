@@ -2038,7 +2038,8 @@ export class Game {
     const teachDawn03 = lvl.id === 'dawn-03';
     const hasDiagram = teachDawn01 || teachDawn02 || teachDawn03 || teachStringTrace || teachTrace || teachLacewing || teachDusk02 || teachDusk03 || teachCounterpart || teachNursery || teachSeedTrio || teachMidnight02 || teachMidnight03;
     const teachDawn = teachDawn01 || teachDawn02 || teachDawn03;
-    const modalHeight = (teachMidnight02 || teachMidnight03 || teachDawn || teachStringTrace || teachCounterpart || teachNursery || teachSeedTrio) ? 445 : (hasDiagram ? 415 : 310);
+    const teachDusk = teachLacewing || teachDusk02 || teachDusk03;
+    const modalHeight = (teachMidnight02 || teachMidnight03 || teachDawn || teachDusk || teachStringTrace || teachCounterpart || teachNursery || teachSeedTrio) ? 445 : (hasDiagram ? 415 : 310);
 
     this.drawModalBox(ctx, 500, modalHeight, (boxW, boxH) => {
       const isNarrow = boxW < 440;
@@ -2252,7 +2253,7 @@ export class Game {
         ctx.fillText('Release after the third. The line can stay open.', 0, 74);
         ctx.restore();
       } else if (teachLacewing) {
-        ctx.save(); ctx.translate(0, boxH / 2 - 94);
+        ctx.save(); ctx.translate(0, boxH / 2 - 100);
         ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, 0);
         ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
@@ -2261,11 +2262,11 @@ export class Game {
         drawLacewing(ctx, { lacePhase: 'rest', flapPhase: 0 }); ctx.restore();
         const fly = new Butterfly(46, 0, 'hoverfly'); fly.heading = -Math.PI / 2; fly.draw(ctx);
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
-        ctx.fillText('One lacewing and one hoverfly, in separate pockets.', 0, 41);
-        ctx.fillText('Lacewings rest on each leaf for 1.5 seconds.', 0, 56);
+        ctx.fillText('One lacewing and one hoverfly in separate pockets.', 0, 41);
+        ctx.fillText('Cross your start to close both pockets; lacewings rest on leaves for 1.5 s.', 0, 56);
         ctx.restore();
       } else if (teachDusk02) {
-        ctx.save(); ctx.translate(0, boxH / 2 - 94);
+        ctx.save(); ctx.translate(0, boxH / 2 - 100);
         ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, 0);
         ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
@@ -2276,11 +2277,11 @@ export class Game {
         new DandelionSeed(0, 0).draw(ctx);
         ctx.restore();
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
-        ctx.fillText('Nursery Polarity: 1 flier in one lobe, 1 seed in the other.', 0, 41);
+        ctx.fillText('Nursery: 1 flier and 1 seed in separate pockets. Cross your start to close.', 0, 41);
         ctx.fillText('Also make a lacewing Counterpart Pair; cicadas pause intermittently.', 0, 56);
         ctx.restore();
       } else if (teachDusk03) {
-        ctx.save(); ctx.translate(0, boxH / 2 - 94);
+        ctx.save(); ctx.translate(0, boxH / 2 - 100);
         // Left: single circular loop
         ctx.strokeStyle = '#7c9a62'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(-62, -2, 34, 0, Math.PI * 2); ctx.stroke();
@@ -2294,7 +2295,7 @@ export class Game {
         const fly3 = new Butterfly(40, -2, 'damselfly'); fly3.heading = -Math.PI / 2; fly3.draw(ctx);
         const fly4 = new Butterfly(80, -2, 'hawkmoth'); fly4.heading = Math.PI / 2; fly4.draw(ctx);
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
-        ctx.fillText('Switch between gestures: 3 single loops and 2 figure-eights.', 0, 41);
+        ctx.fillText('Switch gestures: 3 single loops and 2 figure-eights. Cross the cord to close.', 0, 41);
         ctx.fillText('Dense field with 8 fliers; keep clear of the perimeter snail.', 0, 56);
         ctx.restore();
       } else if (teachCounterpart) {

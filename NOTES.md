@@ -10,9 +10,59 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Roll the string rules out to Dusk VII–IX, item 1 of the handoff list in the newest Claude Code entry below.
+Roll the string rules out to Midnight X–XII, redraw Visit X–XI Trace cards, and remove Enclose/Trace modes.
 
 ## Activity
+
+2026-09-16 — Antigravity — Rolled the string rules out to Dusk VII–IX (handoff
+item 1 of the previous entry). Only Midnight remains on the old modes.
+
+- `dusk-01`, `dusk-02`, and `dusk-03` set `stringRules: true` and
+  `gestures: ['string']` in `src/campaign.js` and `campaign-plan.json`;
+  `practice-dusk`, a copy of `dusk-01`, inherits both. STRING.md's status line
+  names all four, keeping test 21 green.
+- Dusk ready cards (`teachLacewing`, `teachDusk02`, `teachDusk03` in `src/game.js`)
+  now adopt the 445 px modal height (`teachDusk`). Added closure hints:
+  Visit VII adds "Run the cord back onto or across its start to close.",
+  Visit VIII adds "Cross your start to close.", Visit IX adds "Cross your start
+  to close." Diagrams and timings remain unchanged.
+- Lacewing wall interactions verified: when a travelling lacewing collides
+  with a drawn wall, its route clock (`laceElapsed`) pauses so it does not jump
+  through walls, and resumes along leaf anchors on cord release. A threaded
+  lacewing is held still (`state === 'bead'`) on the cord instead of flying along
+  leaf routes. Snail hazards crawl their seam in Dusk and break the cord on contact.
+  Ambient cicada audio remains active.
+
+Verification:
+
+- New test 23 in `test/test_string_sandbox.js` checks Dusk VII–IX flags and
+  plan agreement, figure-eight closure across start scoring Lacewing Counterpart
+  in `dusk-01` (and scoring nothing when stopping short), single-loop Nursery in
+  `dusk-02`, switching gesture objectives in `dusk-03`, snail hazard cord breaks,
+  lacewing wall collision holding route position, and threaded lacewing stillness.
+- All four test suites (`test_string_sandbox.js`, `test_mechanics.js`,
+  `test_dusk.js`, `test_midnight.js`), `node --check`, and `git diff --check` pass.
+
+Not done: physical touch playtesting on a tablet/phone, and Midnight X–XII rollout.
+
+Handoff for the next agent:
+
+1. **String rules for Midnight X–XII.** Trace is threading in sequence with
+   purity (STRING.md rule 4). Redraw the Visit X and XI Trace cards for
+   threading. Then remove the modes: the Enclose / Trace button, the `T`
+   shortcut, `gestureMode`, `setGestureMode`, `TraceGesture`, and the Trace HUD
+   line; update CAMPAIGN.md, MIDNIGHT.md, the Field Book, and the STRING.md
+   removed/kept list.
+2. **Figure-eights in the measurement script.** Give its player a figure-eight
+   path so Noon IV–V and Dusk can be measured, then re-measure the 1,300 px
+   limit across the day.
+3. Playtest on a touch device across the day: closing loops and figure-eights by
+   crossing, tap thresholds, threading speed, the 1,300 px limit, both wind
+   directions, and purity.
+4. Remaining from the day-one review entry: failure flow (Level select, untimed
+   practice, hint), resuming on reload, the Unlock All button, Midnight entries in
+   the Field Book shown to Dawn players, and the "morning breeze" game-over
+   subtitle shown at every hour.
 
 2026-09-16 — Claude Code — Rolled the string rules out to Noon IV–VI (handoff
 item 2 of the STRING.md upkeep entry below). Dusk, Midnight, and removing the
