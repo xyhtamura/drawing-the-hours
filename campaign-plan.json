@@ -380,7 +380,8 @@
         "seed": 2,
         "snail": 0,
         "lacewing": 2,
-        "firefly": 3
+        "firefly": 3,
+        "jasmine": 1
       },
       "motionScale": 0.95,
       "objectives": {
@@ -390,8 +391,8 @@
         "figure8": 1,
         "trace": 2
       },
-      "instruction": "Make six combinations: include a pair, Seed & Wing, a figure-eight, and two traces.",
-      "designNote": "Add hoverflies and seeds to the familiar cast; combine looping and threading without mode switching.",
+      "instruction": "Make six combinations: include a pair, Seed & Wing, a figure-eight, and two traces. Start a thread inside the jasmine to settle one insect on it.",
+      "designNote": "Add hoverflies and seeds to the familiar cast; combine looping and threading without mode switching. The jasmine is the relief valve: a crowded field can be thinned one insect at a time.",
       "gestures": [
         "string"
       ],
@@ -402,7 +403,13 @@
         "lacewing",
         "firefly"
       ],
-      "hourLabel": "Midnight · Visit XI"
+      "hourLabel": "Midnight · Visit XI",
+      "jasminePlaces": [
+        [
+          0.5,
+          0.84
+        ]
+      ]
     },
     {
       "id": "midnight-03",
@@ -413,6 +420,7 @@
       "transitionText": "And the world does move. Because tomorrow keeps happening.",
       "durationSeconds": 110,
       "population": {
+        "bean": 1,
         "brimstone": 2,
         "damselfly": 0,
         "hoverfly": 2,
@@ -421,7 +429,7 @@
         "snail": 1,
         "lacewing": 2,
         "firefly": 3,
-        "bean": 1
+        "jasmine": 1
       },
       "motionScale": 1,
       "objectives": {
@@ -431,8 +439,8 @@
         "trace": 2,
         "nursery": 1
       },
-      "instruction": "Make seven combinations, including two single loops, two figure-eights, two traces, and a Nursery.",
-      "designNote": "Return Brimstones and one perimeter snail; synthesize familiar gestures without a new rule.",
+      "instruction": "Make seven combinations, including two single loops, two figure-eights, two traces, and a Nursery. The jasmine settles one insect at a time.",
+      "designNote": "Return Brimstones and one perimeter snail; synthesize familiar gestures without a new rule. The jasmine stands off to one side, so thinning the field costs a trip.",
       "gestures": [
         "string"
       ],
@@ -444,7 +452,13 @@
         "firefly"
       ],
       "hourLabel": "Midnight · Visit XII",
-      "beanRegrowSeconds": 24
+      "beanRegrowSeconds": 24,
+      "jasminePlaces": [
+        [
+          0.18,
+          0.4
+        ]
+      ]
     }
   ]
 }

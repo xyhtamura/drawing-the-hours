@@ -16,7 +16,7 @@ import {
   polylineTouchesDisk,
   extractClosedPockets,
 } from './geometry.js';
-import { Butterfly, DandelionSeed, Snail, Hornet, WebPatch, FlaxFlower, drawFlaxFlower, SPECIES_CONFIG, drawFirefly } from './entities.js';
+import { Butterfly, DandelionSeed, Snail, Hornet, WebPatch, FlaxFlower, drawFlaxFlower, NightJasmine, SPECIES_CONFIG, drawFirefly } from './entities.js';
 import { evaluateDrawing } from './recipes.js';
 import { DandelionClock } from './clock.js';
 import { audio } from './audio.js';
@@ -33,6 +33,11 @@ const CORD_WIDTH = 4.5;
 const BEAN_BONUS = 400;
 const BEAN_KEEPS_SECONDS = 12;
 const BEAN_REGROW_SECONDS = 8;
+
+// An insect taken by the night jasmine settles on it for this long; the spent
+// bloom then closes and another opens after the regrow delay (Midnight XI-XII).
+const JASMINE_STAY = 24;
+const JASMINE_REGROW = 12;
 
 // Seconds of play without objective progress before the hint card appears
 // (CAMPAIGN.md, tuning section). Dismissing it starts the count again.
@@ -75,7 +80,7 @@ const GAME_OVER_LINES = {
 function speciesLabel(kind) {
   return SPECIES_CONFIG[kind]?.shortName || kind.charAt(0).toUpperCase() + kind.slice(1);
 }
-import { StringGesture, TapTracker, pointAndTangentAtArcLength, constrainToWalls, MAX_CORD_LENGTH } from './string.js';
+import { StringGesture, TapTracker, gestureRoles, pointAndTangentAtArcLength, constrainToWalls, MAX_CORD_LENGTH } from './string.js';
 
 function drawRoundedRect(ctx, x, y, w, h, r) {
   if (ctx.roundRect) {
@@ -130,9 +135,12 @@ export class Game {
     this.saltGrains = [];
     this.activePockets = [];
 
-    // A picked string bean, kept for the next cord
+    // A picked flax flower, kept for the next cord
     this.beanBonus = 0;
     this.beanTimer = 0;
+
+    // The jasmine a held cord started inside, if any
+    this.jasmineStart = null;
 
     // Stalled-play hint and failure-screen options
     this.hintTimer = 0;
@@ -201,7 +209,7 @@ export class Game {
 
       // Keep active entities within new canvas bounds
       for (const ent of this.entities) {
-        if (ent.type === 'hazard' || ent.type === 'terrain') {
+        if (ent.type === 'hazard' || ent.type === 'terrain' || ent.type === 'plant') {
           ent.x = Math.max(30, Math.min(this.width - 30, ent.x));
           ent.update(0, { width: this.width, height: this.height });
         } else {
@@ -277,6 +285,7 @@ export class Game {
     this.gameOverOptions = [];
     this.beanBonus = 0;
     this.beanTimer = 0;
+    this.jasmineStart = null;
     this.clock.reset(this.currentLevel.durationSeconds || 60);
 
     // Reset wind state
@@ -442,6 +451,7 @@ export class Game {
       }
     }
     for (let i = 0; i < (pop.bean || 0); i++) this.spawnAtriumFixture('bean', i);
+    for (let i = 0; i < (pop.jasmine || 0); i++) this.spawnAtriumFixture('jasmine', i);
 
     this.initDecorations();
   }
@@ -461,6 +471,14 @@ export class Game {
       );
       hornet.motionScale = this.currentLevel?.motionScale || 1;
       this.entities.push(hornet);
+      return true;
+    }
+    if (kind === 'jasmine') {
+      const spots = this.currentLevel?.jasminePlaces || [[0.5, 0.82]];
+      const [jx, jy] = spots[index % spots.length];
+      const jasmine = new NightJasmine(jx, jy, 26);
+      jasmine.update(0, bounds);
+      this.entities.push(jasmine);
       return true;
     }
     if (kind === 'web') {
@@ -492,7 +510,7 @@ export class Game {
     const pop = this.currentLevel.population;
     const mScale = this.currentLevel.motionScale || 1.0;
 
-    const activeCounts = { brimstone: 0, damselfly: 0, hawkmoth: 0, seed: 0, snail: 0, hornet: 0, web: 0, bean: 0 };
+    const activeCounts = { brimstone: 0, damselfly: 0, hawkmoth: 0, seed: 0, snail: 0, hornet: 0, web: 0, bean: 0, jasmine: 0 };
     for (const ent of this.entities) {
       if (ent.state === 'departing' || ent.state === 'harmonizing') continue;
       if (ent.type === 'butterfly' || ent.type === 'insect') {
@@ -507,7 +525,7 @@ export class Game {
       }
     }
 
-    const pendingCounts = { brimstone: 0, damselfly: 0, hawkmoth: 0, seed: 0, snail: 0, hornet: 0, web: 0, bean: 0 };
+    const pendingCounts = { brimstone: 0, damselfly: 0, hawkmoth: 0, seed: 0, snail: 0, hornet: 0, web: 0, bean: 0, jasmine: 0 };
     for (const item of this.respawnQueue) {
       pendingCounts[item.kind] = (pendingCounts[item.kind] || 0) + 1;
     }
@@ -551,7 +569,7 @@ export class Game {
           const snail = new Snail(this.width * 0.5, this.height - 35, this.currentLevel.snailRoute);
           snail.update(0, { width: this.width, height: this.height });
           this.entities.push(snail);
-        } else if (item.kind === 'hornet' || item.kind === 'web' || item.kind === 'bean') {
+        } else if (['hornet', 'web', 'bean', 'jasmine'].includes(item.kind)) {
           this.spawnAtriumFixture(item.kind, this.entities.filter(e => e.kind === item.kind).length);
         } else {
           const edge = Math.random();
@@ -746,6 +764,11 @@ export class Game {
           this.beanTimer = 0;
         }
         this.stringGesture = new StringGesture(pos, limit);
+        // Thread starter: a stroke that begins inside an open jasmine
+        // (STRING.md rule 10). The first insect it threads settles on the flower.
+        this.jasmineStart = this.entities.find(
+          e => e.kind === 'jasmine' && e.isOpen && distance(pos, e) <= e.radius
+        ) || null;
       } else {
         this.stringGesture = null;
       }
@@ -874,6 +897,7 @@ export class Game {
       }
 
       if (this.checkCordHazards(this.currentStroke.slice(-2))) return;
+      if (this.checkJasmineTake()) return;
       this.checkCordBeans(this.currentStroke.slice(-2));
       if (this.currentStroke.length >= 5) {
         this.activePockets = this.findPockets(this.currentStroke);
@@ -934,7 +958,7 @@ export class Game {
     const found = new Set();
     for (const pocket of pockets) {
       for (const entity of this.entities) {
-        if (entity.type === 'terrain' || entity.type === 'bean') continue;
+        if (entity.type === 'terrain' || entity.type === 'bean' || entity.type === 'plant') continue;
         if (entity.state === 'roaming' && pointInPolygon({ x: entity.x, y: entity.y }, pocket.polygon)) {
           found.add(entity);
         }
@@ -1002,6 +1026,67 @@ export class Game {
       picked = true;
     }
     return picked;
+  }
+
+  /**
+   * A thread begun inside an open jasmine takes the first insect it threads: the
+   * cord ends there, the insect settles on the flower for JASMINE_STAY seconds,
+   * and the spent bloom closes when the stay ends. It scores nothing — the move
+   * thins a crowded field and leaves a target that holds still (Xyh, 2026-09-16).
+   */
+  checkJasmineTake() {
+    const jasmine = this.jasmineStart;
+    if (!jasmine || !this.isDrawing || !this.stringGesture) return false;
+    const taken = this.stringGesture.threadingOrder[0];
+    if (!taken) return false;
+    if (!jasmine.isOpen) {
+      this.jasmineStart = null;
+      return false;
+    }
+
+    const stroke = [...this.currentStroke];
+    this.stringGesture.releaseBeads();
+    this.cancelStroke();
+    this.recoilStroke = stroke;
+    this.recoilAlpha = 1;
+    this.lastEvaluatedPockets = [];
+
+    taken.parkTarget = { x: jasmine.x, y: jasmine.y };
+    taken.parkedBy = jasmine;
+    jasmine.guest = taken;
+    jasmine.stayTimer = JASMINE_STAY;
+
+    audio.playCordPluck(300);
+    this.showFeedback(
+      `${speciesLabel(taken.kind)} settled on the jasmine. It stays for ${JASMINE_STAY} seconds.`,
+      'info'
+    );
+    return true;
+  }
+
+  /** Free a guest, close the spent bloom, and grow another later. */
+  releaseJasmine(jasmine) {
+    const guest = jasmine.guest;
+    if (guest) {
+      delete guest.parkTarget;
+      delete guest.parkedBy;
+    }
+    jasmine.guest = null;
+    jasmine.stayTimer = 0;
+    const index = this.entities.indexOf(jasmine);
+    if (index >= 0) this.entities.splice(index, 1);
+    this.respawnQueue.push({ kind: 'jasmine', delay: JASMINE_REGROW });
+  }
+
+  /** Count down each guest's stay; a guest used in a drawing frees its flower early. */
+  updateJasmines(dt) {
+    for (const jasmine of this.entities.filter(e => e.kind === 'jasmine' && e.guest)) {
+      const guest = jasmine.guest;
+      const gone = guest.state === 'harmonizing' || guest.state === 'departing'
+        || !this.entities.includes(guest);
+      jasmine.stayTimer -= dt;
+      if (gone || jasmine.stayTimer <= 0) this.releaseJasmine(jasmine);
+    }
   }
 
   /** The kept bean fades if it is not used on the next cord. */
@@ -1092,7 +1177,7 @@ export class Game {
       const enclosed = this.entities.filter(entity => {
         if (entity.state === 'departing' || entity.state === 'harmonizing') return false;
         // Web patches and beans are scenery, never pocket content.
-        if (entity.type === 'terrain' || entity.type === 'bean') return false;
+        if (entity.type === 'terrain' || entity.type === 'bean' || entity.type === 'plant') return false;
         return pointInPolygon({ x: entity.x, y: entity.y }, pocket.polygon);
       });
       return {
@@ -1358,8 +1443,11 @@ export class Game {
         this.stringGesture.updateBeads(dt, bounds);
       }
 
-      if (this.isDrawing && !this.checkCordHazards()) this.checkCordBeans();
+      if (this.isDrawing && !this.checkCordHazards()) {
+        if (!this.checkJasmineTake()) this.checkCordBeans();
+      }
       this.updateBean(dt);
+      this.updateJasmines(dt);
       this.maintainPopulation(dt);
     } else {
       audio.stopCicadas();
@@ -1689,7 +1777,7 @@ export class Game {
       // Count non-hazard roaming entities currently inside the loop
       const enclosedCount = this.entities.filter(entity => {
         if (entity.state === 'departing' || entity.state === 'harmonizing') return false;
-        if (entity.type === 'hazard' || entity.type === 'terrain' || entity.type === 'bean') return false;
+        if (entity.type === 'hazard' || entity.type === 'terrain' || entity.type === 'bean' || entity.type === 'plant') return false;
         return pointInPolygon({ x: entity.x, y: entity.y }, poly);
       }).length;
 
@@ -1835,6 +1923,36 @@ export class Game {
     ctx.restore();
 
     this.hintRect = { x, y, w: cardW, h: cardH };
+  }
+
+  /** A small jasmine spray, used on the Midnight ready cards. */
+  drawJasmineGlyph(ctx, x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.strokeStyle = themeColor('outline', '#4d6b52');
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(0, 10);
+    ctx.quadraticCurveTo(-6, 2, -9, -7);
+    ctx.moveTo(0, 10);
+    ctx.quadraticCurveTo(6, 2, 9, -7);
+    ctx.stroke();
+    ctx.fillStyle = '#5f7f5a';
+    ctx.beginPath(); ctx.ellipse(-7, 6, 5, 2.4, -0.6, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(7, 6, 5, 2.4, 0.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#f6f8ec';
+    ctx.strokeStyle = 'rgba(120, 140, 110, 0.55)';
+    ctx.lineWidth = 0.7;
+    for (const [bx, by] of [[-9, -9], [0, -13], [9, -9]]) {
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+        ctx.beginPath();
+        ctx.ellipse(bx + Math.cos(a) * 3.2, by + Math.sin(a) * 3.2, 2.7, 1.8, a, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
   }
 
   /** The flax flower, shared with the field drawing. */
@@ -2249,15 +2367,21 @@ export class Game {
       ctx.textAlign = 'right';
       ctx.fillStyle = themeColor('ink', '#4a4235');
       ctx.font = '600 12.5px system-ui, -apple-system, sans-serif';
-      ctx.fillText(objText, this.width - 24, 34);
+      // Wrap inside the space right of the cord meter. A visit with five
+      // requirements used to run its list back across the meter and the clock.
+      const objRight = this.width - 24;
+      const objWidth = Math.max(160, objRight - (cx + meterW / 2) - 16);
+      const objectiveLines = wrapText(ctx, objText, objWidth);
+      objectiveLines.forEach((line, i) => ctx.fillText(line, objRight, 34 + i * 15));
+      const objectiveDrop = (objectiveLines.length - 1) * 15;
 
       ctx.fillStyle = themeColor('muted', '#7a6c57');
       ctx.font = 'italic 11px Mali, sans-serif';
-      ctx.fillText(lvlTitle, this.width - 24, 49);
+      ctx.fillText(lvlTitle, objRight, 49 + objectiveDrop);
 
       ctx.fillStyle = themeColor('muted', '#8a7f70');
       ctx.font = '500 11px system-ui, -apple-system, sans-serif';
-      ctx.fillText(`Score: ${this.score}`, this.width - 24, 64);
+      ctx.fillText(`Score: ${this.score}`, objRight, 64 + objectiveDrop);
     }
 
     // --- Wind Indicator Badge (Noon Visits V-VI) ---
@@ -2765,6 +2889,8 @@ export class Game {
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
         ctx.fillText('No modes: thread to trace, or close the cord to loop.', 0, 55);
         ctx.fillText('A stroke cannot both thread and enclose.', 0, 70);
+        this.drawJasmineGlyph(ctx, -104, 30);
+        ctx.fillText('Begin a thread inside the jasmine: the first insect it crosses settles there for 24 s.', 0, 68);
         ctx.restore();
       } else if (teachMidnight03) {
         ctx.save(); ctx.translate(0, boxH / 2 - 96);
@@ -2815,6 +2941,8 @@ export class Game {
         ctx.fillText('Twelve Visits Complete', 0, -boxH / 2 + 38);
       } else if (isMidnight12) {
         ctx.fillText('Visit XII Complete', 0, -boxH / 2 + 38);
+        this.drawJasmineGlyph(ctx, -104, 30);
+        ctx.fillText('The jasmine stands to one side. A thread begun in it settles one insect for 24 s.', 0, 68);
       } else {
         ctx.fillText('Visit Complete', 0, -boxH / 2 + 38);
       }

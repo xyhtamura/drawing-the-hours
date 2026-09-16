@@ -135,6 +135,23 @@ export class Insect {
   update(dt, bounds) {
     this.stateTime += dt;
 
+    // An insect taken by the night jasmine flies to it and settles there. It is
+    // still a target while it waits: that is the point of the move.
+    if (this.parkTarget) {
+      this.flapPhase += (this.config?.flutterFreq || 16) * dt * 0.5;
+      const dx = this.parkTarget.x - this.x;
+      const dy = this.parkTarget.y - this.y;
+      const d = Math.hypot(dx, dy);
+      if (d > 2) {
+        const step = Math.min(d, 150 * dt);
+        this.x += (dx / d) * step;
+        this.y += (dy / d) * step;
+        this.heading = Math.atan2(dy, dx);
+        this.targetHeading = this.heading;
+      }
+      return;
+    }
+
     // A bead keeps its own movement and StringGesture.updateBeads confines it to the
     // cord. A lacewing's route is tied to its leaves, so a threaded lacewing holds still.
     if (this.state === 'bead' && this.kind === 'lacewing') {
@@ -1059,6 +1076,119 @@ export function drawFlaxFlower(ctx) {
   ctx.fillStyle = '#f6df94'; ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#78643b'; ctx.beginPath(); ctx.arc(0, 0, 1.2, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
+}
+
+/**
+ * Night-blooming jasmine. It stands still and takes no part in a combination.
+ * A thread begun inside it takes the first insect the thread crosses: that
+ * insect settles on the flower and stays for a while, which is how a crowded
+ * Midnight field is thinned out. The bloom is spent afterwards and another opens
+ * later (Xyh, 2026-09-16).
+ */
+export class NightJasmine {
+  /** Placed by field ratio so it keeps its place in the scene when the canvas resizes. */
+  constructor(xRatio, yRatio, radius = 26) {
+    this.type = 'plant';
+    this.kind = 'jasmine';
+    this.xRatio = xRatio;
+    this.yRatio = yRatio;
+    this.x = 0;
+    this.y = 0;
+    this.radius = radius;
+    this.state = 'static';
+    this.guest = null;
+    this.stayTimer = 0;
+    this.swayPhase = Math.random() * Math.PI * 2;
+  }
+
+  get isOpen() {
+    return this.guest === null;
+  }
+
+  update(dt, bounds) {
+    this.swayPhase += dt * 0.9;
+    if (!bounds) return;
+    const top = 104 + this.radius;
+    const bottom = bounds.height - 34 - this.radius;
+    this.x = bounds.width * this.xRatio;
+    this.y = Math.min(Math.max(bounds.height * this.yRatio, top), Math.max(top, bottom));
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y + 4);
+    const sway = Math.sin(this.swayPhase) * 0.05;
+    ctx.rotate(sway);
+    ctx.scale(1.15, 1.15);
+
+    // Scent, shown as a soft bloom of light while the flower is open
+    if (this.isOpen) {
+      const halo = ctx.createRadialGradient(0, 0, 4, 0, 0, this.radius + 10);
+      halo.addColorStop(0, 'rgba(238, 244, 226, 0.34)');
+      halo.addColorStop(1, 'rgba(238, 244, 226, 0)');
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius + 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Trailing stems
+    ctx.strokeStyle = themeColor('outline', '#4d6b52');
+    ctx.lineWidth = 1.4;
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(0, 12);
+      ctx.quadraticCurveTo(side * 12, 2, side * 17, -12);
+      ctx.stroke();
+    }
+
+    // Narrow leaves
+    ctx.fillStyle = '#5f7f5a';
+    for (const [lx, ly, rot] of [[-13, 2, -0.7], [12, 3, 0.7], [-5, 13, -0.2], [6, 13, 0.25]]) {
+      ctx.save();
+      ctx.translate(lx, ly);
+      ctx.rotate(rot);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 7, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Star blooms, open and pale at night; a spent flower keeps its buds closed
+    const open = this.isOpen;
+    for (const [bx, by, scale] of [[-14, -13, 1], [0, -18, 1.15], [14, -12, 0.95]]) {
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.scale(scale, scale);
+      if (open) {
+        ctx.fillStyle = '#f6f8ec';
+        ctx.strokeStyle = 'rgba(120, 140, 110, 0.55)';
+        ctx.lineWidth = 0.8;
+        for (let i = 0; i < 5; i++) {
+          const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+          ctx.beginPath();
+          ctx.ellipse(Math.cos(a) * 4.2, Math.sin(a) * 4.2, 3.6, 2.4, a, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+        ctx.fillStyle = '#e8e6c2';
+        ctx.beginPath();
+        ctx.arc(0, 0, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = '#cfd8c0';
+        ctx.strokeStyle = 'rgba(110, 130, 100, 0.5)';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 2.6, 4.6, 0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
 }
 
 /** The glow changes its halo, never its body visibility or target radius. */

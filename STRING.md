@@ -344,6 +344,42 @@ Archived: making the live closure check incremental, so that each pointer sample
 tests only the newest segment. Xyh judged the explicit rule enough, and the
 current check measured 0.21 ms per sample at 320 stroke points on desktop.
 
+## 10. Three relations between a stroke and an entity
+
+Xyh named these on 2026-09-16, so rules can ask for one of them instead of each
+rule inventing its own test. `gestureRoles(points, entity)` in `src/string.js`
+returns all three.
+
+| Relation | Test | Read by |
+| --- | --- | --- |
+| **Thread starter** | The stroke's first point lies inside the entity's radius (`startsIn`) | The night jasmine |
+| **Threaded** | The stroke begins outside and crosses the entity (`crosses && !startsIn`) | Bead threading (rule 3), the Trace (rule 4) |
+| **Thread ended** | The stroke's last point lies inside the radius (`endsIn`) | Nothing yet — named so the third case is not reinvented |
+
+A stroke can hold more than one relation to the same entity: one that begins
+inside a flower and comes back through it both starts in it and crosses it.
+
+### The night jasmine
+
+Added 2026-09-16 for Midnight XI–XII. The jasmine stands still, is never pocket
+content, and is never threaded. A stroke that is a **thread starter** on an open
+jasmine takes the first insect it threads: the cord ends there, that insect flies
+to the flower and settles on it for `JASMINE_STAY` (24 s), and the bloom is spent
+while its guest sits. It scores nothing and advances no objective.
+
+What it is for: the later Midnight visits mix required figures, and insects
+cluster, which makes a clean pocket hard to find. The jasmine buys one insect out
+of the cluster and leaves it stationary — a target that can be drawn around at
+leisure, and one fewer body in the crowd.
+
+A guest gathered into a drawing frees its flower early. When the stay ends the
+spent bloom closes and another opens `JASMINE_REGROW` (12 s) later, so the move
+is a resource rather than a standing facility. A thread begun in a spent bloom is
+an ordinary thread, and its bead cancels the loop as usual.
+
+Open: whether a hazard can be a wanted ingredient later (rule 6), and what a
+**thread ended** relation should do.
+
 ## What the change removes and keeps
 
 Removed when built: the Enclose / Trace button, `gestureMode`,

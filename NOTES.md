@@ -10,9 +10,63 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Playtest Noon IV–VI and the occasional flax-flower returns in Dusk VIII and Midnight XII on a touch device.
+Playtest the night jasmine at Midnight XI–XII, and Noon IV–VI, on a touch device.
 
 ## Activity
+
+2026-09-16 — Claude Code — Added the night jasmine to Midnight XI–XII and named
+the three relations a stroke can have to an entity, after Xyh's playtest of the
+later visits: the required figures interact, the field clusters, and a clean
+pocket becomes hard to find.
+
+- **Three gesture relations** (`gestureRoles` in `src/string.js`, STRING.md rule
+  10). **Thread starter**: the stroke begins inside the entity's radius.
+  **Threaded**: it begins outside and crosses the entity — what threads a bead.
+  **Thread ended**: it ends inside the radius; nothing reads it yet, and it is
+  named so the third case is not reinvented. Xyh's taxonomy, written down so a
+  rule can ask for one instead of inventing its own test.
+- **Night jasmine** (`NightJasmine` in `src/entities.js`, `type: 'plant'`). A
+  stroke that is a thread starter on an open jasmine takes the first insect it
+  threads: the cord ends there, the insect flies over and settles for
+  `JASMINE_STAY` (24 s), and the bloom is spent while its guest sits. It scores
+  nothing and advances no objective — Xyh's call. What it buys is one insect out
+  of the cluster and a target that holds still. A guest gathered into a drawing
+  frees the flower early; when the stay ends the spent bloom closes and another
+  opens `JASMINE_REGROW` (12 s) later, so it regenerates rather than standing
+  there permanently. A thread begun in a spent bloom is an ordinary thread.
+- **Where it stands.** XI has one at the foot of the window (0.50, 0.84); XII has
+  one off to the left (0.18, 0.40), so thinning the field costs a trip. X keeps
+  none: tracing is still being taught there.
+- **Parked insects** keep `state: 'roaming'` and are enclosable while they sit;
+  `Insect.update` flies them to the flower at 150 px/s and then holds them.
+- **HUD fix found while testing XI.** The wide layout wrote the objective list on
+  one line, and five requirements ran it back across the cord meter and the
+  clock. It now wraps into the space right of the meter, and the title and score
+  drop with it. This was the other half of Xyh's "hard to tell what's missing".
+
+Verification:
+
+- New `test/test_jasmine.js`: the three relations, including a stroke that stays
+  clear and an empty stroke; the jasmine authored into XI and XII only, with the
+  plan agreeing on cast and placement; a take that ends the cord, settles the
+  guest, scores nothing and advances no objective; the guest arriving and then
+  holding still; a spent bloom refusing a second insect; the stay ending, the
+  bloom closing, and a regrow queued; a guest harmonized early freeing its
+  flower; the jasmine never threaded and never pocket content. All seven suites,
+  `node --check`, and `git diff --check` pass.
+- In the live page at `http://localhost:8000/drawing-the-hours/`: a dispatched
+  stroke from inside the flower through a lacewing ended the cord, banner
+  "Lacewing settled on the jasmine. It stays for 24 seconds.", score 0 and
+  objectives unchanged, and the lacewing sat at distance 0 from the flower three
+  seconds later. Screenshots: an open bloom mid-field, and Midnight XI with the
+  wrapped HUD.
+- Not measured: 24 s, the 12 s regrow, and one flower per visit are first
+  guesses. Whether the jasmine actually relieves the clustering is a playtest
+  question, not something these checks answer.
+
+Left undone: what a **thread ended** relation should do (named, unused), and
+Xyh's earlier future idea that a hazard could become a wanted ingredient. Both
+are recorded in STRING.md rather than built.
 
 2026-09-16 — Claude Code — Second pass on the day after Xyh played the first
 one. Hazards were sorted into kinds, Noon's pressure changed from care to count,

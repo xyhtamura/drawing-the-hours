@@ -407,6 +407,38 @@ export function pointAndTangentAtArcLength(points, targetS) {
 }
 
 /**
+ * How a stroke stands in relation to one entity (STRING.md, rule 10). Three
+ * relations, named so rules can ask for one of them:
+ *
+ * - **thread starter** — the stroke begins inside the entity's radius
+ *   (`startsIn`). The night jasmine reads this one.
+ * - **threaded** — the stroke begins outside and crosses the entity
+ *   (`crosses && !startsIn`). This is what threads a bead.
+ * - **thread ended** — the stroke ends inside the radius (`endsIn`). Nothing
+ *   reads it yet; it is named so the third case is not reinvented later.
+ */
+export function gestureRoles(points, entity) {
+  if (!points || points.length === 0 || !entity) {
+    return { startsIn: false, crosses: false, endsIn: false, threaded: false };
+  }
+  const radius = entity.radius || 0;
+  const first = points[0];
+  const last = points[points.length - 1];
+  const startsIn = distance(first, entity) <= radius;
+  const endsIn = distance(last, entity) <= radius;
+
+  let crosses = false;
+  for (let i = 1; i < points.length; i++) {
+    if (segmentEntersDisk(points[i - 1], points[i], entity, radius) !== null) {
+      crosses = true;
+      break;
+    }
+  }
+
+  return { startsIn, crosses, endsIn, threaded: crosses && !startsIn };
+}
+
+/**
  * String Gesture controller managing active stroke, walls, beads, snapping, and taps.
  */
 export class StringGesture {
@@ -457,7 +489,7 @@ export class StringGesture {
         const hits = [];
         for (const entity of entities) {
           if (entity === exclude || entity.type === 'hazard' || entity.type === 'terrain'
-            || entity.type === 'bean' || entity.state !== 'roaming') continue;
+            || entity.type === 'bean' || entity.type === 'plant' || entity.state !== 'roaming') continue;
           if (this.beads.some(b => b.entity === entity)) continue;
           const t = segmentEntersDisk(last, point, entity, entity.radius);
           if (t !== null) hits.push({ entity, t });
@@ -614,7 +646,7 @@ export class TapTracker {
   onPress(pos, time, entities = []) {
     const target = (entities || []).find(
       e => e.state !== 'departing' && e.state !== 'harmonizing'
-        && e.type !== 'hazard' && e.type !== 'terrain' && e.type !== 'bean'
+        && e.type !== 'hazard' && e.type !== 'terrain' && e.type !== 'bean' && e.type !== 'plant'
         && distance(pos, e) <= e.radius
     ) || null;
 

@@ -140,6 +140,21 @@ teaches this condition with extra time alongside the hornet; level 6 combines it
 with Seed & Trio circles, the hornet, and the webs.
 This is an authored movement rule, not a fluid simulation.
 
+### Midnight jasmine: levels 11–12
+
+Xyh's 2026-09-16 playtest: the late Midnight visits ask for several different
+figures at once, and the field clusters, so a clean pocket is hard to find and it
+is hard to see which requirement is still open. Two answers. The visit card
+reopens during play, above. And a night-blooming jasmine stands in XI and XII:
+begin a thread inside it and the first insect that thread crosses settles on the
+flower for 24 seconds.
+
+It gathers nothing by itself. It thins the cluster by one and leaves a target
+that holds still, which is what makes the remaining figures drawable. The bloom
+is spent while its guest sits, a guest gathered into a drawing frees it early,
+and another opens twelve seconds after one closes. The rule and the gesture
+relations it reads are in [STRING.md](STRING.md) rule 10.
+
 ### Dusk lacewing: levels 7–9
 
 Add `lacewing`, with mint veined folded wings and a narrow body. It travels
@@ -280,8 +295,8 @@ Xyh's confirmed order. No extra narrative lines are required.
 | 8 | Dusk — The gaps in the sound | Five combinations, including one Nursery (1 flier + 1 seed) and one lacewing Counterpart Pair. | Same passage; a sound layer may intermittently fall quiet without changing the rules. |
 | 9 | Dusk — Carrying something home | Six combinations, including three single loops and two figure-eights. | Slightly denser field; gesture switching, with no medicine gameplay metaphor. |
 | 10 | Midnight — The window corner | Three firefly–lacewing–firefly traces. | Sparse cast teaches open tracing. |
-| 11 | Midnight — Figures | Six combinations including a pair, Seed & Wing, a figure-eight, and two traces. | Explicit Enclose/Trace switching. |
-| 12 | Midnight — Tomorrow keeps happening | Seven combinations including two singles, two figure-eights, two traces, and a Nursery. | Flexible synthesis with no new rule. |
+| 11 | Midnight — Figures | Six combinations including a pair, Seed & Wing, a figure-eight, and two traces. | Threading beside enclosure; a jasmine in reach settles one insect at a time. |
+| 12 | Midnight — Tomorrow keeps happening | Seven combinations including two singles, two figure-eights, two traces, and a Nursery. | Flexible synthesis with no new rule; the jasmine stands off to one side. |
 
 The midnight scene must not hide valid targets or hazards. Lamplight is a
 palette and framing treatment in these twelve levels. The selected

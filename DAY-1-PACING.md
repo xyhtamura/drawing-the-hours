@@ -32,7 +32,7 @@ the existing implementation.
 | Dawn | Close a loop around chosen contents | Pair, Seed & Wing, trio |
 | Noon | Volume and speed under pressure | Six combinations a visit on Dawn's simple loops, a picked pod for length, a wandering hornet, fixed webs, gusts |
 | Dusk | Cross the cord | Counterpart Pair at VII, Nursery at VIII, both shapes at IX |
-| Midnight | Thread in order | Ordered Trace, then traces beside enclosure |
+| Midnight | Thread in order | Ordered Trace, then traces beside enclosure; the jasmine thins the cluster |
 
 Noon IV–VI now require loops only. Nursery Polarity, a crossing recipe, sits at
 Dusk VIII where its shape has just been taught. This closes the similarity
@@ -129,7 +129,8 @@ Totals include seeds and snails. A dash means zero.
 | Snail | Invalid enclosure content; does not cut the cord | II | Mid-field seam in II–III; bottom edge in VIII–IX, XII |
 | Hornet | Wanders like an insect; cuts a touching cord; invalid enclosure content | V | Returns in VI beside the webs |
 | Web patch | Static; cuts a touching cord; terrain, so valid inside a loop | VI | Two patches, placed by the level; the only fixed-path hazard |
-| Picked pod | Adds 400 px to the NEXT cord, kept 12 s; not a target | IV | Present through the hour; another grows 8 s after one is taken |
+| Picked pod | Adds 400 px to the NEXT cord, kept 12 s; not a target | IV | Present through the hour; another grows 8 s after one is taken; flax, and also in VIII and XII |
+| Night jasmine | A thread begun in it settles the first insect it crosses for 24 s; not a target | XI | Also in XII; the bloom is spent while its guest sits and reopens 12 s after it closes |
 
 The snail does return. Its later placement makes it less likely to intersect a useful
 drawing than the Dawn seam route. Presence and mechanical prominence are different.
