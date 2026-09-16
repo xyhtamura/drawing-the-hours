@@ -84,6 +84,33 @@ is not shown Midnight's species and figures. The Unlock All in Save control is
 for playtesting and appears only when the page is opened with `?dev`; the
 console hooks `unlockAllLevels()` and `resetProgress()` are always available.
 
+## One demand per hour
+
+Xyh decided on 2026-09-16 that each hour should ask for one new kind of
+attention, rather than stack recipes: Dawn closes a loop, Noon manages the field
+and the cord, Dusk crosses the cord, Midnight threads in order. The crossing
+therefore starts at Dusk VII, not at Noon IV, and Nursery Polarity — a crossing
+recipe — belongs to Dusk VIII. Noon keeps the loops Dawn taught and changes the
+conditions they are drawn in: gusts, a patrolling hornet, fixed web patches, and
+the cord spool.
+
+### Noon cord economy: levels 4–6
+
+The spool is the hour's new object. Running the held cord over one adds 400 px
+to that stroke's snap limit, and the mark on the cord meter moves with it. The
+thread lasts for that stroke only; the spool leaves the field and another is
+left eight seconds later, so it is a resource to route through rather than a
+permanent upgrade. It is never pocket content and is never threaded as a bead.
+Noon's loops grow across the chapter — three kinds, then a seed and a flier,
+then a seed and three kinds — so the thread is worth the detour by VI.
+
+The hornet patrols one horizontal lane at about 54 px a second and turns at the
+edges; its lane is drawn faintly on the field. A web patch hangs where the level
+places it and never moves. Both break a cord they touch, and say which broke it.
+A hornet inside a pocket spoils the drawing as a snail does; a web does not,
+because it is terrain rather than an inhabitant — a loop drawn around a web is
+valid, the cord simply cannot cross it.
+
 ## Gradual additions to the prototype
 
 Xyh explicitly supports new insects and mechanics within these twelve levels.
@@ -100,7 +127,8 @@ playable-field widths per second in its direction. Existing drift
 continues; no wind force acts on insects, cord, or pointer. Pause stops the
 cycle. Seed exit and quota-based re-entry remain visible. Containment uses
 positions at release, so waiting through a gust is a valid strategy. Level 5
-teaches this condition with extra time; level 6 combines it with Seed & Trio circles.
+teaches this condition with extra time alongside the hornet; level 6 combines it
+with Seed & Trio circles, the hornet, and the webs.
 This is an authored movement rule, not a fluid simulation.
 
 ### Dusk lacewing: levels 7–9
@@ -236,10 +264,10 @@ Xyh's confirmed order. No extra narrative lines are required.
 | 1 | Dawn — Before the bus | Four single loops around matching pairs; the clock starts after the first loop. | A narrow curb, grass seam, and the lower edge of a bus-stop post; spacious center. |
 | 2 | Dawn — Something in the air | Five combinations, including two Seed & Wing loops. | Seed drift, and the first snail crawling a paving seam through the middle of the field. |
 | 3 | Dawn — The curbside patch | Four combinations, including two three-kind trios. | Same patch, third flier silhouette introduced; the seam snail stays. |
-| 4 | Noon — Lunch in the atrium | Four combinations, including three Counterpart Pairs. | Planting beside pale paving; teach one different flier in each lobe. |
-| 5 | Noon — For now | Four figure-eights, including two Nurseries (1 flier + 1 seed); introduce warned gusts. | Choose when to close around drifting seeds. |
-| 6 | Noon — The glass and the leaves | Four combinations, including two Seed & Trio loops, with breeze. | Glass seams frame single-loop groupings. |
-| 7 | Dusk — The way through | Five combinations, including two Counterpart Pairs with a lacewing. | Leaf anchors offer visible resting intervals. |
+| 4 | Noon — Lunch in the atrium | Four combinations, including two three-kind trios; introduce the cord spool. | Planting beside pale paving; a clear field for the new resource. |
+| 5 | Noon — For now | Four combinations, including two Seed & Wing loops; introduce the hornet and warned gusts. | One patrol lane crosses the planting; choose when to close around drifting seeds. |
+| 6 | Noon — The glass and the leaves | Four combinations, including two Seed & Trio loops, with breeze, hornet, and webs. | Glass seams frame single-loop groupings; two webs hang in fixed places. |
+| 7 | Dusk — The way through | Five combinations, including two Counterpart Pairs with a lacewing; introduce the crossing. | Leaf anchors offer visible resting intervals, so the new shape is drawn against targets that wait. |
 | 8 | Dusk — The gaps in the sound | Five combinations, including one Nursery (1 flier + 1 seed) and one lacewing Counterpart Pair. | Same passage; a sound layer may intermittently fall quiet without changing the rules. |
 | 9 | Dusk — Carrying something home | Six combinations, including three single loops and two figure-eights. | Slightly denser field; gesture switching, with no medicine gameplay metaphor. |
 | 10 | Midnight — The window corner | Three firefly–lacewing–firefly traces. | Sparse cast teaches open tracing. |

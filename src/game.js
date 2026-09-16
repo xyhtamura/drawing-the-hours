@@ -16,7 +16,7 @@ import {
   polylineTouchesDisk,
   extractClosedPockets,
 } from './geometry.js';
-import { Butterfly, DandelionSeed, Snail, SPECIES_CONFIG, drawFirefly } from './entities.js';
+import { Butterfly, DandelionSeed, Snail, Hornet, WebPatch, CordSpool, SPECIES_CONFIG, drawFirefly } from './entities.js';
 import { evaluateDrawing } from './recipes.js';
 import { DandelionClock } from './clock.js';
 import { audio } from './audio.js';
@@ -27,6 +27,11 @@ import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } f
 // Drawn width of the held cord. Under string rules a tip that comes this close to
 // the cord overlaps it on screen, so it counts as closing (STRING.md, rule 9).
 const CORD_WIDTH = 4.5;
+
+// Thread a cord spool adds to the stroke that collects it, and the seconds
+// before another spool is left in the atrium (Noon, cord economy).
+const CORD_SPOOL_BONUS = 400;
+const CORD_SPOOL_RESPAWN = 8;
 
 // Seconds of play without objective progress before the hint card appears
 // (CAMPAIGN.md, tuning section). Dismissing it starts the count again.
@@ -48,6 +53,13 @@ const HINT_TEXT = {
   seedTrio: 'Close one loop around three different kinds and one seed.',
   twinSeedWing: 'Cross the cord: one insect and one seed in each pocket.',
   trace: 'Thread a firefly, then a lacewing, then a different firefly in one stroke.',
+};
+
+// What broke the cord, named so the player can act on it.
+const HAZARD_BREAK_MESSAGE = {
+  snail: 'The snail broke the cord. Draw around it.',
+  hornet: 'The hornet broke the cord. Watch its lane.',
+  web: 'The cord stuck in the web. Draw around it.',
 };
 
 // The failure card's second line, one per hour.
@@ -184,7 +196,7 @@ export class Game {
 
       // Keep active entities within new canvas bounds
       for (const ent of this.entities) {
-        if (ent.type === 'hazard') {
+        if (ent.type === 'hazard' || ent.type === 'terrain') {
           ent.x = Math.max(30, Math.min(this.width - 30, ent.x));
           ent.update(0, { width: this.width, height: this.height });
         } else {
@@ -412,9 +424,55 @@ export class Game {
         snail.update(0, { width: this.width, height: this.height });
         this.entities.push(snail);
       }
+
+      // Atrium fixtures: patrolling hornets, web patches, and cord spools.
+      for (const kind of ['hornet', 'web', 'spool']) {
+        for (let i = 0; i < (pop[kind] || 0); i++) this.spawnAtriumFixture(kind, i);
+      }
     }
 
     this.initDecorations();
+  }
+
+  /**
+   * Place one atrium fixture: a hornet on its lane, a web patch at its authored
+   * spot, or a spool on clear ground. Lanes and patch positions come from the
+   * level so a player can learn them; only the spool is placed at random.
+   * Returns false when a spool found no clear ground, so the caller can requeue.
+   */
+  spawnAtriumFixture(kind, index = 0) {
+    const bounds = { width: this.width, height: this.height };
+    if (kind === 'hornet') {
+      const lanes = this.currentLevel?.hornetLanes || [0.42, 0.68];
+      const lane = lanes[index % lanes.length];
+      const direction = index % 2 === 0 ? 1 : -1;
+      const hornet = new Hornet(this.width * (direction > 0 ? 0.2 : 0.8), lane, direction);
+      hornet.update(0, bounds);
+      this.entities.push(hornet);
+      return true;
+    }
+    if (kind === 'web') {
+      const spots = this.currentLevel?.webPatches || [[0.28, 0.3], [0.72, 0.68]];
+      const [wx, wy] = spots[index % spots.length];
+      const web = new WebPatch(wx, wy, 30);
+      web.update(0, bounds);
+      this.entities.push(web);
+      return true;
+    }
+    if (kind === 'spool') {
+      for (let attempt = 0; attempt < 25; attempt++) {
+        const sx = this.width * (0.15 + Math.random() * 0.7);
+        const sy = this.height * (0.2 + Math.random() * 0.6);
+        const clear = this.entities.every(e => Math.hypot(e.x - sx, e.y - sy) >= e.radius + 34);
+        if (clear) {
+          this.entities.push(new CordSpool(sx, sy));
+          return true;
+        }
+      }
+      this.respawnQueue.push({ kind: 'spool', delay: 0.4 });
+      return false;
+    }
+    return false;
   }
 
   maintainPopulation(dt = 0.016) {
@@ -422,7 +480,7 @@ export class Game {
     const pop = this.currentLevel.population;
     const mScale = this.currentLevel.motionScale || 1.0;
 
-    const activeCounts = { brimstone: 0, damselfly: 0, hawkmoth: 0, seed: 0, snail: 0 };
+    const activeCounts = { brimstone: 0, damselfly: 0, hawkmoth: 0, seed: 0, snail: 0, hornet: 0, web: 0, spool: 0 };
     for (const ent of this.entities) {
       if (ent.state === 'departing' || ent.state === 'harmonizing') continue;
       if (ent.type === 'butterfly' || ent.type === 'insect') {
@@ -430,12 +488,14 @@ export class Game {
         activeCounts[k] = (activeCounts[k] || 0) + 1;
       } else if (ent.type === 'seed') {
         activeCounts.seed += 1;
-      } else if (ent.type === 'hazard') {
-        activeCounts.snail += 1;
+      } else {
+        // Hazards, terrain, and spools are counted by kind, so one hazard never
+        // stands in for another.
+        activeCounts[ent.kind] = (activeCounts[ent.kind] || 0) + 1;
       }
     }
 
-    const pendingCounts = { brimstone: 0, damselfly: 0, hawkmoth: 0, seed: 0, snail: 0 };
+    const pendingCounts = { brimstone: 0, damselfly: 0, hawkmoth: 0, seed: 0, snail: 0, hornet: 0, web: 0, spool: 0 };
     for (const item of this.respawnQueue) {
       pendingCounts[item.kind] = (pendingCounts[item.kind] || 0) + 1;
     }
@@ -475,6 +535,8 @@ export class Game {
           const snail = new Snail(this.width * 0.5, this.height - 35, this.currentLevel.snailRoute);
           snail.update(0, { width: this.width, height: this.height });
           this.entities.push(snail);
+        } else if (item.kind === 'hornet' || item.kind === 'web' || item.kind === 'spool') {
+          this.spawnAtriumFixture(item.kind, this.entities.filter(e => e.kind === item.kind).length);
         } else {
           const edge = Math.random();
           let sx = 20, sy = 20;
@@ -790,6 +852,7 @@ export class Game {
       }
 
       if (this.checkCordHazards(this.currentStroke.slice(-2))) return;
+      this.checkCordSpools(this.currentStroke.slice(-2));
       if (this.currentStroke.length >= 5) {
         this.activePockets = this.findPockets(this.currentStroke);
       } else {
@@ -849,6 +912,7 @@ export class Game {
     const found = new Set();
     for (const pocket of pockets) {
       for (const entity of this.entities) {
+        if (entity.type === 'terrain' || entity.type === 'spool') continue;
         if (entity.state === 'roaming' && pointInPolygon({ x: entity.x, y: entity.y }, pocket.polygon)) {
           found.add(entity);
         }
@@ -888,11 +952,41 @@ export class Game {
    */
   checkCordHazards(points = this.currentStroke) {
     if (!this.isDrawing) return false;
-    const hazard = this.entities.find(e => e.type === 'hazard' && e.state !== 'departing'
+    const hazard = this.entities.find(e => (e.type === 'hazard' || e.type === 'terrain')
+      && e.state !== 'departing'
       && polylineTouchesDisk(points, e.x, e.y, e.radius + 3));
     if (!hazard) return false;
-    this.breakCord('The snail broke the cord. Draw around it.');
+    this.breakCord(HAZARD_BREAK_MESSAGE[hazard.kind] || HAZARD_BREAK_MESSAGE.snail);
     return true;
+  }
+
+  /**
+   * A held cord run over a spool takes its thread: the stroke's snap limit rises
+   * by CORD_SPOOL_BONUS. The spool leaves the field and another is left after
+   * CORD_SPOOL_RESPAWN seconds. A spool is never pocket content.
+   */
+  checkCordSpools(points = this.currentStroke) {
+    if (!this.isDrawing || !this.stringGesture) return false;
+    let collected = false;
+    for (let i = this.entities.length - 1; i >= 0; i--) {
+      const spool = this.entities[i];
+      if (spool.type !== 'spool' || spool.state === 'departing') continue;
+      if (!polylineTouchesDisk(points, spool.x, spool.y, spool.radius + 3)) continue;
+      this.entities.splice(i, 1);
+      this.respawnQueue.push({ kind: 'spool', delay: CORD_SPOOL_RESPAWN });
+      this.stringGesture.maxCordLength += CORD_SPOOL_BONUS;
+      audio.playCordPluck(520);
+      this.showFeedback(`Cord spool: +${CORD_SPOOL_BONUS} px of thread on this cord.`, 'success');
+      collected = true;
+    }
+    return collected;
+  }
+
+  /** The snap limit in force: the level's, plus any spool taken by the held cord. */
+  cordLimit() {
+    return this.isDrawing && this.stringGesture
+      ? this.stringGesture.maxCordLength
+      : (this.currentLevel?.maxCordLength ?? MAX_CORD_LENGTH);
   }
 
   resolveCurrentStroke() {
@@ -965,6 +1059,8 @@ export class Game {
     const pocketsWithEntities = rawPockets.map(pocket => {
       const enclosed = this.entities.filter(entity => {
         if (entity.state === 'departing' || entity.state === 'harmonizing') return false;
+        // Web patches and spools are scenery, never pocket content.
+        if (entity.type === 'terrain' || entity.type === 'spool') return false;
         return pointInPolygon({ x: entity.x, y: entity.y }, pocket.polygon);
       });
       return {
@@ -1207,7 +1303,7 @@ export class Game {
         this.stringGesture.updateBeads(dt, bounds);
       }
 
-      if (this.isDrawing) this.checkCordHazards();
+      if (this.isDrawing && !this.checkCordHazards()) this.checkCordSpools();
       this.maintainPopulation(dt);
     } else {
       audio.stopCicadas();
@@ -1393,6 +1489,9 @@ export class Game {
 
     this.drawBeadMarkers(ctx);
 
+    // 5b. The lane each hornet keeps to, so its path can be read before drawing
+    this.drawHornetLanes(ctx);
+
     // 6. Translucent Paper Wind Streamlines
     this.drawWindStreaks(ctx);
 
@@ -1536,7 +1635,8 @@ export class Game {
 
       // Count non-hazard roaming entities currently inside the loop
       const enclosedCount = this.entities.filter(entity => {
-        if (entity.state === 'departing' || entity.state === 'harmonizing' || entity.type === 'hazard') return false;
+        if (entity.state === 'departing' || entity.state === 'harmonizing') return false;
+        if (entity.type === 'hazard' || entity.type === 'terrain' || entity.type === 'spool') return false;
         return pointInPolygon({ x: entity.x, y: entity.y }, poly);
       }).length;
 
@@ -1682,6 +1782,38 @@ export class Game {
     ctx.restore();
 
     this.hintRect = { x, y, w: cardW, h: cardH };
+  }
+
+  /** The line a hornet travels, drawn faintly so its patrol is readable. */
+  drawHornetLanes(ctx) {
+    const hornets = this.entities.filter(e => e.kind === 'hornet' && e.state !== 'departing');
+    if (!hornets.length) return;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(170, 110, 40, 0.30)';
+    ctx.lineWidth = 1.1;
+    ctx.setLineDash([6, 7]);
+    for (const hornet of hornets) {
+      const y = this.height * hornet.laneRatio;
+      ctx.beginPath();
+      ctx.moveTo(24, y);
+      ctx.lineTo(this.width - 24, y);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  /** A small spool, used on the Noon ready cards. */
+  drawSpoolGlyph(ctx, x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = themeColor('cord', '#f0e7d2');
+    ctx.strokeStyle = themeColor('outline', '#b3a488');
+    ctx.lineWidth = 1.1;
+    ctx.beginPath(); ctx.ellipse(0, 0, 7, 9, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#c9b48d';
+    for (const ey of [-9, 9]) { ctx.beginPath(); ctx.ellipse(0, ey, 9, 2.4, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    ctx.restore();
   }
 
   /** The figure a hint names, drawn as cord and marks. No target is moved or marked. */
@@ -2002,7 +2134,8 @@ export class Game {
       ctx.fill();
       ctx.stroke();
 
-      const fillRatio = Math.min(1.0, this.strokeLength / 1400);
+      const meterMax = Math.max(1400, this.cordLimit() + 100);
+      const fillRatio = Math.min(1.0, this.strokeLength / meterMax);
       if (fillRatio > 0.01) {
         ctx.fillStyle = themeColor(this.activeBand.name.toLowerCase(), this.activeBand.color);
         ctx.beginPath();
@@ -2011,7 +2144,7 @@ export class Game {
       }
 
       if (this.currentLevel?.stringRules) {
-        const snapRatio = Math.min(1.0, (this.currentLevel.maxCordLength ?? MAX_CORD_LENGTH) / 1400);
+        const snapRatio = Math.min(1.0, this.cordLimit() / meterMax);
         const snapX = cx - meterW / 2 + 2 + (meterW - 4) * snapRatio;
         ctx.strokeStyle = themeColor('balanced', '#c85a32');
         ctx.lineWidth = 1.6;
@@ -2055,7 +2188,8 @@ export class Game {
       ctx.fill();
       ctx.stroke();
 
-      const fillRatio = Math.min(1.0, this.strokeLength / 1400);
+      const meterMax = Math.max(1400, this.cordLimit() + 100);
+      const fillRatio = Math.min(1.0, this.strokeLength / meterMax);
       if (fillRatio > 0.01) {
         ctx.fillStyle = themeColor(this.activeBand.name.toLowerCase(), this.activeBand.color);
         ctx.beginPath();
@@ -2064,7 +2198,7 @@ export class Game {
       }
 
       if (this.currentLevel?.stringRules) {
-        const snapRatio = Math.min(1.0, (this.currentLevel.maxCordLength ?? MAX_CORD_LENGTH) / 1400);
+        const snapRatio = Math.min(1.0, this.cordLimit() / meterMax);
         const snapX = cx - meterW / 2 + 2 + (meterW - 4) * snapRatio;
         ctx.strokeStyle = themeColor('balanced', '#c85a32');
         ctx.lineWidth = 1.8;
@@ -2223,17 +2357,17 @@ export class Game {
     const teachLacewing = lid === 'dusk-01' || lid === 'practice-dusk';
     const teachDusk02 = lid === 'dusk-02';
     const teachDusk03 = lid === 'dusk-03';
-    const teachCounterpart = lid === 'noon-01' || lid === 'practice-noon';
-    const teachNursery = lid === 'noon-02';
-    const teachSeedTrio = lid === 'noon-03';
+    const teachNoon01 = lid === 'noon-01' || lid === 'practice-noon';
+    const teachNoon02 = lid === 'noon-02';
+    const teachNoon03 = lid === 'noon-03';
     const teachDawn01 = lid === 'dawn-01';
     const teachDawn02 = lid === 'dawn-02';
     const teachDawn03 = lid === 'dawn-03';
     const teachDawn = teachDawn01 || teachDawn02 || teachDawn03;
     const teachDusk = teachLacewing || teachDusk02 || teachDusk03;
     const teachMidnight = teachMidnight01 || teachMidnight02 || teachMidnight03;
-    const hasDiagram = teachDawn || teachDusk || teachMidnight || teachCounterpart || teachNursery || teachSeedTrio;
-    const modalHeight = (teachMidnight || teachDawn || teachDusk || teachCounterpart || teachNursery || teachSeedTrio) ? 445 : (hasDiagram ? 415 : 310);
+    const hasDiagram = teachDawn || teachDusk || teachMidnight || teachNoon01 || teachNoon02 || teachNoon03;
+    const modalHeight = (teachMidnight || teachDawn || teachDusk || teachNoon01 || teachNoon02 || teachNoon03) ? 445 : (hasDiagram ? 415 : 310);
 
     this.drawModalBox(ctx, 500, modalHeight, (boxW, boxH) => {
       const isNarrow = boxW < 440;
@@ -2476,41 +2610,53 @@ export class Game {
         ctx.fillText('Switch gestures: 3 single loops and 2 figure-eights. Cross the cord to close.', 0, 41);
         ctx.fillText('Dense field with 8 fliers; keep clear of the perimeter snail.', 0, 56);
         ctx.restore();
-      } else if (teachCounterpart) {
+      } else if (teachNoon01) {
         ctx.save(); ctx.translate(0, boxH / 2 - 100);
+        // One loop around three kinds, with a spool caught on the way round.
         ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(0, 0);
-        ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
-        ctx.bezierCurveTo(100, -65, 100, 65, 0, 0); ctx.stroke();
-        ctx.fillStyle = themeColor('brimstone', '#f1d152'); ctx.beginPath(); ctx.ellipse(-46, 0, 11, 15, -.4, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = themeColor('hoverfly', '#eab765'); ctx.beginPath(); ctx.ellipse(46, 0, 8, 13, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#5d493a'; for (const y of [-6, 0, 6]) ctx.fillRect(40, y, 12, 3);
+        ctx.beginPath(); ctx.ellipse(0, 2, 80, 38, 0, 0, Math.PI * 2); ctx.stroke();
+
+        ctx.fillStyle = themeColor('brimstone', '#f1d152'); ctx.beginPath(); ctx.ellipse(-42, 6, 10, 14, -0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = themeColor('hoverfly', '#eab765'); ctx.beginPath(); ctx.ellipse(2, 8, 7, 11, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#5d493a'; for (const y of [3, 8, 13]) ctx.fillRect(-2, y, 8, 2);
+        ctx.fillStyle = '#de99a5'; ctx.beginPath(); ctx.ellipse(44, 6, 7, 12, 0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#a8b894'; ctx.beginPath(); ctx.ellipse(44, 0, 4, 8, 0.8, 0, Math.PI * 2); ctx.fill();
+
+        this.drawSpoolGlyph(ctx, -2, -36);
+
         ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('One different insect in each pocket.', 0, 42);
-        ctx.fillText('Run the cord back onto or across its start to close both pockets.', 0, 57);
+        ctx.fillText('Three different kinds in one loop. Cross your start to close.', 0, 39);
+        ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
+        ctx.fillText('Run the cord over a spool to add thread to that stroke. The mark on the meter moves.', 0, 54);
         ctx.restore();
-      } else if (teachNursery) {
+      } else if (teachNoon02) {
         ctx.save(); ctx.translate(0, boxH / 2 - 100);
+        // One loop around a flier and a seed, drawn clear of the hornet's lane.
         ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(0, 0);
-        ctx.bezierCurveTo(-100, -65, -100, 65, 0, 0);
-        ctx.bezierCurveTo(100, -65, 100, 65, 0, 0); ctx.stroke();
-        // Left lobe: 1 Brimstone
-        ctx.fillStyle = themeColor('brimstone', '#f1d152'); ctx.beginPath(); ctx.ellipse(-46, 0, 11, 15, -0.4, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#5d493a'; ctx.lineWidth = 1; ctx.stroke();
-        // Right lobe: 1 Dandelion seed
-        const sx = 46, sy = 0;
+        ctx.beginPath(); ctx.ellipse(-24, 4, 58, 32, 0, 0, Math.PI * 2); ctx.stroke();
+
+        ctx.fillStyle = themeColor('brimstone', '#f1d152'); ctx.beginPath(); ctx.ellipse(-46, 4, 10, 14, -0.4, 0, Math.PI * 2); ctx.fill();
+        const sx = -4, sy = 4;
         ctx.fillStyle = '#faf7ed'; ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.fill();
         ctx.strokeStyle = themeColor('seed', '#8a7e6b'); ctx.lineWidth = 0.8;
         ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + 7, sy + 9); ctx.stroke();
         ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.stroke();
         ctx.fillStyle = themeColor('seed', '#655543'); ctx.beginPath(); ctx.ellipse(sx + 7, sy + 9, 1.5, 3, 0.6, 0, Math.PI * 2); ctx.fill();
+
+        // The hornet keeps to one lane; the card shows the line it travels.
+        ctx.strokeStyle = 'rgba(160, 110, 40, 0.5)'; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
+        ctx.beginPath(); ctx.moveTo(-96, -34); ctx.lineTo(96, -34); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#e0a63c'; ctx.strokeStyle = '#5d4520'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.ellipse(56, -34, 11, 5, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#3d3222';
+        for (const bx of [53, 58, 63]) { ctx.beginPath(); ctx.ellipse(bx, -34, 1.5, 4.4, 0, 0, Math.PI * 2); ctx.fill(); }
+
         ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('Nursery: 1 flier and 1 seed in separate pockets. Cross your start to close.', 0, 39);
+        ctx.fillText('One insect and one seed in one loop. Cross your start to close.', 0, 39);
         ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
-        ctx.fillText('🍃 2-second gusts drift seeds. The warning shows which way they blow.', 0, 54);
+        ctx.fillText('The hornet keeps to one lane and breaks a cord it touches. Gusts drift the seeds.', 0, 54);
         ctx.restore();
-      } else if (teachSeedTrio) {
+      } else if (teachNoon03) {
         ctx.save(); ctx.translate(0, boxH / 2 - 100);
         // Single loop cord (circle)
         ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
@@ -2538,9 +2684,10 @@ export class Game {
         ctx.fillStyle = '#a8b894'; ctx.beginPath(); ctx.ellipse(44, 6, 4, 8, 0.8, 0, Math.PI * 2); ctx.fill();
 
         ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('Seed & Trio: 1 seed and 3 different insects in a loop that crosses itself.', 0, 39);
+        this.drawSpoolGlyph(ctx, 62, -26);
+        ctx.fillText('Seed & Trio: 1 seed and 3 different insects in one loop.', 0, 39);
         ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
-        ctx.fillText('🍃 Gusts change direction. The warning shows which way they blow.', 0, 54);
+        ctx.fillText('Webs and the hornet break a cord they touch. Take a spool for the longest loop.', 0, 54);
         ctx.restore();
       } else if (teachMidnight02) {
         ctx.save(); ctx.translate(0, boxH / 2 - 96);

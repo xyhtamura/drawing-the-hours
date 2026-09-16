@@ -10,9 +10,86 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Playtest the twelve visits on a touch device.
+Playtest Noon IV–VI and the new Dusk VII opening on a touch device.
 
 ## Activity
+
+2026-09-16 — Claude Code — Moved the crossing out of Noon and into Dusk, and
+gave Noon a power-up and hazards instead, following Xyh's decision on
+[DAY-1-PACING.md](DAY-1-PACING.md). Each hour now asks for one new kind of
+attention: Dawn closes a loop, Noon manages the field and the cord, Dusk crosses
+the cord, Midnight threads in order.
+
+- **Noon IV–VI require loops only.** IV: four combinations including two trios,
+  on a clear field (2 Brimstones, 2 hoverflies, 2 hawkmoths). V: four including
+  two Seed & Wing, with the hornet and the gusts; its hawkmoths and snail are
+  gone, which carries out priority 1 of the pacing document. VI: unchanged
+  Seed & Trio goals, now against the hornet, two webs, and the breeze.
+- **Cord spool** (`CordSpool` in `src/entities.js`). Running the held cord over
+  one adds 400 px to that stroke's `maxCordLength`; the meter's snap mark moves
+  with it. The thread lasts for that stroke only, the spool leaves the field, and
+  another is placed 8 s later on clear ground. It is never a bead, never pocket
+  content, and cannot be tapped. `Game.cordLimit()` is the one reading of the
+  limit that the HUD and the tests share.
+- **Hornet** (`Hornet`). Patrols one horizontal lane at about 54 px/s, turning at
+  the edges; `drawHornetLanes` draws the lane faintly so the patrol can be read
+  before a cord is drawn. Breaks a cord it touches and spoils a pocket that holds
+  it. Drawn deeper amber with heavier bands, a dark head, and a sting, so it does
+  not read as a hoverfly.
+- **Web patch** (`WebPatch`). Static, placed by field ratio from the level's
+  `webPatches`, kept clear of the HUD and the bottom frame on short canvases.
+  Breaks a cord it touches. It is `type: 'terrain'`, not a hazard entity, so a
+  loop drawn around a web is valid — the cord simply cannot cross it.
+- **Shared plumbing.** `checkCordHazards` now covers terrain and names what broke
+  the cord (`HAZARD_BREAK_MESSAGE`); population upkeep counts hazards, terrain,
+  and spools by kind rather than folding every hazard into `snail`; pocket
+  gathering, bead threading, and tap targeting all exclude terrain and spools.
+- **Dusk VII is the first crossing.** Its objectives are unchanged; the
+  instruction and the ready card now teach the shape rather than recall it. A
+  resting lacewing and a holding hoverfly are the stillest pair in the game, so
+  the new shape is learned against targets that wait. Nursery Polarity needed no
+  move: it was already Dusk VIII, which is now the visit after the lesson.
+- **Copy and cards.** New Noon ready cards (`teachNoon01/02/03` in `src/game.js`,
+  renamed from the recipe-named flags): a trio loop with a spool, a Seed & Wing
+  loop with the hornet's lane, and the Seed & Trio loop with a spool. Field Book
+  gained Cord Spool, Atrium Hornet, and Web Patch under `data-reveal-hour="noon"`;
+  Counterpart Pair and Nursery Polarity moved to the Dusk reveal; the hoverfly
+  entry no longer teaches a figure-eight. `CAMPAIGN.md`, `STRING.md`, and
+  `DAY-1-PACING.md` record the arc, the spool's exception to the shared snap
+  limit, and the three cord-breaking hazards.
+
+Verification:
+
+- New `test/test_noon.js`: Noon requires no crossing key and the plan agrees on
+  cast, goals, instructions, and web positions; the hornet's lane, 54 px/s speed,
+  edge turns, and lane after a resize; both hazards breaking a cord with their own
+  message and the hornet spoiling a pocket; a loop drawn around a web scoring; a
+  spool raising the limit to 1,700 px for its stroke, leaving the field, queueing
+  its return, and dropping back to 1,300 px on release; spools as neither beads
+  nor content; the trio scoring at IV and Seed & Trio at VI.
+- `test/test_mechanics.js` and `test/test_string_sandbox.js` updated: Noon's
+  objective assertions follow the new design, every Noon level is asserted to
+  require no crossing key, and the figure-eight closure checks moved to Dusk VII
+  and VIII where the shape is now taught. All six suites, `node --check`, and
+  `git diff --check` pass.
+- In-app browser at `http://localhost:8000/drawing-the-hours/`: Noon VI spawns
+  2 Brimstones, 2 hoverflies, 2 hawkmoths, 2 seeds, 1 hornet, 2 webs, 1 spool;
+  a dispatched stroke over the spool raised `cordLimit()` from 1,300 to 1,700,
+  removed the spool, queued its 8 s return, and dropped back to 1,300 on release;
+  a stroke into the hornet broke with "The hornet broke the cord. Watch its lane."
+  Screenshots: the Noon V field with the hornet on its dashed lane, and the ready
+  cards for Noon IV, V, VI and Dusk VII. The Field Book showed the three new Noon
+  entries and hid Counterpart Pair and Nursery until Dusk.
+- Not a manual or touch run, and no balance measurement: the trio at IV, the
+  400 px bonus, the 8 s respawn, the hornet's speed, and the web positions are
+  first guesses.
+
+Left undone: the pacing document's priorities 3–6 (Midnight XI motion, a Dusk IX
+snail route, one Seed & Trio at VI, Midnight XII's cast) are still open, and
+`test/measure_string_sandbox.js` still cannot measure a Noon loop, because its
+scripted player plans single loops only — the four-target Seed & Trio with a spool
+detour is exactly the case it cannot play. Xyh's touch playtest of Noon and the
+new Dusk opening is the next step.
 
 2026-09-16 — Claude Code — Built the remaining day-one review items (handoff
 item 4) and recorded Xyh's answers to the rest of that handoff.

@@ -111,22 +111,23 @@
       "transitionText": "Today, for lunch, I bought myself a sandwich.",
       "durationSeconds": 90,
       "population": {
-        "brimstone": 3,
+        "brimstone": 2,
         "damselfly": 0,
-        "hawkmoth": 0,
+        "hoverfly": 2,
+        "hawkmoth": 2,
         "seed": 0,
         "snail": 0,
         "lacewing": 0,
         "firefly": 0,
-        "hoverfly": 3
+        "spool": 1
       },
       "motionScale": 0.8,
       "objectives": {
         "any": 4,
-        "counterpartPair": 3
+        "trio": 2
       },
-      "instruction": "Make four combinations, including three figure-eights with one different insect in each pocket.",
-      "designNote": "Teach the waist crossing using two kinds and large open drawing space.",
+      "instruction": "Make four combinations, including two loops with three different kinds of insect. Run the cord over a spool to add thread to it.",
+      "designNote": "Teach the cord spool on a clear field. The trio is the longest loop Dawn taught, so the thread it adds is worth taking.",
       "gestures": [
         "string"
       ],
@@ -144,20 +145,22 @@
       "population": {
         "brimstone": 2,
         "damselfly": 0,
-        "hawkmoth": 2,
+        "hoverfly": 2,
+        "hawkmoth": 0,
         "seed": 3,
-        "snail": 1,
+        "snail": 0,
         "lacewing": 0,
         "firefly": 0,
-        "hoverfly": 2
+        "hornet": 1,
+        "spool": 1
       },
       "motionScale": 0.85,
       "objectives": {
-        "figure8": 4,
-        "nursery": 2
+        "any": 4,
+        "seedWing": 2
       },
-      "instruction": "Make four figure-eights, including two with 1 flier and 1 seed in separate pockets.",
-      "designNote": "Introduce a two-second seed-moving gust after a visible warning; keep Nursery as the objective.",
+      "instruction": "Make four combinations, including two loops with one insect and one seed. The hornet breaks a cord it touches.",
+      "designNote": "Introduce the patrolling hornet beside the two-second gusts, keeping the loop recipes familiar so the new pressure is the field, not the shape.",
       "gestures": [
         "string"
       ],
@@ -166,9 +169,15 @@
         "periodSeconds": 12,
         "warningSeconds": 2,
         "gustSeconds": 2,
-        "directions": ["right", "left"],
+        "directions": [
+          "right",
+          "left"
+        ],
         "seedSpeedPlayWidthsPerSecond": 0.08
-      }
+      },
+      "hornetLanes": [
+        0.45
+      ]
     },
     {
       "id": "noon-03",
@@ -181,20 +190,23 @@
       "population": {
         "brimstone": 2,
         "damselfly": 0,
+        "hoverfly": 2,
         "hawkmoth": 2,
         "seed": 2,
         "snail": 0,
         "lacewing": 0,
         "firefly": 0,
-        "hoverfly": 2
+        "hornet": 1,
+        "web": 2,
+        "spool": 1
       },
       "motionScale": 0.85,
       "objectives": {
         "any": 4,
         "seedTrio": 2
       },
-      "instruction": "Make four combinations, including two loops with a seed and three different fliers.",
-      "designNote": "Combine the established breeze with Seed & Trio circles (1 seed + 3 distinct species).",
+      "instruction": "Make four combinations, including two loops with a seed and three different insects. Webs and the hornet break a cord they touch.",
+      "designNote": "The longest loop of the day against the webs, the hornet, and the breeze. The spool is what makes the four-target loop reachable.",
       "gestures": [
         "string"
       ],
@@ -203,9 +215,25 @@
         "periodSeconds": 12,
         "warningSeconds": 2,
         "gustSeconds": 2,
-        "directions": ["right", "left"],
+        "directions": [
+          "right",
+          "left"
+        ],
         "seedSpeedPlayWidthsPerSecond": 0.08
-      }
+      },
+      "hornetLanes": [
+        0.52
+      ],
+      "webPatches": [
+        [
+          0.29,
+          0.31
+        ],
+        [
+          0.71,
+          0.67
+        ]
+      ]
     },
     {
       "id": "dusk-01",
@@ -230,8 +258,8 @@
         "any": 5,
         "lacewingCounterpart": 2
       },
-      "instruction": "Make five combinations, including two figure-eights with a lacewing and a hoverfly in separate pockets.",
-      "designNote": "Introduce paper lacewings that pause at visible leaf anchors.",
+      "instruction": "Cross the cord to make two pockets. Make five combinations, including two figure-eights with a lacewing and a hoverfly in separate pockets.",
+      "designNote": "Teach the waist crossing. A resting lacewing and a holding hoverfly are the stillest pair in the game, so the new shape is learned against targets that wait.",
       "gestures": [
         "string"
       ],

@@ -1069,7 +1069,7 @@ console.log('--- Running String Sandbox Test Suite ---');
   console.log('✔ STRING.md status line names every level with string rules.');
 }
 
-// 22. Noon IV–VI adopt string rules; a drawn figure-eight closes both pockets
+// 22. Noon IV–VI adopt string rules and ask only for loops; the crossing is Dusk's
 {
   const noonIds = ['noon-01', 'noon-02', 'noon-03'];
   const plan = JSON.parse(fs.readFileSync(new URL('../campaign-plan.json', import.meta.url)));
@@ -1129,21 +1129,30 @@ console.log('--- Running String Sandbox Test Suite ---');
       game.entities = [left, right];
     };
 
-    // Counterpart Pair: a Brimstone in one lobe and a hoverfly in the other, the cord run past its start.
-    setup('noon-01', new Insect(380, 320, 'brimstone'), new Insect(580, 320, 'hoverfly'));
+    // Noon asks for loops only, so the crossing is tested where it is taught: Dusk VII.
+    for (const id of noonIds) {
+      const level = CAMPAIGN_LEVELS.find(l => l.id === id);
+      for (const key of ['figure8', 'counterpartPair', 'lacewingCounterpart', 'nursery', 'mixedEcho', 'twinSeedWing']) {
+        assert.ok(!(key in level.objectives), `${id} requires no crossing; figure-eights start at Dusk`);
+      }
+    }
+
+    // Lacewing Counterpart at Dusk VII: a lacewing in one lobe, a hoverfly in the
+    // other, the cord run past its start.
+    setup('dusk-01', new Insect(380, 320, 'lacewing'), new Insect(580, 320, 'hoverfly'));
     drawFigureEight(Math.PI * 2 + 0.35);
     assert.ok(game.feedbackBanner.text.startsWith('Counterpart Pair'),
       `A closed figure-eight scores a Counterpart Pair (got "${game.feedbackBanner.text}")`);
-    assert.strictEqual(game.campaign.objectiveProgress.counterpartPair.current, 1);
+    assert.strictEqual(game.campaign.objectiveProgress.lacewingCounterpart.current, 1);
 
     // The same figure stopped short of its start closes one lobe only and scores nothing.
-    setup('noon-01', new Insect(380, 320, 'brimstone'), new Insect(580, 320, 'hoverfly'));
+    setup('dusk-01', new Insect(380, 320, 'lacewing'), new Insect(580, 320, 'hoverfly'));
     drawFigureEight(Math.PI * 2 - 0.4);
-    assert.strictEqual(game.campaign.objectiveProgress.counterpartPair.current, 0,
+    assert.strictEqual(game.campaign.objectiveProgress.lacewingCounterpart.current, 0,
       `A figure-eight left open at its start does not count (got "${game.feedbackBanner.text}")`);
 
-    // Nursery during Noon V: one flier and one seed in separate pockets.
-    setup('noon-02', new Insect(380, 320, 'hawkmoth'), new DandelionSeed(580, 320));
+    // Nursery during Dusk VIII: one flier and one seed in separate pockets.
+    setup('dusk-02', new Insect(380, 320, 'hawkmoth'), new DandelionSeed(580, 320));
     drawFigureEight(Math.PI * 2 + 0.35);
     assert.ok(game.feedbackBanner.text.startsWith('Nursery Polarity'),
       `A closed figure-eight scores a Nursery (got "${game.feedbackBanner.text}")`);
@@ -1152,7 +1161,7 @@ console.log('--- Running String Sandbox Test Suite ---');
     if (!hadWindow) delete globalThis.window;
     if (!hadDocument) delete globalThis.document;
   }
-  console.log('✔ Noon IV–VI use string rules; a drawn figure-eight closes both pockets only when it runs past its start.');
+  console.log('✔ Noon IV–VI use string rules and require no crossing; the figure-eight scores at Dusk only when it runs past its start.');
 }
 
 // 23. Dusk VII–IX adopt string rules; lacewings, nurseries, switching gestures, and walls

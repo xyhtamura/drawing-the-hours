@@ -617,13 +617,15 @@ console.log('--- All tests passed! ---');
   // Noon 1 (Visit IV)
   const noon1 = campaign.setLevelById('noon-01');
   assert.strictEqual(noon1.transitionText, 'Today, for lunch, I bought myself a sandwich.');
-  assert.deepStrictEqual(noon1.objectives, { any: 4, counterpartPair: 3 });
+  assert.deepStrictEqual(noon1.objectives, { any: 4, trio: 2 });
+  assert.strictEqual(noon1.population.spool, 1, 'Noon IV leaves one cord spool in the atrium');
   assert.strictEqual(campaign.getNextLevel().id, 'noon-02');
 
   // Noon 2 (Visit V)
   const noon2 = campaign.setLevelById('noon-02');
   assert.strictEqual(noon2.transitionText, "I don't know how much longer my job will exist.");
-  assert.deepStrictEqual(noon2.objectives, { figure8: 4, nursery: 2 });
+  assert.deepStrictEqual(noon2.objectives, { any: 4, seedWing: 2 });
+  assert.strictEqual(noon2.population.hornet, 1, 'Noon V introduces the patrolling hornet');
   assert.strictEqual(noon2.durationSeconds, 110);
   assert.strictEqual(noon2.wind.periodSeconds, 12);
   assert.strictEqual(noon2.wind.warningSeconds, 2);
@@ -635,6 +637,7 @@ console.log('--- All tests passed! ---');
   const noon3 = campaign.setLevelById('noon-03');
   assert.strictEqual(noon3.transitionText, 'This atrium makes me feel calmer.');
   assert.deepStrictEqual(noon3.objectives, { any: 4, seedTrio: 2 });
+  assert.strictEqual(noon3.population.web, 2, 'Noon VI strings two webs across the atrium');
   assert.strictEqual(noon3.durationSeconds, 100);
   assert.strictEqual(noon3.wind.periodSeconds, 12);
   assert.strictEqual(campaign.getNextLevel().id, 'dusk-01');
@@ -845,6 +848,10 @@ console.log('--- All tests passed! ---');
  for (const level of CAMPAIGN_LEVELS.filter(l => l.hour === 'noon')) {
    assert.ok(level.population.hoverfly > 0);
    assert.strictEqual(level.population.damselfly, 0);
+   // Crossing the cord belongs to Dusk: Noon asks only for loops.
+   for (const key of ['figure8', 'counterpartPair', 'lacewingCounterpart', 'nursery', 'mixedEcho', 'twinSeedWing']) {
+     assert.ok(!(key in level.objectives), `${level.id} must not require ${key}; figure-eights start at Dusk`);
+   }
  }
  console.log('✔ Hoverfly hold, turn, shift, bounds, recipes, and Noon populations verified.');
 }

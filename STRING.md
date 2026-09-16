@@ -192,11 +192,36 @@ Open: whether the limit scales with the field. A portrait field measured
 359×567 px and the desktop field 996×640 px on 2026-09-15, while the closure
 tolerance and length bands are fixed pixel values today.
 
-## 6. The snail
+### The cord spool raises the limit for one stroke
+
+Added 2026-09-16 for Noon IV–VI. A spool lies on the field; running the held
+cord within its radius adds `CORD_SPOOL_BONUS` (400 px in `src/game.js`) to that
+stroke's `maxCordLength`, and the meter's snap mark moves with it. The addition
+applies to the gesture in hand only: the next stroke starts at the shared limit
+again. The spool leaves the field when taken and another is placed
+`CORD_SPOOL_RESPAWN` (8 s) later, on ground clear of everything else.
+
+A spool is not a target. It is never threaded as a bead, never counts as pocket
+content, and cannot be tapped. This is the one way a level departs from the
+shared snap limit, and it does so per stroke rather than per level, so the rule
+above — no level record sets its own `maxCordLength` — still holds.
+
+## 6. Hazards that break a cord
+
+Three things break a cord they touch. The break is identical in each case — no
+score, beads released, walls removed — and the message names which one it was.
+
+| Hazard | Where | Movement | Inside a pocket |
+| --- | --- | --- | --- |
+| Snail | Dawn II–III, Dusk VIII–IX, Midnight XII | Crawls a seam or the bottom edge | Spoils the drawing |
+| Hornet | Noon V–VI | Patrols one horizontal lane, turning at the edges; the lane is drawn faintly on the field | Spoils the drawing |
+| Web patch | Noon VI | Static, placed by the level | Valid — a web is terrain, not an inhabitant |
 
 The snail is unchanged from the Dawn revision in [CAMPAIGN.md](CAMPAIGN.md). A
 cord that comes within 19 px of a snail's center breaks. Snails do not thread
-and are not blocked by walls, because touching the cord breaks it first.
+and are not blocked by walls, because touching the cord breaks it first. The
+hornet and the web follow the same contact rule at their own radii, and neither
+threads.
 
 ## 7. Wind changes direction
 

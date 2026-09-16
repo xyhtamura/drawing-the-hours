@@ -9,6 +9,7 @@ import { curbSeamY } from './geometry.js';
  * 3. Roseate Hawkmoth (plump body, vibrating delta wings, wide arcing sweeps)
  * 4. Dandelion Seeds (passive wind drift)
  * 5. Snail (ground verge crawler hazard)
+ * 6. Hornet (atrium patrol hazard), Web patch (static cord hazard), Cord spool (power-up)
  */
 
 export const SPECIES_CONFIG = {
@@ -843,6 +844,231 @@ export class Snail {
     ctx.lineWidth = 1.4;
     ctx.beginPath();
     ctx.arc(-2, 0, 6, 0.5, Math.PI * 1.5);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+}
+
+
+/**
+ * Atrium hornet. Patrols one horizontal lane at a steady speed, turning at the
+ * edges, so its path can be read before a cord is drawn. Like the snail it
+ * breaks a cord it touches and spoils any pocket that holds it.
+ */
+export class Hornet {
+  constructor(x, laneRatio = 0.5, direction = 1) {
+    this.type = 'hazard';
+    this.kind = 'hornet';
+    this.x = x;
+    this.laneRatio = laneRatio;
+    this.y = 0;
+    this.radius = 15;
+    this.speed = 0.9; // px per 60 fps frame
+    this.vx = this.speed * direction;
+    this.state = 'roaming';
+    this.wingPhase = 0;
+    this.bobPhase = Math.random() * Math.PI * 2;
+    this.crossesCord = true;
+  }
+
+  update(dt, bounds) {
+    this.wingPhase += dt * 26;
+    this.bobPhase += dt * 2.2;
+    this.x += this.vx * 60 * dt;
+    this.y = bounds.height * this.laneRatio + Math.sin(this.bobPhase) * 8;
+
+    if (this.x > bounds.width - 40) {
+      this.vx = -Math.abs(this.vx);
+    } else if (this.x < 40) {
+      this.vx = Math.abs(this.vx);
+    }
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.scale(this.vx >= 0 ? 1 : -1, 1);
+
+    // Blurred paper wings
+    const beat = 0.55 + 0.45 * Math.abs(Math.sin(this.wingPhase));
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = themeColor('panel', '#f3efe2');
+    ctx.strokeStyle = themeColor('outline', '#a99a80');
+    ctx.lineWidth = 1;
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(-1, side * 6 * beat, 13, 5 * beat, side * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // Banded body. Deeper amber and heavier bands than the hoverfly's, so a
+    // hazard is never mistaken for a target.
+    ctx.fillStyle = '#d97a1e';
+    ctx.strokeStyle = '#3d2a12';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 12, 6.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#241c12';
+    for (const bx of [-3, 2, 7]) {
+      ctx.beginPath();
+      ctx.ellipse(bx, 0, 2.6, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Sting
+    ctx.strokeStyle = '#241c12';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(12, 0);
+    ctx.lineTo(18, 0);
+    ctx.stroke();
+
+    // Head and antennae
+    ctx.fillStyle = '#241c12';
+    ctx.beginPath();
+    ctx.arc(-12, 0, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#241c12';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-14, -2); ctx.lineTo(-20, -6);
+    ctx.moveTo(-14, 1); ctx.lineTo(-20, 4);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+}
+
+/**
+ * A patch of web strung across the atrium. It never moves and nothing lives in
+ * it; a cord drawn into it sticks and breaks. It is terrain, not an inhabitant,
+ * so it is never pocket content and never a drawing target.
+ */
+export class WebPatch {
+  /** Placed by field ratio so it keeps its position in the scene when the canvas resizes. */
+  constructor(xRatio, yRatio, radius = 30) {
+    this.type = 'terrain';
+    this.kind = 'web';
+    this.xRatio = xRatio;
+    this.yRatio = yRatio;
+    this.x = 0;
+    this.y = 0;
+    this.radius = radius;
+    this.state = 'static';
+    this.crossesCord = true;
+    this.spin = Math.random() * Math.PI;
+  }
+
+  update(dt, bounds) {
+    if (!bounds) return;
+    this.x = bounds.width * this.xRatio;
+    // Kept clear of the HUD at the top and the frame at the bottom, so a short
+    // canvas never hangs a web under the readouts.
+    const top = 104 + this.radius;
+    const bottom = bounds.height - 40 - this.radius;
+    this.y = Math.min(Math.max(bounds.height * this.yRatio, top), Math.max(top, bottom));
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.spin);
+    ctx.strokeStyle = themeColor('edge', '#cfd6c8');
+    ctx.globalAlpha = 0.85;
+    ctx.lineWidth = 1;
+
+    const spokes = 8;
+    for (let i = 0; i < spokes; i++) {
+      const a = (i / spokes) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(a) * this.radius, Math.sin(a) * this.radius);
+      ctx.stroke();
+    }
+    for (let ring = 1; ring <= 3; ring++) {
+      const r = (this.radius * ring) / 3;
+      ctx.beginPath();
+      for (let i = 0; i <= spokes; i++) {
+        const a = (i / spokes) * Math.PI * 2;
+        const px = Math.cos(a) * r;
+        const py = Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.quadraticCurveTo(Math.cos(a - Math.PI / spokes) * r * 0.86, Math.sin(a - Math.PI / spokes) * r * 0.86, px, py);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+/**
+ * A spool of cotton left in the atrium. Running the held cord over it adds
+ * thread to that stroke, raising its snap limit; it is not pocket content.
+ */
+export class CordSpool {
+  constructor(x, y) {
+    this.type = 'spool';
+    this.kind = 'spool';
+    this.x = x;
+    this.y = y;
+    this.radius = 14;
+    this.state = 'roaming';
+    this.bobPhase = Math.random() * Math.PI * 2;
+  }
+
+  update(dt) {
+    this.bobPhase += dt * 1.8;
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y + Math.sin(this.bobPhase) * 2);
+
+    ctx.fillStyle = 'rgba(50, 45, 30, 0.10)';
+    ctx.beginPath();
+    ctx.ellipse(0, 12, 12, 3.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Wound cotton
+    ctx.fillStyle = themeColor('cord', '#f0e7d2');
+    ctx.strokeStyle = themeColor('outline', '#b3a488');
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 9, 11, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(160, 145, 115, 0.55)';
+    ctx.lineWidth = 0.9;
+    for (const wy of [-6, -2, 2, 6]) {
+      ctx.beginPath();
+      ctx.moveTo(-8.5, wy);
+      ctx.quadraticCurveTo(0, wy + 2.5, 8.5, wy);
+      ctx.stroke();
+    }
+
+    // Reel ends and a loose thread
+    ctx.fillStyle = '#c9b48d';
+    ctx.strokeStyle = '#8f7c5c';
+    ctx.lineWidth = 1;
+    for (const ey of [-11, 11]) {
+      ctx.beginPath();
+      ctx.ellipse(0, ey, 11, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = themeColor('cord', '#e6dcc2');
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(8, 3);
+    ctx.quadraticCurveTo(17, 6, 14, 14);
     ctx.stroke();
 
     ctx.restore();
