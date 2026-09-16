@@ -10,9 +10,36 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Roll the string rules out to Midnight X–XII, redraw Visit X–XI Trace cards, and remove Enclose/Trace modes.
+Add a figure-eight path to the measurement script to re-measure cord lengths across the day, then playtest on touch devices.
 
 ## Activity
+
+2026-09-16 — Antigravity — Rolled the string rules out to Midnight X–XII and removed obsolete Enclose/Trace modes across the app. All twelve campaign visits and practice levels now run under single-gesture string rules.
+
+- `midnight-01`, `midnight-02`, and `midnight-03` set `stringRules: true` and
+  `gestures: ['string']` in `src/campaign.js` and `campaign-plan.json`;
+  `practice-midnight` automatically inherits both. STRING.md's status line
+  names all twelve visits and practice levels, keeping Test 21 green.
+- Mode switching removed: deleted `#btn-gesture-mode` button, click listener,
+  and `[T]` shortcut from `index.html`. Removed Enclose/Trace mode banner lines
+  from canvas HUD and footer. Removed `TraceGesture` usage and `drawTraceTargets`
+  from `src/game.js`, with cord drawing dyed cotton with trace blue when ready.
+- Redrew ready cards for Visits X (`teachMidnight01`), XI (`teachMidnight02`),
+  and XII (`teachMidnight03`) in `src/game.js`: no modes, showing threading to trace
+  or closing the cord to loop, and explaining that a stroke cannot both thread and enclose.
+- Updated documentation in `CAMPAIGN.md`, `MIDNIGHT.md`, `STRING.md`, and
+  Field Book entries in `index.html`.
+- Updated test suites: updated `test/test_midnight.js` to assert one-gesture string
+  rules across Midnight; added Test 24 to `test/test_string_sandbox.js` covering
+  ordered trace threading in Visit X, loop enclosure, counterpart figure-8, and
+  purity cancellation in Visit XI, and synthesis with snail hazard in Visit XII.
+
+Verification:
+
+- All four test suites (`test_string_sandbox.js`, `test_mechanics.js`,
+  `test_dusk.js`, `test_midnight.js`), `node --check`, and `git diff --check` pass.
+
+Not done: figure-eights in measurement script, and physical touch playtesting on mobile devices.
 
 2026-09-16 — Antigravity — Rolled the string rules out to Dusk VII–IX (handoff
 item 1 of the previous entry). Only Midnight remains on the old modes.

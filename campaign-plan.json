@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "dawn-noon-dusk-and-midnight-01-implemented",
+  "status": "all-twelve-visits-string-rules",
   "title": "Drawing the Hours",
   "campaignId": "first-twelve",
   "defaults": {
@@ -326,11 +326,12 @@
       "objectives": {
         "trace": 3
       },
-      "instruction": "Trace through firefly, lacewing, then another firefly. Release to complete the sequence.",
-      "designNote": "Introduce fireflies and Trace mode with a sparse cast.",
+      "instruction": "Thread firefly, lacewing, then another firefly. Release to complete the trace.",
+      "designNote": "Introduce fireflies and Trace as threading in sequence under one-gesture string rules.",
       "gestures": [
-        "trace"
+        "string"
       ],
+      "stringRules": true,
       "wind": null,
       "traceSequence": [
         "firefly",
@@ -366,11 +367,11 @@
         "trace": 2
       },
       "instruction": "Make six combinations: include a pair, Seed & Wing, a figure-eight, and two traces.",
-      "designNote": "Add hoverflies and seeds to the familiar cast; teach explicit Enclose/Trace switching without a snail.",
+      "designNote": "Add hoverflies and seeds to the familiar cast; combine looping and threading without mode switching.",
       "gestures": [
-        "enclose",
-        "trace"
+        "string"
       ],
+      "stringRules": true,
       "wind": null,
       "traceSequence": [
         "firefly",
@@ -408,9 +409,9 @@
       "instruction": "Make seven combinations, including two single loops, two figure-eights, two traces, and a Nursery.",
       "designNote": "Return Brimstones and one perimeter snail; synthesize familiar gestures without a new rule.",
       "gestures": [
-        "enclose",
-        "trace"
+        "string"
       ],
+      "stringRules": true,
       "wind": null,
       "traceSequence": [
         "firefly",

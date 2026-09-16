@@ -1,13 +1,10 @@
 # Midnight chapter and implementation handoff
 
-**Planned replacement, 2026-09-15:** [STRING.md](STRING.md) removes Trace mode
-and mode switching in favour of one drawing gesture. This document still
-describes the running game. When STRING.md is built, threading in sequence (STRING.md
-rule 4) replaces the Trace contract below; the X–XII objectives stay.
-
-2026-09-15. Visit X is implemented. Antigravity owns implementation of XI and
-XII; their revised records are present but remain outside `PLAYABLE_LEVEL_IDS`.
-The [campaign plan](campaign-plan.json) and [runtime records](src/campaign.js)
+**Implemented, 2026-09-16:** [STRING.md](STRING.md) replaces Trace mode and mode
+switching with one-gesture string rules across Midnight X–XII (and all 12 visits).
+Threading in sequence (STRING.md rule 4) replaces the separate Trace mode; looping
+and tracing coexist on the same cord without toggles. Visits X, XI, and XII are all
+in `PLAYABLE_LEVEL_IDS`. The [campaign plan](campaign-plan.json) and [runtime records](src/campaign.js)
 agree. All three transition sentences remain Xyh's original text.
 
 ## Chapter progression
@@ -18,8 +15,8 @@ agree. All three transition sentences remain Xyh's original text.
 | XI: Figures | Six combinations, including a Kindred Pair, a Seed & Wing, a figure-eight, and two traces. | Three fireflies, two lacewings, two hoverflies, and two seeds. | 110 seconds |
 | XII: Tomorrow keeps happening | Seven combinations, including two single loops, two figure-eights, two traces, and one Nursery. | XI's population plus two Brimstones and one perimeter snail. | 110 seconds |
 
-X teaches one open gesture. XI adds explicit mode switching with familiar
-insects and seeds. Its hoverflies provide stationary enclosure partners;
+X teaches threading in sequence. XI combines looping and tracing on one cord without
+mode switching. Its hoverflies provide stationary enclosure partners;
 the former damselfly quota is removed, and the snail waits until XII.
 Three fireflies preserve X's supply of Trace targets. XII brings back two
 familiar inhabitants without adding a gesture, sequence, weather event, or

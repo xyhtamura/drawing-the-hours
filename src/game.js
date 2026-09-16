@@ -1,5 +1,4 @@
 import { themeColor, themeKey, setThemeHour } from './theme.js';
-import { TraceGesture } from './trace.js';
 import { createMidnightArt } from './midnight-art.js';
 import { createDuskArt } from './dusk-art.js';
 import { leafAnchors, duskSafeArea, placeLacewing, updateLacewing, drawLacewing } from './lacewing.js';
@@ -191,8 +190,9 @@ export class Game {
     this.cancelStroke();
     this.currentLevel = level || this.campaign.currentLevel;
     setThemeHour(this.currentLevel.hour);
-    this.gestureMode = this.currentLevel.stringRules ? 'string' : (this.currentLevel.gestures?.[0] || 'enclose');
+    this.gestureMode = 'string';
     this.stringGesture = null;
+    this.trace = null;
     this.tapTracker?.cancel();
     this.saltGrains = [];
     this.campaign.initProgress(this.currentLevel);
@@ -531,9 +531,7 @@ export class Game {
       } else {
         this.stringGesture = null;
       }
-      this.trace = this.gestureMode === 'trace'
-        ? new TraceGesture(pos, this.entities, this.currentLevel.traceSequence) : null;
-      if (this.trace?.fault) this.showFeedback(this.trace.fault, 'warning');
+      this.trace = null;
       audio.startDrawingRustle();
       this.onDrawingStateChanged?.(true);
     };
@@ -631,28 +629,12 @@ export class Game {
     this.onDrawingStateChanged?.(false);
   }
 
-  setGestureMode(mode) {
-    if (this.isDrawing || this.victoryDelay > 0 || !this.currentLevel.gestures.includes(mode)) return false;
-    this.cancelStroke();
-    this.gestureMode = mode;
-    this.onGestureModeChanged?.(mode);
-    return true;
-  }
-
-  sampleTrace(point = this.lastPointerPos) {
-    if (!this.trace) return;
-    const previousFault = this.trace.fault;
-    this.trace.sample(point, this.entities);
-    if (this.trace.fault && !previousFault) this.showFeedback(this.trace.fault, 'warning');
-  }
-
   samplePointer(pos, force = false) {
     if (!this.isDrawing) return;
-    this.sampleTrace(pos);
     this.lastPointerPos = pos;
     const last = this.currentStroke.at(-1);
     const dist = distance(last, pos);
-    if (dist >= (this.gestureMode === 'trace' ? 0 : 4) || force) {
+    if (dist >= 4 || force) {
       this.currentStroke.push(pos);
       this.strokeLength += dist;
       this.activeBand = getLengthBand(this.strokeLength);
@@ -671,16 +653,13 @@ export class Game {
           this.breakCord('The cord snapped. Keep your stroke shorter.');
           return;
         }
-
       }
 
-      if (this.gestureMode !== 'trace') {
-        if (this.checkCordHazards(this.currentStroke.slice(-2))) return;
-        if (this.currentStroke.length >= 5) {
-          this.activePockets = this.findPockets(this.currentStroke);
-        } else {
-          this.activePockets = [];
-        }
+      if (this.checkCordHazards(this.currentStroke.slice(-2))) return;
+      if (this.currentStroke.length >= 5) {
+        this.activePockets = this.findPockets(this.currentStroke);
+      } else {
+        this.activePockets = [];
       }
       // After the pockets update, so the banner sees this sample's enclosure.
       this.reportTraceProgress();
@@ -774,7 +753,7 @@ export class Game {
    * so a snail crawling into a held line also breaks it.
    */
   checkCordHazards(points = this.currentStroke) {
-    if (!this.isDrawing || this.gestureMode === 'trace') return false;
+    if (!this.isDrawing) return false;
     const hazard = this.entities.find(e => e.type === 'hazard' && e.state !== 'departing'
       && polylineTouchesDisk(points, e.x, e.y, e.radius + 3));
     if (!hazard) return false;
@@ -785,16 +764,6 @@ export class Game {
   resolveCurrentStroke() {
     if (this.state !== 'PLAYING' || this.clock.remainingSeconds <= 0 || this.victoryDelay > 0) {
       this.cancelStroke(); return;
-    }
-    if (this.gestureMode === 'trace') {
-      const result = this.trace?.finish(this.strokeLength);
-      this.recoilStroke = [...this.currentStroke];
-      this.recoilAlpha = 1;
-      if (result?.valid) this.acceptDrawing(result, []);
-      else if (result) { this.showFeedback(result.message, 'warning'); audio.playFrayFault(); }
-      this.currentStroke = [];
-      this.strokeLength = 0;
-      return;
     }
     if (this.currentLevel?.stringRules && this.stringGesture?.hasBeads) {
       const strokePoints = [...this.currentStroke];
@@ -1100,8 +1069,7 @@ export class Game {
         this.stringGesture.updateBeads(dt, bounds);
       }
 
-      if (this.isDrawing && this.gestureMode === 'trace') this.sampleTrace();
-      else if (this.isDrawing) this.checkCordHazards();
+      if (this.isDrawing) this.checkCordHazards();
       this.maintainPopulation(dt);
     } else {
       audio.stopCicadas();
@@ -1285,7 +1253,6 @@ export class Game {
       ent.draw(ctx);
     }
 
-    this.drawTraceTargets(ctx);
     this.drawBeadMarkers(ctx);
 
     // 6. Translucent Paper Wind Streamlines
@@ -1617,8 +1584,11 @@ export class Game {
       }
 
       // Main dyed cotton cord strand
-      ctx.strokeStyle = this.gestureMode === 'trace' ? (this.trace?.fault ? '#a23f4b' : themeColor('trace', '#416e83')) : themeColor(band.name.toLowerCase(), band.cordHue);
-      if (this.gestureMode === 'trace') ctx.setLineDash([10, 4]);
+      ctx.strokeStyle = isTraceReady
+        ? themeColor('trace', '#416e83')
+        : (isClosed
+          ? (hasBeads ? '#d46b43' : '#7fad5a')
+          : themeColor(band.name.toLowerCase(), band.cordHue));
       ctx.lineWidth = 3.8;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -1644,24 +1614,6 @@ export class Game {
 
       ctx.restore();
     }
-  }
-
-  drawTraceTargets(ctx) {
-    if (this.gestureMode !== 'trace') return;
-    ctx.save();
-    for (const entity of this.entities) {
-      if (entity.state === 'harmonizing' || entity.state === 'departing') continue;
-      const index = this.trace?.contacts.indexOf(entity) ?? -1;
-      ctx.strokeStyle = index >= 0 ? themeColor('trace', '#315b73') : themeColor('trace', 'rgba(53,76,92,.4)');
-      ctx.lineWidth = index >= 0 ? 2 : 1;
-      ctx.beginPath(); ctx.arc(entity.x, entity.y, entity.radius, 0, Math.PI * 2); ctx.stroke();
-      if (index >= 0) {
-        ctx.fillStyle = themeColor('trace', '#315b73'); ctx.beginPath(); ctx.arc(entity.x + entity.radius, entity.y - entity.radius, 9, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = themeColor('panel', '#fff'); ctx.font = '600 11px system-ui'; ctx.textAlign = 'center';
-        ctx.fillText(String(index + 1), entity.x + entity.radius, entity.y - entity.radius + 4);
-      }
-    }
-    ctx.restore();
   }
 
   drawSaltGrains(ctx) {
@@ -1889,24 +1841,6 @@ export class Game {
       ctx.fillText(`Score: ${this.score}`, this.width - 24, 64);
     }
 
-    if (this.gestureMode === 'trace') {
-      ctx.save(); ctx.textAlign = 'center';
-      ctx.font = '600 11px system-ui, sans-serif'; ctx.fillStyle = themeColor('trace', '#315b73');
-      const y = isNarrow ? 104 : 88;
-      ctx.fillText('TRACE: Firefly → Lacewing → Firefly', this.width / 2, y);
-      ctx.font = '11px system-ui, sans-serif';
-      const count = this.trace?.contacts.length || 0;
-      ctx.fillText(this.trace?.fault ? 'Release to try again.' : count === 3
-        ? '3 / 3 · Release to finish.' : `${count} / 3 · Start outside the rings.`, this.width / 2, y + 16);
-      ctx.restore();
-    } else if (this.currentLevel?.gestures?.length > 1) {
-      ctx.save(); ctx.textAlign = 'center';
-      ctx.font = '600 11px system-ui, sans-serif'; ctx.fillStyle = themeColor('petite', '#85485e');
-      const y = isNarrow ? 104 : 88;
-      ctx.fillText('ENCLOSE: Loops & Figure-Eights (Press [T] for Trace)', this.width / 2, y);
-      ctx.restore();
-    }
-
     // --- Wind Indicator Badge (Noon Visits V-VI) ---
     if (this.currentLevel?.wind && (this.windPhase === 'warning' || this.windPhase === 'gust')) {
       const cx = this.width / 2;
@@ -2023,23 +1957,23 @@ export class Game {
 
   drawReadyModal(ctx) {
     const lvl = this.currentLevel;
-    const teachTrace = lvl.gestures.length === 1 && lvl.gestures[0] === 'trace';
-    const teachStringTrace = lvl.id === 'practice-string-trace';
+    const teachMidnight01 = lvl.id === 'midnight-01' || lvl.id === 'practice-midnight' || lvl.id === 'practice-string-trace';
+    const teachMidnight02 = lvl.id === 'midnight-02';
+    const teachMidnight03 = lvl.id === 'midnight-03';
     const teachLacewing = lvl.id === 'dusk-01' || lvl.id === 'practice-dusk';
     const teachDusk02 = lvl.id === 'dusk-02';
     const teachDusk03 = lvl.id === 'dusk-03';
     const teachCounterpart = lvl.id === 'noon-01' || lvl.id === 'practice-noon';
     const teachNursery = lvl.id === 'noon-02';
     const teachSeedTrio = lvl.id === 'noon-03';
-    const teachMidnight02 = lvl.id === 'midnight-02';
-    const teachMidnight03 = lvl.id === 'midnight-03';
     const teachDawn01 = lvl.id === 'dawn-01';
     const teachDawn02 = lvl.id === 'dawn-02';
     const teachDawn03 = lvl.id === 'dawn-03';
-    const hasDiagram = teachDawn01 || teachDawn02 || teachDawn03 || teachStringTrace || teachTrace || teachLacewing || teachDusk02 || teachDusk03 || teachCounterpart || teachNursery || teachSeedTrio || teachMidnight02 || teachMidnight03;
     const teachDawn = teachDawn01 || teachDawn02 || teachDawn03;
     const teachDusk = teachLacewing || teachDusk02 || teachDusk03;
-    const modalHeight = (teachMidnight02 || teachMidnight03 || teachDawn || teachDusk || teachStringTrace || teachCounterpart || teachNursery || teachSeedTrio) ? 445 : (hasDiagram ? 415 : 310);
+    const teachMidnight = teachMidnight01 || teachMidnight02 || teachMidnight03;
+    const hasDiagram = teachDawn || teachDusk || teachMidnight || teachCounterpart || teachNursery || teachSeedTrio;
+    const modalHeight = (teachMidnight || teachDawn || teachDusk || teachCounterpart || teachNursery || teachSeedTrio) ? 445 : (hasDiagram ? 415 : 310);
 
     this.drawModalBox(ctx, 500, modalHeight, (boxW, boxH) => {
       const isNarrow = boxW < 440;
@@ -2211,7 +2145,7 @@ export class Game {
         ctx.fillText('Close the loop by crossing the cord over itself or landing on the line.', 0, 41);
         ctx.fillText('Trio of Flight: three different kinds in one loop. Past the meter mark, the cord snaps.', 0, 56);
         ctx.restore();
-      } else if (teachStringTrace) {
+      } else if (teachMidnight01) {
         ctx.save(); ctx.translate(0, boxH / 2 - 112);
         // Cord line threading three insects
         ctx.strokeStyle = themeColor('trace', '#416e83'); ctx.lineWidth = 2.4;
@@ -2235,22 +2169,6 @@ export class Game {
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui';
         ctx.fillText('Thread three insects in sequence: Firefly → Lacewing → different Firefly.', 0, 56);
         ctx.fillText('Line may stay open or close. Release after the third to score.', 0, 71);
-        ctx.restore();
-      } else if (teachTrace) {
-        ctx.save(); ctx.translate(0, boxH / 2 - 112);
-        ctx.strokeStyle = themeColor('trace', '#416e83'); ctx.lineWidth = 2; ctx.setLineDash([7, 4]);
-        ctx.beginPath(); ctx.moveTo(-120, 8); ctx.lineTo(110, 8); ctx.stroke(); ctx.setLineDash([]);
-        for (const [i, x] of [-80, 0, 80].entries()) {
-          ctx.save(); ctx.translate(x, 0); ctx.scale(0.8, 0.8);
-          if (i === 1) drawLacewing(ctx, { lacePhase: 'rest', flapPhase: 0 });
-          else drawFirefly(ctx, { stateTime: 0.4, glowOffset: 0 });
-          ctx.restore();
-          ctx.textAlign = 'center'; ctx.fillStyle = themeColor('trace', '#315b73'); ctx.font = '11px system-ui';
-          ctx.fillText(`${i + 1}. ${i === 1 ? 'Lacewing' : 'Firefly'}`, x, 37);
-        }
-        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui';
-        ctx.fillText('Start in empty space. Touch three different insects.', 0, 59);
-        ctx.fillText('Release after the third. The line can stay open.', 0, 74);
         ctx.restore();
       } else if (teachLacewing) {
         ctx.save(); ctx.translate(0, boxH / 2 - 100);
@@ -2366,7 +2284,7 @@ export class Game {
         ctx.restore();
       } else if (teachMidnight02) {
         ctx.save(); ctx.translate(0, boxH / 2 - 96);
-        // Left side: Enclose Loop (Seed & Wing + Kindred)
+        // Left side: Loop / Figure-eight (Seed & Wing)
         ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 1.8;
         ctx.beginPath();
         ctx.ellipse(-88, -12, 54, 28, -0.15, 0, Math.PI * 2);
@@ -2378,35 +2296,41 @@ export class Game {
         new DandelionSeed(0, 0).draw(ctx); ctx.restore();
 
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('petite', '#7a3e52'); ctx.font = '600 11px system-ui, sans-serif';
-        ctx.fillText('Enclose Mode [T]', -88, 25);
+        ctx.fillText('Loop or Figure-Eight', -88, 25);
         ctx.font = '10px system-ui, sans-serif'; ctx.fillStyle = themeColor('muted', '#6e5a47');
-        ctx.fillText('Loops & 8s (Seeds belong here)', -88, 39);
+        ctx.fillText('Cross the cord to close', -88, 39);
 
         // Divider
         ctx.strokeStyle = themeColor('edge', '#d6cbba'); ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(0, -34); ctx.lineTo(0, 42); ctx.stroke();
 
         // Right side: Trace Path (Firefly -> Lacewing -> Firefly)
-        ctx.strokeStyle = themeColor('trace', '#416e83'); ctx.lineWidth = 1.8; ctx.setLineDash([6, 3]);
-        ctx.beginPath(); ctx.moveTo(25, -12); ctx.lineTo(145, -12); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle = themeColor('trace', '#416e83'); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(25, -12); ctx.lineTo(145, -12); ctx.stroke();
         for (const [i, x] of [35, 85, 135].entries()) {
           ctx.save(); ctx.translate(x, -12); ctx.scale(0.65, 0.65);
           if (i === 1) drawLacewing(ctx, { lacePhase: 'rest', flapPhase: 0 });
           else drawFirefly(ctx, { stateTime: 0.4, glowOffset: 0 });
           ctx.restore();
-          ctx.textAlign = 'center'; ctx.fillStyle = themeColor('trace', '#315b73'); ctx.font = '10px system-ui';
-          ctx.fillText(`${i + 1}`, x, 9);
+          // Bead pip on cord
+          ctx.fillStyle = '#ffffff'; ctx.strokeStyle = themeColor('trace', '#315b73'); ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.arc(x, -12, 2.8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          // Badge
+          ctx.fillStyle = themeColor('trace', '#315b73'); ctx.beginPath(); ctx.arc(x + 10, -12 - 10, 6.5, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = themeColor('panel', '#fff'); ctx.font = '600 8.5px system-ui'; ctx.textAlign = 'center';
+          ctx.fillText(String(i + 1), x + 10, -12 - 7.5);
         }
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('trace', '#2b5570'); ctx.font = '600 11px system-ui, sans-serif';
-        ctx.fillText('Trace Mode [T]', 85, 25);
+        ctx.fillText('Thread in Sequence', 85, 25);
         ctx.font = '10px system-ui, sans-serif'; ctx.fillStyle = themeColor('ink', '#5c4538');
-        ctx.fillText('Ordered 3-insect path', 85, 39);
+        ctx.fillText('Firefly → Lacewing → Firefly', 85, 39);
 
-        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = 'italic 11px Mali, sans-serif';
-        ctx.fillText('Switch modes with [T] or Mode button. Seeds belong in Enclose.', 0, 57);
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
+        ctx.fillText('No modes: thread to trace, or close the cord to loop.', 0, 55);
+        ctx.fillText('A stroke cannot both thread and enclose.', 0, 70);
         ctx.restore();
       } else if (teachMidnight03) {
-        ctx.save(); ctx.translate(0, boxH / 2 - 84);
+        ctx.save(); ctx.translate(0, boxH / 2 - 96);
         // Brimstone butterfly on left
         const brim = new Butterfly(-65, -8, 'brimstone'); brim.heading = -0.3; brim.draw(ctx);
         // Snail on right
@@ -2414,8 +2338,9 @@ export class Game {
 
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '600 12px system-ui, sans-serif';
         ctx.fillText('Brimstone butterflies and the perimeter snail return.', 0, 22);
-        ctx.font = 'italic 11px Mali, sans-serif'; ctx.fillStyle = themeColor('muted', '#6e5a47');
+        ctx.font = '11px system-ui, sans-serif'; ctx.fillStyle = themeColor('muted', '#6e5a47');
         ctx.fillText('Synthesize loops, figure-eights, traces, and a Nursery to complete the day.', 0, 38);
+        ctx.fillText('Draw around the snail. A stroke cannot both thread and enclose.', 0, 54);
         ctx.restore();
       }
 

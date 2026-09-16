@@ -130,7 +130,8 @@ for (const bad of [
   const level11 = manager.setLevelById('midnight-02');
   assert.equal(level11.transitionText, 'I trace figures, while the world moves around me.');
   assert.equal(manager.getNextLevel().id, 'midnight-03');
-  assert.deepEqual(level11.gestures, ['enclose', 'trace']);
+  assert.deepEqual(level11.gestures, ['string']);
+  assert.equal(level11.stringRules, true);
   assert.equal(level11.durationSeconds, 110);
   assert.equal(level11.motionScale, 0.95);
 
@@ -182,7 +183,8 @@ for (const bad of [
   const level12 = manager.setLevelById('midnight-03');
   assert.equal(level12.transitionText, 'And the world does move. Because tomorrow keeps happening.');
   assert.equal(manager.getNextLevel(), null, 'Visit XII is the final visit of the day');
-  assert.deepEqual(level12.gestures, ['enclose', 'trace']);
+  assert.deepEqual(level12.gestures, ['string']);
+  assert.equal(level12.stringRules, true);
   assert.equal(level12.durationSeconds, 110);
   assert.equal(level12.motionScale, 1.0);
 
@@ -244,43 +246,14 @@ for (const bad of [
     'All twelve IDs completed satisfies full day completion');
 }
 
-// Gesture mode lockout rules
+// Midnight string rules: single gesture without mode toggles
 {
-  // Mock game state to verify setGestureMode contract
-  const level10 = CAMPAIGN_LEVELS.find(l => l.id === 'midnight-01'); // ['trace']
-  const level11 = CAMPAIGN_LEVELS.find(l => l.id === 'midnight-02'); // ['enclose', 'trace']
-
-  const mockGame = {
-    isDrawing: false,
-    victoryDelay: 0,
-    currentLevel: level11,
-    gestureMode: 'enclose',
-    setGestureMode(mode) {
-      if (this.isDrawing || this.victoryDelay > 0 || !this.currentLevel.gestures.includes(mode)) return false;
-      this.gestureMode = mode;
-      return true;
-    }
-  };
-
-  assert.equal(mockGame.setGestureMode('trace'), true);
-  assert.equal(mockGame.gestureMode, 'trace');
-  assert.equal(mockGame.setGestureMode('enclose'), true);
-  assert.equal(mockGame.gestureMode, 'enclose');
-
-  // Locked during drawing
-  mockGame.isDrawing = true;
-  assert.equal(mockGame.setGestureMode('trace'), false);
-  mockGame.isDrawing = false;
-
-  // Locked during victory delay
-  mockGame.victoryDelay = 1.0;
-  assert.equal(mockGame.setGestureMode('trace'), false);
-  mockGame.victoryDelay = 0;
-
-  // Locked to gestures supported by level
-  mockGame.currentLevel = level10; // Visit X only has ['trace']
-  assert.equal(mockGame.setGestureMode('enclose'), false, 'Visit X rejects switching to enclose');
-  assert.equal(mockGame.setGestureMode('invalid_mode'), false);
+  for (const id of ['midnight-01', 'midnight-02', 'midnight-03']) {
+    const level = CAMPAIGN_LEVELS.find(l => l.id === id);
+    assert.deepEqual(level.gestures, ['string'], `${id} uses one-gesture string rules`);
+    assert.equal(level.stringRules, true, `${id} has stringRules enabled`);
+    assert.deepEqual(level.traceSequence, ['firefly', 'lacewing', 'firefly'], `${id} defines firefly-lacewing-firefly trace sequence`);
+  }
 }
 
 // Clearance-aware initial placement in window scene

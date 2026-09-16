@@ -1,7 +1,6 @@
 # Drawing the Hours: first twelve visits
 
-Implementation specification, updated 2026-09-15. **Dawn, Noon, and Dusk
-(Visits I–IX) and Midnight Visit X are implemented. XI–XII remain planned; tuning remains provisional.** Xyh confirmed four successive groups of three levels: Dawn,
+Implementation specification, updated 2026-09-16. **All twelve visits (Dawn I–III, Noon IV–VI, Dusk VII–IX, Midnight X–XII) are implemented under one-gesture string rules ([STRING.md](STRING.md)).** Xyh confirmed four successive groups of three levels: Dawn,
 Noon, Dusk, Midnight. Each of their twelve lines introduces one level.
 Their [original draft](first12levels.md) remains unchanged.
 
@@ -11,13 +10,12 @@ It is design data for the implementation, not a file the current game loads.
 This document defines how to interpret it. It supersedes the 24-level campaign
 in `SPEC.md`; twelve levels form a complete release, with later visits optional.
 
-**Planned replacement, 2026-09-15:** [STRING.md](STRING.md) records Xyh's
-decision to replace the Enclose and Trace modes with one drawing gesture: the
-held cord walls insects in, a pointer passing through an insect threads it, long
-cords snap, and a short press is a tap. It is not built. Until it is, this
-document describes the running game; once built, it supersedes the Trace and
-mode-switching sections below and turns each Trace into threading in sequence;
-the Midnight objectives stay.
+**String rules rollout (2026-09-16):** [STRING.md](STRING.md) replaces the Enclose
+and Trace modes with one drawing gesture: the held cord walls insects in, a pointer
+passing through an insect threads it as a bead, long cords snap at 1,300 px, and a
+short press is a tap. Enclosing and Tracing coexist naturally without modes: close the
+cord to score loops, or thread insects in sequence to score an Ordered Trace. A stroke
+cannot both thread and enclose. All twelve visits and practice levels run under these rules.
 
 ## Story and setting
 
@@ -114,41 +112,27 @@ requires a Nursery and a lacewing Counterpart Pair; mixed Echoes are deferred
 pending gesture calibration.
 
 ### Midnight firefly and Trace mode: levels 10–12
-
-Planned for replacement by [STRING.md](STRING.md), which removes Trace mode and
-keeps these objectives, with each Trace threaded in sequence.
+Implemented under [STRING.md](STRING.md) string rules: Trace mode is removed in
+favour of threading in sequence, coexisting with loops on the same cord.
 
 [Midnight implementation and handoff](MIDNIGHT.md) records the implemented
-Trace contract, revised populations, and Antigravity's XI–XII build sequence.
+Trace contract, revised populations, and one-gesture string rules across X–XII.
 
 Add `firefly`, a slow wandering beetle silhouette with a cream-yellow glowing
 abdomen. Its body and hit radius stay visible and unchanged between glows.
 This fictional inhabitant has no hidden invulnerability period.
 
-Level 10 locks to **Trace**, with only fireflies and lacewings. Display names
-and silhouettes for firefly, lacewing, firefly. Press in empty space, pass
-through three distinct insects in order, and release. The first firefly cannot
-also supply the last. A valid trace harmonizes the contacted insects, scores
-240 base points with the existing length multiplier, and advances `trace`
-and `any` counters where listed. It need not close.
+Level 10 (Visit X) introduces Ordered Trace under string rules, with only fireflies
+and lacewings. Thread three distinct insects in order (firefly → lacewing → firefly)
+by passing the pointer through their hit circles, then release. The first firefly cannot
+also supply the last. A valid trace harmonizes the contacted insects, scores 240 base
+points with the length multiplier, and advances `trace` and `any` counters. It need not close.
 
-Record first contacts using swept relative-motion segment tests, accounting
-for pointer and target movement between samples. Use the visible target
-radius. Sort contacts by time; indistinguishable simultaneous contacts produce
-an overlap explanation rather than arbitrary ordering. Mark and reserve
-touched IDs while letting them move. Ignore repeated contact with the same
-ID. A wrong kind, fourth distinct insect, or touched hazard invalidates the
-whole trace. Show mismatch immediately; mutate entities, score, and objectives
-only on release. Cancellation clears reservations. An incomplete trace cannot
-score. No minimum stroke speed is required. Untouched enclosed objects do not
-count in this mode.
-
-Levels 11–12 provide **Enclose / Trace**. Enclose uses the existing pocket
-grammar; touching a creature does not secretly start a trace. Trace uses
-ordered contacts even if the line closes. Disable mode switching mid-stroke.
-Show the mode in text and cord treatment. Mixed-mode levels start and retry
-in Enclose. Keep the same trace sequence throughout this campaign. New flier
-kinds participate generically in enclosure recipes.
+Levels 11–12 (Visits XI–XII) unite loop enclosure and trace threading on the same cord
+without mode switches or toggles. Closing the cord evaluates enclosed pockets; threading
+the sequence evaluates an Ordered Trace. A stroke that both threads and encloses bystander
+entities fails under the purity rule (STRING.md rule 4), scoring neither. Snail contact breaks
+the cord immediately. New flier kinds participate generically in enclosure recipes.
 
 ## Recipe validity and objective progress
 

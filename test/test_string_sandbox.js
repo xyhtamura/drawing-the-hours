@@ -1327,4 +1327,164 @@ console.log('--- Running String Sandbox Test Suite ---');
   console.log('✔ Dusk VII–IX adopt string rules; lacewings, nurseries, switching gestures, and wall stops verified.');
 }
 
+// 24. Midnight X–XII adopt string rules; all twelve visits run under one gesture
+{
+  const midnightIds = ['midnight-01', 'midnight-02', 'midnight-03'];
+  const plan = JSON.parse(fs.readFileSync(new URL('../campaign-plan.json', import.meta.url)));
+
+  // All 12 campaign levels and practice levels now use string rules
+  for (const level of CAMPAIGN_LEVELS) {
+    assert.strictEqual(level.stringRules, true, `${level.id} uses string rules`);
+    assert.deepStrictEqual(level.gestures, ['string'], `${level.id} has gestures ['string']`);
+  }
+  for (const id of midnightIds) {
+    const source = plan.levels.find(l => l.id === id);
+    assert.strictEqual(source.stringRules, true, `${id}: plan has stringRules`);
+    assert.deepStrictEqual(source.gestures, ['string'], `${id}: plan has gestures ['string']`);
+    assert.deepStrictEqual(source.traceSequence, ['firefly', 'lacewing', 'firefly']);
+  }
+
+  const listeners = { window: {}, canvas: {} };
+  const hadWindow = 'window' in globalThis;
+  const hadDocument = 'document' in globalThis;
+  globalThis.window = { addEventListener: (type, fn) => { listeners.window[type] = fn; }, devicePixelRatio: 1 };
+  globalThis.document = {
+    querySelector: () => null,
+    getElementById: () => null,
+    addEventListener: () => {},
+    hidden: false,
+    documentElement: { dataset: {}, style: { setProperty: () => {}, removeProperty: () => {} } },
+  };
+  try {
+    const ctx = new Proxy({ measureText: () => ({ width: 10 }) }, {
+      get: (target, prop) => (prop in target ? target[prop] : () => {}),
+    });
+    const canvas = {
+      width: 960,
+      height: 640,
+      getContext: () => ctx,
+      addEventListener: (type, fn) => { listeners.canvas[type] = fn; },
+      setPointerCapture: () => {},
+      releasePointerCapture: () => {},
+      getBoundingClientRect: () => ({ left: 0, top: 0, width: 960, height: 640 }),
+    };
+    const game = new Game(canvas);
+    assert.strictEqual(game.gestureMode, 'string', 'game.gestureMode is string');
+
+    const pointer = (type, x, y) => {
+      const event = { pointerId: 1, isPrimary: true, button: 0, clientX: x, clientY: y, preventDefault() {} };
+      if (type === 'pointerdown') listeners.canvas.pointerdown(event);
+      else listeners.window[type](event);
+    };
+    const drawLine = (x0, y0, x1, y1) => {
+      const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 8);
+      for (let i = 1; i <= n; i++) pointer('pointermove', x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n);
+    };
+    const drawSingleLoop = (cx = 300, cy = 300, r = 50) => {
+      pointer('pointerdown', cx + r, cy);
+      for (let a = 0.2; a <= Math.PI * 2 + 0.4; a += 0.2) {
+        pointer('pointermove', cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+      }
+      pointer('pointerup', cx + Math.cos(Math.PI * 2 + 0.4) * r, cy + Math.sin(Math.PI * 2 + 0.4) * r);
+    };
+    const lemniscate = t => [480 + 150 * Math.sin(t), 320 + 80 * Math.sin(2 * t)];
+    const drawFigureEight = endT => {
+      pointer('pointerdown', ...lemniscate(0));
+      for (let t = 0.06; t < endT; t += 0.06) pointer('pointermove', ...lemniscate(t));
+      pointer('pointermove', ...lemniscate(endT));
+      pointer('pointerup', ...lemniscate(endT));
+    };
+
+    // 1. Visit X (midnight-01): Ordered Trace threading in sequence
+    game.initLevel('midnight-01');
+    game.state = 'PLAYING';
+    const f1 = new Insect(200, 300, 'firefly');
+    const lace = new Insect(350, 300, 'lacewing');
+    const f2 = new Insect(500, 300, 'firefly');
+    game.entities = [f1, lace, f2];
+
+    pointer('pointerdown', 100, 300);
+    drawLine(100, 300, 600, 300);
+    assert.strictEqual(game.stringGesture.beads.length, 3);
+    assert.strictEqual(game.traceStatus().ready, true);
+    pointer('pointerup', 600, 300);
+    assert.ok(game.feedbackBanner.text.startsWith('Ordered Trace'), `Visit X trace scores (got "${game.feedbackBanner.text}")`);
+    assert.strictEqual(game.campaign.objectiveProgress.trace.current, 1, 'Trace advances trace objective in Visit X');
+
+    // 2. Visit XI (midnight-02): Loop and Trace coexistence without modes
+    game.initLevel('midnight-02');
+    game.state = 'PLAYING';
+
+    // (a) Pair enclosure with single loop
+    game.entities = [new Insect(285, 300, 'hoverfly'), new Insect(315, 300, 'hoverfly')];
+    drawSingleLoop(300, 300, 50);
+    assert.strictEqual(game.campaign.objectiveProgress.pair.current, 1, 'Pair objective advances');
+    assert.strictEqual(game.campaign.objectiveProgress.any.current, 1, 'Any objective advances from loop');
+
+    // (b) Seed & Wing enclosure
+    game.entities = [new Insect(285, 300, 'hoverfly'), new DandelionSeed(315, 300)];
+    drawSingleLoop(300, 300, 50);
+    assert.strictEqual(game.campaign.objectiveProgress.seedWing.current, 1, 'Seed & Wing objective advances');
+    assert.strictEqual(game.campaign.objectiveProgress.any.current, 2);
+
+    // (c) Counterpart figure-8
+    game.entities = [new Insect(380, 320, 'hoverfly'), new Insect(580, 320, 'lacewing')];
+    drawFigureEight(Math.PI * 2 + 0.35);
+    assert.strictEqual(game.campaign.objectiveProgress.figure8.current, 1, 'Figure-8 objective advances');
+    assert.strictEqual(game.campaign.objectiveProgress.any.current, 3);
+
+    // (d) Trace threading on the same cord without mode switching
+    const xf1 = new Insect(200, 300, 'firefly');
+    const xlace = new Insect(350, 300, 'lacewing');
+    const xf2 = new Insect(500, 300, 'firefly');
+    game.entities = [xf1, xlace, xf2];
+    pointer('pointerdown', 100, 300);
+    drawLine(100, 300, 600, 300);
+    pointer('pointerup', 600, 300);
+    assert.strictEqual(game.campaign.objectiveProgress.trace.current, 1, 'Trace advances trace objective');
+    assert.strictEqual(game.campaign.objectiveProgress.any.current, 4, 'Trace advances any objective');
+
+    // (e) Purity enforcement: threading + enclosing cancels both
+    game.entities = [
+      new Insect(200, 300, 'firefly'),
+      new Insect(350, 300, 'lacewing'),
+      new Insect(500, 300, 'firefly'),
+      new Insect(350, 420, 'hoverfly'), // bystander to be enclosed
+    ];
+    // Path threads all three then loops back around the hoverfly
+    pointer('pointerdown', 100, 300);
+    drawLine(100, 300, 550, 300);
+    drawLine(550, 300, 550, 480);
+    drawLine(550, 480, 150, 480);
+    drawLine(150, 480, 150, 250); // crosses over start line (300)
+    assert.strictEqual(game.traceStatus().encloses, true, 'Detects enclosed entity');
+    pointer('pointerup', 150, 250);
+    assert.strictEqual(game.feedbackBanner.text, 'A stroke cannot both thread and enclose, so neither counts.');
+    assert.strictEqual(game.campaign.objectiveProgress.trace.current, 1, 'Impure stroke does not advance trace');
+    assert.strictEqual(game.campaign.objectiveProgress.any.current, 4, 'Impure stroke does not advance any');
+
+    // 3. Visit XII (midnight-03): Synthesis & Snail Hazard
+    game.initLevel('midnight-03');
+    game.state = 'PLAYING';
+
+    // Nursery Polarity in Visit XII
+    game.entities = [new Insect(380, 320, 'brimstone'), new DandelionSeed(580, 320)];
+    drawFigureEight(Math.PI * 2 + 0.35);
+    assert.strictEqual(game.campaign.objectiveProgress.nursery.current, 1, 'Nursery advances nursery objective');
+    assert.strictEqual(game.campaign.objectiveProgress.figure8.current, 1, 'Nursery advances figure8');
+    assert.strictEqual(game.campaign.objectiveProgress.any.current, 1, 'Nursery advances any');
+
+    // Snail hazard breaks the cord
+    const snail = new Snail(300, 300);
+    game.entities = [snail];
+    pointer('pointerdown', 200, 300);
+    pointer('pointermove', 300, 300);
+    assert.strictEqual(game.isDrawing, false, 'Touching snail breaks cord immediately');
+    assert.ok(game.feedbackBanner.text.includes('snail broke the cord'), 'Shows snail break banner');
+  } finally {
+    if (!hadWindow) delete globalThis.window;
+    if (!hadDocument) delete globalThis.document;
+  }
+  console.log('✔ Midnight X–XII adopt string rules; trace, loop coexistence, purity, and snail hazards verified.');
+}
 console.log('--- All String Sandbox unit tests passed! ---');

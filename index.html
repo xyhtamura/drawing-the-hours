@@ -20,9 +20,6 @@
       <button id="btn-visit" title="Garden Visits &amp; Hours (W)">
         🌿 Visit: Dawn 1
       </button>
-      <button id="btn-gesture-mode" title="Switch gesture mode: Enclose / Trace (T)" aria-label="Gesture Mode" style="display: none;">
-        ✏ Mode: Enclose [T]
-      </button>
       <button id="btn-orientation" title="Switch orientation mode: Auto / Vertical / Horizontal (V)">
         📱 View: Auto
       </button>
@@ -47,7 +44,7 @@
 
   <footer>
     <div id="gesture-hint">Draw around insects. Cross your line to make two pockets.</div>
-    <div>Keyboard: [Space] Pause / Advance &bull; [T] Mode &bull; [W] Visits &bull; [V] View &bull; [M] Sound &bull; [H] Field Book &bull; [R] Restart</div>
+    <div>Keyboard: [Space] Pause / Advance &bull; [W] Visits &bull; [V] View &bull; [M] Sound &bull; [H] Field Book &bull; [R] Restart</div>
   </footer>
 
   <!-- Field Book Modal -->
@@ -71,8 +68,8 @@
       <div class="recipe-entry">
         <span class="entry-badge" style="background:#e0f2fe; color:#0369a1;">Species</span>
         <div class="recipe-info">
-          <h3>Window Firefly</h3><p>Appears at Midnight. A slow beetle with a pale abdomen that stays visible between glows. In Trace mode, target rings stay the same size throughout the glow cycle.</p>
-          <h3>Ordered Trace</h3><p>Start outside every target ring. Touch a firefly, a lacewing, then a different firefly in one stroke. Release to finish; the line can stay open. Numbered rings show the order. Repeating an insect does not count again. A wrong insect, a fourth target, or a snail invalidates the trace. Overlapping contacts require another attempt. Leaves do not count.</p>
+          <h3>Window Firefly</h3><p>Appears at Midnight. A slow beetle with a pale abdomen that stays visible between glows. Target radius stays the same throughout the glow cycle.</p>
+          <h3>Ordered Trace</h3><p>Thread a firefly, a lacewing, then a different firefly in one stroke. Release to finish; the line can stay open or close. Numbered badges show the sequence. Repeating an insect does not count again. A wrong order, extra insects, or enclosing another creature cancels the trace. Leaves do not count.</p>
           <h3>Paper Lacewing</h3><p>Appears at Dusk. Mint veined wings fold while it rests on a leaf for 1.5 seconds. Draw a figure-eight with one lacewing and one different insect in separate pockets. Leaves do not count as targets.</p>
           <h3>Amber Hoverfly</h3><p>Appears at Noon. Holds still, turns, then shifts a short distance. Draw a figure-eight around one hoverfly and one Brimstone, with one insect in each pocket.</p>
         </div>
@@ -245,7 +242,6 @@
     window.game = game; // handle for playtesting from the console
 
     const btnVisit = document.getElementById('btn-visit');
-    const btnGestureMode = document.getElementById('btn-gesture-mode');
     const btnOrientation = document.getElementById('btn-orientation');
     const btnFieldbook = document.getElementById('btn-fieldbook');
     const btnAudio = document.getElementById('btn-audio');
@@ -328,15 +324,9 @@
     });
 
     const updateLevelUI = (level = game.currentLevel) => {
-      document.getElementById('gesture-hint').textContent = level?.stringRules
-        ? (level.traceSequence
-          ? 'Thread a firefly, a lacewing, then another firefly in one stroke. Draw around insects for loops.'
-          : 'The held cord is a wall. Draw around insects; a line through an insect cancels the loop.')
-        : (game.gestureMode === 'trace'
-          ? 'Start in empty space. Trace through firefly, lacewing, then another firefly. Release to finish.'
-          : (level?.hour === 'midnight'
-            ? 'Draw around insects. Seeds belong in Enclose. Cross line for two lobes.'
-            : 'Draw around insects. Cross your line to make two pockets.'));
+      document.getElementById('gesture-hint').textContent = level?.traceSequence
+        ? 'Thread firefly → lacewing → firefly in sequence to trace. Draw around insects to loop.'
+        : 'The held cord is a wall. Draw around insects; crossing the cord closes the loop.';
       if (btnVisit && level) {
         if (level.hourLabel && level.hourLabel.startsWith('Practice')) {
           btnVisit.textContent = `🌿 Sandbox: ${level.number}`;
@@ -344,30 +334,6 @@
           btnVisit.textContent = `🌿 Visit: Dawn ${level.number}`;
         } else {
           btnVisit.textContent = `🌿 Visit: ${level.number}`;
-        }
-      }
-      if (btnGestureMode && level) {
-        const gestures = level.gestures || ['enclose'];
-        if (gestures.length > 1) {
-          btnGestureMode.style.display = 'inline-flex';
-          btnGestureMode.disabled = game.isDrawing || game.victoryDelay > 0;
-          if (game.gestureMode === 'trace') {
-            btnGestureMode.textContent = '✨ Mode: Trace [T]';
-            btnGestureMode.className = 'mode-trace';
-            btnGestureMode.title = 'Switch gesture mode: Enclose / Trace (T)';
-          } else {
-            btnGestureMode.textContent = '✏ Mode: Enclose [T]';
-            btnGestureMode.className = 'mode-enclose';
-            btnGestureMode.title = 'Switch gesture mode: Enclose / Trace (T)';
-          }
-        } else if (gestures[0] === 'trace') {
-          btnGestureMode.style.display = 'inline-flex';
-          btnGestureMode.disabled = true;
-          btnGestureMode.textContent = '✨ Mode: Trace (Locked)';
-          btnGestureMode.className = 'mode-trace';
-          btnGestureMode.title = 'Trace mode locked for this visit';
-        } else {
-          btnGestureMode.style.display = 'none';
         }
       }
       if (headerSub && level) {
@@ -568,17 +534,6 @@
       btnPause.textContent = '⏸ Pause';
     });
 
-    // Gesture mode toggle
-    if (btnGestureMode) {
-      btnGestureMode.addEventListener('click', () => {
-        if (game.isDrawing || game.victoryDelay > 0) return;
-        const next = game.gestureMode === 'trace' ? 'enclose' : 'trace';
-        if (game.setGestureMode(next)) {
-          updateLevelUI();
-        }
-      });
-    }
-
     // Keyboard Shortcuts
     window.addEventListener('keydown', (e) => {
       if (e.key === ' ' || e.code === 'Space') {
@@ -588,13 +543,6 @@
         } else {
           game.togglePause();
           btnPause.textContent = (game.state === 'PAUSED') ? '▶ Resume' : '⏸ Pause';
-        }
-      } else if (e.key === 't' || e.key === 'T') {
-        if (!game.isDrawing && game.victoryDelay <= 0 && game.currentLevel?.gestures?.length > 1) {
-          const next = game.gestureMode === 'trace' ? 'enclose' : 'trace';
-          if (game.setGestureMode(next)) {
-            updateLevelUI();
-          }
         }
       } else if (e.key === 'w' || e.key === 'W') {
         toggleVisitModal();
