@@ -30,7 +30,7 @@ the existing implementation.
 | Hour | The one new demand | What carries it |
 | --- | --- | --- |
 | Dawn | Close a loop around chosen contents | Pair, Seed & Wing, trio |
-| Noon | Manage the field and the cord | Cord spool, hornet patrol, web patches, gusts — Dawn's loops, grown |
+| Noon | Volume and speed under pressure | Six combinations a visit on Dawn's simple loops, a picked pod for length, a wandering hornet, fixed webs, gusts |
 | Dusk | Cross the cord | Counterpart Pair at VII, Nursery at VIII, both shapes at IX |
 | Midnight | Thread in order | Ordered Trace, then traces beside enclosure |
 
@@ -126,10 +126,10 @@ Totals include seeds and snails. A dash means zero.
 | Lacewing | Travels between visible leaves, rests at anchors | VII | Continues through Midnight; bridges enclosure and threading lessons |
 | Firefly | Slow flight and glow; body remains visible between glows | X | Carries the ordered-threading recipe through XII |
 | Seed | Drifting non-flier recipe target; affected by wind | II | Returns V–VI, VIII–IX, XI–XII |
-| Snail | Breaks a touching cord; invalid enclosure content | II | Mid-field seam in II–III; bottom edge in VIII–IX, XII |
-| Hornet | Patrols one drawn lane; breaks a touching cord; invalid enclosure content | V | Returns in VI beside the webs |
-| Web patch | Static; breaks a touching cord; terrain, so valid inside a loop | VI | Two patches, placed by the level |
-| Cord spool | Adds 400 px to the stroke that runs over it; not a target | IV | Present through the hour; another is left 8 s after one is taken |
+| Snail | Invalid enclosure content; does not cut the cord | II | Mid-field seam in II–III; bottom edge in VIII–IX, XII |
+| Hornet | Wanders like an insect; cuts a touching cord; invalid enclosure content | V | Returns in VI beside the webs |
+| Web patch | Static; cuts a touching cord; terrain, so valid inside a loop | VI | Two patches, placed by the level; the only fixed-path hazard |
+| Picked pod | Adds 400 px to the NEXT cord, kept 12 s; not a target | IV | Present through the hour; another grows 8 s after one is taken |
 
 The snail does return. Its later placement makes it less likely to intersect a useful
 drawing than the Dawn seam route. Presence and mechanical prominence are different.
@@ -147,8 +147,8 @@ The matrix tracks authored requirements, not every valid recipe the evaluator ac
 | Seed & Wing, one pocket | — | N | — | — | R | — | — | — | — | — | R | — |
 | Three-species trio | — | — | N | R | — | — | — | — | — | — | — | — |
 | Three species plus seed, one pocket | — | — | — | — | — | N | — | — | — | — | — | — |
-| Cord spool | — | — | — | N | P | P | — | — | — | — | — | — |
-| Hornet lane | — | — | — | — | N | P | — | — | — | — | — | — |
+| Picked pod for cord length | — | — | — | N | P | P | — | — | — | — | — | — |
+| Wandering hornet | — | — | — | — | N | P | — | — | — | — | — | — |
 | Web patch | — | — | — | — | — | N | — | — | — | — | — | — |
 | Different-species figure-eight | — | — | — | — | — | — | N | R | — | — | — | — |
 | Nursery: flier and seed in separate pockets | — | — | — | — | — | — | — | N | — | — | — | R |
@@ -176,9 +176,9 @@ Motion is the configured flier motion multiplier, not a universal speed for ever
 | I · Before the bus | 75s; waits for first success | 0.80 | 4 single loops; available cast teaches same-kind pairs | Several foundational rules despite a simple objective |
 | II · Something in the air | 85s | 0.85 | 5 total; 2 Seed & Wing | Seeds and central hazard arrive together |
 | III · The curbside patch | 90s | 0.85 | 4 total; 2 trios | Larger grouping and an arcing species; seeds removed |
-| IV · Lunch in the atrium | 90s | 0.80 | 4 total; 2 trios | A known recipe on a clear field; the new thing is the spool |
-| V · For now | 110s | 0.85 | 4 total; 2 Seed & Wing | Hornet lane and gusts arrive together, on familiar loops |
-| VI · The glass and the leaves | 100s | 0.85 | 4 total; 2 Seed & Trio | The day's longest loop against webs, hornet, and wind |
+| IV · Lunch in the atrium | 90s | 0.80 | 6 total; 2 trios | Known recipes on a clear field; the count is the pressure |
+| V · For now | 110s | 0.85 | 6 total; 3 Seed & Wing | A wandering hornet and gusts, against six required drawings |
+| VI · The glass and the leaves | 100s | 0.85 | 6 total; 2 Seed & Trio | The day's longest loop, five more drawings, webs and hornet |
 | VII · The way through | 100s | 0.85 | 5 total; 2 lacewing Counterpart Pairs | First crossing, taught against the stillest targets in the game |
 | VIII · The gaps in the sound | 95s | 0.85 | 5 total; 1 Nursery; 1 lacewing Counterpart Pair | 4 → 10 entities while the timer shortens |
 | IX · Carrying something home | 100s | 1.00 | 6 total; 3 single loops; 2 figure-eights | More speed, more contents, and alternating shapes |
@@ -232,6 +232,19 @@ establish rule behavior, not a smooth difficulty curve. Population and objective
 tables are verified against the configuration; the pacing judgments still need playtests.
 
 ## Record
+
+2026-09-16 — Claude Code — Second pass, after Xyh played the first one. Noon's
+pressure became count rather than care: six combinations a visit on the same
+simple loops. The hornet was rewritten to fly like an insect, because a creature
+on a fixed route reads as scenery; fixed paths now belong to things, which leaves
+the web as the only fixed-place hazard. The snail stopped cutting the cord and is
+a dud ingredient only. The cord spool became a picked pod that lengthens the next
+cord for twelve seconds, and its skin is Codex's to draw. The visit card can be
+reopened during play, which Xyh asked for after Midnight XI. Seeds now take the
+visit's motion scale, so a Dusk seed no longer outruns every insect on the field.
+Xyh's readings that needed no change: Dawn and IV feel right, the trio is fine,
+figure-eights suit the current cord length, Dusk VIII after VII ramps well, and
+X–XI are challenging in the way intended.
 
 2026-09-16 — Claude Code — Applied Xyh's decision on this document: figure-eights
 moved from Noon to Dusk, and Noon took a power-up and hazards instead. Noon IV–VI

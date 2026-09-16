@@ -457,7 +457,7 @@ export class StringGesture {
         const hits = [];
         for (const entity of entities) {
           if (entity === exclude || entity.type === 'hazard' || entity.type === 'terrain'
-            || entity.type === 'spool' || entity.state !== 'roaming') continue;
+            || entity.type === 'bean' || entity.state !== 'roaming') continue;
           if (this.beads.some(b => b.entity === entity)) continue;
           const t = segmentEntersDisk(last, point, entity, entity.radius);
           if (t !== null) hits.push({ entity, t });
@@ -614,7 +614,7 @@ export class TapTracker {
   onPress(pos, time, entities = []) {
     const target = (entities || []).find(
       e => e.state !== 'departing' && e.state !== 'harmonizing'
-        && e.type !== 'hazard' && e.type !== 'terrain' && e.type !== 'spool'
+        && e.type !== 'hazard' && e.type !== 'terrain' && e.type !== 'bean'
         && distance(pos, e) <= e.radius
     ) || null;
 

@@ -23,6 +23,9 @@
       <button id="btn-orientation" title="Switch orientation mode: Auto / Vertical / Horizontal (V)">
         📱 View: Auto
       </button>
+      <button id="btn-visit-card" title="Show this visit's card again (C)">
+        🗒 Visit Card
+      </button>
       <button id="btn-fieldbook" title="View Field Book combinations (H)">
         📖 Field Book
       </button>
@@ -44,7 +47,7 @@
 
   <footer>
     <div id="gesture-hint">Draw around insects. Cross your line to make two pockets.</div>
-    <div>Keyboard: [Space] Pause / Advance &bull; [W] Visits &bull; [V] View &bull; [M] Sound &bull; [H] Field Book &bull; [R] Restart</div>
+    <div>Keyboard: [Space] Pause / Advance &bull; [C] Visit Card &bull; [W] Visits &bull; [V] View &bull; [M] Sound &bull; [H] Field Book &bull; [R] Restart</div>
   </footer>
 
   <!-- Field Book Modal -->
@@ -153,22 +156,22 @@
       <div class="recipe-entry" data-reveal-hour="noon">
         <span class="entry-badge" style="background:#ede7d6; color:#5c4837;">Thread</span>
         <div class="recipe-info">
-          <h3>Cord Spool</h3>
-          <p>Appears at Noon. Running the held cord over a spool adds thread to that stroke: the mark on the cord meter moves right, so the loop can run further before it snaps. The thread lasts for that stroke only, and another spool is left in the atrium a few seconds later. A spool is never part of a combination.</p>
+          <h3>String Bean</h3>
+          <p>Appears at Noon. Drawing the cord over a bean picks it. Your <em>next</em> cord runs 400 px longer — the mark on the cord meter moves right before you start it — and the length is spent on that one cord. A picked bean dries out after about twelve seconds, and another pod grows a few seconds after one is taken. A bean is never part of a combination.</p>
         </div>
       </div>
       <div class="recipe-entry" data-reveal-hour="noon">
         <span class="entry-badge" style="background:#fae5e5; color:#852b2b;">Hazard</span>
         <div class="recipe-info">
           <h3>Atrium Hornet</h3>
-          <p>Appears at Noon. Patrols one horizontal lane at a steady speed and turns at the edges, so its path can be read before you draw. A cord that touches it breaks, and a loop that holds one fails.</p>
+          <p>Appears at Noon. Flies like the other insects, wandering and turning on its own. A cord that touches it is cut at once, and a loop that holds one fails.</p>
         </div>
       </div>
       <div class="recipe-entry" data-reveal-hour="noon">
         <span class="entry-badge" style="background:#fae5e5; color:#852b2b;">Hazard</span>
         <div class="recipe-info">
           <h3>Web Patch</h3>
-          <p>Appears at Noon. A patch of web strung across the atrium in a fixed place. A cord drawn into it sticks and breaks. It is not a creature, so a loop drawn around one is still valid — the cord simply cannot cross it.</p>
+          <p>Appears at Noon. A patch of web strung across the atrium in a fixed place — the one hazard that holds still, because it is a thing rather than a creature. A cord drawn into it sticks and is cut. A loop drawn around one is still valid; the cord simply cannot cross it.</p>
         </div>
       </div>
       <div class="recipe-entry" data-reveal-hour="noon">
@@ -215,7 +218,7 @@
         <span class="entry-badge" style="background:#fae5e5; color:#852b2b;">Hazard</span>
         <div class="recipe-info">
           <h3>Ground Crawler (Snail)</h3>
-          <p>At Dawn a snail crawls along the paving seam through the middle of the field; in later hours it keeps to the bottom edge. A cord that touches a snail while you draw breaks, and a loop that encloses one fails. Draw around it.</p>
+          <p>At Dawn a snail crawls along the paving seam through the middle of the field; in later hours it keeps to the bottom edge. Your cord can cross a snail safely, but a loop that encloses one gathers nothing. Draw around it.</p>
         </div>
       </div>
 
@@ -275,6 +278,7 @@
     const btnVisit = document.getElementById('btn-visit');
     const btnOrientation = document.getElementById('btn-orientation');
     const btnFieldbook = document.getElementById('btn-fieldbook');
+    const btnVisitCard = document.getElementById('btn-visit-card');
     const btnAudio = document.getElementById('btn-audio');
     const btnPause = document.getElementById('btn-pause');
     const btnRestart = document.getElementById('btn-restart');
@@ -479,7 +483,8 @@
       if (modal && modal.classList.contains('active')) return;
       if (visitModal && visitModal.classList.contains('active')) return;
 
-      if (game.state === 'TRANSITION' || game.state === 'READY' || game.state === 'LEVEL_COMPLETE' || game.state === 'GAMEOVER') {
+      if (game.state === 'TRANSITION' || game.state === 'READY' || game.state === 'CARD'
+        || game.state === 'LEVEL_COMPLETE' || game.state === 'GAMEOVER') {
         game.advance();
         btnPause.textContent = '⏸ Pause';
       }
@@ -575,6 +580,14 @@
       });
     }
 
+    // Show the visit card again without restarting the visit
+    if (btnVisitCard) {
+      btnVisitCard.addEventListener('click', () => {
+        game.toggleVisitCard();
+        btnPause.textContent = '⏸ Pause';
+      });
+    }
+
     // Audio toggle
     btnAudio.addEventListener('click', () => {
       const isMuted = audio.toggleMute();
@@ -597,7 +610,8 @@
     window.addEventListener('keydown', (e) => {
       if (e.key === ' ' || e.code === 'Space') {
         e.preventDefault();
-        if (game.state === 'TRANSITION' || game.state === 'READY' || game.state === 'LEVEL_COMPLETE' || game.state === 'GAMEOVER') {
+        if (game.state === 'TRANSITION' || game.state === 'READY' || game.state === 'CARD'
+          || game.state === 'LEVEL_COMPLETE' || game.state === 'GAMEOVER') {
           advanceOrRestart();
         } else {
           game.togglePause();
@@ -615,6 +629,9 @@
         btnAudio.textContent = isMuted ? '🔇 Sound: Off' : '🔊 Sound: On';
       } else if (e.key === 'r' || e.key === 'R') {
         game.startLevel(game.currentLevel);
+        btnPause.textContent = '⏸ Pause';
+      } else if (e.key === 'c' || e.key === 'C') {
+        game.toggleVisitCard();
         btnPause.textContent = '⏸ Pause';
       } else if (e.key === 'h' || e.key === 'H') {
         toggleFieldbook();

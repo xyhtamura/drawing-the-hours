@@ -1,24 +1,24 @@
 /**
  * Tests for Noon IV–VI after the crossing moved to Dusk: loop-only objectives,
- * the cord spool, the patrolling hornet, and the web patches.
+ * the string bean, the wandering hornet, and the web patches.
  *
  * 1. Noon requires loops only; the plan and the runtime agree
- * 2. The hornet patrols one lane, turns at the edges, and keeps its lane on resize
- * 3. A cord touching the hornet or a web breaks, and says which
+ * 2. The hornet flies like an insect; only the web keeps a fixed place
+ * 3. A cord touching the hornet or a web is cut, and says which; the snail is not a cutter
  * 4. A loop drawn around a web still scores: a web is terrain, not content
- * 5. A cord run over a spool gains thread, and the spool leaves the field
- * 6. A spool is never threaded as a bead and never pocket content
+ * 5. A picked bean lengthens the NEXT cord, keeps for a while, then dries out
+ * 6. A bean is never threaded as a bead and never pocket content
  * 7. The trio scores at Noon IV
  */
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { CAMPAIGN_LEVELS } from '../src/campaign.js';
-import { Insect, DandelionSeed, Hornet, WebPatch, CordSpool } from '../src/entities.js';
+import { Insect, DandelionSeed, Snail, Hornet, WebPatch, StringBean } from '../src/entities.js';
 import { evaluateSinglePocket } from '../src/recipes.js';
 import { MAX_CORD_LENGTH } from '../src/string.js';
 
-console.log('--- Running Noon Test Suite (loops, spool, hornet, webs) ---');
+console.log('--- Running Noon Test Suite (loops, bean, hornet, webs) ---');
 
 const CROSSING_KEYS = ['figure8', 'counterpartPair', 'lacewingCounterpart', 'nursery', 'mixedEcho', 'twinSeedWing'];
 const noonLevels = CAMPAIGN_LEVELS.filter(l => l.hour === 'noon');
@@ -32,7 +32,8 @@ const noonLevels = CAMPAIGN_LEVELS.filter(l => l.hour === 'noon');
     for (const key of CROSSING_KEYS) {
       assert.ok(!(key in level.objectives), `${level.id} requires no crossing`);
     }
-    assert.equal(level.population.spool, 1, `${level.id} leaves one cord spool`);
+    assert.equal(level.population.bean, 1, `${level.id} hangs one string bean`);
+    assert.equal(level.hornetLanes, undefined, `${level.id} gives the hornet no fixed lane`);
 
     const source = plan.levels.find(l => l.id === level.id);
     assert.deepEqual(source.objectives, level.objectives, `${level.id}: plan objectives agree`);
@@ -41,12 +42,18 @@ const noonLevels = CAMPAIGN_LEVELS.filter(l => l.hour === 'noon');
   }
 
   const [four, five, six] = noonLevels;
-  assert.deepEqual(four.objectives, { any: 4, trio: 2 }, 'Noon IV asks for trios');
-  assert.equal(four.population.hornet, undefined, 'Noon IV keeps a clear field for the spool lesson');
-  assert.deepEqual(five.objectives, { any: 4, seedWing: 2 }, 'Noon V asks for Seed & Wing loops');
+  assert.deepEqual(four.objectives, { any: 6, trio: 2 }, 'Noon IV asks for trios');
+  assert.equal(four.population.hornet, undefined, 'Noon IV keeps a clear field for the bean lesson');
+  assert.deepEqual(five.objectives, { any: 6, seedWing: 3 }, 'Noon V asks for Seed & Wing loops');
   assert.equal(five.population.hornet, 1, 'Noon V introduces the hornet');
   assert.equal(five.population.web, undefined, 'Noon V holds the webs back');
-  assert.deepEqual(six.objectives, { any: 4, seedTrio: 2 }, 'Noon VI asks for Seed & Trio loops');
+  assert.deepEqual(six.objectives, { any: 6, seedTrio: 2 }, 'Noon VI asks for Seed & Trio loops');
+
+  // Noon's pressure is the count, not the shape: more drawings than Dawn asks
+  // for, in the same order of time (Xyh, 2026-09-16).
+  for (const level of noonLevels) {
+    assert.ok(level.objectives.any >= 6, `${level.id} asks for at least six combinations`);
+  }
   assert.equal(six.population.web, 2, 'Noon VI strings two webs');
   assert.equal(six.webPatches.length, 2, 'Noon VI authors where the webs hang');
   assert.deepEqual(
@@ -63,32 +70,41 @@ const noonLevels = CAMPAIGN_LEVELS.filter(l => l.hour === 'noon');
   console.log('✔ Noon asks for loops only; plan and runtime agree on cast, goals, and webs.');
 }
 
-// 2. The hornet's patrol
+// 2. The hornet flies; only the web holds a place
 {
   const bounds = { width: 960, height: 640 };
-  const hornet = new Hornet(200, 0.45, 1);
-  hornet.update(0, bounds);
-  assert.ok(Math.abs(hornet.y - 640 * 0.45) <= 8, 'The hornet flies its lane');
+  const hornet = new Hornet(300, 300);
+  assert.equal(hornet.type, 'hazard', 'The hornet is a hazard');
+  assert.equal(hornet.cutsCord, true, 'The hornet cuts a cord it touches');
+  assert.equal(hornet.laneRatio, undefined, 'The hornet keeps no lane');
 
-  const startX = hornet.x;
-  for (let i = 0; i < 60; i++) hornet.update(1 / 60, bounds);
-  assert.ok(hornet.x > startX, 'The hornet travels along its lane');
-  assert.ok(Math.abs((hornet.x - startX) - 54) < 2, 'It covers about 54 px a second, slow enough to read');
+  // It wanders: over half a minute it turns, and it leaves the line it started on.
+  const startHeading = hornet.heading;
+  const startY = hornet.y;
+  let turned = false;
+  let leftTheLine = false;
+  for (let i = 0; i < 60 * 30; i++) {
+    hornet.update(1 / 60, bounds);
+    if (Math.abs(hornet.heading - startHeading) > 0.3) turned = true;
+    if (Math.abs(hornet.y - startY) > 40) leftTheLine = true;
+    assert.ok(hornet.x >= 10 && hornet.x <= bounds.width - 10, 'It stays on the field');
+    assert.ok(hornet.y >= 10 && hornet.y <= bounds.height - 10, 'It stays on the field');
+  }
+  assert.ok(turned, 'The hornet changes heading as an insect does');
+  assert.ok(leftTheLine, 'The hornet does not hold one horizontal line');
 
-  for (let i = 0; i < 60 * 30; i++) hornet.update(1 / 60, bounds);
-  assert.ok(hornet.x >= 40 && hornet.x <= bounds.width - 40, 'It turns at the edges instead of leaving');
+  // The snail is the counterpart: a creature that no longer cuts.
+  assert.equal(new Snail(100, 0).cutsCord, false, 'The snail spoils a pocket instead of cutting');
 
   const narrow = { width: 390, height: 640 };
-  hornet.update(0, narrow);
-  assert.ok(Math.abs(hornet.y - 640 * 0.45) <= 8, 'A resize keeps it on the same lane of the field');
-
   const web = new WebPatch(0.29, 0.31, 30);
   web.update(0, bounds);
+  assert.equal(web.cutsCord, true, 'The web cuts a cord it touches');
   assert.equal(web.x, 960 * 0.29, 'A web hangs where the level put it');
   web.update(0, narrow);
   assert.equal(web.x, 390 * 0.29, 'A web keeps its place in the scene when the canvas resizes');
 
-  console.log('✔ Hornet lane, speed, turns, and web placement verified.');
+  console.log('✔ The hornet wanders and cuts; the snail does not cut; only the web holds a place.');
 }
 
 // The remaining checks drive the real page code, so they need the browser stubs.
@@ -144,13 +160,12 @@ try {
     game.entities = entities;
   };
 
-  // 3. A cord touching a hazard breaks and says which
+  // 3. A cord touching a hazard is cut, and says which
   {
-    const hornet = new Hornet(480, 0.5, 1);
-    hornet.update(0, { width: 960, height: 640 });
+    const hornet = new Hornet(480, 320);
     setup('noon-02', [hornet]);
     stroke([[200, hornet.y], [400, hornet.y], [600, hornet.y]]);
-    assert.equal(game.feedbackBanner.text, 'The hornet broke the cord. Watch its lane.',
+    assert.equal(game.feedbackBanner.text, 'The hornet cut the cord.',
       'The break names the hornet');
     assert.equal(game.isDrawing, false, 'The stroke ends when the hornet takes it');
 
@@ -161,13 +176,14 @@ try {
     assert.equal(game.feedbackBanner.text, 'The cord stuck in the web. Draw around it.',
       'The break names the web');
 
-    // A pocket holding the hornet fails, as the snail's does.
-    const caught = new Hornet(480, 0.5, 1);
-    caught.update(0, { width: 960, height: 640 });
-    assert.equal(evaluateSinglePocket([new Insect(470, 300, 'brimstone'), caught]).valid, false,
+    // A pocket holding the hornet fails, as the snail's does: under the purity
+    // rule an uninvited entity is a dud ingredient whether or not it cuts.
+    assert.equal(evaluateSinglePocket([new Insect(470, 300, 'brimstone'), new Hornet(480, 320)]).valid, false,
       'A loop holding the hornet is not a combination');
+    assert.equal(evaluateSinglePocket([new Insect(470, 300, 'brimstone'), new Snail(480, 320)]).valid, false,
+      'A loop holding the snail is not a combination');
 
-    console.log('✔ Hornet and web break the cord with their own message; the hornet spoils a pocket.');
+    console.log('✔ Hornet and web cut the cord with their own message; both hazards spoil a pocket.');
   }
 
   // 4. A web inside a loop is terrain, not content
@@ -183,45 +199,71 @@ try {
     console.log('✔ A loop around a web scores; the web is never pocket content.');
   }
 
-  // 5. A spool adds thread to the stroke that takes it
+  // 5. A picked bean lengthens the next cord
   {
-    setup('noon-01', [new CordSpool(480, 320)]);
-    const limitBefore = game.cordLimit();
-    assert.equal(limitBefore, MAX_CORD_LENGTH, 'The visit starts on the shared snap limit');
+    setup('noon-01', [new StringBean(480, 320)]);
+    assert.equal(game.cordLimit(), MAX_CORD_LENGTH, 'The visit starts on the shared snap limit');
 
     pointer('pointerdown', [200, 320]);
     pointer('pointermove', [400, 320]);
     pointer('pointermove', [480, 320]);
-    assert.equal(game.stringGesture.maxCordLength, MAX_CORD_LENGTH + 400,
-      'Running the cord over a spool adds 400 px to that stroke');
-    assert.equal(game.cordLimit(), MAX_CORD_LENGTH + 400, 'The meter follows the raised limit');
-    assert.equal(game.entities.some(e => e.type === 'spool'), false, 'The spool leaves the field');
-    assert.ok(game.respawnQueue.some(i => i.kind === 'spool' && i.delay > 1),
-      'Another spool is left after a delay, so the thread is a resource');
+    assert.equal(game.stringGesture.maxCordLength, MAX_CORD_LENGTH,
+      'The cord that picks the bean is not itself lengthened');
+    assert.equal(game.entities.some(e => e.type === 'bean'), false, 'The bean leaves the field');
+    assert.ok(game.respawnQueue.some(i => i.kind === 'bean' && i.delay > 1),
+      'Another bean grows after a delay, so the length is a resource');
     pointer('pointerup', [520, 320]);
-    assert.equal(game.cordLimit(), MAX_CORD_LENGTH, 'The thread lasts for that stroke only');
+    assert.equal(game.cordLimit(), MAX_CORD_LENGTH + 400, 'The kept bean shows on the meter before the next cord');
 
-    console.log('✔ A spool raises the snap limit of its own stroke and then returns to the field.');
+    pointer('pointerdown', [200, 400]);
+    assert.equal(game.stringGesture.maxCordLength, MAX_CORD_LENGTH + 400, 'The next cord runs 400 px longer');
+    pointer('pointerup', [260, 400]);
+    assert.equal(game.cordLimit(), MAX_CORD_LENGTH, 'The bean is spent on that one cord');
+
+    // Kept beans dry out when they are not used.
+    setup('noon-01', [new StringBean(480, 320)]);
+    stroke([[200, 320], [400, 320], [480, 320], [560, 320]]);
+    assert.equal(game.cordLimit(), MAX_CORD_LENGTH + 400, 'The bean is kept after the cord that picked it');
+    for (let i = 0; i < 130; i++) game.update(0.1); // thirteen seconds
+    assert.equal(game.cordLimit(), MAX_CORD_LENGTH, 'An unused bean dries out');
+
+    console.log('✔ A picked bean lengthens the next cord only, and dries out if it is not used.');
   }
 
-  // 6. A spool is neither a bead nor pocket content
+  // 6. A bean is neither a bead nor pocket content
   {
-    const spool = new CordSpool(480, 320);
-    setup('noon-01', [spool, new Insect(450, 380, 'brimstone'), new Insect(510, 380, 'brimstone')]);
+    setup('noon-01', [new StringBean(480, 320), new Insect(450, 380, 'brimstone'), new Insect(510, 380, 'brimstone')]);
     pointer('pointerdown', [300, 320]);
     pointer('pointermove', [480, 320]);
-    assert.equal(game.stringGesture.beads.length, 0, 'A spool is not threaded onto the cord');
+    assert.equal(game.stringGesture.beads.length, 0, 'A bean is not threaded onto the cord');
     pointer('pointerup', [600, 320]);
 
-    setup('noon-01', [new CordSpool(480, 250), new Insect(450, 320, 'brimstone'), new Insect(510, 320, 'brimstone')]);
+    setup('noon-01', [new StringBean(480, 250), new Insect(450, 320, 'brimstone'), new Insect(510, 320, 'brimstone')]);
     stroke(circle(480, 300, 90));
     assert.ok(game.feedbackBanner.text.startsWith('Kindred Pair'),
-      `A spool inside the loop does not spoil it (got "${game.feedbackBanner.text}")`);
+      `A bean inside the loop does not spoil it (got "${game.feedbackBanner.text}")`);
 
-    console.log('✔ Spools are never beads and never pocket content.');
+    console.log('✔ Beans are never beads and never pocket content.');
   }
 
-  // 7. The trio still scores at Noon IV
+  // 8. The visit card can be reopened during play
+  {
+    setup('noon-01', [new Insect(450, 320, 'brimstone')]);
+    game.clock.remainingSeconds = 42;
+    assert.equal(game.toggleVisitCard(), true, 'The card opens during play');
+    assert.equal(game.state, 'CARD', 'The visit card state is its own');
+    assert.equal(game.clock.isPaused, true, 'The clock stops while the card is open');
+    for (let i = 0; i < 20; i++) game.update(0.1);
+    assert.equal(Math.round(game.clock.remainingSeconds), 42, 'Two seconds of card time cost nothing');
+    game.advance();
+    assert.equal(game.state, 'PLAYING', 'Advancing from the card returns to the visit');
+    assert.equal(game.clock.isPaused, false, 'The clock runs again');
+    assert.equal(game.campaign.objectiveProgress.any.target, 6, 'The visit was not restarted');
+
+    console.log('✔ The visit card reopens mid-visit, stops the clock, and does not restart the visit.');
+  }
+
+  // 7. The trio still scores at Noon IV, at the new count
   {
     setup('noon-01', [
       new Insect(440, 300, 'brimstone'),

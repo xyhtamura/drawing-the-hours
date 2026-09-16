@@ -1268,15 +1268,30 @@ console.log('--- Running String Sandbox Test Suite ---');
     drawFigureEight(Math.PI * 2 + 0.35);
     assert.strictEqual(game.campaign.objectiveProgress.figure8.current, 1, 'Figure-eight advances figure8 objective');
 
-    // 4. Snail hazard: cord contacting snail breaks cord
+    // 4. The snail no longer cuts the cord; it spoils the pocket that holds it
+    //    (Xyh, 2026-09-16: a hazard disturbs one way or the other, not both).
     game.initLevel('dusk-02');
     game.state = 'PLAYING';
     const snail = new Snail(300, 300);
     game.entities = [snail];
     pointer('pointerdown', [200, 300]);
-    pointer('pointermove', [300, 300]); // touches snail
-    assert.strictEqual(game.isDrawing, false, 'Touching snail breaks cord immediately');
-    assert.ok(game.feedbackBanner.text.includes('snail broke the cord'), 'Shows snail break banner');
+    pointer('pointermove', [300, 300]); // runs over the snail
+    assert.strictEqual(game.isDrawing, true, 'A cord drawn over the snail keeps going');
+    pointer('pointerup', [400, 300]);
+
+    game.initLevel('dusk-02');
+    game.state = 'PLAYING';
+    game.entities = [new Snail(480, 320), new Insect(440, 320, 'brimstone'), new Insect(520, 320, 'brimstone')];
+    const ring = [];
+    for (let i = 0; i <= 43; i++) {
+      const a = (i / 40) * Math.PI * 2;
+      ring.push([480 + 100 * Math.cos(a), 320 + 100 * Math.sin(a)]);
+    }
+    pointer('pointerdown', ring[0]);
+    for (const p of ring.slice(1)) pointer('pointermove', p);
+    pointer('pointerup', ring[ring.length - 1]);
+    assert.strictEqual(game.campaign.objectiveProgress.any.current, 0,
+      `A pocket holding the snail scores nothing (got "${game.feedbackBanner.text}")`);
 
     // 5. Lacewing wall constraint and route resumption
     game.initLevel('dusk-01');
@@ -1483,13 +1498,13 @@ console.log('--- Running String Sandbox Test Suite ---');
     assert.strictEqual(game.campaign.objectiveProgress.figure8.current, 1, 'Nursery advances figure8');
     assert.strictEqual(game.campaign.objectiveProgress.any.current, 1, 'Nursery advances any');
 
-    // Snail hazard breaks the cord
+    // The snail spoils a pocket rather than cutting the cord
     const snail = new Snail(300, 300);
     game.entities = [snail];
     pointer('pointerdown', 200, 300);
     pointer('pointermove', 300, 300);
-    assert.strictEqual(game.isDrawing, false, 'Touching snail breaks cord immediately');
-    assert.ok(game.feedbackBanner.text.includes('snail broke the cord'), 'Shows snail break banner');
+    assert.strictEqual(game.isDrawing, true, 'A cord drawn over the snail keeps going');
+    pointer('pointerup', 400, 300);
   } finally {
     if (!hadWindow) delete globalThis.window;
     if (!hadDocument) delete globalThis.document;

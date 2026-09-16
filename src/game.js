@@ -16,7 +16,7 @@ import {
   polylineTouchesDisk,
   extractClosedPockets,
 } from './geometry.js';
-import { Butterfly, DandelionSeed, Snail, Hornet, WebPatch, CordSpool, SPECIES_CONFIG, drawFirefly } from './entities.js';
+import { Butterfly, DandelionSeed, Snail, Hornet, WebPatch, StringBean, SPECIES_CONFIG, drawFirefly } from './entities.js';
 import { evaluateDrawing } from './recipes.js';
 import { DandelionClock } from './clock.js';
 import { audio } from './audio.js';
@@ -28,10 +28,11 @@ import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } f
 // the cord overlaps it on screen, so it counts as closing (STRING.md, rule 9).
 const CORD_WIDTH = 4.5;
 
-// Thread a cord spool adds to the stroke that collects it, and the seconds
-// before another spool is left in the atrium (Noon, cord economy).
-const CORD_SPOOL_BONUS = 400;
-const CORD_SPOOL_RESPAWN = 8;
+// A picked string bean lengthens the NEXT cord by this much, keeps for this many
+// seconds, and another pod grows after this delay (Noon, cord economy).
+const BEAN_BONUS = 400;
+const BEAN_KEEPS_SECONDS = 12;
+const BEAN_REGROW_SECONDS = 8;
 
 // Seconds of play without objective progress before the hint card appears
 // (CAMPAIGN.md, tuning section). Dismissing it starts the count again.
@@ -55,10 +56,10 @@ const HINT_TEXT = {
   trace: 'Thread a firefly, then a lacewing, then a different firefly in one stroke.',
 };
 
-// What broke the cord, named so the player can act on it.
+// What cut the cord, named so the player can act on it. The snail is absent on
+// purpose: it spoils a pocket instead of cutting (Xyh, 2026-09-16).
 const HAZARD_BREAK_MESSAGE = {
-  snail: 'The snail broke the cord. Draw around it.',
-  hornet: 'The hornet broke the cord. Watch its lane.',
+  hornet: 'The hornet cut the cord.',
   web: 'The cord stuck in the web. Draw around it.',
 };
 
@@ -109,7 +110,7 @@ export class Game {
 
     // Game state
     this.currentWave = 1; // For practice/wave compatibility
-    this.state = 'TRANSITION'; // 'TRANSITION' | 'READY' | 'PLAYING' | 'PAUSED' | 'LEVEL_COMPLETE' | 'GAMEOVER'
+    this.state = 'TRANSITION'; // 'TRANSITION' | 'READY' | 'CARD' | 'PLAYING' | 'PAUSED' | 'LEVEL_COMPLETE' | 'GAMEOVER'
     this.score = 0;
     this.harmoniesCount = 0;
     this.harmoniesGoal = 5;
@@ -128,6 +129,10 @@ export class Game {
     this.lastTap = null;
     this.saltGrains = [];
     this.activePockets = [];
+
+    // A picked string bean, kept for the next cord
+    this.beanBonus = 0;
+    this.beanTimer = 0;
 
     // Stalled-play hint and failure-screen options
     this.hintTimer = 0;
@@ -270,6 +275,8 @@ export class Game {
     this.hint = null;
     this.hintRect = null;
     this.gameOverOptions = [];
+    this.beanBonus = 0;
+    this.beanTimer = 0;
     this.clock.reset(this.currentLevel.durationSeconds || 60);
 
     // Reset wind state
@@ -370,7 +377,9 @@ export class Game {
           const cx = r.left + Math.random() * (r.right - r.left);
           const cy = r.top + Math.random() * (r.bottom - r.top);
           if (hasClearance(cx, cy, 14)) {
-            this.entities.push(new DandelionSeed(cx, cy));
+            const seed = new DandelionSeed(cx, cy);
+            seed.motionScale = mScale;
+            this.entities.push(seed);
             placed = true;
             break;
           }
@@ -414,7 +423,9 @@ export class Game {
       for (let i = 0; i < seedCount; i++) {
         const x = padX + Math.random() * (this.width - 2 * padX);
         const y = padY + Math.random() * (this.height - 2 * padY);
-        this.entities.push(new DandelionSeed(x, y));
+        const seed = new DandelionSeed(x, y);
+        seed.motionScale = mScale;
+        this.entities.push(seed);
       }
 
       // Snail
@@ -425,8 +436,8 @@ export class Game {
         this.entities.push(snail);
       }
 
-      // Atrium fixtures: patrolling hornets, web patches, and cord spools.
-      for (const kind of ['hornet', 'web', 'spool']) {
+      // Atrium fixtures: wandering hornets, web patches, and string beans.
+      for (const kind of ['hornet', 'web', 'bean']) {
         for (let i = 0; i < (pop[kind] || 0); i++) this.spawnAtriumFixture(kind, i);
       }
     }
@@ -435,19 +446,19 @@ export class Game {
   }
 
   /**
-   * Place one atrium fixture: a hornet on its lane, a web patch at its authored
-   * spot, or a spool on clear ground. Lanes and patch positions come from the
-   * level so a player can learn them; only the spool is placed at random.
-   * Returns false when a spool found no clear ground, so the caller can requeue.
+   * Place one atrium fixture: a hornet loose in the planting, a web patch at its authored
+   * spot, or a bean on clear ground. Web positions come from the level so a
+   * player can learn them; the hornet and the bean are placed at random.
+   * Returns false when a bean found no clear ground, so the caller can requeue.
    */
   spawnAtriumFixture(kind, index = 0) {
     const bounds = { width: this.width, height: this.height };
     if (kind === 'hornet') {
-      const lanes = this.currentLevel?.hornetLanes || [0.42, 0.68];
-      const lane = lanes[index % lanes.length];
-      const direction = index % 2 === 0 ? 1 : -1;
-      const hornet = new Hornet(this.width * (direction > 0 ? 0.2 : 0.8), lane, direction);
-      hornet.update(0, bounds);
+      const hornet = new Hornet(
+        this.width * (0.2 + Math.random() * 0.6),
+        this.height * (0.2 + Math.random() * 0.6)
+      );
+      hornet.motionScale = this.currentLevel?.motionScale || 1;
       this.entities.push(hornet);
       return true;
     }
@@ -459,17 +470,17 @@ export class Game {
       this.entities.push(web);
       return true;
     }
-    if (kind === 'spool') {
+    if (kind === 'bean') {
       for (let attempt = 0; attempt < 25; attempt++) {
         const sx = this.width * (0.15 + Math.random() * 0.7);
         const sy = this.height * (0.2 + Math.random() * 0.6);
         const clear = this.entities.every(e => Math.hypot(e.x - sx, e.y - sy) >= e.radius + 34);
         if (clear) {
-          this.entities.push(new CordSpool(sx, sy));
+          this.entities.push(new StringBean(sx, sy));
           return true;
         }
       }
-      this.respawnQueue.push({ kind: 'spool', delay: 0.4 });
+      this.respawnQueue.push({ kind: 'bean', delay: 0.4 });
       return false;
     }
     return false;
@@ -480,7 +491,7 @@ export class Game {
     const pop = this.currentLevel.population;
     const mScale = this.currentLevel.motionScale || 1.0;
 
-    const activeCounts = { brimstone: 0, damselfly: 0, hawkmoth: 0, seed: 0, snail: 0, hornet: 0, web: 0, spool: 0 };
+    const activeCounts = { brimstone: 0, damselfly: 0, hawkmoth: 0, seed: 0, snail: 0, hornet: 0, web: 0, bean: 0 };
     for (const ent of this.entities) {
       if (ent.state === 'departing' || ent.state === 'harmonizing') continue;
       if (ent.type === 'butterfly' || ent.type === 'insect') {
@@ -489,13 +500,13 @@ export class Game {
       } else if (ent.type === 'seed') {
         activeCounts.seed += 1;
       } else {
-        // Hazards, terrain, and spools are counted by kind, so one hazard never
+        // Hazards, terrain, and beans are counted by kind, so one hazard never
         // stands in for another.
         activeCounts[ent.kind] = (activeCounts[ent.kind] || 0) + 1;
       }
     }
 
-    const pendingCounts = { brimstone: 0, damselfly: 0, hawkmoth: 0, seed: 0, snail: 0, hornet: 0, web: 0, spool: 0 };
+    const pendingCounts = { brimstone: 0, damselfly: 0, hawkmoth: 0, seed: 0, snail: 0, hornet: 0, web: 0, bean: 0 };
     for (const item of this.respawnQueue) {
       pendingCounts[item.kind] = (pendingCounts[item.kind] || 0) + 1;
     }
@@ -527,15 +538,19 @@ export class Game {
               this.respawnQueue.push({ kind: item.kind, delay: 0.2 });
               continue;
             }
-            this.entities.push(new DandelionSeed(sx, sy));
+            const seed = new DandelionSeed(sx, sy);
+            seed.motionScale = mScale;
+            this.entities.push(seed);
           } else {
-            this.entities.push(new DandelionSeed(-15, 60 + Math.random() * (this.height - 120)));
+            const seed = new DandelionSeed(-15, 60 + Math.random() * (this.height - 120));
+            seed.motionScale = mScale;
+            this.entities.push(seed);
           }
         } else if (item.kind === 'snail') {
           const snail = new Snail(this.width * 0.5, this.height - 35, this.currentLevel.snailRoute);
           snail.update(0, { width: this.width, height: this.height });
           this.entities.push(snail);
-        } else if (item.kind === 'hornet' || item.kind === 'web' || item.kind === 'spool') {
+        } else if (item.kind === 'hornet' || item.kind === 'web' || item.kind === 'bean') {
           this.spawnAtriumFixture(item.kind, this.entities.filter(e => e.kind === item.kind).length);
         } else {
           const edge = Math.random();
@@ -723,7 +738,13 @@ export class Game {
       this.lastReportedTraceKey = null;
       if (this.currentLevel?.stringRules) {
         this.tapTracker.onPress(pos, performance.now(), this.entities);
-        this.stringGesture = new StringGesture(pos, this.currentLevel.maxCordLength ?? MAX_CORD_LENGTH);
+        // A bean picked on an earlier cord is spent on this one.
+        const limit = (this.currentLevel.maxCordLength ?? MAX_CORD_LENGTH) + (this.beanBonus || 0);
+        if (this.beanBonus) {
+          this.beanBonus = 0;
+          this.beanTimer = 0;
+        }
+        this.stringGesture = new StringGesture(pos, limit);
       } else {
         this.stringGesture = null;
       }
@@ -852,7 +873,7 @@ export class Game {
       }
 
       if (this.checkCordHazards(this.currentStroke.slice(-2))) return;
-      this.checkCordSpools(this.currentStroke.slice(-2));
+      this.checkCordBeans(this.currentStroke.slice(-2));
       if (this.currentStroke.length >= 5) {
         this.activePockets = this.findPockets(this.currentStroke);
       } else {
@@ -912,7 +933,7 @@ export class Game {
     const found = new Set();
     for (const pocket of pockets) {
       for (const entity of this.entities) {
-        if (entity.type === 'terrain' || entity.type === 'spool') continue;
+        if (entity.type === 'terrain' || entity.type === 'bean') continue;
         if (entity.state === 'roaming' && pointInPolygon({ x: entity.x, y: entity.y }, pocket.polygon)) {
           found.add(entity);
         }
@@ -946,47 +967,57 @@ export class Game {
   }
 
   /**
-   * A snail touching the unfinished enclosure cord breaks the stroke at once.
+   * A cutting hazard touching the unfinished cord ends the stroke at once.
    * Pointer samples test the newest segment; each update tests the whole cord,
-   * so a snail crawling into a held line also breaks it.
+   * so a hornet flying into a held line also cuts it. The snail is not a cutter.
    */
   checkCordHazards(points = this.currentStroke) {
     if (!this.isDrawing) return false;
-    const hazard = this.entities.find(e => (e.type === 'hazard' || e.type === 'terrain')
-      && e.state !== 'departing'
+    const hazard = this.entities.find(e => e.cutsCord && e.state !== 'departing'
       && polylineTouchesDisk(points, e.x, e.y, e.radius + 3));
     if (!hazard) return false;
-    this.breakCord(HAZARD_BREAK_MESSAGE[hazard.kind] || HAZARD_BREAK_MESSAGE.snail);
+    this.breakCord(HAZARD_BREAK_MESSAGE[hazard.kind] || 'The cord was cut.');
     return true;
   }
 
   /**
-   * A held cord run over a spool takes its thread: the stroke's snap limit rises
-   * by CORD_SPOOL_BONUS. The spool leaves the field and another is left after
-   * CORD_SPOOL_RESPAWN seconds. A spool is never pocket content.
+   * A held cord drawn over a string bean picks it: the pod's length is kept for
+   * the NEXT cord, for BEAN_KEEPS_SECONDS, and another pod grows after
+   * BEAN_REGROW_SECONDS. A bean is never pocket content and is never threaded.
    */
-  checkCordSpools(points = this.currentStroke) {
-    if (!this.isDrawing || !this.stringGesture) return false;
-    let collected = false;
+  checkCordBeans(points = this.currentStroke) {
+    if (!this.isDrawing) return false;
+    let picked = false;
     for (let i = this.entities.length - 1; i >= 0; i--) {
-      const spool = this.entities[i];
-      if (spool.type !== 'spool' || spool.state === 'departing') continue;
-      if (!polylineTouchesDisk(points, spool.x, spool.y, spool.radius + 3)) continue;
+      const bean = this.entities[i];
+      if (bean.type !== 'bean' || bean.state === 'departing') continue;
+      if (!polylineTouchesDisk(points, bean.x, bean.y, bean.radius + 3)) continue;
       this.entities.splice(i, 1);
-      this.respawnQueue.push({ kind: 'spool', delay: CORD_SPOOL_RESPAWN });
-      this.stringGesture.maxCordLength += CORD_SPOOL_BONUS;
+      this.respawnQueue.push({ kind: 'bean', delay: BEAN_REGROW_SECONDS });
+      this.beanBonus = BEAN_BONUS;
+      this.beanTimer = BEAN_KEEPS_SECONDS;
       audio.playCordPluck(520);
-      this.showFeedback(`Cord spool: +${CORD_SPOOL_BONUS} px of thread on this cord.`, 'success');
-      collected = true;
+      this.showFeedback(`String bean picked: the next cord runs ${BEAN_BONUS} px longer.`, 'success');
+      picked = true;
     }
-    return collected;
+    return picked;
   }
 
-  /** The snap limit in force: the level's, plus any spool taken by the held cord. */
+  /** The kept bean fades if it is not used on the next cord. */
+  updateBean(dt) {
+    if (!this.beanBonus) return;
+    this.beanTimer -= dt;
+    if (this.beanTimer <= 0) {
+      this.beanBonus = 0;
+      this.beanTimer = 0;
+      this.showFeedback('The bean dried out. Pick another for a longer cord.', 'hint');
+    }
+  }
+
+  /** The snap limit in force: the held cord's, or the level's plus a kept bean. */
   cordLimit() {
-    return this.isDrawing && this.stringGesture
-      ? this.stringGesture.maxCordLength
-      : (this.currentLevel?.maxCordLength ?? MAX_CORD_LENGTH);
+    if (this.isDrawing && this.stringGesture) return this.stringGesture.maxCordLength;
+    return (this.currentLevel?.maxCordLength ?? MAX_CORD_LENGTH) + (this.beanBonus || 0);
   }
 
   resolveCurrentStroke() {
@@ -1059,8 +1090,8 @@ export class Game {
     const pocketsWithEntities = rawPockets.map(pocket => {
       const enclosed = this.entities.filter(entity => {
         if (entity.state === 'departing' || entity.state === 'harmonizing') return false;
-        // Web patches and spools are scenery, never pocket content.
-        if (entity.type === 'terrain' || entity.type === 'spool') return false;
+        // Web patches and beans are scenery, never pocket content.
+        if (entity.type === 'terrain' || entity.type === 'bean') return false;
         return pointInPolygon({ x: entity.x, y: entity.y }, pocket.polygon);
       });
       return {
@@ -1155,6 +1186,9 @@ export class Game {
       this.state = 'READY';
     } else if (this.state === 'READY' || this.state === 'INTRO') {
       this.state = 'PLAYING';
+    } else if (this.state === 'CARD') {
+      this.state = 'PLAYING';
+      this.clock.isPaused = false;
     } else if (this.state === 'LEVEL_COMPLETE' || this.state === 'VICTORY') {
       if (this.currentLevel.id === 'midnight-03') {
         if (typeof this.onOpenVisitModal === 'function') {
@@ -1177,6 +1211,26 @@ export class Game {
     if (typeof this.onStateChanged === 'function') {
       this.onStateChanged(this.state, this.currentLevel);
     }
+  }
+
+  /**
+   * Show the visit card again during play, so a player can reread what the visit
+   * asks for without restarting it (CAMPAIGN.md: the story and requirements stay
+   * reachable). The clock stops while it is open and the visit is not reset.
+   */
+  toggleVisitCard() {
+    if (this.state === 'PLAYING') {
+      this.cancelStroke();
+      this.clock.isPaused = true;
+      this.state = 'CARD';
+    } else if (this.state === 'CARD') {
+      this.clock.isPaused = false;
+      this.state = 'PLAYING';
+    } else {
+      return false;
+    }
+    this.onStateChanged?.(this.state, this.currentLevel);
+    return true;
   }
 
   setWave(wave) {
@@ -1303,7 +1357,8 @@ export class Game {
         this.stringGesture.updateBeads(dt, bounds);
       }
 
-      if (this.isDrawing && !this.checkCordHazards()) this.checkCordSpools();
+      if (this.isDrawing && !this.checkCordHazards()) this.checkCordBeans();
+      this.updateBean(dt);
       this.maintainPopulation(dt);
     } else {
       audio.stopCicadas();
@@ -1489,9 +1544,6 @@ export class Game {
 
     this.drawBeadMarkers(ctx);
 
-    // 5b. The lane each hornet keeps to, so its path can be read before drawing
-    this.drawHornetLanes(ctx);
-
     // 6. Translucent Paper Wind Streamlines
     this.drawWindStreaks(ctx);
 
@@ -1504,7 +1556,7 @@ export class Game {
 
     // 7. Modals / Overlays
     if (this.state === 'TRANSITION') this.drawTransitionModal(ctx);
-    else if (this.state === 'READY' || this.state === 'INTRO') this.drawReadyModal(ctx);
+    else if (this.state === 'READY' || this.state === 'INTRO' || this.state === 'CARD') this.drawReadyModal(ctx);
     else if (this.state === 'PAUSED') this.drawPausedModal(ctx);
     else if (this.state === 'LEVEL_COMPLETE' || this.state === 'VICTORY') this.drawLevelCompleteModal(ctx);
     else if (this.state === 'GAMEOVER') this.drawGameOverModal(ctx);
@@ -1636,7 +1688,7 @@ export class Game {
       // Count non-hazard roaming entities currently inside the loop
       const enclosedCount = this.entities.filter(entity => {
         if (entity.state === 'departing' || entity.state === 'harmonizing') return false;
-        if (entity.type === 'hazard' || entity.type === 'terrain' || entity.type === 'spool') return false;
+        if (entity.type === 'hazard' || entity.type === 'terrain' || entity.type === 'bean') return false;
         return pointInPolygon({ x: entity.x, y: entity.y }, poly);
       }).length;
 
@@ -1784,35 +1836,22 @@ export class Game {
     this.hintRect = { x, y, w: cardW, h: cardH };
   }
 
-  /** The line a hornet travels, drawn faintly so its patrol is readable. */
-  drawHornetLanes(ctx) {
-    const hornets = this.entities.filter(e => e.kind === 'hornet' && e.state !== 'departing');
-    if (!hornets.length) return;
-    ctx.save();
-    ctx.strokeStyle = 'rgba(170, 110, 40, 0.30)';
-    ctx.lineWidth = 1.1;
-    ctx.setLineDash([6, 7]);
-    for (const hornet of hornets) {
-      const y = this.height * hornet.laneRatio;
-      ctx.beginPath();
-      ctx.moveTo(24, y);
-      ctx.lineTo(this.width - 24, y);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-    ctx.restore();
-  }
-
-  /** A small spool, used on the Noon ready cards. */
-  drawSpoolGlyph(ctx, x, y) {
+  /** A small bean pod, used on the Noon ready cards. */
+  drawBeanGlyph(ctx, x, y) {
     ctx.save();
     ctx.translate(x, y);
-    ctx.fillStyle = themeColor('cord', '#f0e7d2');
-    ctx.strokeStyle = themeColor('outline', '#b3a488');
+    ctx.fillStyle = '#9dc06a';
+    ctx.strokeStyle = '#5f7d3f';
     ctx.lineWidth = 1.1;
-    ctx.beginPath(); ctx.ellipse(0, 0, 7, 9, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#c9b48d';
-    for (const ey of [-9, 9]) { ctx.beginPath(); ctx.ellipse(0, ey, 9, 2.4, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    ctx.beginPath();
+    ctx.moveTo(0, -9);
+    ctx.quadraticCurveTo(8, 1, 3, 13);
+    ctx.quadraticCurveTo(-3, 2, -4, -8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#8fae63';
+    ctx.beginPath(); ctx.ellipse(-5, -12, 5, 2.6, -0.5, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
 
@@ -2489,7 +2528,7 @@ export class Game {
 
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
         ctx.fillText('Touching an insect threads it as a bead on the cord and cancels the loop.', 0, 43);
-        ctx.fillText('Draw around creatures to enclose them. (The seam snail breaks the cord.)', 0, 58);
+        ctx.fillText('Draw around creatures to enclose them. (A loop holding the snail gathers nothing.)', 0, 58);
         ctx.restore();
       } else if (teachDawn03) {
         ctx.save(); ctx.translate(0, boxH / 2 - 108);
@@ -2612,7 +2651,7 @@ export class Game {
         ctx.restore();
       } else if (teachNoon01) {
         ctx.save(); ctx.translate(0, boxH / 2 - 100);
-        // One loop around three kinds, with a spool caught on the way round.
+        // One loop around three kinds, with a bean picked on the way round.
         ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
         ctx.beginPath(); ctx.ellipse(0, 2, 80, 38, 0, 0, Math.PI * 2); ctx.stroke();
 
@@ -2622,12 +2661,12 @@ export class Game {
         ctx.fillStyle = '#de99a5'; ctx.beginPath(); ctx.ellipse(44, 6, 7, 12, 0.4, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#a8b894'; ctx.beginPath(); ctx.ellipse(44, 0, 4, 8, 0.8, 0, Math.PI * 2); ctx.fill();
 
-        this.drawSpoolGlyph(ctx, -2, -36);
+        this.drawBeanGlyph(ctx, -2, -36);
 
         ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('Three different kinds in one loop. Cross your start to close.', 0, 39);
         ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
-        ctx.fillText('Run the cord over a spool to add thread to that stroke. The mark on the meter moves.', 0, 54);
+        ctx.fillText('Draw over a string bean to pick it. Your next cord runs longer, for a short while.', 0, 54);
         ctx.restore();
       } else if (teachNoon02) {
         ctx.save(); ctx.translate(0, boxH / 2 - 100);
@@ -2643,10 +2682,13 @@ export class Game {
         ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.stroke();
         ctx.fillStyle = themeColor('seed', '#655543'); ctx.beginPath(); ctx.ellipse(sx + 7, sy + 9, 1.5, 3, 0.6, 0, Math.PI * 2); ctx.fill();
 
-        // The hornet keeps to one lane; the card shows the line it travels.
-        ctx.strokeStyle = 'rgba(160, 110, 40, 0.5)'; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
-        ctx.beginPath(); ctx.moveTo(-96, -34); ctx.lineTo(96, -34); ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle = '#e0a63c'; ctx.strokeStyle = '#5d4520'; ctx.lineWidth = 1;
+        // The hornet wanders; the card shows one of its turns.
+        ctx.strokeStyle = 'rgba(160, 110, 40, 0.45)'; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ctx.moveTo(-70, -22);
+        ctx.bezierCurveTo(-20, -48, 20, -14, 56, -34);
+        ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#d97a1e'; ctx.strokeStyle = '#3d2a12'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.ellipse(56, -34, 11, 5, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.fillStyle = '#3d3222';
         for (const bx of [53, 58, 63]) { ctx.beginPath(); ctx.ellipse(bx, -34, 1.5, 4.4, 0, 0, Math.PI * 2); ctx.fill(); }
@@ -2654,7 +2696,7 @@ export class Game {
         ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('One insect and one seed in one loop. Cross your start to close.', 0, 39);
         ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
-        ctx.fillText('The hornet keeps to one lane and breaks a cord it touches. Gusts drift the seeds.', 0, 54);
+        ctx.fillText('The hornet wanders and cuts a cord it touches. Gusts drift the seeds.', 0, 54);
         ctx.restore();
       } else if (teachNoon03) {
         ctx.save(); ctx.translate(0, boxH / 2 - 100);
@@ -2684,10 +2726,10 @@ export class Game {
         ctx.fillStyle = '#a8b894'; ctx.beginPath(); ctx.ellipse(44, 6, 4, 8, 0.8, 0, Math.PI * 2); ctx.fill();
 
         ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
-        this.drawSpoolGlyph(ctx, 62, -26);
+        this.drawBeanGlyph(ctx, 62, -26);
         ctx.fillText('Seed & Trio: 1 seed and 3 different insects in one loop.', 0, 39);
         ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
-        ctx.fillText('Webs and the hornet break a cord they touch. Take a spool for the longest loop.', 0, 54);
+        ctx.fillText('Webs and the hornet cut a cord they touch. Pick a bean for the longest loop.', 0, 54);
         ctx.restore();
       } else if (teachMidnight02) {
         ctx.save(); ctx.translate(0, boxH / 2 - 96);
@@ -2755,7 +2797,14 @@ export class Game {
       ctx.textAlign = 'center';
       ctx.fillStyle = themeColor('ink', '#5c4538');
       ctx.font = isNarrow ? '600 12px system-ui, sans-serif' : '600 14px system-ui, sans-serif';
-      ctx.fillText(isNarrow ? '[ Tap to Begin Visit ]' : '[ Click anywhere or press Space to Begin ]', 0, boxH / 2 - 24);
+      const resume = this.state === 'CARD';
+      ctx.fillText(
+        isNarrow
+          ? (resume ? '[ Tap to Resume ]' : '[ Tap to Begin Visit ]')
+          : (resume ? '[ Click anywhere or press Space to Resume ]' : '[ Click anywhere or press Space to Begin ]'),
+        0,
+        boxH / 2 - 24
+      );
     });
   }
 

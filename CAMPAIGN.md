@@ -57,6 +57,11 @@ ready overlay. Start simulation and the clock only on **Begin**. Keep narrative
 and operational instructions separate. Pause all motion, expiry, and victory
 timers during transitions, help, background-tab suspension, and ready screens.
 
+The visit card stays reachable during play: the **Visit Card** control, or `C`,
+shows it again with the clock stopped, and the next click resumes without
+restarting. Xyh asked for this on 2026-09-16 after Midnight XI, where several
+different required figures made it hard to tell what was still missing.
+
 On success, freeze gameplay, show the completed objective checklist and score,
 then offer **Continue** to the next transition. Do not advance on an old pointer
 release; the completion overlay must require a fresh input. Clear held pointer
@@ -94,22 +99,27 @@ recipe — belongs to Dusk VIII. Noon keeps the loops Dawn taught and changes th
 conditions they are drawn in: gusts, a patrolling hornet, fixed web patches, and
 the cord spool.
 
-### Noon cord economy: levels 4–6
+### Noon cord economy and speed: levels 4–6
 
-The spool is the hour's new object. Running the held cord over one adds 400 px
-to that stroke's snap limit, and the mark on the cord meter moves with it. The
-thread lasts for that stroke only; the spool leaves the field and another is
-left eight seconds later, so it is a resource to route through rather than a
-permanent upgrade. It is never pocket content and is never threaded as a bead.
-Noon's loops grow across the chapter — three kinds, then a seed and a flier,
-then a seed and three kinds — so the thread is worth the detour by VI.
+Noon's pressure is **count, not shape** (Xyh, 2026-09-16 playtest): the recipes
+stay the simple loops Dawn taught, and each visit asks for six combinations
+rather than four, in the same order of time. Care and timing are Dusk's theme;
+Noon should feel quick.
 
-The hornet patrols one horizontal lane at about 54 px a second and turns at the
-edges; its lane is drawn faintly on the field. A web patch hangs where the level
-places it and never moves. Both break a cord they touch, and say which broke it.
-A hornet inside a pocket spoils the drawing as a snail does; a web does not,
-because it is terrain rather than an inhabitant — a loop drawn around a web is
-valid, the cord simply cannot cross it.
+The hour's new object is botanical — a string bean in the placeholder skin, which
+Codex is reskinning. Drawing the held cord over one picks it, and the pod's
+length, 400 px, goes to the **next** cord rather than the one that picked it. The
+meter's snap mark shows the longer allowance before that stroke starts. A picked
+pod dries out after twelve seconds if unused, and another grows eight seconds
+after one is taken, so it is a resource to plan a route around rather than a
+permanent upgrade. It is never pocket content and is never threaded.
+
+The hornet flies like the other insects, wandering and turning on its own: a
+creature with a fixed route reads as scenery, so fixed paths belong to things
+(see [STRING.md](STRING.md) rule 6). A web patch hangs where the level places it
+and never moves. Both cut a cord they touch, and the message says which. The
+snail cuts nothing; it spoils a pocket that holds it, which the hornet does too
+under the purity rule.
 
 ## Gradual additions to the prototype
 
@@ -264,9 +274,9 @@ Xyh's confirmed order. No extra narrative lines are required.
 | 1 | Dawn — Before the bus | Four single loops around matching pairs; the clock starts after the first loop. | A narrow curb, grass seam, and the lower edge of a bus-stop post; spacious center. |
 | 2 | Dawn — Something in the air | Five combinations, including two Seed & Wing loops. | Seed drift, and the first snail crawling a paving seam through the middle of the field. |
 | 3 | Dawn — The curbside patch | Four combinations, including two three-kind trios. | Same patch, third flier silhouette introduced; the seam snail stays. |
-| 4 | Noon — Lunch in the atrium | Four combinations, including two three-kind trios; introduce the cord spool. | Planting beside pale paving; a clear field for the new resource. |
-| 5 | Noon — For now | Four combinations, including two Seed & Wing loops; introduce the hornet and warned gusts. | One patrol lane crosses the planting; choose when to close around drifting seeds. |
-| 6 | Noon — The glass and the leaves | Four combinations, including two Seed & Trio loops, with breeze, hornet, and webs. | Glass seams frame single-loop groupings; two webs hang in fixed places. |
+| 4 | Noon — Lunch in the atrium | Six combinations, including two three-kind trios; introduce the picked pod. | Planting beside pale paving; a clear field for the new resource. |
+| 5 | Noon — For now | Six combinations, including three Seed & Wing loops; introduce the hornet and warned gusts. | A hornet wanders the planting; choose when to close around drifting seeds. |
+| 6 | Noon — The glass and the leaves | Six combinations, including two Seed & Trio loops, with breeze, hornet, and webs. | Glass seams frame single-loop groupings; two webs hang in fixed places. |
 | 7 | Dusk — The way through | Five combinations, including two Counterpart Pairs with a lacewing; introduce the crossing. | Leaf anchors offer visible resting intervals, so the new shape is drawn against targets that wait. |
 | 8 | Dusk — The gaps in the sound | Five combinations, including one Nursery (1 flier + 1 seed) and one lacewing Counterpart Pair. | Same passage; a sound layer may intermittently fall quiet without changing the rules. |
 | 9 | Dusk — Carrying something home | Six combinations, including three single loops and two figure-eights. | Slightly denser field; gesture switching, with no medicine gameplay metaphor. |

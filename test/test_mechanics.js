@@ -595,7 +595,10 @@ console.log('--- Running Drawing the Hours Test Suite ---');
   edgeSnail.update(0, { width: 996, height: 640 });
   assert.strictEqual(edgeSnail.y, 605, 'later snails keep the bottom-edge route');
 
-  // Cord contact with the snail's disk.
+  // The snail spoils a pocket but no longer cuts a cord (Xyh, 2026-09-16).
+  assert.strictEqual(new Snail(100, 0).cutsCord, false, 'The snail does not cut the cord');
+
+  // Cord contact with a cutting hazard's disk.
   const cord = [{ x: 0, y: 0 }, { x: 100, y: 0 }];
   assert.strictEqual(polylineTouchesDisk(cord, 50, 18, 19), true, 'segment passes within reach');
   assert.strictEqual(polylineTouchesDisk(cord, 50, 20, 19), false, 'segment passes outside');
@@ -617,14 +620,14 @@ console.log('--- All tests passed! ---');
   // Noon 1 (Visit IV)
   const noon1 = campaign.setLevelById('noon-01');
   assert.strictEqual(noon1.transitionText, 'Today, for lunch, I bought myself a sandwich.');
-  assert.deepStrictEqual(noon1.objectives, { any: 4, trio: 2 });
-  assert.strictEqual(noon1.population.spool, 1, 'Noon IV leaves one cord spool in the atrium');
+  assert.deepStrictEqual(noon1.objectives, { any: 6, trio: 2 });
+  assert.strictEqual(noon1.population.bean, 1, 'Noon IV hangs one string bean in the atrium');
   assert.strictEqual(campaign.getNextLevel().id, 'noon-02');
 
   // Noon 2 (Visit V)
   const noon2 = campaign.setLevelById('noon-02');
   assert.strictEqual(noon2.transitionText, "I don't know how much longer my job will exist.");
-  assert.deepStrictEqual(noon2.objectives, { any: 4, seedWing: 2 });
+  assert.deepStrictEqual(noon2.objectives, { any: 6, seedWing: 3 });
   assert.strictEqual(noon2.population.hornet, 1, 'Noon V introduces the patrolling hornet');
   assert.strictEqual(noon2.durationSeconds, 110);
   assert.strictEqual(noon2.wind.periodSeconds, 12);
@@ -636,7 +639,7 @@ console.log('--- All tests passed! ---');
   // Noon 3 (Visit VI)
   const noon3 = campaign.setLevelById('noon-03');
   assert.strictEqual(noon3.transitionText, 'This atrium makes me feel calmer.');
-  assert.deepStrictEqual(noon3.objectives, { any: 4, seedTrio: 2 });
+  assert.deepStrictEqual(noon3.objectives, { any: 6, seedTrio: 2 });
   assert.strictEqual(noon3.population.web, 2, 'Noon VI strings two webs across the atrium');
   assert.strictEqual(noon3.durationSeconds, 100);
   assert.strictEqual(noon3.wind.periodSeconds, 12);

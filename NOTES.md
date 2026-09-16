@@ -10,9 +10,87 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Playtest Noon IV–VI and the new Dusk VII opening on a touch device.
+Codex reskins the Noon cord-length pickup; then playtest Noon IV–VI on a touch device.
 
 ## Activity
+
+2026-09-16 — Claude Code — Second pass on the day after Xyh played the first
+one. Hazards were sorted into kinds, Noon's pressure changed from care to count,
+the cord pickup changed hands, and the visit card became reopenable.
+
+- **A hazard cuts or is a dud, and a fixed path belongs to a thing.** Xyh's two
+  rules. The hornet now flies like the other insects — `Hornet extends Insect`
+  with its own `SPECIES_CONFIG` entry, so it wanders and turns — and its drawn
+  lane is gone, because a creature on a fixed route read as scenery. The web is
+  the only fixed-place hazard, and it is a thing. The snail no longer cuts the
+  cord (`cutsCord: false`); it spoils a pocket that holds it, which the hornet
+  does too under the purity rule. `checkCordHazards` now selects on `cutsCord`
+  rather than on entity type. **This reverses Xyh's 2026-09-15 decision that a
+  cord touching the snail breaks**, on Xyh's own proposal; Dawn II–III keep the
+  seam snail as a dud ingredient.
+- **Noon asks for more, not for care.** Xyh: the hornet visit played as care and
+  timing, which is Dusk's theme, and Noon should feel quick. Each Noon visit now
+  requires six combinations instead of four, on the same simple loops: IV six
+  with two trios, V six with three Seed & Wing, VI six with two Seed & Trio.
+  Clocks and casts are unchanged.
+- **The cord pickup lengthens the next cord.** Following Xyh's note that it
+  should be botanical and short-lived: picking it does not lengthen the cord that
+  picks it. `BEAN_BONUS` (400 px) goes to the next stroke, the meter shows the
+  longer allowance before that stroke starts, an unused pod dries out after
+  `BEAN_KEEPS_SECONDS` (12 s), and another grows `BEAN_REGROW_SECONDS` (8 s)
+  after one is taken. **The skin is Codex's** — see the handoff below.
+- **The visit card reopens during play.** Xyh could not tell which required
+  figures were still missing at Midnight XI. A `CARD` state draws the ready card
+  again over the paused field; the **Visit Card** control or `C` opens it, the
+  next click or Space resumes, the clock stops meanwhile, and the visit is not
+  reset. The card's footer reads Resume rather than Begin when reopened.
+- **Seeds take the visit's motion scale.** Xyh noticed seeds outrunning insects
+  at Dusk. They did: `DandelionSeed` ignored `motionScale` entirely while fliers
+  were multiplied by 0.85. Seeds now take it, and their base drift dropped from
+  0.5–0.9 to 0.38–0.68.
+- **Recorded, not built:** hazards as wanted ingredients in a later recipe
+  (Xyh's future idea, noted in STRING.md rule 6). Figure-eights stay at the
+  current cord length; Xyh confirmed it.
+
+Verification:
+
+- `test/test_noon.js` rewritten for the new design: the hornet wanders (heading
+  changes and it leaves its starting line across 30 simulated seconds, staying on
+  the field), keeps no lane, and cuts; the snail does not cut; both spoil a
+  pocket; the web is the only fixed-place hazard and keeps its ratio on resize;
+  the picking cord is not lengthened while the next one is, the kept pod shows on
+  the meter, is spent by one stroke, and dries out after twelve seconds; beans are
+  neither beads nor content; the visit card opens mid-visit, stops the clock, and
+  leaves objectives intact. `test_mechanics.js` and `test_string_sandbox.js`
+  updated for the snail: a cord drawn over one keeps going, and a pocket holding
+  one scores nothing. All six suites, `node --check`, and `git diff --check` pass.
+- In the live page at `http://localhost:8000/drawing-the-hours/`: the Noon V
+  hornet turned and left its starting line (−57, −23 px over ten seconds); picking
+  the pod left the picking stroke at 1,300 px, showed 1,700 px on the meter after
+  release, gave the next stroke 1,700 px, and dropped back to 1,300 px once spent;
+  a cord drawn across the Dawn II snail survived; the Visit Card button opened the
+  card with the clock held at 50 s through two seconds of updates, and the footer
+  read Resume. Screenshot: the Dawn II card reopened mid-visit.
+- Not measured: six combinations per Noon visit, the 12 s keep, the 8 s regrow,
+  and the hornet's flight speed are first guesses awaiting Xyh's play.
+
+**Handoff to Codex — reskin the Noon cord-length pickup.** The object is
+placeholder work by Claude Code: `StringBean` in `src/entities.js` (a green bean
+pod), `drawBeanGlyph` in `src/game.js` for the ready cards, the Field Book entry
+"String Bean" in `index.html`, and the copy on the Noon IV and VI cards. Xyh's
+brief: botanical, elemental, or edgelands, and oblique rather than literal —
+"string bean" is the first thing that came to mind, not the decision. Yours to
+choose, draw, and name.
+
+What must keep working, because the rules and tests depend on it: the entity
+keeps `type: 'bean'` (rename the class and the kind if you like, but change
+`src/game.js`, `src/string.js`, the `population` key in `src/campaign.js` and
+`campaign-plan.json`, and `test/test_noon.js` together); it is picked when the
+held cord comes within `radius + 3`; the bonus lands on the next stroke, not the
+one that picks it; it is never threaded, never pocket content, never tappable.
+`test/test_noon.js` checks each of those. The Field Book entry carries
+`data-reveal-hour="noon"`, and `DOC_STYLE_GUIDE.md` and `WRITING_VOICE_AGENT.md`
+govern the copy. One agent per folder: this session is finished in here.
 
 2026-09-16 — Claude Code — Moved the crossing out of Noon and into Dusk, and
 gave Noon a power-up and hazards instead, following Xyh's decision on

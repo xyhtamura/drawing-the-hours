@@ -13,6 +13,18 @@ import { curbSeamY } from './geometry.js';
  */
 
 export const SPECIES_CONFIG = {
+  hornet: {
+    id: 'hornet',
+    name: 'Atrium Hornet',
+    shortName: 'Hornet',
+    speciesGroup: 'hazard',
+    bodyColor: '#d97a1e',
+    wingColor: '#f3efe2',
+    wingEdge: '#a99a80',
+    speed: 1.35,
+    size: 17,
+    flutterFreq: 34,
+  },
   brimstone: {
     id: 'brimstone',
     name: 'Brimstone Butterfly',
@@ -655,8 +667,11 @@ export class DandelionSeed {
     this.y = y;
     this.radius = 14;
 
-    this.vx = 0.5 + Math.random() * 0.4;
-    this.vy = 0.15 + Math.random() * 0.2;
+    this.vx = 0.38 + Math.random() * 0.3;
+    this.vy = 0.12 + Math.random() * 0.15;
+    // Seeds take the visit's motion scale like the fliers do; without it a Dusk
+    // seed outran every insect on the field (Xyh, 2026-09-16).
+    this.motionScale = 1.0;
     this.phase = Math.random() * Math.PI * 2;
     this.tilt = (Math.random() - 0.5) * 0.3;
 
@@ -681,8 +696,9 @@ export class DandelionSeed {
     this.phase += dt * 2.0;
     const waveY = Math.sin(this.phase) * 0.4;
 
-    this.x += (this.vx * 60 + windVx) * dt;
-    this.y += (this.vy + waveY) * 60 * dt;
+    const scale = this.motionScale || 1.0;
+    this.x += (this.vx * scale * 60 + windVx) * dt;
+    this.y += (this.vy + waveY) * scale * 60 * dt;
 
     // Lean with an active gust, whichever way it blows
     if (windVx !== 0) {
@@ -760,11 +776,17 @@ export class DandelionSeed {
   }
 }
 
+/**
+ * The snail crawls its seam and spoils any pocket that holds it, but it does not
+ * cut the cord (Xyh, 2026-09-16): a hazard disturbs a drawing one way or the
+ * other, not both, and the snail's way is to be a dud ingredient.
+ */
 export class Snail {
   /** route: 'edge' keeps to the bottom verge; 'seam' crawls the Dawn paving seam mid-field. */
   constructor(x, y, route = 'edge') {
     this.type = 'hazard';
     this.kind = 'snail';
+    this.cutsCord = false;
     this.x = x;
     this.y = y;
     this.radius = 16;
@@ -852,43 +874,29 @@ export class Snail {
 
 
 /**
- * Atrium hornet. Patrols one horizontal lane at a steady speed, turning at the
- * edges, so its path can be read before a cord is drawn. Like the snail it
- * breaks a cord it touches and spoils any pocket that holds it.
+ * Atrium hornet. It flies like the other insects — a wandering flutter with its
+ * own turns — because a creature with a fixed route reads as scenery (Xyh,
+ * 2026-09-16). It cuts a cord it touches, and like any uninvited entity it
+ * spoils a pocket that holds it.
  */
-export class Hornet {
-  constructor(x, laneRatio = 0.5, direction = 1) {
+export class Hornet extends Insect {
+  constructor(x, y) {
+    super(x, y, 'hornet');
     this.type = 'hazard';
-    this.kind = 'hornet';
-    this.x = x;
-    this.laneRatio = laneRatio;
-    this.y = 0;
-    this.radius = 15;
-    this.speed = 0.9; // px per 60 fps frame
-    this.vx = this.speed * direction;
-    this.state = 'roaming';
-    this.wingPhase = 0;
-    this.bobPhase = Math.random() * Math.PI * 2;
+    this.cutsCord = true;
     this.crossesCord = true;
+    this.wingPhase = Math.random() * Math.PI * 2;
   }
 
   update(dt, bounds) {
     this.wingPhase += dt * 26;
-    this.bobPhase += dt * 2.2;
-    this.x += this.vx * 60 * dt;
-    this.y = bounds.height * this.laneRatio + Math.sin(this.bobPhase) * 8;
-
-    if (this.x > bounds.width - 40) {
-      this.vx = -Math.abs(this.vx);
-    } else if (this.x < 40) {
-      this.vx = Math.abs(this.vx);
-    }
+    super.update(dt, bounds);
   }
 
   draw(ctx) {
     ctx.save();
     ctx.translate(this.x, this.y);
-    ctx.scale(this.vx >= 0 ? 1 : -1, 1);
+    ctx.scale(Math.cos(this.heading) >= 0 ? 1 : -1, 1);
 
     // Blurred paper wings
     const beat = 0.55 + 0.45 * Math.abs(Math.sin(this.wingPhase));
@@ -947,8 +955,9 @@ export class Hornet {
 
 /**
  * A patch of web strung across the atrium. It never moves and nothing lives in
- * it; a cord drawn into it sticks and breaks. It is terrain, not an inhabitant,
- * so it is never pocket content and never a drawing target.
+ * it; a cord drawn into it sticks and breaks. Fixed-place hazards are things
+ * rather than creatures (Xyh, 2026-09-16). It is terrain, not an inhabitant, so
+ * it is never pocket content and never a drawing target.
  */
 export class WebPatch {
   /** Placed by field ratio so it keeps its position in the scene when the canvas resizes. */
@@ -961,6 +970,7 @@ export class WebPatch {
     this.y = 0;
     this.radius = radius;
     this.state = 'static';
+    this.cutsCord = true;
     this.crossesCord = true;
     this.spin = Math.random() * Math.PI;
   }
@@ -1008,68 +1018,65 @@ export class WebPatch {
 }
 
 /**
- * A spool of cotton left in the atrium. Running the held cord over it adds
- * thread to that stroke, raising its snap limit; it is not pocket content.
+ * A string bean hanging in the atrium planting. Drawing the cord over one picks
+ * it, and the pod's length is added to the next cord you draw; it is not pocket
+ * content and is never threaded.
  */
-export class CordSpool {
+export class StringBean {
   constructor(x, y) {
-    this.type = 'spool';
-    this.kind = 'spool';
+    this.type = 'bean';
+    this.kind = 'bean';
     this.x = x;
     this.y = y;
-    this.radius = 14;
+    this.radius = 15;
     this.state = 'roaming';
-    this.bobPhase = Math.random() * Math.PI * 2;
+    this.swayPhase = Math.random() * Math.PI * 2;
+    this.lean = (Math.random() - 0.5) * 0.5;
   }
 
   update(dt) {
-    this.bobPhase += dt * 1.8;
+    this.swayPhase += dt * 1.1;
   }
 
   draw(ctx) {
     ctx.save();
-    ctx.translate(this.x, this.y + Math.sin(this.bobPhase) * 2);
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.lean + Math.sin(this.swayPhase) * 0.07);
 
-    ctx.fillStyle = 'rgba(50, 45, 30, 0.10)';
+    // Stem and a pair of leaves at the top
+    ctx.strokeStyle = themeColor('outline', '#6f8b52');
+    ctx.lineWidth = 1.6;
     ctx.beginPath();
-    ctx.ellipse(0, 12, 12, 3.5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(0, -17);
+    ctx.quadraticCurveTo(3, -13, 1, -10);
+    ctx.stroke();
 
-    // Wound cotton
-    ctx.fillStyle = themeColor('cord', '#f0e7d2');
-    ctx.strokeStyle = themeColor('outline', '#b3a488');
+    ctx.fillStyle = '#8fae63';
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(side * 6, -16, 6, 3, side * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // The pod, a long curved bean
+    ctx.fillStyle = '#9dc06a';
+    ctx.strokeStyle = '#5f7d3f';
     ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.ellipse(0, 0, 9, 11, 0, 0, Math.PI * 2);
+    ctx.moveTo(0, -10);
+    ctx.quadraticCurveTo(9, 2, 3, 15);
+    ctx.quadraticCurveTo(-3, 3, -4, -9);
+    ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
-    ctx.strokeStyle = 'rgba(160, 145, 115, 0.55)';
-    ctx.lineWidth = 0.9;
-    for (const wy of [-6, -2, 2, 6]) {
+    // Seeds showing through the pod
+    ctx.fillStyle = 'rgba(92, 120, 60, 0.55)';
+    for (const [bx, by] of [[0, -4], [2, 2], [2, 8]]) {
       ctx.beginPath();
-      ctx.moveTo(-8.5, wy);
-      ctx.quadraticCurveTo(0, wy + 2.5, 8.5, wy);
-      ctx.stroke();
-    }
-
-    // Reel ends and a loose thread
-    ctx.fillStyle = '#c9b48d';
-    ctx.strokeStyle = '#8f7c5c';
-    ctx.lineWidth = 1;
-    for (const ey of [-11, 11]) {
-      ctx.beginPath();
-      ctx.ellipse(0, ey, 11, 3, 0, 0, Math.PI * 2);
+      ctx.ellipse(bx, by, 2, 2.6, 0.2, 0, Math.PI * 2);
       ctx.fill();
-      ctx.stroke();
     }
-
-    ctx.strokeStyle = themeColor('cord', '#e6dcc2');
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.moveTo(8, 3);
-    ctx.quadraticCurveTo(17, 6, 14, 14);
-    ctx.stroke();
 
     ctx.restore();
   }

@@ -192,36 +192,48 @@ Open: whether the limit scales with the field. A portrait field measured
 359×567 px and the desktop field 996×640 px on 2026-09-15, while the closure
 tolerance and length bands are fixed pixel values today.
 
-### The cord spool raises the limit for one stroke
+### A picked pod raises the limit for the next stroke
 
-Added 2026-09-16 for Noon IV–VI. A spool lies on the field; running the held
-cord within its radius adds `CORD_SPOOL_BONUS` (400 px in `src/game.js`) to that
-stroke's `maxCordLength`, and the meter's snap mark moves with it. The addition
-applies to the gesture in hand only: the next stroke starts at the shared limit
-again. The spool leaves the field when taken and another is placed
-`CORD_SPOOL_RESPAWN` (8 s) later, on ground clear of everything else.
+Added 2026-09-16 for Noon IV–VI. Something botanical hangs on the field — a
+string bean in the placeholder skin, which Codex is reskinning. Drawing the held
+cord within its radius picks it. The cord that picks it is **not** lengthened;
+`BEAN_BONUS` (400 px in `src/game.js`) is added to the *next* stroke's
+`maxCordLength`, and the meter's snap mark shows the longer allowance before that
+stroke begins. A kept pod dries out after `BEAN_KEEPS_SECONDS` (12 s) if it is
+not used, and another grows `BEAN_REGROW_SECONDS` (8 s) after one is taken.
 
-A spool is not a target. It is never threaded as a bead, never counts as pocket
-content, and cannot be tapped. This is the one way a level departs from the
-shared snap limit, and it does so per stroke rather than per level, so the rule
-above — no level record sets its own `maxCordLength` — still holds.
+It is not a target: never threaded as a bead, never pocket content, never
+tappable. This is the one way a level departs from the shared snap limit, and it
+does so per stroke rather than per level, so the rule above — no level record
+sets its own `maxCordLength` — still holds.
 
-## 6. Hazards that break a cord
+## 6. Hazards
 
-Three things break a cord they touch. The break is identical in each case — no
-score, beads released, walls removed — and the message names which one it was.
+A hazard disturbs a drawing in one of two ways: it **cuts** the cord it touches,
+or it is a **dud ingredient** that spoils a pocket holding it. Xyh decided on
+2026-09-16 that one hazard should not usually do both by design — though under
+the purity rule (rule 4) anything uninvited inside a pocket spoils it, so every
+hazard is a dud, and the axis that actually varies is whether it cuts.
 
-| Hazard | Where | Movement | Inside a pocket |
-| --- | --- | --- | --- |
-| Snail | Dawn II–III, Dusk VIII–IX, Midnight XII | Crawls a seam or the bottom edge | Spoils the drawing |
-| Hornet | Noon V–VI | Patrols one horizontal lane, turning at the edges; the lane is drawn faintly on the field | Spoils the drawing |
-| Web patch | Noon VI | Static, placed by the level | Valid — a web is terrain, not an inhabitant |
+A second rule from the same decision: **a hazard that keeps a fixed path is a
+thing, not a creature.** Creatures fly or crawl as themselves; scenery holds
+still. The hornet was rewritten to wander for this reason, and the web is the
+only fixed-place hazard.
 
-The snail is unchanged from the Dawn revision in [CAMPAIGN.md](CAMPAIGN.md). A
-cord that comes within 19 px of a snail's center breaks. Snails do not thread
-and are not blocked by walls, because touching the cord breaks it first. The
-hornet and the web follow the same contact rule at their own radii, and neither
-threads.
+| Hazard | Where | Movement | Cuts the cord | Inside a pocket |
+| --- | --- | --- | --- | --- |
+| Snail | Dawn II–III, Dusk VIII–IX, Midnight XII | Crawls a seam or the bottom edge | No — the cord crosses it safely | Spoils the drawing |
+| Hornet | Noon V–VI | Wanders and turns like the other insects | Yes | Spoils the drawing |
+| Web patch | Noon VI | Static, placed by the level | Yes | Valid — a web is terrain, not an inhabitant |
+
+A cut is identical in each case — no score, beads released, walls removed — and
+the message names what cut it. Hazards do not thread. The snail's cord break,
+added in the 2026-09-15 Dawn revision, was removed on 2026-09-16 under the rule
+above; Dawn II–III keep the snail as a dud ingredient crawling the seam.
+
+Open: whether a hazard can later be a wanted ingredient. Xyh raised it on
+2026-09-16 as a future direction — a recipe that asks for the hornet, so the
+thing to avoid becomes the thing to catch. Nothing is built for it.
 
 ## 7. Wind changes direction
 
