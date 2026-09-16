@@ -10,7 +10,7 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Codex reskins the Noon cord-length pickup; then playtest Noon IV–VI on a touch device.
+Playtest Noon IV–VI and the occasional flax-flower returns in Dusk VIII and Midnight XII on a touch device.
 
 ## Activity
 
@@ -1530,3 +1530,26 @@ also passed its five enclosure gestures through victory after input refactoring.
 Inspected desktop field and ready-card images and a 390-pixel portrait ready
 card. Moved frame edges below the HUD after seeing text cross the dark border.
 These are controlled-input checks, not a manual or real-touch completion run.
+
+
+2026-09-16 — Codex — Completed the pickup handoff: replaced the placeholder
+String Bean with a pale blue, five-petaled Flax Flower. The field and Noon cards
+share `drawFlaxFlower`; the Field Book and pickup/expiry messages name the flower.
+Original Canvas paths add no external assets. The internal `bean` type and quota
+key remain so threading, pocket, and tap exclusions keep the existing contract.
+The 400 px next-cord bonus, twelve-second expiry, and Noon eight-second regrowth
+are unchanged.
+
+Added one flower to Dusk VIII and Midnight XII with twenty-four-second regrowth
+after picking. These visit choices and the slower interval are first-pass tuning
+for Xyh's request for occasional returns. Initial spawning now includes Midnight's
+separate scene branch. Runtime and campaign plan agree. No flowers were added to
+the chapter-opening lessons.
+
+Verified all six Node suites, including added checks for later-hour initial
+population/queueing, pickup, unchanged picking-cord limit, and delayed regrowth.
+Inspected the rendered flower in the actual Midnight XII field using headless
+Edge; screenshot is ignored under `.browser-check/flax.png`. Module syntax and
+`git diff --check` pass. Touch playtesting and regrowth balance remain open.
+The screenshot also shows the existing XII objective line overlapping the cord
+meter at desktop width; that unrelated HUD layout issue remains unfixed.

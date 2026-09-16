@@ -123,7 +123,7 @@ export const CAMPAIGN_LEVELS = [
       any: 6,
       trio: 2,
     },
-    instruction: 'Make six combinations, including two loops with three different kinds of insect. Draw over a string bean to lengthen your next cord.',
+    instruction: 'Make six combinations, including two loops with three different kinds of insect. Draw over a flax flower to lengthen your next cord.',
     designNote: 'Teach the bean on a clear field. Noon asks for more drawings than Dawn in the same time: the pressure is the count, not the shape.',
     gestures: ['string'],
     stringRules: true,
@@ -249,6 +249,7 @@ export const CAMPAIGN_LEVELS = [
     transitionText: "I can hear the cicadas. And sometimes I can't.",
     durationSeconds: 95,
     population: {
+      bean: 1,
       brimstone: 2,
       damselfly: 0,
       hoverfly: 2,
@@ -258,6 +259,7 @@ export const CAMPAIGN_LEVELS = [
       lacewing: 2,
       firefly: 0,
     },
+    beanRegrowSeconds: 24,
     motionScale: 0.85,
     objectives: {
       any: 5,
@@ -376,6 +378,7 @@ export const CAMPAIGN_LEVELS = [
     transitionText: 'And the world does move. Because tomorrow keeps happening.',
     durationSeconds: 110,
     population: {
+      bean: 1,
       brimstone: 2,
       damselfly: 0,
       hoverfly: 2,
@@ -385,6 +388,7 @@ export const CAMPAIGN_LEVELS = [
       lacewing: 2,
       firefly: 3,
     },
+    beanRegrowSeconds: 24,
     motionScale: 1.0,
     objectives: {
       any: 7,

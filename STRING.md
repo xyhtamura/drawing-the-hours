@@ -192,15 +192,16 @@ Open: whether the limit scales with the field. A portrait field measured
 359×567 px and the desktop field 996×640 px on 2026-09-15, while the closure
 tolerance and length bands are fixed pixel values today.
 
-### A picked pod raises the limit for the next stroke
+### A picked flax flower raises the limit for the next stroke
 
-Added 2026-09-16 for Noon IV–VI. Something botanical hangs on the field — a
-string bean in the placeholder skin, which Codex is reskinning. Drawing the held
+A flax flower appears in Noon IV–VI and returns in Dusk VIII and Midnight XII. Drawing the held
 cord within its radius picks it. The cord that picks it is **not** lengthened;
 `BEAN_BONUS` (400 px in `src/game.js`) is added to the *next* stroke's
 `maxCordLength`, and the meter's snap mark shows the longer allowance before that
-stroke begins. A kept pod dries out after `BEAN_KEEPS_SECONDS` (12 s) if it is
-not used, and another grows `BEAN_REGROW_SECONDS` (8 s) after one is taken.
+stroke begins. A kept flower wilts after `BEAN_KEEPS_SECONDS` (12 s) if it is
+not used. Another grows `BEAN_REGROW_SECONDS` (8 s) after picking at Noon;
+Dusk VIII and Midnight XII set `beanRegrowSeconds: 24`. The internal `bean`
+type and population key remain for pickup filtering; the class is `FlaxFlower`.
 
 It is not a target: never threaded as a bead, never pocket content, never
 tappable. This is the one way a level departs from the shared snap limit, and it

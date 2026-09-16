@@ -126,7 +126,7 @@
         "any": 6,
         "trio": 2
       },
-      "instruction": "Make six combinations, including two loops with three different kinds of insect. Draw over a string bean to lengthen your next cord.",
+      "instruction": "Make six combinations, including two loops with three different kinds of insect. Draw over a flax flower to lengthen your next cord.",
       "designNote": "Teach the bean on a clear field. Noon asks for more drawings than Dawn in the same time: the pressure is the count, not the shape.",
       "gestures": [
         "string"
@@ -277,7 +277,8 @@
         "seed": 3,
         "snail": 1,
         "lacewing": 2,
-        "firefly": 0
+        "firefly": 0,
+        "bean": 1
       },
       "motionScale": 0.85,
       "objectives": {
@@ -292,7 +293,8 @@
       ],
       "stringRules": true,
       "wind": null,
-      "hourLabel": "Dusk · Visit VIII"
+      "hourLabel": "Dusk · Visit VIII",
+      "beanRegrowSeconds": 24
     },
     {
       "id": "dusk-03",
@@ -418,7 +420,8 @@
         "seed": 2,
         "snail": 1,
         "lacewing": 2,
-        "firefly": 3
+        "firefly": 3,
+        "bean": 1
       },
       "motionScale": 1,
       "objectives": {
@@ -440,7 +443,8 @@
         "lacewing",
         "firefly"
       ],
-      "hourLabel": "Midnight · Visit XII"
+      "hourLabel": "Midnight · Visit XII",
+      "beanRegrowSeconds": 24
     }
   ]
 }

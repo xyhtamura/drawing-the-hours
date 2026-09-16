@@ -14,7 +14,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { CAMPAIGN_LEVELS } from '../src/campaign.js';
-import { Insect, DandelionSeed, Snail, Hornet, WebPatch, StringBean } from '../src/entities.js';
+import { Insect, DandelionSeed, Snail, Hornet, WebPatch, FlaxFlower } from '../src/entities.js';
 import { evaluateSinglePocket } from '../src/recipes.js';
 import { MAX_CORD_LENGTH } from '../src/string.js';
 
@@ -201,7 +201,7 @@ try {
 
   // 5. A picked bean lengthens the next cord
   {
-    setup('noon-01', [new StringBean(480, 320)]);
+    setup('noon-01', [new FlaxFlower(480, 320)]);
     assert.equal(game.cordLimit(), MAX_CORD_LENGTH, 'The visit starts on the shared snap limit');
 
     pointer('pointerdown', [200, 320]);
@@ -221,7 +221,7 @@ try {
     assert.equal(game.cordLimit(), MAX_CORD_LENGTH, 'The bean is spent on that one cord');
 
     // Kept beans dry out when they are not used.
-    setup('noon-01', [new StringBean(480, 320)]);
+    setup('noon-01', [new FlaxFlower(480, 320)]);
     stroke([[200, 320], [400, 320], [480, 320], [560, 320]]);
     assert.equal(game.cordLimit(), MAX_CORD_LENGTH + 400, 'The bean is kept after the cord that picked it');
     for (let i = 0; i < 130; i++) game.update(0.1); // thirteen seconds
@@ -232,13 +232,13 @@ try {
 
   // 6. A bean is neither a bead nor pocket content
   {
-    setup('noon-01', [new StringBean(480, 320), new Insect(450, 380, 'brimstone'), new Insect(510, 380, 'brimstone')]);
+    setup('noon-01', [new FlaxFlower(480, 320), new Insect(450, 380, 'brimstone'), new Insect(510, 380, 'brimstone')]);
     pointer('pointerdown', [300, 320]);
     pointer('pointermove', [480, 320]);
     assert.equal(game.stringGesture.beads.length, 0, 'A bean is not threaded onto the cord');
     pointer('pointerup', [600, 320]);
 
-    setup('noon-01', [new StringBean(480, 250), new Insect(450, 320, 'brimstone'), new Insect(510, 320, 'brimstone')]);
+    setup('noon-01', [new FlaxFlower(480, 250), new Insect(450, 320, 'brimstone'), new Insect(510, 320, 'brimstone')]);
     stroke(circle(480, 300, 90));
     assert.ok(game.feedbackBanner.text.startsWith('Kindred Pair'),
       `A bean inside the loop does not spoil it (got "${game.feedbackBanner.text}")`);
@@ -287,6 +287,26 @@ try {
 
     console.log('✔ Trio at Noon IV and Seed & Trio at Noon VI both score.');
   }
+  // Later-hour returns keep the same pickup contract with slower regrowth.
+  for (const id of ['dusk-02', 'midnight-03']) {
+    game.initLevel(id);
+    assert.equal(game.currentLevel.population.bean, 1);
+    assert.equal(game.entities.filter(e => e.type === 'bean').length + game.respawnQueue.filter(e => e.kind === 'bean').length, 1, `${id}: one flower, live or queued`);
+    setup(id, [new FlaxFlower(480, 320)]);
+    pointer('pointerdown', [300, 320]); pointer('pointermove', [480, 320]);
+    assert.equal(game.stringGesture.maxCordLength, MAX_CORD_LENGTH);
+    assert.equal(game.beanBonus, 400);
+    assert.equal(game.respawnQueue.find(e => e.kind === 'bean').delay, 24);
+    pointer('pointerup', [480, 320]);
+    game.entities = [];
+    game.respawnQueue = [{kind: 'bean', delay: 24}];
+    game.maintainPopulation(23);
+    assert.equal(game.entities.filter(e => e.type === 'bean').length, 0);
+    game.entities = []; // Keep spawn clearance deterministic for this assertion.
+    game.maintainPopulation(1);
+    assert.equal(game.entities.filter(e => e.type === 'bean').length, 1);
+  }
+  console.log('PASS: flax returns in Dusk VIII and Midnight XII, with 24-second regrowth.');
 } finally {
   if (!hadWindow) delete globalThis.window;
   if (!hadDocument) delete globalThis.document;

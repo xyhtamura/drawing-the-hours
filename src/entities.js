@@ -1018,68 +1018,47 @@ export class WebPatch {
 }
 
 /**
- * A string bean hanging in the atrium planting. Drawing the cord over one picks
- * it, and the pod's length is added to the next cord you draw; it is not pocket
+ * A flax flower growing among the planting. Drawing the cord over one picks
+ * it, and extra length is added to the next cord you draw; it is not pocket
  * content and is never threaded.
  */
-export class StringBean {
+/** Internal bean type/kind preserves pickup filtering and campaign population keys. */
+export class FlaxFlower {
   constructor(x, y) {
-    this.type = 'bean';
-    this.kind = 'bean';
-    this.x = x;
-    this.y = y;
-    this.radius = 15;
-    this.state = 'roaming';
-    this.swayPhase = Math.random() * Math.PI * 2;
-    this.lean = (Math.random() - 0.5) * 0.5;
+    this.type = 'bean'; this.kind = 'bean';
+    this.x = x; this.y = y; this.radius = 15;
+    this.state = 'roaming'; this.swayPhase = Math.random() * Math.PI * 2;
   }
-
-  update(dt) {
-    this.swayPhase += dt * 1.1;
-  }
-
+  update(dt) { this.swayPhase += dt * 1.1; }
   draw(ctx) {
-    ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.lean + Math.sin(this.swayPhase) * 0.07);
+    ctx.save(); ctx.translate(this.x, this.y);
+    ctx.rotate(Math.sin(this.swayPhase) * 0.07);
+    drawFlaxFlower(ctx); ctx.restore();
+  }
+}
 
-    // Stem and a pair of leaves at the top
-    ctx.strokeStyle = themeColor('outline', '#6f8b52');
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.moveTo(0, -17);
-    ctx.quadraticCurveTo(3, -13, 1, -10);
-    ctx.stroke();
-
-    ctx.fillStyle = '#8fae63';
-    for (const side of [-1, 1]) {
-      ctx.beginPath();
-      ctx.ellipse(side * 6, -16, 6, 3, side * 0.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // The pod, a long curved bean
-    ctx.fillStyle = '#9dc06a';
-    ctx.strokeStyle = '#5f7d3f';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(0, -10);
-    ctx.quadraticCurveTo(9, 2, 3, 15);
-    ctx.quadraticCurveTo(-3, 3, -4, -9);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // Seeds showing through the pod
-    ctx.fillStyle = 'rgba(92, 120, 60, 0.55)';
-    for (const [bx, by] of [[0, -4], [2, 2], [2, 8]]) {
-      ctx.beginPath();
-      ctx.ellipse(bx, by, 2, 2.6, 0.2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
+/** Five blue petals, fine veins, a warm center, and narrow stem leaves. */
+export function drawFlaxFlower(ctx) {
+  ctx.save();
+  ctx.strokeStyle = themeColor('outline', '#6f8b52'); ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(0, 4); ctx.quadraticCurveTo(-3, 15, 1, 24); ctx.stroke();
+  ctx.fillStyle = themeColor('leaf', '#8fae63');
+  for (const side of [-1, 1]) {
+    ctx.beginPath(); ctx.ellipse(side * 4, 16, 2, 7, side * 0.65, 0, Math.PI * 2); ctx.fill();
+  }
+  for (let i = 0; i < 5; i++) {
+    ctx.save(); ctx.rotate(i * Math.PI * 2 / 5);
+    ctx.fillStyle = '#bdd4fa'; ctx.strokeStyle = '#748cbf'; ctx.lineWidth = 0.9;
+    ctx.beginPath(); ctx.moveTo(0, 1);
+    ctx.bezierCurveTo(-11, -5, -9, -17, 0, -15);
+    ctx.bezierCurveTo(9, -17, 11, -5, 0, 1); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = '#8ea7d4'; ctx.lineWidth = 0.6;
+    ctx.beginPath(); ctx.moveTo(0, -3); ctx.lineTo(0, -12); ctx.stroke();
     ctx.restore();
   }
+  ctx.fillStyle = '#f6df94'; ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#78643b'; ctx.beginPath(); ctx.arc(0, 0, 1.2, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
 }
 
 /** The glow changes its halo, never its body visibility or target radius. */

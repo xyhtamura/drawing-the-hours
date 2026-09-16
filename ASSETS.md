@@ -35,3 +35,6 @@ The window-side planter in `src/midnight-art.js` and the Window Firefly in
 `src/entities.js` were authored by Codex on 2026-09-15 using Canvas paths and
 deterministic paper fibers. The glow is a radial gradient. No external art,
 font, or audio asset was added for Midnight.
+
+2026-09-16 — Codex — Flax flower pickup and card glyph drawn with original
+Canvas paths in `src/entities.js`; no external image or font added.

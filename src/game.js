@@ -16,7 +16,7 @@ import {
   polylineTouchesDisk,
   extractClosedPockets,
 } from './geometry.js';
-import { Butterfly, DandelionSeed, Snail, Hornet, WebPatch, StringBean, SPECIES_CONFIG, drawFirefly } from './entities.js';
+import { Butterfly, DandelionSeed, Snail, Hornet, WebPatch, FlaxFlower, drawFlaxFlower, SPECIES_CONFIG, drawFirefly } from './entities.js';
 import { evaluateDrawing } from './recipes.js';
 import { DandelionClock } from './clock.js';
 import { audio } from './audio.js';
@@ -436,11 +436,12 @@ export class Game {
         this.entities.push(snail);
       }
 
-      // Atrium fixtures: wandering hornets, web patches, and string beans.
-      for (const kind of ['hornet', 'web', 'bean']) {
+      // Atrium hazards: wandering hornets and web patches.
+      for (const kind of ['hornet', 'web']) {
         for (let i = 0; i < (pop[kind] || 0); i++) this.spawnAtriumFixture(kind, i);
       }
     }
+    for (let i = 0; i < (pop.bean || 0); i++) this.spawnAtriumFixture('bean', i);
 
     this.initDecorations();
   }
@@ -476,7 +477,7 @@ export class Game {
         const sy = this.height * (0.2 + Math.random() * 0.6);
         const clear = this.entities.every(e => Math.hypot(e.x - sx, e.y - sy) >= e.radius + 34);
         if (clear) {
-          this.entities.push(new StringBean(sx, sy));
+          this.entities.push(new FlaxFlower(sx, sy));
           return true;
         }
       }
@@ -993,11 +994,11 @@ export class Game {
       if (bean.type !== 'bean' || bean.state === 'departing') continue;
       if (!polylineTouchesDisk(points, bean.x, bean.y, bean.radius + 3)) continue;
       this.entities.splice(i, 1);
-      this.respawnQueue.push({ kind: 'bean', delay: BEAN_REGROW_SECONDS });
+      this.respawnQueue.push({ kind: 'bean', delay: this.currentLevel.beanRegrowSeconds ?? BEAN_REGROW_SECONDS });
       this.beanBonus = BEAN_BONUS;
       this.beanTimer = BEAN_KEEPS_SECONDS;
       audio.playCordPluck(520);
-      this.showFeedback(`String bean picked: the next cord runs ${BEAN_BONUS} px longer.`, 'success');
+      this.showFeedback(`Flax flower picked: the next cord runs ${BEAN_BONUS} px longer.`, 'success');
       picked = true;
     }
     return picked;
@@ -1010,7 +1011,7 @@ export class Game {
     if (this.beanTimer <= 0) {
       this.beanBonus = 0;
       this.beanTimer = 0;
-      this.showFeedback('The bean dried out. Pick another for a longer cord.', 'hint');
+      this.showFeedback('The flax flower wilted. Pick another for a longer cord.', 'hint');
     }
   }
 
@@ -1836,23 +1837,10 @@ export class Game {
     this.hintRect = { x, y, w: cardW, h: cardH };
   }
 
-  /** A small bean pod, used on the Noon ready cards. */
+  /** The flax flower, shared with the field drawing. */
   drawBeanGlyph(ctx, x, y) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.fillStyle = '#9dc06a';
-    ctx.strokeStyle = '#5f7d3f';
-    ctx.lineWidth = 1.1;
-    ctx.beginPath();
-    ctx.moveTo(0, -9);
-    ctx.quadraticCurveTo(8, 1, 3, 13);
-    ctx.quadraticCurveTo(-3, 2, -4, -8);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#8fae63';
-    ctx.beginPath(); ctx.ellipse(-5, -12, 5, 2.6, -0.5, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
+    ctx.save(); ctx.translate(x, y); ctx.scale(0.8, 0.8);
+    drawFlaxFlower(ctx); ctx.restore();
   }
 
   /** The figure a hint names, drawn as cord and marks. No target is moved or marked. */
@@ -2666,7 +2654,7 @@ export class Game {
         ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('Three different kinds in one loop. Cross your start to close.', 0, 39);
         ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
-        ctx.fillText('Draw over a string bean to pick it. Your next cord runs longer, for a short while.', 0, 54);
+        ctx.fillText('Pick a flax flower. The next cord is longer; use it within 12 seconds.', 0, 54);
         ctx.restore();
       } else if (teachNoon02) {
         ctx.save(); ctx.translate(0, boxH / 2 - 100);
@@ -2729,7 +2717,7 @@ export class Game {
         this.drawBeanGlyph(ctx, 62, -26);
         ctx.fillText('Seed & Trio: 1 seed and 3 different insects in one loop.', 0, 39);
         ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
-        ctx.fillText('Webs and the hornet cut a cord they touch. Pick a bean for the longest loop.', 0, 54);
+        ctx.fillText('Avoid webs and the hornet. Flax gives extra length to the next cord.', 0, 54);
         ctx.restore();
       } else if (teachMidnight02) {
         ctx.save(); ctx.translate(0, boxH / 2 - 96);

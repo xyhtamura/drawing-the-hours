@@ -106,11 +106,10 @@ stay the simple loops Dawn taught, and each visit asks for six combinations
 rather than four, in the same order of time. Care and timing are Dusk's theme;
 Noon should feel quick.
 
-The hour's new object is botanical — a string bean in the placeholder skin, which
-Codex is reskinning. Drawing the held cord over one picks it, and the pod's
-length, 400 px, goes to the **next** cord rather than the one that picked it. The
+The hour introduces a flax flower. Drawing the held cord over one picks it, and
+400 px of extra length goes to the **next** cord rather than the one that picked it. The
 meter's snap mark shows the longer allowance before that stroke starts. A picked
-pod dries out after twelve seconds if unused, and another grows eight seconds
+flower wilts after twelve seconds if unused, and another grows eight seconds
 after one is taken, so it is a resource to plan a route around rather than a
 permanent upgrade. It is never pocket content and is never threaded.
 
@@ -411,3 +410,6 @@ Visit I holds its clock until the first accepted drawing
 (`clockStartsOnFirstCombination`). All three Dawn ready cards carry diagrams.
 The feedback banner moved from the bottom of the field to below the top HUD,
 because the canvas bottom can sit below the fold.
+
+The flax flower returns in Dusk VIII and Midnight XII, one at a time, with
+twenty-four-second regrowth after picking. Its next-cord bonus is unchanged.
