@@ -10,9 +10,83 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Add a figure-eight path to the measurement script to re-measure cord lengths across the day, then playtest on touch devices.
+Playtest the twelve visits on a touch device.
 
 ## Activity
+
+2026-09-16 — Claude Code — Built the remaining day-one review items (handoff
+item 4) and recorded Xyh's answers to the rest of that handoff.
+
+- **Failure card.** Retry, Practice this visit, and Level select are now three
+  clickable rows on the game-over card in `src/game.js`; Space still takes the
+  first. Retry returns to the ready screen rather than the story card. Canvas
+  clicks reach them through `handleOverlayClick`, which `index.html` calls
+  before the advance handler.
+- **Untimed practice of a visit.** `CampaignManager.startPracticeOf` copies the
+  failed visit as `practice-visit` with `untimed: true`, runs it in practice
+  mode, and so writes no completion, unlock, or best score. The clock is frozen
+  and reads `--:--` / Untimed; the HUD, pause card, ready diagram, and the Dusk
+  cicada layer follow `practiceOf` so the copy behaves as its source visit.
+- **Hint.** After twelve seconds of play without objective progress, a
+  dismissible card names one unfinished requirement, counts what is left, and
+  draws the figure (loop, crossed loop, or threaded line) as cord and marks. It
+  moves nothing on the field. A press on the card dismisses it and starts the
+  twelve seconds again; objective progress clears it.
+- **Resume on reload.** `CampaignManager` now loads `currentLevelId` into the
+  opening visit and flags `resumedFromSave`; the game opens that visit at its
+  ready screen instead of replaying the story card. An unknown or not-yet-playable
+  saved ID falls back to Dawn I. This closes the startup gap recorded on 2026-09-15.
+- **Progress gates.** The visit list unlocks only what the save has reached —
+  the highest unlocked index, completed IDs, and the visit in play — and the
+  practice verges for an hour appear with that hour. `isHourReached` in
+  `src/campaign.js` drives both that and the Field Book, whose Noon, Dusk, and
+  Midnight entries are now separate entries tagged `data-reveal-hour`. The
+  Threading & Beads entry no longer explains the Midnight trace.
+- **Save controls.** The Unlock All in Save button is hidden unless the page is
+  opened with `?dev`; `window.unlockAllLevels()` and `window.resetProgress()`
+  are unchanged.
+- **Failure line.** The card's second line follows the hour rather than saying
+  "morning breeze" at Midnight.
+
+Verification:
+
+- New `test/test_flow.js`: hour gates, save resume and fallback, untimed
+  practice writing nothing over two simulated minutes, hint timing at 11 s and
+  13 s with dismissal and re-arming, the three failure options and their
+  rectangles and actions (including that the untimed copy offers no practice of
+  itself), the per-hour failure line, and the page gates. The four existing
+  suites, `node --check`, and `git diff --check` pass.
+- In-app browser at `http://localhost:8000/drawing-the-hours/`, driving the real
+  page with dispatched click and pointer events: a fresh save hides every
+  reveal-tagged Field Book entry and locks Visits II–XII; recording Dawn I–III
+  victories reveals Noon's visit, practice verge, and four Field Book entries
+  while Dusk and Midnight stay hidden; a click on Practice this visit started
+  `practice-visit` of Dusk VII, whose clock stayed at 100 s through 30 s of
+  updates with the save untouched; a pointer press on the hint card dismissed it
+  without starting a cord, while a press elsewhere still drew; a reload resumed
+  Dusk VII at READY; `?dev` showed the save control and Unlock All opened
+  everything; Level select opened the visit list from the failure card; the
+  Midnight card read "slipped away into the dark". Screenshots: the Noon failure
+  card at desktop width and at 375×812, and the Midnight hint card at 375×812.
+- Not a manual or real-touch run. The browser pane pauses `requestAnimationFrame`
+  while hidden, so these checks stepped `update()` and `render()` directly.
+
+Xyh's answers to the previous handoff: Midnight is complete (item 1), 1,300 px
+feels fine (item 2), and item 4 was to be built. **Dropped: the figure-eight path
+in the measurement script.** Item 2 existed to re-measure the cord limit across
+the day; with the limit accepted, the measurement is not needed, so it was not
+written. Item 3, the touch playtest, is Xyh's and remains open.
+
+Handoff for the next agent:
+
+1. Playtest on a touch device across the day: closing loops and figure-eights by
+   crossing, tap thresholds, threading speed, the 1,300 px limit, both wind
+   directions, and purity. Xyh's to run.
+2. The failure card's Level select leaves the game in GAMEOVER behind the modal;
+   closing the modal without choosing returns to the failure card. Decide whether
+   that is right, or whether closing should retry.
+3. The hint card sits at a fixed position under the HUD (x 12, y 132/150). It has
+   not been checked against every scene's artwork at small heights.
 
 2026-09-16 — Antigravity — Rolled the string rules out to Midnight X–XII and removed obsolete Enclose/Trace modes across the app. All twelve campaign visits and practice levels now run under single-gesture string rules.
 

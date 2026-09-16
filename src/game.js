@@ -28,6 +28,36 @@ import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } f
 // the cord overlaps it on screen, so it counts as closing (STRING.md, rule 9).
 const CORD_WIDTH = 4.5;
 
+// Seconds of play without objective progress before the hint card appears
+// (CAMPAIGN.md, tuning section). Dismissing it starts the count again.
+const HINT_DELAY_SECONDS = 12;
+
+// One line per unfinished requirement. The hint names the figure and its shape;
+// it never points at particular insects on the field.
+const HINT_TEXT = {
+  any: 'Any combination counts. Two insects of one kind in a single loop is the shortest.',
+  single: 'Close one loop around two insects of the same kind.',
+  figure8: 'Cross the cord to make two pockets, with one insect in each.',
+  pair: 'Close one loop around two insects of the same kind.',
+  trio: 'Close one loop around three different kinds at once.',
+  seedWing: 'Close one loop around one insect and one drifting seed.',
+  counterpartPair: 'Cross the cord: one kind in one pocket, a different kind in the other.',
+  lacewingCounterpart: 'Cross the cord: a resting lacewing in one pocket, a different kind in the other.',
+  nursery: 'Cross the cord: exactly one insect in one pocket, exactly one seed in the other.',
+  mixedEcho: 'Cross the cord: the same two kinds mirrored in both pockets.',
+  seedTrio: 'Close one loop around three different kinds and one seed.',
+  twinSeedWing: 'Cross the cord: one insect and one seed in each pocket.',
+  trace: 'Thread a firefly, then a lacewing, then a different firefly in one stroke.',
+};
+
+// The failure card's second line, one per hour.
+const GAME_OVER_LINES = {
+  dawn: 'The dandelion seeds took flight into the morning breeze.',
+  noon: 'The dandelion seeds scattered across the midday atrium.',
+  dusk: 'The dandelion seeds drifted off into the evening air.',
+  midnight: 'The dandelion seeds slipped away into the dark.',
+};
+
 /** Species name for interface text, for example 'firefly' → 'Firefly'. */
 function speciesLabel(kind) {
   return SPECIES_CONFIG[kind]?.shortName || kind.charAt(0).toUpperCase() + kind.slice(1);
@@ -87,6 +117,12 @@ export class Game {
     this.saltGrains = [];
     this.activePockets = [];
 
+    // Stalled-play hint and failure-screen options
+    this.hintTimer = 0;
+    this.hint = null;
+    this.hintRect = null;
+    this.gameOverOptions = [];
+
     // Transient feedback & visuals
     this.recoilStroke = null;
     this.recoilAlpha = 0;
@@ -115,6 +151,10 @@ export class Game {
     this.initDecorations();
     this.initLevel();
     this.bindEvents();
+
+    // A reload resumes the saved visit at its ready screen rather than replaying
+    // its story card (CAMPAIGN.md, save section).
+    if (this.campaign.resumedFromSave) this.state = 'READY';
 
     this.lastFrameTime = performance.now();
     if (typeof requestAnimationFrame !== 'undefined') {
@@ -214,6 +254,10 @@ export class Game {
     this.score = 0;
     this.harmoniesCount = 0;
     this.victoryDelay = 0;
+    this.hintTimer = 0;
+    this.hint = null;
+    this.hintRect = null;
+    this.gameOverOptions = [];
     this.clock.reset(this.currentLevel.durationSeconds || 60);
 
     // Reset wind state
@@ -472,6 +516,87 @@ export class Game {
     return !!this.currentLevel?.clockStartsOnFirstCombination && this.harmoniesCount === 0;
   }
 
+  /** Untimed practice runs the visit with the clock stopped and nothing written to the save. */
+  isUntimed() {
+    return !!this.currentLevel?.untimed;
+  }
+
+  /**
+   * Offer a hint after twelve seconds without objective progress (CAMPAIGN.md).
+   * It names one unfinished requirement and draws its figure; it never moves a
+   * target or completes anything.
+   */
+  updateHint(dt) {
+    if (this.hint) return;
+    this.hintTimer += dt;
+    if (this.hintTimer < HINT_DELAY_SECONDS) return;
+    const unfinished = Object.entries(this.campaign.objectiveProgress)
+      .find(([, obj]) => obj.current < obj.target);
+    if (!unfinished) return;
+    const [key, obj] = unfinished;
+    this.hint = {
+      key,
+      label: obj.label,
+      remaining: obj.target - obj.current,
+      text: HINT_TEXT[key] || 'Draw one more combination the visit asks for.',
+    };
+  }
+
+  /** Dismiss the hint and start the twelve seconds again. */
+  dismissHint() {
+    this.hint = null;
+    this.hintRect = null;
+    this.hintTimer = 0;
+  }
+
+  /** Run the current campaign visit untimed, without touching campaign progress. */
+  startPracticeOfCurrent() {
+    const sourceId = this.currentLevel?.practiceOf || this.currentLevel?.id;
+    const practice = this.campaign.startPracticeOf(sourceId);
+    if (!practice) {
+      this.initLevel(this.currentLevel);
+      this.state = 'READY';
+      return false;
+    }
+    this.initLevel(practice);
+    this.victoryDelay = 0;
+    this.state = 'READY';
+    this.onLevelChanged?.(this.currentLevel);
+    this.onStateChanged?.(this.state, this.currentLevel);
+    return true;
+  }
+
+  /**
+   * Route a click on the canvas that lands on an overlay control: a failure-screen
+   * option, or the hint card's dismissal. Returns true when the click was used,
+   * so the caller does not also advance the state.
+   */
+  handleOverlayClick(x, y) {
+    if (this.state === 'GAMEOVER') {
+      const option = this.gameOverOptions.find(
+        o => x >= o.x && x <= o.x + o.w && y >= o.y && y <= o.y + o.h
+      );
+      if (!option) return false;
+      if (option.action === 'practice') {
+        this.startPracticeOfCurrent();
+      } else if (option.action === 'select') {
+        if (typeof this.onOpenVisitModal === 'function') this.onOpenVisitModal();
+        else this.advance();
+      } else {
+        this.advance();
+      }
+      return true;
+    }
+    if (this.hint && this.hintRect) {
+      const r = this.hintRect;
+      if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+        this.dismissHint();
+        return true;
+      }
+    }
+    return false;
+  }
+
   /** Fault text that does not suggest a figure the current visit cannot supply. */
   explainFault(result) {
     const pop = this.currentLevel?.population || {};
@@ -513,6 +638,15 @@ export class Game {
       if (document.querySelector('.modal-overlay.active')) return;
       if (this.state !== 'PLAYING' || this.victoryDelay > 0 || this.clock.remainingSeconds <= 0) return;
       e.preventDefault();
+      // A press on the hint card dismisses it instead of starting a cord.
+      if (this.hint && this.hintRect) {
+        const p = getPos(e);
+        if (p.x >= this.hintRect.x && p.x <= this.hintRect.x + this.hintRect.w
+          && p.y >= this.hintRect.y && p.y <= this.hintRect.y + this.hintRect.h) {
+          this.dismissHint();
+          return;
+        }
+      }
       audio.ensureContext();
       this.activePointerId = e.pointerId;
       try { this.canvas.setPointerCapture(e.pointerId); } catch (_) {}
@@ -876,6 +1010,7 @@ export class Game {
     const campResult = this.campaign.processDrawing(result, pocketsWithEntities, this.clock);
 
     if (campResult.advancedObjective) {
+      this.dismissHint();
       this.showFeedback(`${result.title} (+${result.finalScore} pts)`, 'success');
     } else {
       this.showFeedback(`${result.title} (+${result.finalScore} pts) — Objective unchanged`, 'info');
@@ -988,13 +1123,15 @@ export class Game {
         }
       }
 
-      if (!this.isClockHeld()) this.clock.update(dt);
-      if (this.clock.isExpired && this.victoryDelay <= 0) {
+      if (!this.isClockHeld() && !this.isUntimed()) this.clock.update(dt);
+      if (this.clock.isExpired && !this.isUntimed() && this.victoryDelay <= 0) {
         this.cancelStroke();
         this.state = 'GAMEOVER';
         audio.stopCicadas();
         return;
       }
+
+      this.updateHint(dt);
 
       // Atrium Wind Mechanics (Noon Visits V-VI)
       if (this.currentLevel?.wind) {
@@ -1033,7 +1170,8 @@ export class Game {
       }
 
       // Dusk Cicada Ambient Layer (Visit VIII)
-      const isCicadaLevel = this.currentLevel?.id === 'dusk-02';
+      const cicadaId = this.currentLevel?.practiceOf || this.currentLevel?.id;
+      const isCicadaLevel = cicadaId === 'dusk-02';
       audio.updateCicadas(dt, isCicadaLevel && this.state === 'PLAYING');
 
       const bounds = { width: this.width, height: this.height };
@@ -1263,6 +1401,7 @@ export class Game {
 
     // 6. HUD & Banners
     this.drawHUD(ctx);
+    this.drawHint(ctx);
 
     // 7. Modals / Overlays
     if (this.state === 'TRANSITION') this.drawTransitionModal(ctx);
@@ -1495,6 +1634,121 @@ export class Game {
     ctx.restore();
   }
 
+  /**
+   * The hint card: one unfinished requirement, its figure, and how to close it.
+   * Tapping anywhere on the card dismisses it (see handleOverlayClick).
+   */
+  drawHint(ctx) {
+    if (!this.hint || this.state !== 'PLAYING') {
+      this.hintRect = null;
+      return;
+    }
+    const isNarrow = this.width < 560;
+    const cardW = Math.min(this.width - 24, isNarrow ? 250 : 288);
+    const x = 12;
+    const y = isNarrow ? 150 : 132;
+    const padX = 10;
+    const glyphW = 54;
+    const textX = x + padX + glyphW + 10;
+    const textW = cardW - (padX * 2) - glyphW - 10;
+
+    ctx.save();
+    ctx.font = '500 11.5px system-ui, -apple-system, sans-serif';
+    const lines = wrapText(ctx, this.hint.text, textW);
+    const cardH = Math.max(72, 34 + lines.length * 15 + 16);
+
+    ctx.fillStyle = themeColor('panel', 'rgba(250, 246, 236, 0.96)');
+    ctx.strokeStyle = themeColor('edge', '#d3c7ae');
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    drawRoundedRect(ctx, x, y, cardW, cardH, 9);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = themeColor('ink', '#4a4235');
+    ctx.font = '600 11.5px system-ui, -apple-system, sans-serif';
+    ctx.fillText(`Hint · ${this.hint.label}: ${this.hint.remaining} left`, x + padX, y + 18);
+
+    ctx.fillStyle = themeColor('ink', '#54483a');
+    ctx.font = '500 11.5px system-ui, -apple-system, sans-serif';
+    lines.forEach((line, i) => ctx.fillText(line, textX, y + 36 + i * 15));
+
+    ctx.fillStyle = themeColor('muted', '#8a7f70');
+    ctx.font = '500 10px system-ui, -apple-system, sans-serif';
+    ctx.fillText('Tap this card to dismiss', textX, y + cardH - 8);
+
+    this.drawHintGlyph(ctx, this.hint.key, x + padX, y + 26, glyphW, cardH - 38);
+    ctx.restore();
+
+    this.hintRect = { x, y, w: cardW, h: cardH };
+  }
+
+  /** The figure a hint names, drawn as cord and marks. No target is moved or marked. */
+  drawHintGlyph(ctx, key, x, y, w, h) {
+    const EIGHTS = new Set(['figure8', 'counterpartPair', 'lacewingCounterpart', 'nursery', 'mixedEcho', 'twinSeedWing']);
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    const cord = themeColor('muted', '#9a8f7c');
+    const ink = themeColor('ink', '#4a4235');
+
+    const dot = (dx, dy, filled = true) => {
+      ctx.beginPath();
+      ctx.arc(dx, dy, 3, 0, Math.PI * 2);
+      if (filled) {
+        ctx.fillStyle = ink;
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 1.1;
+        ctx.stroke();
+      }
+    };
+
+    ctx.save();
+    ctx.strokeStyle = cord;
+    ctx.lineWidth = 1.6;
+
+    if (key === 'trace') {
+      ctx.beginPath();
+      ctx.moveTo(x + 2, cy + 10);
+      ctx.quadraticCurveTo(cx, cy - 16, x + w - 2, cy + 10);
+      ctx.stroke();
+      dot(x + 8, cy + 4);
+      dot(cx, cy - 5);
+      dot(x + w - 8, cy + 4);
+    } else if (EIGHTS.has(key)) {
+      const r = Math.min(w * 0.24, h * 0.34);
+      ctx.beginPath();
+      ctx.ellipse(cx - r * 0.9, cy, r, r * 0.92, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(cx + r * 0.9, cy, r, r * 0.92, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      dot(cx - r * 0.9, cy);
+      dot(cx + r * 0.9, cy, key !== 'nursery' && key !== 'twinSeedWing');
+    } else {
+      const rx = Math.min(w * 0.42, 24);
+      const ry = Math.min(h * 0.42, 20);
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      if (key === 'trio' || key === 'seedTrio') {
+        dot(cx - 8, cy + 4);
+        dot(cx + 8, cy + 4);
+        dot(cx, cy - 6);
+        if (key === 'seedTrio') dot(cx + 13, cy - 7, false);
+      } else if (key === 'seedWing') {
+        dot(cx - 6, cy);
+        dot(cx + 7, cy, false);
+      } else {
+        dot(cx - 6, cy);
+        dot(cx + 6, cy);
+      }
+    }
+    ctx.restore();
+  }
+
   drawStamps(ctx) {
     for (const s of this.stamps) {
       ctx.save();
@@ -1710,11 +1964,11 @@ export class Game {
       const secondsLeft = Math.ceil(this.clock.remainingSeconds);
       const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
       const ss = String(secondsLeft % 60).padStart(2, '0');
-      ctx.fillText(`${mm}:${ss}`, 52, 28);
+      ctx.fillText(this.isUntimed() ? '--:--' : `${mm}:${ss}`, 52, 28);
 
       ctx.fillStyle = themeColor('muted', '#8a7f70');
       ctx.font = '500 10px system-ui, -apple-system, sans-serif';
-      ctx.fillText(this.isClockHeld() ? 'Waiting' : 'Clock', 52, 40);
+      ctx.fillText(this.isUntimed() ? 'Untimed' : (this.isClockHeld() ? 'Waiting' : 'Clock'), 52, 40);
 
       // Top-Right: Objective & Score
       const objEntries = Object.entries(this.campaign.objectiveProgress);
@@ -1781,11 +2035,15 @@ export class Game {
       const secondsLeft = Math.ceil(this.clock.remainingSeconds);
       const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
       const ss = String(secondsLeft % 60).padStart(2, '0');
-      ctx.fillText(`${mm}:${ss}`, 74, 38);
+      ctx.fillText(this.isUntimed() ? '--:--' : `${mm}:${ss}`, 74, 38);
 
       ctx.fillStyle = themeColor('muted', '#8a7f70');
       ctx.font = '500 11px system-ui, -apple-system, sans-serif';
-      ctx.fillText(this.isClockHeld() ? 'Starts after first loop' : 'Dandelion Clock', 74, 52);
+      ctx.fillText(
+        this.isUntimed() ? 'Untimed practice' : (this.isClockHeld() ? 'Starts after first loop' : 'Dandelion Clock'),
+        74,
+        52
+      );
 
       const cx = this.width / 2;
       ctx.fillStyle = themeColor('panel', 'rgba(255, 255, 255, 0.7)');
@@ -1957,18 +2215,20 @@ export class Game {
 
   drawReadyModal(ctx) {
     const lvl = this.currentLevel;
-    const teachMidnight01 = lvl.id === 'midnight-01' || lvl.id === 'practice-midnight' || lvl.id === 'practice-string-trace';
-    const teachMidnight02 = lvl.id === 'midnight-02';
-    const teachMidnight03 = lvl.id === 'midnight-03';
-    const teachLacewing = lvl.id === 'dusk-01' || lvl.id === 'practice-dusk';
-    const teachDusk02 = lvl.id === 'dusk-02';
-    const teachDusk03 = lvl.id === 'dusk-03';
-    const teachCounterpart = lvl.id === 'noon-01' || lvl.id === 'practice-noon';
-    const teachNursery = lvl.id === 'noon-02';
-    const teachSeedTrio = lvl.id === 'noon-03';
-    const teachDawn01 = lvl.id === 'dawn-01';
-    const teachDawn02 = lvl.id === 'dawn-02';
-    const teachDawn03 = lvl.id === 'dawn-03';
+    // Untimed practice copies keep the visit's teaching diagram.
+    const lid = lvl.practiceOf || lvl.id;
+    const teachMidnight01 = lid === 'midnight-01' || lid === 'practice-midnight' || lid === 'practice-string-trace';
+    const teachMidnight02 = lid === 'midnight-02';
+    const teachMidnight03 = lid === 'midnight-03';
+    const teachLacewing = lid === 'dusk-01' || lid === 'practice-dusk';
+    const teachDusk02 = lid === 'dusk-02';
+    const teachDusk03 = lid === 'dusk-03';
+    const teachCounterpart = lid === 'noon-01' || lid === 'practice-noon';
+    const teachNursery = lid === 'noon-02';
+    const teachSeedTrio = lid === 'noon-03';
+    const teachDawn01 = lid === 'dawn-01';
+    const teachDawn02 = lid === 'dawn-02';
+    const teachDawn03 = lid === 'dawn-03';
     const teachDawn = teachDawn01 || teachDawn02 || teachDawn03;
     const teachDusk = teachLacewing || teachDusk02 || teachDusk03;
     const teachMidnight = teachMidnight01 || teachMidnight02 || teachMidnight03;
@@ -2439,7 +2699,11 @@ export class Game {
 
       ctx.font = isNarrow ? '12px system-ui, -apple-system, sans-serif' : '13px system-ui, -apple-system, sans-serif';
       ctx.fillStyle = themeColor('ink', '#54483a');
-      ctx.fillText('Remaining Time: ' + Math.ceil(this.clock.remainingSeconds) + 's', 0, -10);
+      ctx.fillText(
+        this.isUntimed() ? 'Untimed practice — no clock' : 'Remaining Time: ' + Math.ceil(this.clock.remainingSeconds) + 's',
+        0,
+        -10
+      );
 
       // Objectives progress
       const objEntries = Object.entries(this.campaign.objectiveProgress);
@@ -2455,28 +2719,68 @@ export class Game {
 
   drawGameOverModal(ctx) {
     const lvl = this.currentLevel;
-    this.drawModalBox(ctx, 450, 260, (boxW, boxH) => {
+    const canPractice = !this.isUntimed() && CAMPAIGN_LEVELS.some(l => l.id === lvl?.id);
+    this.gameOverOptions = [];
+    this.drawModalBox(ctx, 460, 320, (boxW, boxH) => {
       const isNarrow = boxW < 440;
       ctx.fillStyle = themeColor('petite', '#6e3535');
       ctx.font = isNarrow ? '600 22px Mali, sans-serif' : '600 27px Mali, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('The Hour Has Passed', 0, -boxH / 2 + 38);
+      ctx.fillText('The Hour Has Passed', 0, -boxH / 2 + 36);
 
       ctx.font = isNarrow ? 'italic 12px Mali, sans-serif' : 'italic 14px Mali, sans-serif';
       ctx.fillStyle = themeColor('muted', '#8f5c5c');
-      ctx.fillText('The dandelion seeds took flight into the morning breeze.', 0, -boxH / 2 + 60);
+      ctx.fillText(GAME_OVER_LINES[lvl?.hour] || GAME_OVER_LINES.dawn, 0, -boxH / 2 + 58);
 
       ctx.font = isNarrow ? '12px system-ui, -apple-system, sans-serif' : '13px system-ui, -apple-system, sans-serif';
       ctx.fillStyle = themeColor('ink', '#42372b');
 
       const objEntries = Object.entries(this.campaign.objectiveProgress);
       const objText = objEntries.map(([k, o]) => `${o.label}: ${o.current}/${o.target}`).join(' • ');
-      ctx.fillText(objText, 0, 0);
-      ctx.fillText(`Score: ${this.score} points`, 0, 26);
+      ctx.fillText(objText, 0, -boxH / 2 + 88);
+      ctx.fillText(`Score: ${this.score} points`, 0, -boxH / 2 + 110);
 
-      ctx.fillStyle = themeColor('ink', '#5c4538');
-      ctx.font = isNarrow ? '600 12px system-ui, -apple-system, sans-serif' : '600 14px system-ui, -apple-system, sans-serif';
-      ctx.fillText(isNarrow ? '[ Tap to Retry Visit ]' : '[ Click or Press Space to Retry Visit ]', 0, boxH / 2 - 22);
+      // Options. Each row is clickable; Space keeps taking the first one.
+      const rows = [
+        { action: 'retry', label: isNarrow ? 'Retry visit (Space)' : 'Retry visit — starts at the ready screen (Space)' },
+      ];
+      if (canPractice) {
+        rows.push({
+          action: 'practice',
+          label: isNarrow ? 'Practice this visit (untimed)' : 'Practice this visit — untimed, progress not saved',
+        });
+      }
+      rows.push({ action: 'select', label: 'Level select' });
+
+      const rowH = isNarrow ? 30 : 34;
+      const gap = 8;
+      const rowW = Math.min(boxW - 48, 360);
+      const totalH = rows.length * rowH + (rows.length - 1) * gap;
+      let rowY = boxH / 2 - 22 - totalH;
+
+      for (const row of rows) {
+        ctx.fillStyle = themeColor('panel', '#f6f1e4');
+        ctx.strokeStyle = themeColor('edge', '#d8ccb6');
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        drawRoundedRect(ctx, -rowW / 2, rowY, rowW, rowH, 9);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = themeColor('ink', '#5c4538');
+        ctx.font = isNarrow ? '600 11.5px system-ui, -apple-system, sans-serif' : '600 13px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(row.label, 0, rowY + rowH / 2 + 4);
+
+        this.gameOverOptions.push({
+          action: row.action,
+          x: this.width / 2 - rowW / 2,
+          y: this.height / 2 + rowY,
+          w: rowW,
+          h: rowH,
+        });
+        rowY += rowH + gap;
+      }
     });
   }
 

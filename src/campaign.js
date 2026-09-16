@@ -670,6 +670,20 @@ export function deriveObjectiveTags(drawingResult, pockets) {
   return tags;
 }
 
+/**
+ * True when the player has unlocked or completed at least one visit of that hour.
+ * The visit list and the Field Book both use it, so a Dawn player is not shown
+ * Midnight's species and figures before reaching them.
+ */
+export function isHourReached(saveState, hour) {
+  if (hour === 'dawn') return true;
+  const highest = saveState?.highestUnlockedIndex || 0;
+  const completed = saveState?.completedLevelIds || [];
+  return CAMPAIGN_LEVELS.some(
+    (level, index) => level.hour === hour && (index <= highest || completed.includes(level.id))
+  );
+}
+
 const STORAGE_KEY = 'dth_campaign_save_v1';
 
 export class CampaignSaveManager {
@@ -738,9 +752,38 @@ export class CampaignManager {
   constructor() {
     this.saveState = CampaignSaveManager.load();
     this.currentMode = 'campaign'; // 'campaign' | 'practice'
-    this.currentLevel = CAMPAIGN_LEVELS[0];
+    // A reload resumes the saved visit (CAMPAIGN.md, save section). An unknown or
+    // not-yet-playable saved ID falls back to the first visit.
+    const saved = CAMPAIGN_LEVELS.find(
+      level => level.id === this.saveState.currentLevelId && PLAYABLE_LEVEL_IDS.has(level.id)
+    );
+    this.resumedFromSave = Boolean(saved) && saved.id !== CAMPAIGN_LEVELS[0].id;
+    this.currentLevel = saved || CAMPAIGN_LEVELS[0];
+    // The untimed practice copy of a campaign visit, built on demand after a failure.
+    this.practiceVisit = null;
     this.objectiveProgress = {};
     this.initProgress(this.currentLevel);
+  }
+
+  /**
+   * Untimed practice copy of a campaign visit, offered after a failure.
+   * It keeps the visit's cast and objectives, runs in practice mode, and so
+   * writes no completion, unlock, or best score (CAMPAIGN.md, retry section).
+   */
+  startPracticeOf(levelId) {
+    const source = CAMPAIGN_LEVELS.find(level => level.id === levelId);
+    if (!source) return null;
+    this.practiceVisit = {
+      ...source,
+      id: 'practice-visit',
+      hourLabel: `Practice · ${source.hourLabel}`,
+      practiceOf: source.id,
+      untimed: true,
+      clockStartsOnFirstCombination: false,
+    };
+    this.currentMode = 'practice';
+    this.initProgress(this.practiceVisit);
+    return this.practiceVisit;
   }
 
   unlockAll() {
@@ -766,6 +809,11 @@ export class CampaignManager {
   }
 
   setLevelById(id) {
+    if (this.practiceVisit && id === this.practiceVisit.id) {
+      this.currentMode = 'practice';
+      this.initProgress(this.practiceVisit);
+      return this.practiceVisit;
+    }
     const foundCamp = CAMPAIGN_LEVELS.find(l => l.id === id);
     if (foundCamp && PLAYABLE_LEVEL_IDS.has(foundCamp.id)) {
       this.currentMode = 'campaign';

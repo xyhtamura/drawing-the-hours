@@ -77,6 +77,13 @@ the ready screen, never in a half-drawn gesture. Unlock the next level on
 completion; preserve replay access. Keep the prototype's two waves separately
 accessible as **Practice** for comparison. They are not campaign level IDs.
 
+The visit list offers what the save has reached: the highest unlocked index,
+completed IDs, and the visit in play, with the practice verge for an hour
+appearing with that hour. The Field Book follows the same gate, so a Dawn player
+is not shown Midnight's species and figures. The Unlock All in Save control is
+for playtesting and appears only when the page is opened with `?dev`; the
+console hooks `unlockAllLevels()` and `resetProgress()` are always available.
+
 ## Gradual additions to the prototype
 
 Xyh explicitly supports new insects and mechanics within these twelve levels.

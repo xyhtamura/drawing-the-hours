@@ -65,12 +65,22 @@
           <p>Folded sulphur-yellow paper wings. Wanders leisurely with delicate flutter and resting glides.</p>
         </div>
       </div>
-      <div class="recipe-entry">
+      <div class="recipe-entry" data-reveal-hour="midnight">
         <span class="entry-badge" style="background:#e0f2fe; color:#0369a1;">Species</span>
         <div class="recipe-info">
           <h3>Window Firefly</h3><p>Appears at Midnight. A slow beetle with a pale abdomen that stays visible between glows. Target radius stays the same throughout the glow cycle.</p>
           <h3>Ordered Trace</h3><p>Thread a firefly, a lacewing, then a different firefly in one stroke. Release to finish; the line can stay open or close. Numbered badges show the sequence. Repeating an insect does not count again. A wrong order, extra insects, or enclosing another creature cancels the trace. Leaves do not count.</p>
+        </div>
+      </div>
+      <div class="recipe-entry" data-reveal-hour="dusk">
+        <span class="entry-badge" style="background:#dcfce7; color:#166534;">Species</span>
+        <div class="recipe-info">
           <h3>Paper Lacewing</h3><p>Appears at Dusk. Mint veined wings fold while it rests on a leaf for 1.5 seconds. Draw a figure-eight with one lacewing and one different insect in separate pockets. Leaves do not count as targets.</p>
+        </div>
+      </div>
+      <div class="recipe-entry" data-reveal-hour="noon">
+        <span class="entry-badge" style="background:#fef9c3; color:#854d0e;">Species</span>
+        <div class="recipe-info">
           <h3>Amber Hoverfly</h3><p>Appears at Noon. Holds still, turns, then shifts a short distance. Draw a figure-eight around one hoverfly and one Brimstone, with one insect in each pocket.</p>
         </div>
       </div>
@@ -102,7 +112,7 @@
         <span class="entry-badge" style="background:#fee2e2; color:#991b1b;">Caution</span>
         <div class="recipe-info">
           <h3>Threading &amp; Beads</h3>
-          <p>Drawing your line through an insect threads it onto the cord as a bead. A threaded insect cancels the loop, except in a Trace: a firefly, a lacewing, then a different firefly, threaded in that order in one stroke. To enclose insects, draw around them.</p>
+          <p>Drawing your line through an insect threads it onto the cord as a bead. A threaded insect cancels the loop. To enclose insects, draw around them.</p>
         </div>
       </div>
       <div class="recipe-entry">
@@ -140,7 +150,7 @@
         </div>
       </div>
 
-      <div class="recipe-entry">
+      <div class="recipe-entry" data-reveal-hour="noon">
         <span class="entry-badge badge-single">Single Loop</span>
         <div class="recipe-info">
           <h3>Seed &amp; Trio</h3>
@@ -148,7 +158,7 @@
         </div>
       </div>
 
-      <div class="recipe-entry">
+      <div class="recipe-entry" data-reveal-hour="noon">
         <span class="entry-badge badge-double">Figure-Eight</span>
         <div class="recipe-info">
           <h3>Counterpart Pair (Two Dissimilar Species)</h3>
@@ -172,7 +182,7 @@
         </div>
       </div>
 
-      <div class="recipe-entry">
+      <div class="recipe-entry" data-reveal-hour="noon">
         <span class="entry-badge badge-double">Figure-Eight</span>
         <div class="recipe-info">
           <h3>Nursery Polarity</h3>
@@ -197,7 +207,7 @@
     <div class="recipe-card visit-card">
       <h2>Meadow Visits &amp; Hours</h2>
       <div class="field-intro">
-        Select any chapter visit across the four hours of the day, or return to an open practice verge. All 12 visits are playable.
+        Select a visit you have reached, or return to an open practice verge. Later visits unlock as you finish the one before.
       </div>
 
       <div class="visit-section">
@@ -219,7 +229,7 @@
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; gap:8px;">
-        <button id="btn-unlock-all-visits" style="background:#f4ece1; border:1px solid #d4c5b0; border-radius:6px; color:#5c4837; padding:7px 12px; font-size:0.8rem; cursor:pointer; font-family:inherit;">🔓 Unlock All in Save</button>
+        <button id="btn-unlock-all-visits" hidden style="background:#f4ece1; border:1px solid #d4c5b0; border-radius:6px; color:#5c4837; padding:7px 12px; font-size:0.8rem; cursor:pointer; font-family:inherit;">🔓 Unlock All in Save</button>
         <button id="btn-close-visit-modal" class="close-btn" style="margin-top:0;">Return to Visit</button>
       </div>
     </div>
@@ -229,7 +239,7 @@
     import { getColorMode, setColorMode } from './src/theme.js';
     import { Game } from './src/game.js';
     import { audio } from './src/audio.js';
-    import { CAMPAIGN_LEVELS, PRACTICE_LEVELS, PLAYABLE_LEVEL_IDS, CampaignSaveManager } from './src/campaign.js';
+    import { CAMPAIGN_LEVELS, PRACTICE_LEVELS, PLAYABLE_LEVEL_IDS, CampaignSaveManager, isHourReached } from './src/campaign.js';
 
     const canvas = document.getElementById('game-canvas');
     // Finish local font loading before measuring canvas text. Failure uses fallbacks.
@@ -350,7 +360,11 @@
       for (const [hour, list] of [['dawn', visitListDawn], ['noon', visitListNoon], ['dusk', visitListDusk], ['midnight', visitListMidnight]]) {
         if (!list) continue;
         list.innerHTML = CAMPAIGN_LEVELS.filter(lvl => lvl.hour === hour && PLAYABLE_LEVEL_IDS.has(lvl.id)).map(lvl => {
-          const isUnlocked = PLAYABLE_LEVEL_IDS.has(lvl.id) || (CAMPAIGN_LEVELS.indexOf(lvl) <= highestUnlocked);
+          // Reached visits only: the save's highest unlocked index, anything already
+          // completed, and the visit in play. Unlock All in Save opens the rest.
+          const isUnlocked = CAMPAIGN_LEVELS.indexOf(lvl) <= highestUnlocked
+            || save.completedLevelIds.includes(lvl.id)
+            || lvl.id === currentId;
           const isCompleted = save.completedLevelIds.includes(lvl.id);
           const isActive = lvl.id === currentId;
           const bestScore = save.bestScores ? save.bestScores[lvl.id] : undefined;
@@ -385,7 +399,7 @@
 
       // Practice levels
       if (visitListPractice) {
-        visitListPractice.innerHTML = PRACTICE_LEVELS.map(lvl => {
+        visitListPractice.innerHTML = PRACTICE_LEVELS.filter(lvl => isHourReached(save, lvl.hour)).map(lvl => {
           const isActive = lvl.id === currentId;
           return `
             <div class="visit-item ${isActive ? 'active' : ''}" data-level-id="${lvl.id}">
@@ -416,9 +430,23 @@
       }
     };
 
+    // Hours the player has not reached stay out of the Field Book, so a Dawn
+    // player is not shown Midnight's species and figures.
+    const applyFieldBookReveal = () => {
+      const save = game.campaign.saveState;
+      const playingHour = game.currentLevel?.practiceOf
+        ? CAMPAIGN_LEVELS.find(l => l.id === game.currentLevel.practiceOf)?.hour
+        : game.currentLevel?.hour;
+      modal.querySelectorAll('[data-reveal-hour]').forEach(el => {
+        const hour = el.getAttribute('data-reveal-hour');
+        el.hidden = !isHourReached(save, hour) && hour !== playingHour;
+      });
+    };
+
     game.onLevelChanged = (level) => {
       updateLevelUI(level);
       renderVisitModal();
+      applyFieldBookReveal();
     };
 
     game.onStateChanged = () => {
@@ -436,8 +464,17 @@
       }
     };
 
-    // Canvas click to advance modals
-    canvas.addEventListener('click', advanceOrRestart);
+    // Canvas click: failure-screen options and the hint card take the click first.
+    canvas.addEventListener('click', (e) => {
+      if (modal && modal.classList.contains('active')) return;
+      if (visitModal && visitModal.classList.contains('active')) return;
+      const rect = canvas.getBoundingClientRect();
+      if (game.handleOverlayClick(e.clientX - rect.left, e.clientY - rect.top)) {
+        btnPause.textContent = '⏸ Pause';
+        return;
+      }
+      advanceOrRestart();
+    });
 
     // Toggle Field Book. Opening pauses the visit; closing resumes it, but only
     // if the Field Book is what paused it.
@@ -513,6 +550,7 @@
       btnUnlockAllVisits.addEventListener('click', () => {
         game.campaign.unlockAll();
         renderVisitModal();
+        applyFieldBookReveal();
       });
     }
 
@@ -575,16 +613,24 @@
     // Initial UI setup
     updateLevelUI(game.currentLevel);
     renderVisitModal();
+    applyFieldBookReveal();
+
+    // Playtesting route: ?dev shows the save controls. Players never see them;
+    // the console hooks below stay available either way.
+    const devMode = new URLSearchParams(location.search).has('dev');
+    if (btnUnlockAllVisits) btnUnlockAllVisits.hidden = !devMode;
 
     // Playtesting and testing hooks
     window.unlockAllLevels = () => {
       game.campaign.unlockAll();
       renderVisitModal();
+      applyFieldBookReveal();
       console.log('All campaign levels unlocked in save.');
     };
     window.resetProgress = () => {
       game.campaign.reset();
       renderVisitModal();
+      applyFieldBookReveal();
       console.log('Campaign progress reset.');
     };
   </script>
