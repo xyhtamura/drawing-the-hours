@@ -14,6 +14,17 @@ Playtest the fixed-size field and pause-menu flow on touch devices, including No
 
 ## Activity
 
+2026-09-18 — Antigravity — Added close X buttons to popups and an on/off hints toggle setting in Settings.
+
+- **Dedicated close X buttons on popups.** Added delicate circular paper close buttons (`.modal-close-btn`) to Settings (`#settings-menu`), Field Book (`#fieldbook-modal`), Visits (`#visit-modal`), and Pause Menu (`#pause-menu`). In Field Book and Visits, the close button uses `position: sticky; top: 0; float: right; z-index: 25;` so it is immediately visible without scrolling and stays pinned at the top-right even when reading down lengthy recipe entries. In Pause and Settings shell cards, it is pinned with `position: absolute; top: 16px; right: 16px;` to preserve centered title alignment. The bottom "Back to menu" / "Resume" buttons remain for backwards compatibility and keyboard users. Clicking the modal backdrop outside the card also dismisses the popup (resumes game on Pause, returns to Pause menu on sub-modals).
+- **Hints toggle in Settings.** Added `<button id="btn-hints">` in Settings allowing players to toggle the stalled-play hint on or off (`Hints: On` / `Hints: Off`), styled identically to the Sound toggle. Setting state is persisted in `localStorage` under `drawing-the-hours-hints`. When disabled, `updateHint(dt)` returns immediately without accumulating stalled time or showing a hint; disabling hints during active play immediately dismisses any active hint card and rectangle.
+
+Verification:
+- `test/test_flow.js`: added suite 9 verifying hints toggle initialization, storage persistence, timer suppression, active hint dismissal on disable, presence of `#btn-hints` and all four `#btn-close-*-x` buttons, backdrop click listeners, and CSS sticky/absolute positioning rules.
+- `test/shell-browser.html`: updated iframe browser test suite with checks for Settings close X, Hints button toggle on/off, Field Book close X, Visits modal close X, and Pause close X.
+- Automated browser verification in headless Edge driving `http://localhost:8000/drawing-the-hours/index.html` via Chrome DevTools Protocol: verified title begin, pause menu opening and close X resume, settings menu opening and close X return, hints toggle button text and localStorage persistence ('off' / 'on'), field book close X return without scrolling, visits close X return, and backdrop click dismissal.
+- All unit test suites pass (`test_flow.js`, `test_noon.js`, `test_mechanics.js`, `test_dusk.js`, `test_midnight.js`, `test_jasmine.js`, `test_string_sandbox.js`), `node --check` passes cleanly on all modified files, and `git diff --check` passes.
+
 2026-09-17 — Antigravity — Added level completion fade-out wash, dedicated Continue button on Visit Complete card to prevent accidental advance, and reduced Noon VI web hazard to one web.
 
 - **Level fade-out before Visit Complete.** When all visit objectives are met, `victoryDelay` extends to 1.35 s: the player first sees the completion stamp and banner, then over the final 1.05 s the field, moving inhabitants, and HUD smoothly dim under a soft parchment wash (`rgba(40, 32, 28, ...)`). When the state changes to `LEVEL_COMPLETE`, the modal eases in over 0.25 s, removing the jarring snap.

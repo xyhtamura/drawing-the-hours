@@ -56,7 +56,7 @@ const SAVE_KEY = 'dth_campaign_save_v1';
 console.log('--- Running Flow Test Suite (failure, hint, resume, gates) ---');
 
 const { CAMPAIGN_LEVELS, CampaignManager, isHourReached } = await import('../src/campaign.js');
-const { Game } = await import('../src/game.js');
+const { Game, HINTS_STORAGE_KEY } = await import('../src/game.js');
 
 // 1. Hour gates
 {
@@ -288,6 +288,63 @@ const { Game } = await import('../src/game.js');
   assert.equal(game.currentLevel.id, 'dawn-02', 'Clicking Continue advances to the next visit');
 
   console.log('✔ Visit complete Continue button and click swallowing verified.');
+}
+
+// 9. Hints setting toggle and popup close buttons
+{
+  // 9a. Hints toggle and persistence in Game
+  installStorage({});
+  const canvas = makeCanvas();
+  const game = new Game(canvas);
+  assert.equal(game.hintsEnabled, true, 'Hints are enabled by default');
+
+  game.setHintsEnabled(false);
+  assert.equal(game.hintsEnabled, false, 'Hints can be disabled');
+  assert.equal(globalThis.localStorage.getItem(HINTS_STORAGE_KEY), 'off', 'Disabled hints persist to storage as "off"');
+
+  // New Game instance loads disabled hints from storage
+  const gameOff = new Game(canvas);
+  assert.equal(gameOff.hintsEnabled, false, 'Game constructor reads disabled hints from storage');
+
+  // Disabled hints never show hint card even after stalling
+  gameOff.initLevel('dawn-01');
+  gameOff.state = 'PLAYING';
+  for (let i = 0; i < 150; i++) gameOff.update(0.1);
+  assert.equal(gameOff.hint, null, 'No hint appears when hints are disabled');
+  assert.equal(gameOff.hintTimer, 0, 'Hint timer does not tick when hints are disabled');
+
+  // Toggle hints back on
+  assert.equal(gameOff.toggleHints(), true, 'toggleHints toggles to true');
+  assert.equal(gameOff.hintsEnabled, true, 'hintsEnabled is now true');
+  assert.equal(globalThis.localStorage.getItem(HINTS_STORAGE_KEY), 'on', 'Enabled hints persist to storage as "on"');
+
+  // With hints re-enabled, hint appears after twelve seconds of stalled play
+  for (let i = 0; i < 130; i++) gameOff.update(0.1);
+  assert.ok(gameOff.hint, 'Hint appears when hints are re-enabled');
+
+  // Disabling hints while a hint is on-screen immediately dismisses it
+  gameOff.setHintsEnabled(false);
+  assert.equal(gameOff.hint, null, 'Disabling hints dismisses active hint');
+  assert.equal(gameOff.hintRect, null, 'Disabling hints clears hintRect');
+
+  // 9b. Markup and CSS assertions for close X buttons and hints toggle
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /id="btn-hints"[^>]*>Hints: On<\/button>/, 'index.html has btn-hints toggle button');
+  assert.match(html, /id="btn-close-settings-x"/, 'Settings menu has close X button');
+  assert.match(html, /id="btn-close-fieldbook-x"/, 'Field book modal has close X button');
+  assert.match(html, /id="btn-close-visit-modal-x"/, 'Visit modal has close X button');
+  assert.match(html, /id="btn-close-pause-x"/, 'Pause menu has close X button');
+  assert.match(html, /btnClosePauseX\.onclick = \(\) => showPanel\(null\)/, 'Pause close X resumes game');
+  assert.match(html, /btnCloseSettingsX\.onclick = openMenu/, 'Settings close X returns to menu');
+  assert.match(html, /btnCloseFieldbookX\.onclick = openMenu/, 'Field book close X returns to menu');
+  assert.match(html, /btnCloseVisitModalX\.onclick = openMenu/, 'Visit modal close X returns to menu');
+  assert.match(html, /panel\.addEventListener\('click'/, 'Panels have backdrop click handler');
+
+  const css = fs.readFileSync(new URL('../style.css', import.meta.url), 'utf8');
+  assert.match(css, /\.modal-close-btn\s*\{[^}]*position:\s*sticky/, 'CSS gives modal close button sticky positioning');
+  assert.match(css, /\.shell-card \.modal-close-btn\s*\{[^}]*position:\s*absolute/, 'CSS pins close button absolutely in shell cards');
+
+  console.log('✔ Hints setting toggle, storage persistence, active dismissal, and popup close X buttons verified.');
 }
 
 console.log('--- All flow tests passed! ---');

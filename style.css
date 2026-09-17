@@ -8,6 +8,7 @@ html[data-color-mode="default"] button:focus-visible { outline-color: var(--text
 html[data-color-mode="default"] #btn-visit,
 html[data-color-mode="default"] #btn-gesture-mode,
 html[data-color-mode="default"] .close-btn,
+html[data-color-mode="default"] .modal-close-btn,
 html[data-color-mode="default"] .visit-item {
   background: var(--panel-bg); color: var(--text-dark); border-color: var(--border-paper);
 }
@@ -117,7 +118,7 @@ body {
     radial-gradient(ellipse at 95% 100%, #e1e8d5 0, transparent 55%);
 }
 
-#btn-visit, .close-btn {
+#btn-visit, .close-btn, .modal-close-btn {
   background: #f4dce3;
   border-color: #d3aaba;
   color: #713e52;
@@ -203,6 +204,7 @@ footer {
 }
 
 .recipe-card {
+  position: relative;
   background: var(--panel-bg);
   border: 2px solid var(--border-paper);
   border-radius: 14px;
@@ -278,6 +280,52 @@ footer {
   margin-top: 14px;
   width: 100%;
   justify-content: center;
+}
+
+.modal-close-btn {
+  position: sticky;
+  top: 0;
+  float: right;
+  z-index: 25;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0;
+  margin: -4px -4px 0 8px;
+  border-radius: 50%;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(50, 40, 30, 0.08);
+  transition: all 0.15s ease;
+}
+
+.modal-close-btn:hover {
+  background: #ffffff;
+  border-color: #b5a489;
+  transform: scale(1.06);
+}
+
+.modal-close-btn:active {
+  transform: scale(0.94);
+}
+
+.modal-close-btn:focus-visible {
+  outline: 3px solid #985477;
+  outline-offset: 2px;
+}
+
+.shell-card .modal-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  margin: 0;
 }
 
 /* =========================================================

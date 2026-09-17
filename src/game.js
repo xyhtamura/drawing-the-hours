@@ -43,6 +43,7 @@ const JASMINE_REGROW = 12;
 // Seconds of play without objective progress before the hint card appears
 // (CAMPAIGN.md, tuning section). Dismissing it starts the count again.
 const HINT_DELAY_SECONDS = 12;
+export const HINTS_STORAGE_KEY = 'drawing-the-hours-hints';
 
 // One line per unfinished requirement. The hint names the figure and its shape;
 // it never points at particular insects on the field.
@@ -144,6 +145,11 @@ export class Game {
     this.jasmineStart = null;
 
     // Stalled-play hint and failure-screen options
+    let hints = true;
+    try {
+      if (globalThis.localStorage?.getItem(HINTS_STORAGE_KEY) === 'off') hints = false;
+    } catch {}
+    this.hintsEnabled = hints;
     this.hintTimer = 0;
     this.hint = null;
     this.hintRect = null;
@@ -625,7 +631,7 @@ export class Game {
    * target or completes anything.
    */
   updateHint(dt) {
-    if (this.hint) return;
+    if (!this.hintsEnabled || this.hint) return;
     this.hintTimer += dt;
     if (this.hintTimer < HINT_DELAY_SECONDS) return;
     const unfinished = Object.entries(this.campaign.objectiveProgress)
@@ -645,6 +651,21 @@ export class Game {
     this.hint = null;
     this.hintRect = null;
     this.hintTimer = 0;
+  }
+
+  setHintsEnabled(enabled) {
+    this.hintsEnabled = Boolean(enabled);
+    if (!this.hintsEnabled) {
+      this.dismissHint();
+    }
+    try {
+      globalThis.localStorage?.setItem(HINTS_STORAGE_KEY, this.hintsEnabled ? 'on' : 'off');
+    } catch {}
+    return this.hintsEnabled;
+  }
+
+  toggleHints() {
+    return this.setHintsEnabled(!this.hintsEnabled);
   }
 
   /** Run the current campaign visit untimed, without touching campaign progress. */

@@ -21,6 +21,7 @@
     </section>
     <section id="pause-menu" class="recipe-modal" role="dialog" aria-modal="true" aria-labelledby="menu-heading" hidden>
       <div class="recipe-card shell-card">
+        <button class="modal-close-btn close-btn" id="btn-close-pause-x" aria-label="Resume game" title="Resume game">✕</button>
         <h1 id="menu-heading">Drawing the Hours</h1>
         <p id="header-sub"></p>
         <nav class="menu-buttons" aria-label="Pause menu">
@@ -36,10 +37,12 @@
     </section>
     <section id="settings-menu" class="recipe-modal" role="dialog" aria-modal="true" aria-labelledby="settings-heading" hidden>
       <div class="recipe-card shell-card">
+        <button class="modal-close-btn close-btn" id="btn-close-settings-x" aria-label="Back to menu" title="Back to menu">✕</button>
         <h2 id="settings-heading">Settings</h2>
         <div class="menu-buttons">
           <button id="btn-color-mode" aria-label="Pure light colors" aria-pressed="false">Colors: Default</button>
           <button id="btn-audio">Sound: On</button>
+          <button id="btn-hints" aria-label="Toggle hints" aria-pressed="true">Hints: On</button>
           <button id="btn-settings-back">Back to menu</button>
         </div>
         <p>The field keeps its proportions and scales to fit your screen.</p>
@@ -50,6 +53,7 @@
   <!-- Field Book Modal -->
   <div id="fieldbook-modal" class="recipe-modal" role="dialog" aria-modal="true">
     <div class="recipe-card">
+      <button class="modal-close-btn close-btn" id="btn-close-fieldbook-x" aria-label="Back to menu" title="Back to menu">✕</button>
       <h2>Meadow Field Book</h2>
       <div class="field-intro">
         Harmonious relationships observed during quiet morning visits. Draw temporary cotton cord around moving meadow creatures to reveal their connections.
@@ -233,6 +237,7 @@
   <!-- Visit / Chapter Selection Modal -->
   <div id="visit-modal" class="recipe-modal" role="dialog" aria-modal="true">
     <div class="recipe-card visit-card">
+      <button class="modal-close-btn close-btn" id="btn-close-visit-modal-x" aria-label="Back to menu" title="Back to menu">✕</button>
       <h2>Meadow Visits &amp; Hours</h2>
       <div class="field-intro">
         Select a visit you have reached, or return to an open practice verge. Later visits unlock as you finish the one before.
@@ -422,7 +427,10 @@
       if (!id && game.state === 'PAUSED') game.togglePause();
       changingPanel = false;
       const panel = id && document.getElementById(id);
-      (panel?.querySelector('button:not([hidden]):not([disabled])') || canvas).focus({preventScroll:true});
+      const defaultBtn = panel?.querySelector('.menu-buttons button:not([hidden]):not([disabled]), .visit-item.current, .visit-item.active, button:not(.modal-close-btn):not([hidden]):not([disabled])')
+        || panel?.querySelector('button:not([hidden]):not([disabled])')
+        || canvas;
+      defaultBtn.focus({preventScroll:true});
     };
     const openMenu = () => showPanel('pause-menu');
     const toggleFieldbook = (open = activePanel !== 'fieldbook-modal') => {
@@ -466,6 +474,36 @@
     btnAudio.onclick = () => {
       btnAudio.textContent = audio.toggleMute() ? 'Sound: Off' : 'Sound: On';
     };
+    const btnHints = document.getElementById('btn-hints');
+    const updateHintsUI = () => {
+      if (!btnHints) return;
+      const on = game.hintsEnabled;
+      btnHints.textContent = on ? 'Hints: On' : 'Hints: Off';
+      btnHints.setAttribute('aria-pressed', String(on));
+    };
+    updateHintsUI();
+    if (btnHints) {
+      btnHints.onclick = () => {
+        game.toggleHints();
+        updateHintsUI();
+      };
+    }
+    const btnClosePauseX = document.getElementById('btn-close-pause-x');
+    const btnCloseSettingsX = document.getElementById('btn-close-settings-x');
+    const btnCloseFieldbookX = document.getElementById('btn-close-fieldbook-x');
+    const btnCloseVisitModalX = document.getElementById('btn-close-visit-modal-x');
+    if (btnClosePauseX) btnClosePauseX.onclick = () => showPanel(null);
+    if (btnCloseSettingsX) btnCloseSettingsX.onclick = openMenu;
+    if (btnCloseFieldbookX) btnCloseFieldbookX.onclick = openMenu;
+    if (btnCloseVisitModalX) btnCloseVisitModalX.onclick = openMenu;
+    panels.forEach(panel => {
+      panel.addEventListener('click', (e) => {
+        if (e.target === panel) {
+          if (panel.id === 'pause-menu') showPanel(null);
+          else if (panel.id !== 'title-screen') openMenu();
+        }
+      });
+    });
     btnUnlockAllVisits.onclick = () => {
       game.campaign.unlockAll(); renderVisitModal(); applyFieldBookReveal();
     };
