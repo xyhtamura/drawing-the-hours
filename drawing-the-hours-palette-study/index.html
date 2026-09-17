@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Drawing the Hours · Palette study</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header><div><p class="eyebrow">Drawing the Hours / side study</p><h1>Four hours, in color.</h1>
+  <p class="intro">Try chapter palettes before applying them to the game. These scenes are independent approximations.</p></div>
+  <div class="file-actions"><button id="export">Export palettes</button><label class="file-button">Import palettes<input id="import" type="file" accept=".json,application/json"></label></div></header>
+  <section class="set-bar" aria-label="Whole-day palettes"><label for="set">Day palette set</label><select id="set"></select><button id="apply-set">Apply to all four hours</button><span id="status" role="status" aria-live="polite">Changes save in this browser.</span></section>
+  <nav id="hours" aria-label="Select chapter"></nav>
+  <main>
+    <section class="preview-area" aria-labelledby="preview-title">
+      <div class="section-head"><div><p class="eyebrow">Selected chapter</p><h2 id="preview-title">Midnight</h2></div><button id="png">Save preview PNG</button></div>
+      <div class="preview-shell"><canvas id="preview" width="960" height="620" aria-label="Chapter palette preview. Drag to test cord visibility."></canvas></div>
+      <div class="preview-controls"><label><input type="checkbox" id="card"> Show instruction card</label><label><input type="checkbox" id="motion"> Animate insects</label><label>Test stroke <select id="stroke"><option value="trace">Trace</option><option value="petite">Short cord</option><option value="balanced">Medium cord</option><option value="extended">Long cord</option></select></label><button id="clear">Clear strokes</button></div>
+      <p class="caption">Drag over the preview to test a stroke. All six insects appear here to compare visibility; this is not a playable level.</p>
+      <section class="comparison" aria-labelledby="compare-title"><div class="section-head"><h2 id="compare-title">Across the day</h2><span>Choose a card to edit that hour.</span></div><div id="compare"></div></section>
+      <section class="readability"><h2>Swatch contrast</h2><div id="contrast"></div><p class="caption">Ratios compare solid swatches only. Field results use the lowest ratio against the three wash colors; they do not assess rendered gradients, glow, or motion.</p></section>
+    </section>
+    <aside aria-labelledby="edit-title"><div class="section-head"><h2 id="edit-title">Edit palette</h2><button id="reset">Reset this preset</button></div><label class="preset-label" for="preset">Chapter preset</label><select id="preset"></select><div id="swatches"></div><button id="css">Copy chapter CSS</button><details><summary>Export format</summary><p>JSON contains all four palettes and semantic color roles. Exporting does not change the game. The “current” presets reproduce field wash stops; UI and insect colors are approximated.</p></details></aside>
+  </main>
+  <footer>Standalone study · no game imports, no campaign saves, no external assets.</footer>
+  <script src="palettes.js"></script><script src="lab.js"></script>
+</body></html>
