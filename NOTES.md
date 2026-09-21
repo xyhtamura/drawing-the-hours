@@ -1689,7 +1689,7 @@ scaled insect sizes and the chosen portrait baseline. No cord tuning was changed
 
 
 2026-09-21 — Claude Code — Recorded other stories for the string mechanic in
-[STRING.md](STRING.md)'s companion note, [STORIES.md](STORIES.md): a Filipino
+[STORIES.md](STORIES.md): a Filipino
 edgelands campaign (places, a cast matched to existing species behaviour,
 plants, and two new behaviours), and Xyh's three alternative stories: fish on
 an aquarium or pond trip, buttons and crafts, and words, syllables, and numbers
