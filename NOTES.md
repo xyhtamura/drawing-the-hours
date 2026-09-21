@@ -1686,3 +1686,14 @@ and title screenshots in headless Edge. Existing browser harnesses dismiss the
 new title screen before testing gameplay. Module syntax and diff whitespace
 checks pass. Manual full-day and physical touch playtests remain open, especially
 scaled insect sizes and the chosen portrait baseline. No cord tuning was changed.
+
+
+2026-09-21 — Claude Code — Recorded other stories for the string mechanic in
+[STRING.md](STRING.md)'s companion note, [STORIES.md](STORIES.md): a Filipino
+edgelands campaign (places, a cast matched to existing species behaviour,
+plants, and two new behaviours), and Xyh's three alternative stories: fish on
+an aquarium or pond trip, buttons and crafts, and words, syllables, and numbers
+spoken in a situation. Nothing was built and no species, range, or local name
+was checked. The Next in Dev line is unchanged. One code-level note carried in
+STORIES.md: hover-and-dart is dragonfly behaviour, so the Azure damselfly is
+misnamed for how it moves.
