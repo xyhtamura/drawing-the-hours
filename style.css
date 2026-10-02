@@ -264,6 +264,19 @@ footer {
   color: #582e6c;
 }
 
+.recipe-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Figure diagram at the right of a Field Book combination. */
+.combo-diagram {
+  flex: none;
+  width: 160px;
+  height: 60px;
+  align-self: center;
+}
+
 .recipe-info h3 {
   font-size: 0.98rem;
   font-weight: 600;
@@ -463,6 +476,11 @@ footer {
 
   .recipe-info h3 {
     font-size: 0.92rem;
+  }
+
+  .combo-diagram {
+    width: 112px;
+    height: 42px;
   }
 
   .recipe-info p {

@@ -19,6 +19,7 @@ import {
 } from './geometry.js';
 import { Butterfly, DandelionSeed, Snail, Hornet, WebPatch, FlaxFlower, drawFlaxFlower, NightJasmine, SPECIES_CONFIG, drawFirefly } from './entities.js';
 import { evaluateDrawing } from './recipes.js';
+import { COMBO_DIAGRAMS, drawComboDiagram } from './combo-diagrams.js';
 import { DandelionClock } from './clock.js';
 import { audio } from './audio.js';
 import { createDawnArt, wrapText } from './dawn-art.js';
@@ -39,6 +40,9 @@ const BEAN_REGROW_SECONDS = 8;
 // bloom then closes and another opens after the regrow delay (Midnight XI-XII).
 const JASMINE_STAY = 24;
 const JASMINE_REGROW = 12;
+
+// Height of one requirement row on the visit card; the row holds a figure diagram.
+const REQUIREMENT_ROW = 36;
 
 // Seconds of play without objective progress before the hint card appears
 // (CAMPAIGN.md, tuning section). Dismissing it starts the count again.
@@ -2529,8 +2533,11 @@ export class Game {
     const teachMidnight = teachMidnight01 || teachMidnight02 || teachMidnight03;
     const hasDiagram = teachDawn || teachDusk || teachMidnight || teachNoon01 || teachNoon02 || teachNoon03;
     const modalHeight = (teachMidnight || teachDawn || teachDusk || teachNoon01 || teachNoon02 || teachNoon03) ? 445 : (hasDiagram ? 415 : 310);
+    // Each requirement row carries a diagram, so rows are taller than bare text.
+    const requirementCount = Object.keys(this.campaign.objectiveProgress).length;
+    const rowExtra = requirementCount * (REQUIREMENT_ROW - 21);
 
-    this.drawModalBox(ctx, 500, modalHeight, (boxW, boxH) => {
+    this.drawModalBox(ctx, 500, modalHeight + rowExtra, (boxW, boxH) => {
       const isNarrow = boxW < 440;
 
       // Header
@@ -2562,9 +2569,17 @@ export class Game {
 
       ctx.font = isNarrow ? '12px system-ui, sans-serif' : '13px system-ui, sans-serif';
       ctx.fillStyle = themeColor('ink', '#4c4234');
+      const diagramW = isNarrow ? 76 : 92;
+      const diagramH = isNarrow ? 28 : 34;
       for (const [k, obj] of Object.entries(this.campaign.objectiveProgress)) {
-        ctx.fillText(`• ${obj.label}: ${obj.current} / ${obj.target}`, padX + 8, startY);
-        startY += 21;
+        if (COMBO_DIAGRAMS[k]) {
+          ctx.save();
+          ctx.translate(padX + 4, startY - 14 + (REQUIREMENT_ROW - diagramH) / 2 - 3);
+          drawComboDiagram(ctx, k, diagramW, diagramH);
+          ctx.restore();
+        }
+        ctx.fillText(`${obj.label}: ${obj.current} / ${obj.target}`, padX + diagramW + 16, startY + (REQUIREMENT_ROW - 21) / 2 - 3);
+        startY += REQUIREMENT_ROW;
       }
 
       // Duration note

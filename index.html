@@ -73,7 +73,6 @@
         <span class="entry-badge" style="background:#e0f2fe; color:#0369a1;">Species</span>
         <div class="recipe-info">
           <h3>Window Firefly</h3><p>Appears at Midnight. A slow beetle with a pale abdomen that stays visible between glows. Target radius stays the same throughout the glow cycle.</p>
-          <h3>Ordered Trace</h3><p>Thread a firefly, a lacewing, then a different firefly in one stroke. Release to finish; the line can stay open or close. Numbered badges show the sequence. Repeating an insect does not count again. A wrong order, extra insects, or enclosing another creature cancels the trace. Leaves do not count.</p>
         </div>
       </div>
       <div class="recipe-entry" data-reveal-hour="midnight">
@@ -143,6 +142,7 @@
           <h3>Kindred Pair</h3>
           <p>Enclose exactly two insects of the same species (for example, two Brimstones or two Hoverflies). Kindred fliers belong together in a single loop — dividing similar fliers across a figure-eight crossing is invalid.</p>
         </div>
+        <canvas class="combo-diagram" data-combo="pair" data-w="160" data-h="60" role="img" aria-label="Diagram: one loop around two Brimstone Butterflies"></canvas>
       </div>
 
       <div class="recipe-entry">
@@ -151,6 +151,7 @@
           <h3>Trio of Flight</h3>
           <p>Enclose three fliers representing three different species.</p>
         </div>
+        <canvas class="combo-diagram" data-combo="trio" data-w="160" data-h="60" role="img" aria-label="Diagram: one loop around a Brimstone, a Damselfly and a Hawkmoth"></canvas>
       </div>
 
       <div class="recipe-entry">
@@ -159,6 +160,7 @@
           <h3>Seed &amp; Wing</h3>
           <p>Enclose one flier alongside an airborne dandelion seed drifting on the morning breeze.</p>
         </div>
+        <canvas class="combo-diagram" data-combo="seedWing" data-w="160" data-h="60" role="img" aria-label="Diagram: one loop around a Brimstone and a seed"></canvas>
       </div>
 
       <div class="recipe-entry" data-reveal-hour="noon">
@@ -188,6 +190,7 @@
           <h3>Seed &amp; Trio</h3>
           <p>Enclose three fliers of three distinct species together with one airborne dandelion seed in a single circular loop.</p>
         </div>
+        <canvas class="combo-diagram" data-combo="seedTrio" data-w="160" data-h="60" role="img" aria-label="Diagram: one loop around three different insects and a seed"></canvas>
       </div>
 
       <div class="recipe-entry" data-reveal-hour="dusk">
@@ -196,6 +199,7 @@
           <h3>Counterpart Pair (Two Dissimilar Species)</h3>
           <p>Enclose two dissimilar fliers across the lobes (e.g. 1 Damselfly in Pocket A, 1 Hawkmoth in Pocket B). While two different species cannot share a single loop, crossing the cord between them balances their contrast into a harmonious bilateral dialogue.</p>
         </div>
+        <canvas class="combo-diagram" data-combo="counterpartPair" data-w="160" data-h="60" role="img" aria-label="Diagram: figure-eight with a Damselfly in one pocket and a Hawkmoth in the other"></canvas>
       </div>
 
       <div class="recipe-entry">
@@ -204,6 +208,7 @@
           <h3>Twin Echo Correspondence (Wave 2 Experiment)</h3>
           <p>Cross the cord into two lobes: mirror identical species in both pockets (e.g. 1 Damselfly + 1 Hawkmoth in Pocket A and Pocket B). Mixed combinations that fail alone will harmonize through bilateral symmetry!</p>
         </div>
+        <canvas class="combo-diagram" data-combo="mixedEcho" data-w="160" data-h="60" role="img" aria-label="Diagram: figure-eight with a Damselfly and a Hawkmoth in each pocket"></canvas>
       </div>
 
       <div class="recipe-entry">
@@ -212,6 +217,7 @@
           <h3>Cross-Meadow Correspondence</h3>
           <p>Cross the cord to form two distinct pockets: place a kindred pair in Pocket A, and another kindred pair in Pocket B.</p>
         </div>
+        <canvas class="combo-diagram" data-combo="crossMeadow" data-w="160" data-h="60" role="img" aria-label="Diagram: figure-eight with two Brimstones in one pocket and two Damselflies in the other"></canvas>
       </div>
 
       <div class="recipe-entry" data-reveal-hour="dusk">
@@ -220,6 +226,16 @@
           <h3>Nursery Polarity</h3>
           <p>Place exactly one winged traveler in one pocket, and exactly one wild drifting seed in the opposite pocket. More than one of either disturbs the balance.</p>
         </div>
+        <canvas class="combo-diagram" data-combo="nursery" data-w="160" data-h="60" role="img" aria-label="Diagram: figure-eight with a Brimstone in one pocket and a seed in the other"></canvas>
+      </div>
+
+      <div class="recipe-entry" data-reveal-hour="midnight">
+        <span class="entry-badge" style="background:#e9efe0; color:#3f5b34;">Thread</span>
+        <div class="recipe-info">
+          <h3>Ordered Trace</h3>
+          <p>Thread a firefly, a lacewing, then a different firefly in one stroke. Release to finish; the line can stay open or close. Numbered badges show the sequence. Repeating an insect does not count again. A wrong order, extra insects, or enclosing another creature cancels the trace. Leaves do not count.</p>
+        </div>
+        <canvas class="combo-diagram" data-combo="trace" data-w="160" data-h="60" role="img" aria-label="Diagram: one open stroke threading a firefly, a lacewing, then a different firefly, numbered 1 to 3"></canvas>
       </div>
 
       <div class="recipe-entry">
@@ -273,6 +289,7 @@
   <script type="module">
     import { getColorMode, setColorMode } from './src/theme.js';
     import { Game } from './src/game.js';
+    import { renderComboCanvases } from './src/combo-diagrams.js';
     import { audio } from './src/audio.js';
     import { CAMPAIGN_LEVELS, PRACTICE_LEVELS, PLAYABLE_LEVEL_IDS, CampaignSaveManager, isHourReached } from './src/campaign.js';
 
@@ -434,6 +451,7 @@
     };
     const openMenu = () => showPanel('pause-menu');
     const toggleFieldbook = (open = activePanel !== 'fieldbook-modal') => {
+      if (open) renderComboCanvases(modal);
       applyFieldBookReveal(); showPanel(open ? 'fieldbook-modal' : 'pause-menu');
     };
     const toggleVisitModal = (open = activePanel !== 'visit-modal') => {

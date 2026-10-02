@@ -1697,3 +1697,32 @@ spoken in a situation. Nothing was built and no species, range, or local name
 was checked. The Next in Dev line is unchanged. One code-level note carried in
 STORIES.md: hover-and-dart is dragonfly behaviour, so the Azure damselfly is
 misnamed for how it moves.
+
+
+2026-10-02 — Claude Code — Added figure diagrams for the combinations a visit asks
+for. `src/combo-diagrams.js` holds one table keyed by objective (pair, trio,
+seedWing, seedTrio, nursery, counterpartPair, lacewingCounterpart, twinSeedWing,
+mixedEcho, figure8, single, any, trace, plus crossMeadow for the Field Book): a
+loop, figure-eight, or open trace with the creatures that belong in each pocket,
+drawn by the game's own `Insect` and `DandelionSeed` code so each species matches
+the field. The visit card now shows a diagram beside every requirement row (rows
+grew from 21 to 36 units; the card grows by the same amount per row). The Field
+Book's Harmonic Combinations each carry a diagram at the right, drawn when the
+book opens. Ordered Trace moved out of the Window Firefly entry into its own
+Midnight-gated combination entry so it can carry its diagram; its text is
+unchanged.
+
+Verified: `test/test_combo_diagrams.js` (every objective key used by any visit or
+practice verge has a diagram, every creature token is a real species, each
+diagram draws against a recording context); all other Node suites pass. Opened
+the actual page in the preview browser and looked at the Field Book at
+Midnight, and at the visit cards for Midnight XII, Midnight XI, and Dusk VIII.
+A 3x gallery of all fourteen figures was checked for overlap and clipping.
+
+Not done: the in-play HUD objective line is still text only; diagrams there need
+a layout pass because the line wraps beside the cord meter. The Field Book has no
+entry for Twin Seed & Wing, which the code recognises but no visit asks for. The
+visit-complete recap and pause menu are unchanged. Known and not from this
+change: on the Midnight XI card the begin prompt overlaps the last line of the
+teaching diagram (same at HEAD). Not checked on a touch device or in Pure light
+colours.
