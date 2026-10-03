@@ -1975,6 +1975,17 @@ export class Game {
   }
 
   /** The flax flower, shared with the field drawing. */
+  /** The small cross a ready card puts beside a figure that does not count. */
+  drawCardCross(ctx, x, y) {
+    ctx.save();
+    ctx.strokeStyle = '#b54a4a'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x - 5, y - 5); ctx.lineTo(x + 5, y + 5);
+    ctx.moveTo(x + 5, y - 5); ctx.lineTo(x - 5, y + 5);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   drawBeanGlyph(ctx, x, y) {
     ctx.save(); ctx.translate(x, y); ctx.scale(0.8, 0.8);
     drawFlaxFlower(ctx); ctx.restore();
@@ -2530,18 +2541,26 @@ export class Game {
     const teachMidnight03 = lid === 'midnight-05' || lid === 'midnight-06';
     const teachLacewing = lid === 'dusk-01' || lid === 'practice-dusk';
     const teachDusk02 = lid === 'dusk-03' || lid === 'dusk-04';
-    const teachDusk03 = lid === 'dusk-06';
+    const teachDusk03 = lid === 'dusk-05' || lid === 'dusk-06';
     const teachNoon01 = lid === 'noon-01' || lid === 'practice-noon';
     const teachNoon02 = lid === 'noon-03';
-    const teachNoon03 = lid === 'noon-06';
+    const teachNoon03 = lid === 'noon-04' || lid === 'noon-06';
     const teachDawn01 = lid === 'dawn-01';
     const teachDawn02 = lid === 'dawn-03' || lid === 'dawn-04';
     const teachDawn03 = lid === 'dawn-05';
     const teachDawn = teachDawn01 || teachDawn02 || teachDawn03;
     const teachDusk = teachLacewing || teachDusk02 || teachDusk03;
     const teachMidnight = teachMidnight01 || teachMidnight02 || teachMidnight03;
-    const hasDiagram = teachDawn || teachDusk || teachMidnight || teachNoon01 || teachNoon02 || teachNoon03;
-    const modalHeight = (teachMidnight || teachDawn || teachDusk || teachNoon01 || teachNoon02 || teachNoon03) ? 445 : (hasDiagram ? 415 : 310);
+    // Visits that add nothing new still get a picture: what the visit is practising.
+    const teachDawnPairs = lid === 'dawn-02';
+    const teachDawnAll = lid === 'dawn-06';
+    const teachNoonGust = lid === 'noon-02';
+    const teachNoonWeb = lid === 'noon-05';
+    const teachDuskCounterpart = lid === 'dusk-02';
+    const teachMidnightRoute = lid === 'midnight-02';
+    const hasDiagram = teachDawn || teachDusk || teachMidnight || teachNoon01 || teachNoon02 || teachNoon03
+      || teachDawnPairs || teachDawnAll || teachNoonGust || teachNoonWeb || teachDuskCounterpart || teachMidnightRoute;
+    const modalHeight = hasDiagram ? 445 : 310;
     // Each requirement row carries a diagram, so rows are taller than bare text.
     const requirementCount = Object.keys(this.campaign.objectiveProgress).length;
     const rowExtra = requirementCount * (REQUIREMENT_ROW - 21);
@@ -2800,8 +2819,10 @@ export class Game {
         const fly3 = new Butterfly(40, -2, 'damselfly'); fly3.heading = -Math.PI / 2; fly3.draw(ctx);
         const fly4 = new Butterfly(80, -2, 'hawkmoth'); fly4.heading = Math.PI / 2; fly4.draw(ctx);
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
-        ctx.fillText('Switch gestures: 3 single loops and 2 figure-eights. Cross the cord to close.', 0, 41);
-        ctx.fillText('Dense field with 8 fliers; keep clear of the perimeter snail.', 0, 56);
+        const fliers = ['brimstone', 'damselfly', 'hawkmoth', 'hoverfly', 'lacewing', 'firefly']
+          .reduce((sum, kind) => sum + (lvl.population[kind] || 0), 0);
+        ctx.fillText(`Switch gestures: ${lvl.objectives.single} single loops and ${lvl.objectives.figure8} figure-eights. Cross the cord to close.`, 0, 41);
+        ctx.fillText(`${fliers >= 8 ? 'Dense field with' : 'A thinner field, with'} ${fliers} fliers; keep clear of the perimeter snail.`, 0, 56);
         ctx.restore();
       } else if (teachNoon01) {
         ctx.save(); ctx.translate(0, boxH / 2 - 100);
@@ -2883,7 +2904,9 @@ export class Game {
         this.drawBeanGlyph(ctx, 62, -26);
         ctx.fillText('Seed & Trio: 1 seed and 3 different insects in one loop.', 0, 39);
         ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
-        ctx.fillText('Avoid the web and the hornet. Flax gives extra length to the next cord.', 0, 54);
+        ctx.fillText(lvl.population.web
+          ? 'Avoid the web and the hornet. Flax gives extra length to the next cord.'
+          : 'Pick a flax flower first: the next cord is longer. Watch the hornet.', 0, 54);
         ctx.restore();
       } else if (teachMidnight02) {
         ctx.save(); ctx.translate(0, boxH / 2 - 96);
@@ -2945,6 +2968,175 @@ export class Game {
         ctx.fillText(lvl.population.brimstone
           ? 'Brimstones and the snail return. A stroke cannot both thread and enclose.'
           : 'Either trace counts: firefly first or lacewing first.', 0, 54);
+        ctx.restore();
+      } else if (teachDawnPairs) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 108);
+        // Left: two of one kind
+        ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(-80, -6, 50, 28, 0, 0, Math.PI * 2); ctx.stroke();
+        for (const [x, tilt] of [[-98, 0], [-62, 0.4]]) {
+          ctx.save(); ctx.translate(x, -6); ctx.scale(0.75, 0.75);
+          const d = new Butterfly(0, 0, 'damselfly'); d.heading = -Math.PI / 2 + tilt; d.draw(ctx);
+          ctx.restore();
+        }
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '10.5px system-ui, sans-serif';
+        ctx.fillText('Kindred Pair', -80, 28);
+
+        // Right: two different kinds in one loop
+        ctx.strokeStyle = '#b85c38'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(78, -6, 50, 28, 0, 0, Math.PI * 2); ctx.stroke();
+        const b1 = new Butterfly(60, -6, 'brimstone'); b1.heading = -0.4; b1.draw(ctx);
+        ctx.save(); ctx.translate(96, -6); ctx.scale(0.75, 0.75);
+        const d3 = new Butterfly(0, 0, 'damselfly'); d3.heading = -Math.PI / 2; d3.draw(ctx);
+        ctx.restore();
+        this.drawCardCross(ctx, 124, -30);
+        ctx.fillStyle = themeColor('petite', '#852b2b'); ctx.font = '10.5px system-ui, sans-serif';
+        ctx.fillText('Two kinds (gathers nothing)', 78, 28);
+
+        ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
+        ctx.fillText('A pair is two insects of the same kind in one loop.', 0, 43);
+        ctx.fillText('There are as many damselflies as Brimstones now: pick the match.', 0, 58);
+        ctx.restore();
+      } else if (teachDawnAll) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 108);
+        // The three Dawn figures side by side
+        const small = (kind, x, y, heading) => {
+          ctx.save(); ctx.translate(x, y); ctx.scale(0.72, 0.72);
+          const fly = new Butterfly(0, 0, kind); fly.heading = heading; fly.draw(ctx);
+          ctx.restore();
+        };
+        ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
+        for (const cx of [-102, 0, 102]) {
+          ctx.beginPath(); ctx.ellipse(cx, -8, 44, 25, 0, 0, Math.PI * 2); ctx.stroke();
+        }
+        small('brimstone', -116, -8, -0.4); small('brimstone', -88, -8, 0.5);
+        small('damselfly', -14, -8, -Math.PI / 2);
+        ctx.save(); ctx.translate(16, -8); ctx.scale(0.7, 0.7); new DandelionSeed(0, 0).draw(ctx); ctx.restore();
+        small('brimstone', 76, -8, -0.4); small('damselfly', 102, -8, -Math.PI / 2); small('hawkmoth', 128, -8, 0.4);
+
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '10.5px system-ui, sans-serif';
+        ctx.fillText('Pair', -102, 28);
+        ctx.fillText('Seed & Wing', 0, 28);
+        ctx.fillText('Trio', 102, 28);
+
+        ctx.font = '11px system-ui, sans-serif';
+        ctx.fillText('Every Dawn figure on one field. Nothing here is new.', 0, 43);
+        ctx.fillText('Keep seeds and the snail out of the trio loop.', 0, 58);
+        ctx.restore();
+      } else if (teachNoonGust) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 100);
+        // A Seed & Wing loop on the left, and a seed being carried off on the right.
+        ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(-72, 2, 52, 30, 0, 0, Math.PI * 2); ctx.stroke();
+        const fly = new Butterfly(-92, 2, 'brimstone'); fly.heading = -0.4; fly.draw(ctx);
+        ctx.save(); ctx.translate(-54, 2); ctx.scale(0.85, 0.85); new DandelionSeed(0, 0).draw(ctx); ctx.restore();
+
+        // Streaks: what the field shows before and during a gust
+        ctx.strokeStyle = themeColor('muted', '#8a7e6f'); ctx.lineWidth = 1.3; ctx.lineCap = 'round';
+        for (const [x, y, len] of [[8, -30, 46], [44, -18, 60], [16, 22, 52]]) {
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + len, y); ctx.stroke();
+        }
+        // The same seed at three moments, fading in along the gust
+        for (const [x, alpha] of [[36, 0.3], [70, 0.55], [104, 1]]) {
+          ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, 2); ctx.scale(0.8, 0.8);
+          const seed = new DandelionSeed(0, 0); seed.tilt = 0.5; seed.draw(ctx);
+          ctx.restore();
+        }
+        ctx.strokeStyle = themeColor('ink', '#5c4538'); ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(122, 2); ctx.lineTo(140, 2); ctx.moveTo(134, -3); ctx.lineTo(140, 2); ctx.lineTo(134, 7); ctx.stroke();
+
+        ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('A gust carries seeds sideways for two seconds.', 0, 39);
+        ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
+        ctx.fillText('Leaves lean and streaks cross the field two seconds before it. Close first, or wait.', 0, 54);
+        ctx.restore();
+      } else if (teachNoonWeb) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 110);
+        const web = (x, y) => {
+          const patch = new WebPatch(0, 0, 20);
+          patch.x = x; patch.y = y; patch.spin = 0.6;
+          patch.draw(ctx);
+        };
+        // Left: a loop closed clear of the web
+        web(-126, -16);
+        ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(-58, 4, 44, 26, 0, 0, Math.PI * 2); ctx.stroke();
+        const h1 = new Butterfly(-74, 4, 'hoverfly'); h1.heading = -Math.PI / 2; h1.draw(ctx);
+        const h2 = new Butterfly(-42, 4, 'hoverfly'); h2.heading = -Math.PI / 2 + 0.3; h2.draw(ctx);
+
+        // Right: a cord that reaches the web ends there
+        web(92, -4);
+        ctx.strokeStyle = '#b85c38'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(24, 16); ctx.quadraticCurveTo(48, -20, 74, -6); ctx.stroke();
+        ctx.save(); ctx.setLineDash([3, 4]); ctx.strokeStyle = 'rgba(184, 92, 56, 0.45)'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(110, -2); ctx.quadraticCurveTo(134, 4, 138, 22); ctx.stroke(); ctx.restore();
+        this.drawCardCross(ctx, 118, -30);
+
+        ctx.textAlign = 'center'; ctx.font = '10.5px system-ui, sans-serif';
+        ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.fillText('Drawn clear of it', -70, 44);
+        ctx.fillStyle = themeColor('petite', '#852b2b'); ctx.fillText('Cord cut at the web', 82, 44);
+
+        ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
+        ctx.fillText('The web stays where it hangs, here and in the next visit.', 0, 60);
+        ctx.restore();
+      } else if (teachDuskCounterpart) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 100);
+        const eight = (cx) => {
+          ctx.beginPath(); ctx.moveTo(cx, -4);
+          ctx.bezierCurveTo(cx - 62, -52, cx - 62, 44, cx, -4);
+          ctx.bezierCurveTo(cx + 62, -52, cx + 62, 44, cx, -4); ctx.stroke();
+        };
+        // Left: two different kinds, one in each pocket
+        ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
+        eight(-76);
+        const pocketed = (kind, x, heading) => {
+          ctx.save(); ctx.translate(x, -4); ctx.scale(0.68, 0.68);
+          const fly = new Butterfly(0, 0, kind); fly.heading = heading; fly.draw(ctx);
+          ctx.restore();
+        };
+        pocketed('brimstone', -104, -0.4);
+        pocketed('hoverfly', -48, -Math.PI / 2);
+
+        // Right: one kind split across the crossing
+        ctx.strokeStyle = '#b85c38'; ctx.lineWidth = 2;
+        eight(76);
+        pocketed('brimstone', 48, -0.4);
+        pocketed('brimstone', 104, 0.5);
+        this.drawCardCross(ctx, 130, -32);
+
+        ctx.textAlign = 'center'; ctx.font = '10.5px system-ui, sans-serif';
+        ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.fillText('Counterpart Pair', -76, 30);
+        ctx.fillStyle = themeColor('petite', '#852b2b'); ctx.fillText('One kind, divided', 76, 30);
+
+        ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
+        ctx.fillText('Two different kinds, one in each pocket. Cross your start to close.', 0, 45);
+        ctx.fillText('Two of one kind belong together in a single loop.', 0, 60);
+        ctx.restore();
+      } else if (teachMidnightRoute) {
+        ctx.save(); ctx.translate(0, boxH / 2 - 112);
+        // The same trace, bent over a hoverfly that sits on the straight line
+        ctx.strokeStyle = themeColor('trace', '#416e83'); ctx.lineWidth = 2.4;
+        ctx.beginPath(); ctx.moveTo(-120, 8); ctx.lineTo(-80, 8);
+        ctx.bezierCurveTo(-62, 8, -64, -30, -40, -30);
+        ctx.bezierCurveTo(-16, -30, -18, 8, 0, 8);
+        ctx.lineTo(120, 8); ctx.stroke();
+        const hover = new Butterfly(-40, 8, 'hoverfly'); hover.heading = -Math.PI / 2; hover.draw(ctx);
+        ctx.save(); ctx.setLineDash([3, 3]); ctx.strokeStyle = 'rgba(184, 92, 56, 0.7)'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(-40, 8, 18, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+        for (const [i, x] of [-80, 0, 80].entries()) {
+          ctx.save(); ctx.translate(x, 8); ctx.scale(0.8, 0.8);
+          if (i === 1) drawLacewing(ctx, { lacePhase: 'rest', flapPhase: 0 });
+          else drawFirefly(ctx, { stateTime: 0.4, glowOffset: 0 });
+          ctx.restore();
+          ctx.fillStyle = '#ffffff'; ctx.strokeStyle = themeColor('trace', '#315b73'); ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.arc(x, 8, 3.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = themeColor('trace', '#315b73'); ctx.beginPath(); ctx.arc(x + 14, 8 - 14, 8, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = themeColor('panel', '#fff'); ctx.font = '600 10px system-ui'; ctx.textAlign = 'center';
+          ctx.fillText(String(i + 1), x + 14, 8 - 10.5);
+        }
+        ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui';
+        ctx.fillText('The same trace: Firefly → Lacewing → different Firefly.', 0, 56);
+        ctx.fillText('Bend the line around a hoverfly. One threaded on the way spoils the trace.', 0, 71);
         ctx.restore();
       }
 

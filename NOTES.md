@@ -14,6 +14,16 @@ Play the twenty-four visits through and retune counts and durations by hand, sta
 
 ## Activity
 
+2026-10-03 — Claude Code — Gave the eight visits that had no teaching picture one each, on Xyh's request.
+
+- **Six new pictures** in `Game.drawReadyModal`: II a matching pair beside a two-kind loop that gathers nothing; VI the three Dawn figures side by side; VIII a Seed & Wing loop beside a seed carried along a gust; XI a loop closed clear of the web beside a cord cut at it; XIV a Counterpart Pair beside one kind divided across the crossing; XX the firefly-first trace bent over a hoverfly.
+- **Two reuse an existing picture** with its lines taken from the visit: X uses the Seed & Trio picture without the web line, and XVII uses the switching picture, whose loop, figure-eight, and flier counts now come from the level.
+- `Game.drawCardCross` draws the mark beside a figure that does not count.
+
+Verification: all eight `node test/test_*.js` suites pass. Each of the eight cards was opened in the page at `http://localhost:8000/drawing-the-hours/` and read by screenshot at an 800 x 450 pane: picture, labels, and both caption lines sit inside the card and clear of the Begin prompt.
+
+Not done: the cards were not checked at phone width, where the card is narrower than the widest pictures (about 290 px across). The rule each picture states was checked against `src/recipes.js` and the trace logic, not by playing.
+
 2026-10-03 — Claude Code — Stretched the campaign from twelve visits to twenty-four, six an hour, on Xyh's call that mechanics arrived too quickly.
 
 - **Sequence.** The order of introduction is the same. A visit now adds at most one thing, and the sixth visit of each hour adds nothing. The table, with which visits keep a twelve-visit field unchanged, is in [CAMPAIGN.md](CAMPAIGN.md) under "Twenty-four visits revision, 2026-10-03". Xyh's six lines per hour in [first12levels.md](first12levels.md) are used in order and are not tied to the mechanics.
