@@ -50,19 +50,24 @@ const JASMINE_STAY = 24;
   console.log('✔ Thread starter, threaded, and thread ended are told apart.');
 }
 
-// 2. The last visit carries one, and the plan agrees
+// 2. The last two visits carry one, and the plan agrees
 {
   const plan = JSON.parse(fs.readFileSync(new URL('../campaign-plan.json', import.meta.url)));
-  const twelve = CAMPAIGN_LEVELS.find(l => l.id === 'midnight-03');
-  assert.equal(twelve.population.jasmine, 1, 'Midnight XII grows one jasmine');
-  assert.equal(twelve.jasminePlaces.length, 1, 'Midnight XII says where it stands');
-  const source = plan.levels.find(l => l.id === 'midnight-03');
+  const twelve = CAMPAIGN_LEVELS.find(l => l.id === 'midnight-06');
+  assert.equal(twelve.population.jasmine, 1, 'Midnight XXIV grows one jasmine');
+  assert.equal(twelve.jasminePlaces.length, 1, 'Midnight XXIV says where it stands');
+  const source = plan.levels.find(l => l.id === 'midnight-06');
   assert.equal(source.population.jasmine, 1, 'The plan agrees on the jasmine');
   assert.deepEqual(JSON.parse(JSON.stringify(source.jasminePlaces)), twelve.jasminePlaces,
     'The plan agrees on where it stands');
 
-  // Xyh played XI through without it, so only the last visit has one.
-  for (const id of ['midnight-01', 'midnight-02']) {
+  // It is introduced in XXIII, one visit before the last, so the last adds nothing new.
+  const intro = CAMPAIGN_LEVELS.find(l => l.id === 'midnight-05');
+  assert.equal(intro.population.jasmine, 1, 'Midnight XXIII introduces the jasmine');
+  assert.deepEqual(intro.jasminePlaces, twelve.jasminePlaces, 'It stands where it will stand in XXIV');
+
+  // The four visits before that have none.
+  for (const id of ['midnight-01', 'midnight-02', 'midnight-03', 'midnight-04']) {
     const level = CAMPAIGN_LEVELS.find(l => l.id === id);
     assert.equal(level.population.jasmine, undefined, `${id} grows no jasmine`);
     assert.equal(level.jasminePlaces, undefined, `${id} places none`);
@@ -123,7 +128,7 @@ try {
 
   // 3. The take: the cord ends, the insect settles, nothing is scored
   {
-    game.initLevel('midnight-03');
+    game.initLevel('midnight-06');
     game.state = 'PLAYING';
     const jasmine = placeJasmine();
     const lacewing = new Insect(jasmine.x + 140, jasmine.y, 'lacewing');
@@ -174,7 +179,7 @@ try {
 
   // 6. A guest used in a drawing frees its flower early
   {
-    game.initLevel('midnight-03');
+    game.initLevel('midnight-06');
     game.state = 'PLAYING';
     const jasmine = placeJasmine();
     const hoverfly = new Insect(jasmine.x + 140, jasmine.y, 'hoverfly');
@@ -192,7 +197,7 @@ try {
 
   // 7. The flower itself is scenery
   {
-    game.initLevel('midnight-03');
+    game.initLevel('midnight-06');
     game.state = 'PLAYING';
     const jasmine = placeJasmine();
     const a = new Insect(jasmine.x - 60, jasmine.y + 80, 'firefly');

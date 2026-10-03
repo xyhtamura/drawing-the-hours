@@ -518,7 +518,11 @@ console.log('--- Running Drawing the Hours Test Suite ---');
 
 // 9. Campaign Registry and Hour I Verbatim Text Integrity
 {
-  assert.strictEqual(CAMPAIGN_LEVELS.length, 12, '12 campaign levels authored');
+  assert.strictEqual(CAMPAIGN_LEVELS.length, 24, '24 campaign levels authored');
+  for (const hour of ['dawn', 'noon', 'dusk', 'midnight']) {
+    assert.strictEqual(CAMPAIGN_LEVELS.filter(l => l.hour === hour).length, 6, `${hour} has six visits`);
+  }
+  CAMPAIGN_LEVELS.forEach((l, i) => assert.strictEqual(l.number, i + 1, `${l.id} is numbered by position`));
   assert.strictEqual(PRACTICE_LEVELS.length, 7, 'Practice includes Midnight, String Sandbox, and String Trace Sandbox');
   assert.ok(PRACTICE_LEVELS.some(p => p.id === 'practice-string'), 'String sandbox present in practice');
   assert.ok(PRACTICE_LEVELS.some(p => p.id === 'practice-string-trace'), 'String trace sandbox present in practice');
@@ -532,7 +536,7 @@ console.log('--- Running Drawing the Hours Test Suite ---');
   assert.strictEqual(dawn2.transitionText, 'I like to watch the insects here, in this patch by the curbside.');
   assert.strictEqual(dawn3.transitionText, 'Maybe I have an overactive imagination.');
 
-  // Verify non-empty populations and positive durations for all 12 levels
+  // Verify non-empty populations and positive durations for all 24 levels
   for (const lvl of CAMPAIGN_LEVELS) {
     assert.ok(lvl.id && lvl.title && lvl.hour && lvl.scene, `Level ${lvl.id} has all required fields`);
     assert.ok(lvl.durationSeconds >= 60, `Level ${lvl.id} has adequate duration`);
@@ -546,15 +550,26 @@ console.log('--- Running Drawing the Hours Test Suite ---');
   console.log('✔ Campaign registry, verbatim texts, and optionality of complex figure-eights verified.');
 }
 
-// 10. Dawn order: seeds and the seam snail in Visit II, the trio in Visit III
+// 10. Dawn order: seeds in Visit III, the seam snail in IV, the trio in V, and nothing new in VI
 {
-  const [dawn1, dawn2, dawn3] = CAMPAIGN_LEVELS;
+  const [dawn1, dawnPairs, dawnSeeds, dawn2, dawn3, dawn6] = CAMPAIGN_LEVELS;
   assert.strictEqual(dawn1.clockStartsOnFirstCombination, true);
+
+  // II repeats the pair loop; III adds seeds with no hazard on the field.
+  assert.deepStrictEqual(dawnPairs.objectives, { pair: 5 });
+  assert.strictEqual(dawnPairs.population.seed + dawnPairs.population.snail + dawnPairs.population.hawkmoth, 0);
+  assert.deepStrictEqual(dawnSeeds.objectives, { any: 5, seedWing: 2 });
+  assert.strictEqual(dawnSeeds.population.seed, 3);
+  assert.strictEqual(dawnSeeds.population.snail, 0);
+
+  // VI asks for every Dawn figure and adds no kind, hazard, or rule.
+  assert.deepStrictEqual(dawn6.objectives, { any: 6, pair: 1, seedWing: 2, trio: 1 });
+  assert.deepStrictEqual(dawn6.population, { ...dawn3.population, seed: 2 });
   assert.strictEqual(dawn1.stringRules, true);
   assert.deepStrictEqual(dawn1.gestures, ['string']);
   assert.strictEqual(dawn1.maxCordLength, undefined);
 
-  assert.strictEqual(dawn2.title, 'Something in the air');
+  assert.strictEqual(dawn2.title, 'In my thirties');
   assert.deepStrictEqual(dawn2.objectives, { any: 5, seedWing: 2 });
   assert.strictEqual(dawn2.population.hawkmoth, 0);
   assert.strictEqual(dawn2.population.seed, 3);
@@ -563,7 +578,7 @@ console.log('--- Running Drawing the Hours Test Suite ---');
   assert.deepStrictEqual(dawn2.gestures, ['string']);
   assert.strictEqual(dawn2.maxCordLength, undefined);
 
-  assert.strictEqual(dawn3.title, 'The curbside patch');
+  assert.strictEqual(dawn3.title, 'Hard to save');
   assert.deepStrictEqual(dawn3.objectives, { any: 4, trio: 2 });
   assert.strictEqual(dawn3.population.hawkmoth, 2);
   assert.strictEqual(dawn3.snailRoute, 'seam');
@@ -572,7 +587,7 @@ console.log('--- Running Drawing the Hours Test Suite ---');
   assert.strictEqual(dawn3.maxCordLength, undefined);
 
   const plan = JSON.parse(fs.readFileSync(new URL('../campaign-plan.json', import.meta.url)));
-  for (const level of [dawn1, dawn2, dawn3]) {
+  for (const level of [dawn1, dawnPairs, dawnSeeds, dawn2, dawn3, dawn6]) {
     const source = plan.levels.find(l => l.id === level.id);
     for (const key of ['title', 'population', 'objectives', 'durationSeconds', 'motionScale',
       'instruction', 'transitionText', 'snailRoute', 'clockStartsOnFirstCombination', 'stringRules', 'gestures']) {
@@ -614,33 +629,54 @@ console.log('--- All tests passed! ---');
 // Noon complete chapter progression, objectives, and practice isolation.
 {
   const campaign = new CampaignManager();
-  campaign.setLevelById('dawn-03');
+  campaign.setLevelById('dawn-06');
   assert.strictEqual(campaign.getNextLevel().id, 'noon-01');
 
-  // Noon 1 (Visit IV)
+  // Noon 1 (Visit VII)
   const noon1 = campaign.setLevelById('noon-01');
   assert.strictEqual(noon1.transitionText, 'Today, for lunch, I bought myself a sandwich.');
   assert.deepStrictEqual(noon1.objectives, { any: 6, trio: 2 });
-  assert.strictEqual(noon1.population.bean, 1, 'Noon IV hangs one string bean in the atrium');
+  assert.strictEqual(noon1.population.bean, 1, 'Noon VII hangs one string bean in the atrium');
   assert.strictEqual(campaign.getNextLevel().id, 'noon-02');
 
-  // Noon 2 (Visit V)
-  const noon2 = campaign.setLevelById('noon-02');
-  assert.strictEqual(noon2.transitionText, "I don't know how much longer my job will exist.");
+  // Noon 2 (Visit VIII): the gusts alone, before anything cuts the cord
+  const noonWind = campaign.setLevelById('noon-02');
+  assert.strictEqual(noonWind.transitionText, "I don't know how much longer my job will exist.");
+  assert.deepStrictEqual(noonWind.objectives, { any: 6, seedWing: 3 });
+  assert.strictEqual(noonWind.wind.periodSeconds, 12);
+  assert.strictEqual(noonWind.population.hornet, undefined, 'Noon VIII has no hornet');
+  assert.strictEqual(noonWind.population.web, undefined, 'Noon VIII has no web');
+  assert.strictEqual(campaign.getNextLevel().id, 'noon-03');
+
+  // Noon 3 (Visit IX)
+  const noon2 = campaign.setLevelById('noon-03');
+  assert.strictEqual(noon2.transitionText, 'This atrium makes me feel calmer.');
   assert.deepStrictEqual(noon2.objectives, { any: 6, seedWing: 3 });
-  assert.strictEqual(noon2.population.hornet, 1, 'Noon V introduces the patrolling hornet');
+  assert.strictEqual(noon2.population.hornet, 1, 'Noon IX introduces the patrolling hornet');
   assert.strictEqual(noon2.durationSeconds, 110);
   assert.strictEqual(noon2.wind.periodSeconds, 12);
   assert.strictEqual(noon2.wind.warningSeconds, 2);
   assert.strictEqual(noon2.wind.gustSeconds, 2);
   assert.strictEqual(noon2.wind.seedSpeedPlayWidthsPerSecond, 0.08);
-  assert.strictEqual(campaign.getNextLevel().id, 'noon-03');
+  assert.strictEqual(campaign.getNextLevel().id, 'noon-04');
 
-  // Noon 3 (Visit VI)
-  const noon3 = campaign.setLevelById('noon-03');
-  assert.strictEqual(noon3.transitionText, 'This atrium makes me feel calmer.');
+  // Noon 4 (Visit X) introduces Seed & Trio without the web; Noon 5 (Visit XI) introduces the web under familiar figures.
+  const noonSeedTrio = campaign.setLevelById('noon-04');
+  assert.deepStrictEqual(noonSeedTrio.objectives, { any: 6, seedTrio: 1 });
+  assert.strictEqual(noonSeedTrio.population.web, undefined, 'Noon X has no web');
+  assert.strictEqual(campaign.getNextLevel().id, 'noon-05');
+  const noonWeb = campaign.setLevelById('noon-05');
+  assert.deepStrictEqual(noonWeb.objectives, { any: 6, seedWing: 2, trio: 1 });
+  assert.strictEqual(noonWeb.population.web, 1, 'Noon XI introduces the web');
+  assert.strictEqual(campaign.getNextLevel().id, 'noon-06');
+
+  // Noon 6 (Visit XII): nothing new
+  const noon3 = campaign.setLevelById('noon-06');
+  assert.strictEqual(noon3.transitionText, "It's hard for me to think of a future like that.");
+  assert.deepStrictEqual(noon3.population, noonWeb.population, 'Noon XII keeps the cast and hazards of XI');
+  assert.deepStrictEqual(noon3.webPatches, noonWeb.webPatches, 'The web hangs where it hung in XI');
   assert.deepStrictEqual(noon3.objectives, { any: 6, seedTrio: 2 });
-  assert.strictEqual(noon3.population.web, 1, 'Noon VI strings one web across the atrium');
+  assert.strictEqual(noon3.population.web, 1, 'Noon XII strings one web across the atrium');
   assert.strictEqual(noon3.durationSeconds, 100);
   assert.strictEqual(noon3.wind.periodSeconds, 12);
   assert.strictEqual(campaign.getNextLevel().id, 'dusk-01');
@@ -657,26 +693,47 @@ console.log('--- All tests passed! ---');
 // 10b. Complete Dusk Chapter Progression & Verbatim Texts
 {
   const campaign = new CampaignManager();
-  campaign.setLevelById('noon-03');
+  campaign.setLevelById('noon-06');
   assert.strictEqual(campaign.getNextLevel().id, 'dusk-01');
 
-  // Dusk 1 (Visit VII: The way through)
+  // Dusk 1 (Visit XIII: The way through)
   const dusk1 = campaign.setLevelById('dusk-01');
   assert.strictEqual(dusk1.transitionText, 'I always find myself walking home through here.');
   assert.deepStrictEqual(dusk1.objectives, { any: 5, lacewingCounterpart: 2 });
   assert.strictEqual(dusk1.durationSeconds, 100);
   assert.strictEqual(campaign.getNextLevel().id, 'dusk-02');
 
-  // Dusk 2 (Visit VIII: The gaps in the sound)
-  const dusk2 = campaign.setLevelById('dusk-02');
-  assert.strictEqual(dusk2.transitionText, "I can hear the cicadas. And sometimes I can't.");
-  assert.deepStrictEqual(dusk2.objectives, { any: 5, nursery: 1, lacewingCounterpart: 1 });
-  assert.strictEqual(dusk2.durationSeconds, 95);
+  // Dusk 2 (Visit XIV: The gaps in the sound) repeats the crossing and carries the cicada layer.
+  const duskCicadas = campaign.setLevelById('dusk-02');
+  assert.strictEqual(duskCicadas.transitionText, "I can hear the cicadas. And sometimes I can't.");
+  assert.deepStrictEqual(duskCicadas.objectives, { any: 5, counterpartPair: 3 });
+  assert.strictEqual(duskCicadas.cicadas, true);
+  assert.deepStrictEqual(CAMPAIGN_LEVELS.filter(l => l.cicadas).map(l => l.id), ['dusk-02'], 'One visit carries the cicadas');
   assert.strictEqual(campaign.getNextLevel().id, 'dusk-03');
 
-  // Dusk 3 (Visit IX: Carrying something home)
-  const dusk3 = campaign.setLevelById('dusk-03');
-  assert.strictEqual(dusk3.transitionText, 'Bringing home medicine today.');
+  // Dusk 3 (Visit XV: Carrying something home) introduces the Nursery with no snail and no flax.
+  const duskNursery = campaign.setLevelById('dusk-03');
+  assert.strictEqual(duskNursery.transitionText, 'Bringing home medicine today.');
+  assert.deepStrictEqual(duskNursery.objectives, { any: 5, nursery: 2 });
+  assert.strictEqual(duskNursery.population.snail, 0);
+  assert.strictEqual(duskNursery.population.bean, undefined);
+  assert.strictEqual(campaign.getNextLevel().id, 'dusk-04');
+
+  // Dusk 4 (Visit XVI: Almost nominal)
+  const dusk2 = campaign.setLevelById('dusk-04');
+  assert.strictEqual(dusk2.transitionText, 'Some health coverages are almost nominal.');
+  assert.deepStrictEqual(dusk2.objectives, { any: 5, nursery: 1, lacewingCounterpart: 1 });
+  assert.strictEqual(dusk2.durationSeconds, 95);
+  assert.strictEqual(campaign.getNextLevel().id, 'dusk-05');
+
+  // Dusk 5 (Visit XVII: The long way home) asks for both shapes on a thinner field than the last visit.
+  const duskSwitch = campaign.setLevelById('dusk-05');
+  assert.deepStrictEqual(duskSwitch.objectives, { any: 5, single: 2, figure8: 2 });
+  assert.strictEqual(campaign.getNextLevel().id, 'dusk-06');
+
+  // Dusk 6 (Visit XVIII: What places absorb): nothing new
+  const dusk3 = campaign.setLevelById('dusk-06');
+  assert.strictEqual(dusk3.transitionText, 'Some places absorb what developments expel.');
   assert.deepStrictEqual(dusk3.objectives, { any: 6, single: 3, figure8: 2 });
   assert.strictEqual(dusk3.durationSeconds, 100);
   assert.strictEqual(campaign.getNextLevel().id, 'midnight-01');
@@ -735,7 +792,7 @@ console.log('--- All tests passed! ---');
   let rngState = 5;
   Math.random = () => ((rngState = (rngState * 1664525 + 1013904223) >>> 0) / 4294967296);
   try {
-    for (const id of ['noon-02', 'noon-03']) {
+    for (const id of ['noon-02', 'noon-03', 'noon-04', 'noon-05', 'noon-06']) {
       const level = CAMPAIGN_LEVELS.find(l => l.id === id);
       assert.deepStrictEqual(level.wind.directions, ['right', 'left'], `${id} lists both gust directions`);
       assert.deepStrictEqual(plan.levels.find(l => l.id === id).wind.directions, level.wind.directions,

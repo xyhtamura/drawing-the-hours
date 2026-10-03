@@ -107,12 +107,13 @@ for (const bad of [
 }
 {
   const manager = new CampaignManager();
-  manager.setLevelById('dusk-03'); assert.equal(manager.getNextLevel().id, 'midnight-01');
+  manager.setLevelById('dusk-06'); assert.equal(manager.getNextLevel().id, 'midnight-01');
   const level10 = manager.setLevelById('midnight-01');
-  assert.equal(level10.transitionText, "I wake up often, and there's always rustling in the corner.");
+  assert.equal(level10.transitionText, "I'm trying to sleep.");
   assert.equal(manager.getNextLevel().id, 'midnight-02');
-  assert.ok(PLAYABLE_LEVEL_IDS.has('midnight-02') && PLAYABLE_LEVEL_IDS.has('midnight-03'));
-  assert.equal(PLAYABLE_LEVEL_IDS.size, 12, 'All 12 campaign levels are in PLAYABLE_LEVEL_IDS');
+  assert.ok(PLAYABLE_LEVEL_IDS.has('midnight-03') && PLAYABLE_LEVEL_IDS.has('midnight-06'));
+  assert.equal(PLAYABLE_LEVEL_IDS.size, 24, 'All 24 campaign levels are in PLAYABLE_LEVEL_IDS');
+  assert.ok(CAMPAIGN_LEVELS.every(l => PLAYABLE_LEVEL_IDS.has(l.id)), 'Every authored visit is playable');
 
   const clock10 = new DandelionClock(95);
   manager.processDrawing({valid:true}, [{entities:cast()}], clock10);
@@ -126,10 +127,10 @@ for (const bad of [
   manager.setLevelById('practice-midnight'); manager.recordVictory(999);
   assert.equal(JSON.stringify(manager.saveState), saved);
 
-  // --- Visit XI: Figures ---
-  const level11 = manager.setLevelById('midnight-02');
-  assert.equal(level11.transitionText, 'I trace figures, while the world moves around me.');
-  assert.equal(manager.getNextLevel().id, 'midnight-03');
+  // --- Visit XXI: Day shift, night shift ---
+  const level11 = manager.setLevelById('midnight-03');
+  assert.equal(level11.transitionText, "I don't know if I like the day shift or night shift more.");
+  assert.equal(manager.getNextLevel().id, 'midnight-04');
   assert.deepEqual(level11.gestures, ['string']);
   assert.equal(level11.stringRules, true);
   assert.equal(level11.durationSeconds, 110);
@@ -179,10 +180,38 @@ for (const bad of [
   assert.equal(manager.objectiveProgress.any.current, 6);
   assert.ok(manager.isComplete(), 'XI complete when all objectives satisfied');
 
-  // --- Visit XII: Tomorrow keeps happening ---
-  const level12 = manager.setLevelById('midnight-03');
+  // --- Visit XXII: the second Trace recipe, lacewing first ---
+  {
+    const level22 = manager.setLevelById('midnight-04');
+    assert.deepEqual(level22.traceSequence, ['lacewing', 'firefly', 'lacewing']);
+    assert.equal(level22.traceSequences, undefined, 'Only the new recipe scores as a trace in XXII');
+    assert.deepEqual(level22.objectives, { any: 5, lacewingTrace: 3 });
+    const lacewingFirst = { valid: true, mode: 'trace', recipeType: 'ORDERED_TRACE', traceSequence: level22.traceSequence };
+    assert.deepEqual(deriveObjectiveTags(lacewingFirst, []), ['any', 'trace', 'lacewingTrace']);
+    assert.deepEqual(deriveObjectiveTags(traceDrawing, []), ['any', 'trace'], 'A firefly-first trace is not a lacewing-first one');
+    const clock22 = new DandelionClock(110);
+    manager.processDrawing(traceDrawing, [], clock22);
+    assert.equal(manager.objectiveProgress.lacewingTrace.current, 0);
+    for (let i = 0; i < 3; i++) manager.processDrawing(lacewingFirst, [], clock22);
+    assert.equal(manager.objectiveProgress.lacewingTrace.current, 3);
+    manager.processDrawing(pairDrawing, pairPockets, clock22);
+    assert.ok(manager.isComplete(), 'XXII complete');
+    assert.equal(manager.getNextLevel().id, 'midnight-05');
+
+    // XXIII takes either recipe and asks for one lacewing-first trace among two.
+    const level23 = manager.setLevelById('midnight-05');
+    assert.deepEqual(level23.traceSequences, [['firefly', 'lacewing', 'firefly'], ['lacewing', 'firefly', 'lacewing']]);
+    assert.deepEqual(level23.objectives, { any: 6, single: 2, figure8: 1, trace: 2, lacewingTrace: 1 });
+    manager.processDrawing(lacewingFirst, [], clock22);
+    assert.equal(manager.objectiveProgress.trace.current, 1, 'A lacewing-first trace is also a trace');
+    assert.equal(manager.objectiveProgress.lacewingTrace.current, 1);
+    assert.equal(manager.getNextLevel().id, 'midnight-06');
+  }
+
+  // --- Visit XXIV: Tomorrow keeps happening ---
+  const level12 = manager.setLevelById('midnight-06');
   assert.equal(level12.transitionText, 'And the world does move. Because tomorrow keeps happening.');
-  assert.equal(manager.getNextLevel(), null, 'Visit XII is the final visit of the day');
+  assert.equal(manager.getNextLevel(), null, 'Visit XXIV is the final visit of the day');
   assert.deepEqual(level12.gestures, ['string']);
   assert.equal(level12.stringRules, true);
   assert.equal(level12.durationSeconds, 110);
@@ -233,33 +262,36 @@ for (const bad of [
 // Day completion check logic
 {
   const allIds = CAMPAIGN_LEVELS.map(l => l.id);
-  assert.equal(allIds.length, 12);
+  assert.equal(allIds.length, 24);
 
-  // Partial save: only midnight-03 completed
-  const partialSave = { completedLevelIds: ['midnight-03'], highestUnlockedIndex: 11 };
+  // Partial save: only midnight-06 completed
+  const partialSave = { completedLevelIds: ['midnight-06'], highestUnlockedIndex: 23 };
   assert.equal(CAMPAIGN_LEVELS.every(l => partialSave.completedLevelIds.includes(l.id)), false,
-    'Finishing XII out of order does not claim twelve visits complete');
+    'Finishing XXIV out of order does not claim every visit complete');
 
-  // Complete save: all 12 IDs present
-  const fullSave = { completedLevelIds: [...allIds], highestUnlockedIndex: 11 };
+  // Complete save: all 24 IDs present
+  const fullSave = { completedLevelIds: [...allIds], highestUnlockedIndex: 23 };
   assert.equal(CAMPAIGN_LEVELS.every(l => fullSave.completedLevelIds.includes(l.id)), true,
-    'All twelve IDs completed satisfies full day completion');
+    'All twenty-four IDs completed satisfies full day completion');
 }
 
 // Midnight string rules: single gesture without mode toggles
 {
-  for (const id of ['midnight-01', 'midnight-02', 'midnight-03']) {
-    const level = CAMPAIGN_LEVELS.find(l => l.id === id);
+  for (const level of CAMPAIGN_LEVELS.filter(l => l.hour === 'midnight')) {
+    const id = level.id;
     assert.deepEqual(level.gestures, ['string'], `${id} uses one-gesture string rules`);
     assert.equal(level.stringRules, true, `${id} has stringRules enabled`);
-    assert.deepEqual(level.traceSequence, ['firefly', 'lacewing', 'firefly'], `${id} defines firefly-lacewing-firefly trace sequence`);
+    // XXII teaches the lacewing-first recipe on its own; every other visit leads with firefly-first.
+    assert.deepEqual(level.traceSequence,
+      id === 'midnight-04' ? ['lacewing', 'firefly', 'lacewing'] : ['firefly', 'lacewing', 'firefly'],
+      `${id} defines its trace sequence`);
   }
 }
 
 // Clearance-aware initial placement in window scene
 {
   for (const [w, h] of [[960, 640], [390, 844]]) {
-    for (const lvlId of ['midnight-02', 'midnight-03']) {
+    for (const lvlId of ['midnight-02', 'midnight-03', 'midnight-04', 'midnight-05', 'midnight-06']) {
       const lvl = CAMPAIGN_LEVELS.find(l => l.id === lvlId);
       for (let run = 0; run < 10; run++) {
         const bounds = { width: w, height: h };
@@ -364,7 +396,7 @@ for (const bad of [
 const plan = JSON.parse(fs.readFileSync(new URL('../campaign-plan.json', import.meta.url)));
 for (const level of CAMPAIGN_LEVELS.filter(l => l.hour === 'midnight')) {
   const source = plan.levels.find(l => l.id === level.id);
-  for (const key of ['population', 'objectives', 'durationSeconds', 'motionScale', 'instruction', 'transitionText', 'traceSequence']) {
+  for (const key of ['population', 'objectives', 'durationSeconds', 'motionScale', 'instruction', 'transitionText', 'traceSequence', 'traceSequences']) {
     assert.deepEqual(level[key], source[key], `${level.id}: plan and runtime ${key}`);
   }
 }

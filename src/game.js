@@ -65,6 +65,7 @@ const HINT_TEXT = {
   seedTrio: 'Close one loop around three different kinds and one seed.',
   twinSeedWing: 'Cross the cord: one insect and one seed in each pocket.',
   trace: 'Thread a firefly, then a lacewing, then a different firefly in one stroke.',
+  lacewingTrace: 'Thread a lacewing, then a firefly, then the other lacewing in one stroke.',
 };
 
 // What cut the cord, named so the player can act on it. The snail is absent on
@@ -370,7 +371,7 @@ export class Game {
         }
       }
 
-      // 4. Brimstones (Visit XII)
+      // 4. Brimstones (final Midnight visit)
       const brimCount = pop.brimstone || 0;
       for (let i = 0; i < brimCount; i++) {
         let placed = false;
@@ -410,7 +411,7 @@ export class Game {
         }
       }
 
-      // 6. Perimeter Snail (Visit XII)
+      // 6. Perimeter Snail (final Midnight visit)
       const snailCount = pop.snail || 0;
       for (let i = 0; i < snailCount; i++) {
         this.entities.push(new Snail(this.width * 0.5, this.height - 35));
@@ -963,9 +964,17 @@ export class Game {
    * update, release, cord glow, and bead markers all read this one result.
    */
   traceStatus(pockets = this.activePockets) {
-    const sequence = this.currentLevel?.stringRules ? this.currentLevel.traceSequence : null;
-    if (!sequence?.length) return null;
+    const level = this.currentLevel;
+    const recipes = level?.stringRules ? (level.traceSequences || (level.traceSequence ? [level.traceSequence] : [])) : [];
+    if (!recipes.length || !recipes[0]?.length) return null;
     const order = this.stringGesture?.threadingOrder || [];
+    // With two recipes on a visit, the stroke is read against the one it follows furthest.
+    const matched = recipe => {
+      let n = 0;
+      while (n < recipe.length && n < order.length && order[n].kind === recipe[n]) n++;
+      return n;
+    };
+    const sequence = recipes.reduce((best, recipe) => (matched(recipe) > matched(best) ? recipe : best));
     const prefixMatches = order.slice(0, sequence.length).every((e, i) => e.kind === sequence[i]);
     const matchesSoFar = prefixMatches && order.length <= sequence.length;
     const complete = matchesSoFar && order.length === sequence.length;
@@ -979,7 +988,7 @@ export class Game {
       complete,
       encloses,
       ready: complete && !encloses,
-      required: sequence.map(speciesLabel).join(' → '),
+      required: recipes.map(recipe => recipe.map(speciesLabel).join(' → ')).join(', or '),
       threaded: order.map(e => speciesLabel(e.kind)).join(' → '),
     };
   }
@@ -1160,6 +1169,7 @@ export class Game {
             valid: true,
             mode: 'trace',
             recipeType: 'ORDERED_TRACE',
+            traceSequence: trace.sequence,
             title: 'Ordered Trace',
             finalScore: Math.round(240 * multiplier),
             band: band.name,
@@ -1311,7 +1321,7 @@ export class Game {
       this.state = 'PLAYING';
       this.clock.isPaused = false;
     } else if (this.state === 'LEVEL_COMPLETE' || this.state === 'VICTORY') {
-      if (this.currentLevel.id === 'midnight-03') {
+      if (this.currentLevel.id === CAMPAIGN_LEVELS[CAMPAIGN_LEVELS.length - 1].id) {
         if (typeof this.onOpenVisitModal === 'function') {
           this.onOpenVisitModal();
         } else {
@@ -1443,9 +1453,8 @@ export class Game {
         this.windStreaks = [];
       }
 
-      // Dusk Cicada Ambient Layer (Visit VIII)
-      const cicadaId = this.currentLevel?.practiceOf || this.currentLevel?.id;
-      const isCicadaLevel = cicadaId === 'dusk-02';
+      // Dusk cicada ambient layer: the visit whose line is about the cicadas carries the flag.
+      const isCicadaLevel = Boolean(this.currentLevel?.cicadas);
       audio.updateCicadas(dt, isCicadaLevel && this.state === 'PLAYING');
 
       const bounds = { width: this.width, height: this.height };
@@ -2516,18 +2525,18 @@ export class Game {
     const lvl = this.currentLevel;
     // Untimed practice copies keep the visit's teaching diagram.
     const lid = lvl.practiceOf || lvl.id;
-    const teachMidnight01 = lid === 'midnight-01' || lid === 'practice-midnight' || lid === 'practice-string-trace';
-    const teachMidnight02 = lid === 'midnight-02';
-    const teachMidnight03 = lid === 'midnight-03';
+    const teachMidnight01 = lid === 'midnight-01' || lid === 'midnight-04' || lid === 'practice-midnight' || lid === 'practice-string-trace';
+    const teachMidnight02 = lid === 'midnight-03';
+    const teachMidnight03 = lid === 'midnight-05' || lid === 'midnight-06';
     const teachLacewing = lid === 'dusk-01' || lid === 'practice-dusk';
-    const teachDusk02 = lid === 'dusk-02';
-    const teachDusk03 = lid === 'dusk-03';
+    const teachDusk02 = lid === 'dusk-03' || lid === 'dusk-04';
+    const teachDusk03 = lid === 'dusk-06';
     const teachNoon01 = lid === 'noon-01' || lid === 'practice-noon';
-    const teachNoon02 = lid === 'noon-02';
-    const teachNoon03 = lid === 'noon-03';
+    const teachNoon02 = lid === 'noon-03';
+    const teachNoon03 = lid === 'noon-06';
     const teachDawn01 = lid === 'dawn-01';
-    const teachDawn02 = lid === 'dawn-02';
-    const teachDawn03 = lid === 'dawn-03';
+    const teachDawn02 = lid === 'dawn-03' || lid === 'dawn-04';
+    const teachDawn03 = lid === 'dawn-05';
     const teachDawn = teachDawn01 || teachDawn02 || teachDawn03;
     const teachDusk = teachLacewing || teachDusk02 || teachDusk03;
     const teachMidnight = teachMidnight01 || teachMidnight02 || teachMidnight03;
@@ -2665,7 +2674,9 @@ export class Game {
 
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
         ctx.fillText('Touching an insect threads it as a bead on the cord and cancels the loop.', 0, 43);
-        ctx.fillText('Draw around creatures to enclose them. (A loop holding the snail gathers nothing.)', 0, 58);
+        ctx.fillText(lvl.population.snail
+          ? 'Draw around creatures to enclose them. A loop holding the snail gathers nothing.'
+          : 'Draw around creatures to enclose them.', 0, 58);
         ctx.restore();
       } else if (teachDawn03) {
         ctx.save(); ctx.translate(0, boxH / 2 - 108);
@@ -2717,12 +2728,14 @@ export class Game {
         ctx.restore();
       } else if (teachMidnight01) {
         ctx.save(); ctx.translate(0, boxH / 2 - 112);
-        // Cord line threading three insects
+        // Cord line threading three insects, in the order this visit asks for
+        const cardSequence = lvl.traceSequence || ['firefly', 'lacewing', 'firefly'];
+        const lacewingFirst = cardSequence[0] === 'lacewing';
         ctx.strokeStyle = themeColor('trace', '#416e83'); ctx.lineWidth = 2.4;
         ctx.beginPath(); ctx.moveTo(-110, 8); ctx.lineTo(110, 8); ctx.stroke();
         for (const [i, x] of [-70, 0, 70].entries()) {
           ctx.save(); ctx.translate(x, 8); ctx.scale(0.8, 0.8);
-          if (i === 1) drawLacewing(ctx, { lacePhase: 'rest', flapPhase: 0 });
+          if (cardSequence[i] === 'lacewing') drawLacewing(ctx, { lacePhase: 'rest', flapPhase: 0 });
           else drawFirefly(ctx, { stateTime: 0.4, glowOffset: 0 });
           ctx.restore();
           // Bead pip on the cord
@@ -2734,10 +2747,12 @@ export class Game {
           ctx.fillText(String(i + 1), x + 14, 8 - 10.5);
 
           ctx.textAlign = 'center'; ctx.fillStyle = themeColor('trace', '#315b73'); ctx.font = '11px system-ui';
-          ctx.fillText(`${i + 1}. ${i === 1 ? 'Lacewing' : 'Firefly'}`, x, 34);
+          ctx.fillText(`${i + 1}. ${cardSequence[i] === 'lacewing' ? 'Lacewing' : 'Firefly'}`, x, 34);
         }
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui';
-        ctx.fillText('Thread three insects in sequence: Firefly → Lacewing → different Firefly.', 0, 56);
+        ctx.fillText(lacewingFirst
+          ? 'Thread three insects in sequence: Lacewing → Firefly → the other Lacewing.'
+          : 'Thread three insects in sequence: Firefly → Lacewing → different Firefly.', 0, 56);
         ctx.fillText('Line may stay open or close. Release after the third to score.', 0, 71);
         ctx.restore();
       } else if (teachLacewing) {
@@ -2766,7 +2781,9 @@ export class Game {
         ctx.restore();
         ctx.textAlign = 'center'; ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '11px system-ui, sans-serif';
         ctx.fillText('Nursery: 1 flier and 1 seed in separate pockets. Cross your start to close.', 0, 41);
-        ctx.fillText('Also make a lacewing Counterpart Pair; cicadas pause intermittently.', 0, 56);
+        ctx.fillText(lvl.population.snail
+          ? 'Also make a lacewing Counterpart Pair. Keep the snail out of both pockets.'
+          : 'Exactly one of each: a second flier or seed in a pocket spoils it.', 0, 56);
         ctx.restore();
       } else if (teachDusk03) {
         ctx.save(); ctx.translate(0, boxH / 2 - 100);
@@ -2925,7 +2942,9 @@ export class Game {
         ctx.fillText('Begin a thread inside the jasmine to settle one insect on it for 24 s.', 0, 22);
         ctx.font = '11px system-ui, sans-serif'; ctx.fillStyle = themeColor('muted', '#6e5a47');
         ctx.fillText('It gathers nothing, but the insect holds still and the field thins by one.', 0, 38);
-        ctx.fillText('Brimstones and the snail return. A stroke cannot both thread and enclose.', 0, 54);
+        ctx.fillText(lvl.population.brimstone
+          ? 'Brimstones and the snail return. A stroke cannot both thread and enclose.'
+          : 'Either trace counts: firefly first or lacewing first.', 0, 54);
         ctx.restore();
       }
 
@@ -2947,7 +2966,7 @@ export class Game {
   drawLevelCompleteModal(ctx) {
     const lvl = this.currentLevel;
     const nextLevel = this.campaign.getNextLevel();
-    const isMidnight12 = lvl.id === 'midnight-03';
+    const isMidnight12 = lvl.id === CAMPAIGN_LEVELS[CAMPAIGN_LEVELS.length - 1].id;
     const save = this.campaign.saveState;
     const completedIds = save?.completedLevelIds || [];
     const all12Completed = isMidnight12 && CAMPAIGN_LEVELS.every(l => completedIds.includes(l.id));
@@ -2964,9 +2983,9 @@ export class Game {
       ctx.textAlign = 'center';
 
       if (all12Completed) {
-        ctx.fillText('Twelve Visits Complete', 0, -boxH / 2 + 38);
+        ctx.fillText('Twenty-Four Visits Complete', 0, -boxH / 2 + 38);
       } else if (isMidnight12) {
-        ctx.fillText('Visit XII Complete', 0, -boxH / 2 + 38);
+        ctx.fillText('Visit XXIV Complete', 0, -boxH / 2 + 38);
       } else {
         ctx.fillText('Visit Complete', 0, -boxH / 2 + 38);
       }
@@ -2974,7 +2993,7 @@ export class Game {
       ctx.font = isNarrow ? 'italic 12px Mali, sans-serif' : 'italic 14px Mali, sans-serif';
       ctx.fillStyle = themeColor('vein', '#5a7857');
       if (all12Completed) {
-        ctx.fillText('The day harmonized peacefully across all twelve visits.', 0, -boxH / 2 + 62);
+        ctx.fillText('The day harmonized peacefully across all twenty-four visits.', 0, -boxH / 2 + 62);
       } else {
         ctx.fillText(`${lvl.title} harmonized peacefully.`, 0, -boxH / 2 + 62);
       }
@@ -2997,7 +3016,7 @@ export class Game {
 
       if (all12Completed) {
         const totalRecord = CAMPAIGN_LEVELS.reduce((sum, l) => sum + (save?.bestScores?.[l.id] || 0), 0);
-        ctx.fillText(`Campaign Record: ${totalRecord} pts  (Visit XII: ${this.score} pts)`, 0, startY + 14);
+        ctx.fillText(`Campaign Record: ${totalRecord} pts  (Visit XXIV: ${this.score} pts)`, 0, startY + 14);
       } else {
         ctx.fillText(`Score: ${this.score} pts  (Best: ${best} pts)`, 0, startY + 12);
       }

@@ -20,7 +20,7 @@
  * Usage:
  *   node test/measure_string_sandbox.js
  *   node test/measure_string_sandbox.js --runs 20 --limits 900,1100,1300,none
- *   node test/measure_string_sandbox.js --visits dawn-03 --speed 900
+ *   node test/measure_string_sandbox.js --visits dawn-05 --speed 900
  *   node test/measure_string_sandbox.js --json > string-measure.json
  */
 
@@ -37,7 +37,7 @@ const RUNS = Number(option('runs', 10));
 const LIMITS = option('limits', '800,1000,1150,1300,1600,none')
   .split(',').map(v => (v === 'none' ? Infinity : Number(v)));
 const SPEED = Number(option('speed', 700)); // px per second along the loop
-const VISITS = option('visits', 'dawn-02,dawn-03').split(',');
+const VISITS = option('visits', 'dawn-04,dawn-05').split(',');
 const JSON_OUT = args.includes('--json');
 
 const DT = 1 / 60;

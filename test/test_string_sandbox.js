@@ -673,7 +673,7 @@ console.log('--- Running String Sandbox Test Suite ---');
   };
   const game = new Game(canvas);
 
-  for (const id of ['dawn-01', 'dawn-02', 'dawn-03']) {
+  for (const id of CAMPAIGN_LEVELS.filter(l => l.hour === 'dawn').map(l => l.id)) {
     game.initLevel(id);
     game.state = 'PLAYING';
     assert.strictEqual(game.currentLevel.stringRules, true, `${id} has stringRules: true`);
@@ -1071,7 +1071,7 @@ console.log('--- Running String Sandbox Test Suite ---');
 
 // 22. Noon IV–VI adopt string rules and ask only for loops; the crossing is Dusk's
 {
-  const noonIds = ['noon-01', 'noon-02', 'noon-03'];
+  const noonIds = CAMPAIGN_LEVELS.filter(l => l.hour === 'noon').map(l => l.id);
   const plan = JSON.parse(fs.readFileSync(new URL('../campaign-plan.json', import.meta.url)));
   for (const id of [...noonIds, 'practice-noon']) {
     const level = [...CAMPAIGN_LEVELS, ...PRACTICE_LEVELS].find(l => l.id === id);
@@ -1152,7 +1152,7 @@ console.log('--- Running String Sandbox Test Suite ---');
       `A figure-eight left open at its start does not count (got "${game.feedbackBanner.text}")`);
 
     // Nursery during Dusk VIII: one flier and one seed in separate pockets.
-    setup('dusk-02', new Insect(380, 320, 'hawkmoth'), new DandelionSeed(580, 320));
+    setup('dusk-04', new Insect(380, 320, 'hawkmoth'), new DandelionSeed(580, 320));
     drawFigureEight(Math.PI * 2 + 0.35);
     assert.ok(game.feedbackBanner.text.startsWith('Nursery Polarity'),
       `A closed figure-eight scores a Nursery (got "${game.feedbackBanner.text}")`);
@@ -1166,7 +1166,7 @@ console.log('--- Running String Sandbox Test Suite ---');
 
 // 23. Dusk VII–IX adopt string rules; lacewings, nurseries, switching gestures, and walls
 {
-  const duskIds = ['dusk-01', 'dusk-02', 'dusk-03'];
+  const duskIds = CAMPAIGN_LEVELS.filter(l => l.hour === 'dusk').map(l => l.id);
   const plan = JSON.parse(fs.readFileSync(new URL('../campaign-plan.json', import.meta.url)));
   for (const id of [...duskIds, 'practice-dusk']) {
     const level = [...CAMPAIGN_LEVELS, ...PRACTICE_LEVELS].find(l => l.id === id);
@@ -1246,8 +1246,8 @@ console.log('--- Running String Sandbox Test Suite ---');
     assert.strictEqual(game.campaign.objectiveProgress.lacewingCounterpart.current, 1,
       'Open figure-eight in Dusk 1 does not advance objective');
 
-    // 2. Dusk 2 (dusk-02): Nursery Polarity (1 flier + 1 seed)
-    game.initLevel('dusk-02');
+    // 2. Dusk 2 (dusk-04): Nursery Polarity (1 flier + 1 seed)
+    game.initLevel('dusk-04');
     game.state = 'PLAYING';
     game.entities = [new Insect(380, 320, 'brimstone'), new DandelionSeed(580, 320)];
     drawFigureEight(Math.PI * 2 + 0.35);
@@ -1255,8 +1255,8 @@ console.log('--- Running String Sandbox Test Suite ---');
       `Dusk 2 figure-eight scores Nursery Polarity (got "${game.feedbackBanner.text}")`);
     assert.strictEqual(game.campaign.objectiveProgress.nursery.current, 1);
 
-    // 3. Dusk 3 (dusk-03): Switching gestures (single loops and figure-eights)
-    game.initLevel('dusk-03');
+    // 3. Dusk 3 (dusk-06): Switching gestures (single loops and figure-eights)
+    game.initLevel('dusk-06');
     game.state = 'PLAYING';
     // Single loop around two brimstones
     game.entities = [new Insect(285, 300, 'brimstone'), new Insect(315, 300, 'brimstone')];
@@ -1270,7 +1270,7 @@ console.log('--- Running String Sandbox Test Suite ---');
 
     // 4. The snail no longer cuts the cord; it spoils the pocket that holds it
     //    (Xyh, 2026-09-16: a hazard disturbs one way or the other, not both).
-    game.initLevel('dusk-02');
+    game.initLevel('dusk-04');
     game.state = 'PLAYING';
     const snail = new Snail(300, 300);
     game.entities = [snail];
@@ -1279,7 +1279,7 @@ console.log('--- Running String Sandbox Test Suite ---');
     assert.strictEqual(game.isDrawing, true, 'A cord drawn over the snail keeps going');
     pointer('pointerup', [400, 300]);
 
-    game.initLevel('dusk-02');
+    game.initLevel('dusk-04');
     game.state = 'PLAYING';
     game.entities = [new Snail(480, 320), new Insect(440, 320, 'brimstone'), new Insect(520, 320, 'brimstone')];
     const ring = [];
@@ -1353,10 +1353,10 @@ console.log('--- Running String Sandbox Test Suite ---');
 
 // 24. Midnight X–XII adopt string rules; all twelve visits run under one gesture
 {
-  const midnightIds = ['midnight-01', 'midnight-02', 'midnight-03'];
+  const midnightIds = CAMPAIGN_LEVELS.filter(l => l.hour === 'midnight').map(l => l.id);
   const plan = JSON.parse(fs.readFileSync(new URL('../campaign-plan.json', import.meta.url)));
 
-  // All 12 campaign levels and practice levels now use string rules
+  // All 24 campaign levels and practice levels now use string rules
   for (const level of CAMPAIGN_LEVELS) {
     assert.strictEqual(level.stringRules, true, `${level.id} uses string rules`);
     assert.deepStrictEqual(level.gestures, ['string'], `${level.id} has gestures ['string']`);
@@ -1365,7 +1365,9 @@ console.log('--- Running String Sandbox Test Suite ---');
     const source = plan.levels.find(l => l.id === id);
     assert.strictEqual(source.stringRules, true, `${id}: plan has stringRules`);
     assert.deepStrictEqual(source.gestures, ['string'], `${id}: plan has gestures ['string']`);
-    assert.deepStrictEqual(source.traceSequence, ['firefly', 'lacewing', 'firefly']);
+    // XXII teaches the lacewing-first recipe alone; the rest lead with firefly-first.
+    assert.deepStrictEqual(source.traceSequence,
+      id === 'midnight-04' ? ['lacewing', 'firefly', 'lacewing'] : ['firefly', 'lacewing', 'firefly']);
   }
 
   const listeners = { window: {}, canvas: {} };
@@ -1419,7 +1421,7 @@ console.log('--- Running String Sandbox Test Suite ---');
       pointer('pointerup', ...lemniscate(endT));
     };
 
-    // 1. Visit X (midnight-01): Ordered Trace threading in sequence
+    // 1. Visit XIX (midnight-01): Ordered Trace threading in sequence
     game.initLevel('midnight-01');
     game.state = 'PLAYING';
     const f1 = new Insect(200, 300, 'firefly');
@@ -1432,11 +1434,11 @@ console.log('--- Running String Sandbox Test Suite ---');
     assert.strictEqual(game.stringGesture.beads.length, 3);
     assert.strictEqual(game.traceStatus().ready, true);
     pointer('pointerup', 600, 300);
-    assert.ok(game.feedbackBanner.text.startsWith('Ordered Trace'), `Visit X trace scores (got "${game.feedbackBanner.text}")`);
-    assert.strictEqual(game.campaign.objectiveProgress.trace.current, 1, 'Trace advances trace objective in Visit X');
+    assert.ok(game.feedbackBanner.text.startsWith('Ordered Trace'), `Visit XIX trace scores (got "${game.feedbackBanner.text}")`);
+    assert.strictEqual(game.campaign.objectiveProgress.trace.current, 1, 'Trace advances trace objective in Visit XIX');
 
-    // 2. Visit XI (midnight-02): Loop and Trace coexistence without modes
-    game.initLevel('midnight-02');
+    // 2. Visit XXI (midnight-03): Loop and Trace coexistence without modes
+    game.initLevel('midnight-03');
     game.state = 'PLAYING';
 
     // (a) Pair enclosure with single loop
@@ -1487,11 +1489,11 @@ console.log('--- Running String Sandbox Test Suite ---');
     assert.strictEqual(game.campaign.objectiveProgress.trace.current, 1, 'Impure stroke does not advance trace');
     assert.strictEqual(game.campaign.objectiveProgress.any.current, 4, 'Impure stroke does not advance any');
 
-    // 3. Visit XII (midnight-03): Synthesis & Snail Hazard
-    game.initLevel('midnight-03');
+    // 3. Visit XXIV (midnight-06): Synthesis & Snail Hazard
+    game.initLevel('midnight-06');
     game.state = 'PLAYING';
 
-    // Nursery Polarity in Visit XII
+    // Nursery Polarity in Visit XXIV
     game.entities = [new Insect(380, 320, 'brimstone'), new DandelionSeed(580, 320)];
     drawFigureEight(Math.PI * 2 + 0.35);
     assert.strictEqual(game.campaign.objectiveProgress.nursery.current, 1, 'Nursery advances nursery objective');
@@ -1505,10 +1507,48 @@ console.log('--- Running String Sandbox Test Suite ---');
     pointer('pointermove', 300, 300);
     assert.strictEqual(game.isDrawing, true, 'A cord drawn over the snail keeps going');
     pointer('pointerup', 400, 300);
+
+    // 4. Visit XXII (midnight-04): the second recipe, lacewing → firefly → lacewing
+    const threadThree = (kinds) => {
+      game.entities = kinds.map((kind, i) => new Insect(200 + i * 150, 300, kind));
+      pointer('pointerdown', 100, 300);
+      drawLine(100, 300, 600, 300);
+      const status = game.traceStatus();
+      pointer('pointerup', 600, 300);
+      return status;
+    };
+    game.initLevel('midnight-04');
+    game.state = 'PLAYING';
+    assert.strictEqual(threadThree(['lacewing', 'firefly', 'lacewing']).ready, true, 'Lacewing-first trace is ready in XXII');
+    assert.ok(game.feedbackBanner.text.startsWith('Ordered Trace'), `XXII lacewing-first trace scores (got "${game.feedbackBanner.text}")`);
+    assert.strictEqual(game.campaign.objectiveProgress.lacewingTrace.current, 1, 'It advances the lacewing-first objective');
+    assert.strictEqual(game.campaign.objectiveProgress.any.current, 1);
+    assert.strictEqual(threadThree(['firefly', 'lacewing', 'firefly']).ready, false, 'The firefly-first recipe does not score in XXII');
+    assert.strictEqual(game.campaign.objectiveProgress.any.current, 1, 'and advances nothing');
+
+    // 5. Visits XXIII and XXIV take either recipe, and read a stroke against the one it follows
+    game.initLevel('midnight-05');
+    game.state = 'PLAYING';
+    assert.deepStrictEqual(threadThree(['lacewing', 'firefly', 'lacewing']).sequence, ['lacewing', 'firefly', 'lacewing']);
+    assert.strictEqual(game.campaign.objectiveProgress.lacewingTrace.current, 1, 'XXIII counts the lacewing-first trace');
+    assert.strictEqual(game.campaign.objectiveProgress.trace.current, 1, 'which is also a trace');
+    assert.deepStrictEqual(threadThree(['firefly', 'lacewing', 'firefly']).sequence, ['firefly', 'lacewing', 'firefly']);
+    assert.strictEqual(game.campaign.objectiveProgress.trace.current, 2, 'XXIII counts the firefly-first trace');
+    assert.strictEqual(game.campaign.objectiveProgress.lacewingTrace.current, 1, 'which is not lacewing-first');
+    const mixed = threadThree(['lacewing', 'lacewing', 'firefly']);
+    assert.strictEqual(mixed.ready, false, 'A stroke that follows neither recipe is not ready');
+    assert.strictEqual(game.campaign.objectiveProgress.trace.current, 2, 'and scores nothing');
+    assert.ok(/, or /.test(mixed.required), `The fault names both recipes (got "${mixed.required}")`);
+
+    game.initLevel('midnight-06');
+    game.state = 'PLAYING';
+    threadThree(['lacewing', 'firefly', 'lacewing']);
+    threadThree(['firefly', 'lacewing', 'firefly']);
+    assert.strictEqual(game.campaign.objectiveProgress.trace.current, 2, 'XXIV takes two traces of either kind');
   } finally {
     if (!hadWindow) delete globalThis.window;
     if (!hadDocument) delete globalThis.document;
   }
-  console.log('✔ Midnight X–XII adopt string rules; trace, loop coexistence, purity, and snail hazards verified.');
+  console.log('✔ Midnight XIX–XXIV adopt string rules; trace, both recipes, loop coexistence, purity, and snail hazards verified.');
 }
 console.log('--- All String Sandbox unit tests passed! ---');

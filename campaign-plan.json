@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "all-twelve-visits-string-rules",
+  "status": "all-twenty-four-visits-string-rules",
   "title": "Drawing the Hours",
   "campaignId": "first-twelve",
   "defaults": {
@@ -15,6 +15,7 @@
       "number": 1,
       "title": "Before the bus",
       "hour": "dawn",
+      "hourLabel": "Dawn · Visit I",
       "scene": "curb",
       "transitionText": "Another morning of standing, waiting for the bus.",
       "durationSeconds": 75,
@@ -43,10 +44,72 @@
     {
       "id": "dawn-02",
       "number": 2,
-      "title": "Something in the air",
+      "title": "The curbside patch",
       "hour": "dawn",
+      "hourLabel": "Dawn · Visit II",
       "scene": "curb",
       "transitionText": "I like to watch the insects here, in this patch by the curbside.",
+      "durationSeconds": 80,
+      "population": {
+        "brimstone": 3,
+        "damselfly": 3,
+        "hawkmoth": 0,
+        "seed": 0,
+        "snail": 0,
+        "lacewing": 0,
+        "firefly": 0
+      },
+      "motionScale": 0.85,
+      "objectives": {
+        "pair": 5
+      },
+      "instruction": "Draw five loops, each around two insects of the same kind.",
+      "designNote": "Nothing new. The two kinds are now equal in number, so a matching pair has to be picked out of a mixed field, and the clock runs from the start.",
+      "gestures": [
+        "string"
+      ],
+      "stringRules": true,
+      "wind": null
+    },
+    {
+      "id": "dawn-03",
+      "number": 3,
+      "title": "Something in the air",
+      "hour": "dawn",
+      "hourLabel": "Dawn · Visit III",
+      "scene": "curb",
+      "transitionText": "Maybe I have an overactive imagination.",
+      "durationSeconds": 85,
+      "population": {
+        "brimstone": 2,
+        "damselfly": 2,
+        "hawkmoth": 0,
+        "seed": 3,
+        "snail": 0,
+        "lacewing": 0,
+        "firefly": 0
+      },
+      "motionScale": 0.85,
+      "objectives": {
+        "any": 5,
+        "seedWing": 2
+      },
+      "instruction": "Make five combinations, including two loops with one insect and one seed.",
+      "designNote": "Add airborne seeds on a field with no hazard, so Seed & Wing is learned before anything can spoil it.",
+      "gestures": [
+        "string"
+      ],
+      "stringRules": true,
+      "wind": null
+    },
+    {
+      "id": "dawn-04",
+      "number": 4,
+      "title": "In my thirties",
+      "hour": "dawn",
+      "hourLabel": "Dawn · Visit IV",
+      "scene": "curb",
+      "transitionText": "In my thirties, I still don't feel like an adult sometimes.",
       "durationSeconds": 85,
       "population": {
         "brimstone": 2,
@@ -63,7 +126,7 @@
         "seedWing": 2
       },
       "instruction": "Make five combinations, including two loops with one insect and one seed. Draw around the snail.",
-      "designNote": "Add airborne seeds and a mid-field snail whose touch breaks the cord; keep the two familiar insects.",
+      "designNote": "Add a mid-field snail that spoils any loop holding it; the cast and the requirement repeat the visit before.",
       "gestures": [
         "string"
       ],
@@ -72,12 +135,13 @@
       "snailRoute": "seam"
     },
     {
-      "id": "dawn-03",
-      "number": 3,
-      "title": "The curbside patch",
+      "id": "dawn-05",
+      "number": 5,
+      "title": "Hard to save",
       "hour": "dawn",
+      "hourLabel": "Dawn · Visit V",
       "scene": "curb",
-      "transitionText": "Maybe I have an overactive imagination.",
+      "transitionText": "It's hard to save, and prices keep getting higher.",
       "durationSeconds": 90,
       "population": {
         "brimstone": 2,
@@ -103,10 +167,45 @@
       "snailRoute": "seam"
     },
     {
+      "id": "dawn-06",
+      "number": 6,
+      "title": "Not how I imagined",
+      "hour": "dawn",
+      "hourLabel": "Dawn · Visit VI",
+      "scene": "curb",
+      "transitionText": "This is not how I imagined adulthood.",
+      "durationSeconds": 100,
+      "population": {
+        "brimstone": 2,
+        "damselfly": 2,
+        "hawkmoth": 2,
+        "seed": 2,
+        "snail": 1,
+        "lacewing": 0,
+        "firefly": 0
+      },
+      "motionScale": 0.9,
+      "objectives": {
+        "any": 6,
+        "pair": 1,
+        "seedWing": 2,
+        "trio": 1
+      },
+      "instruction": "Make six combinations, including a matching pair, two loops with one insect and one seed, and a loop with three different kinds.",
+      "designNote": "Nothing new. Every Dawn figure on one field: three kinds, seeds, and the seam snail, so a trio has to be closed clear of the seeds.",
+      "gestures": [
+        "string"
+      ],
+      "stringRules": true,
+      "wind": null,
+      "snailRoute": "seam"
+    },
+    {
       "id": "noon-01",
-      "number": 4,
+      "number": 7,
       "title": "Lunch in the atrium",
       "hour": "noon",
+      "hourLabel": "Noon · Visit VII",
       "scene": "atrium",
       "transitionText": "Today, for lunch, I bought myself a sandwich.",
       "durationSeconds": 90,
@@ -136,11 +235,54 @@
     },
     {
       "id": "noon-02",
-      "number": 5,
+      "number": 8,
       "title": "For now",
       "hour": "noon",
+      "hourLabel": "Noon · Visit VIII",
       "scene": "atrium",
       "transitionText": "I don't know how much longer my job will exist.",
+      "durationSeconds": 110,
+      "population": {
+        "brimstone": 2,
+        "damselfly": 0,
+        "hoverfly": 2,
+        "hawkmoth": 0,
+        "seed": 3,
+        "snail": 0,
+        "lacewing": 0,
+        "firefly": 0,
+        "bean": 1
+      },
+      "motionScale": 0.85,
+      "objectives": {
+        "any": 6,
+        "seedWing": 3
+      },
+      "instruction": "Make six combinations, including three loops with one insect and one seed. A gust carries the seeds sideways; streaks cross the field two seconds before it.",
+      "designNote": "Introduce the two-second gusts alone. Nothing cuts the cord yet, so the only new judgement is when to close around a drifting seed.",
+      "gestures": [
+        "string"
+      ],
+      "stringRules": true,
+      "wind": {
+        "periodSeconds": 12,
+        "warningSeconds": 2,
+        "gustSeconds": 2,
+        "directions": [
+          "right",
+          "left"
+        ],
+        "seedSpeedPlayWidthsPerSecond": 0.08
+      }
+    },
+    {
+      "id": "noon-03",
+      "number": 9,
+      "title": "The glass and the leaves",
+      "hour": "noon",
+      "hourLabel": "Noon · Visit IX",
+      "scene": "atrium",
+      "transitionText": "This atrium makes me feel calmer.",
       "durationSeconds": 110,
       "population": {
         "brimstone": 2,
@@ -160,7 +302,7 @@
         "seedWing": 3
       },
       "instruction": "Make six combinations, including three loops with one insect and one seed. The hornet cuts a cord it touches.",
-      "designNote": "Introduce the wandering hornet beside the two-second gusts. The recipes stay simple and the count rises, so the visit asks for speed rather than care.",
+      "designNote": "Introduce the wandering hornet on the field the gusts were learned on. The recipes stay simple and the count rises, so the visit asks for speed rather than care.",
       "gestures": [
         "string"
       ],
@@ -177,12 +319,107 @@
       }
     },
     {
-      "id": "noon-03",
-      "number": 6,
-      "title": "The glass and the leaves",
+      "id": "noon-04",
+      "number": 10,
+      "title": "At my age",
       "hour": "noon",
+      "hourLabel": "Noon · Visit X",
       "scene": "atrium",
-      "transitionText": "This atrium makes me feel calmer.",
+      "transitionText": "At my age, my mother already held a high company position.",
+      "durationSeconds": 110,
+      "population": {
+        "brimstone": 2,
+        "damselfly": 0,
+        "hoverfly": 2,
+        "hawkmoth": 2,
+        "seed": 2,
+        "snail": 0,
+        "lacewing": 0,
+        "firefly": 0,
+        "hornet": 1,
+        "bean": 1
+      },
+      "motionScale": 0.85,
+      "objectives": {
+        "any": 6,
+        "seedTrio": 1
+      },
+      "instruction": "Make six combinations, including one loop with a seed and three different insects. Pick a flax flower first: the loop is a long one.",
+      "designNote": "Introduce Seed & Trio, once, with the hornet and the gusts already familiar and no web. The bean is what makes the four-target loop reachable.",
+      "gestures": [
+        "string"
+      ],
+      "stringRules": true,
+      "wind": {
+        "periodSeconds": 12,
+        "warningSeconds": 2,
+        "gustSeconds": 2,
+        "directions": [
+          "right",
+          "left"
+        ],
+        "seedSpeedPlayWidthsPerSecond": 0.08
+      }
+    },
+    {
+      "id": "noon-05",
+      "number": 11,
+      "title": "Six years old",
+      "hour": "noon",
+      "hourLabel": "Noon · Visit XI",
+      "scene": "atrium",
+      "transitionText": "I was already six years old.",
+      "durationSeconds": 105,
+      "population": {
+        "brimstone": 2,
+        "damselfly": 0,
+        "hoverfly": 2,
+        "hawkmoth": 2,
+        "seed": 2,
+        "snail": 0,
+        "lacewing": 0,
+        "firefly": 0,
+        "hornet": 1,
+        "web": 1,
+        "bean": 1
+      },
+      "motionScale": 0.85,
+      "objectives": {
+        "any": 6,
+        "seedWing": 2,
+        "trio": 1
+      },
+      "instruction": "Make six combinations, including two loops with one insect and one seed, and one loop with three different kinds. The web cuts a cord that touches it.",
+      "designNote": "Introduce the web under figures the player already draws quickly. It hangs where it will hang in the next visit.",
+      "webPatches": [
+        [
+          0.29,
+          0.31
+        ]
+      ],
+      "gestures": [
+        "string"
+      ],
+      "stringRules": true,
+      "wind": {
+        "periodSeconds": 12,
+        "warningSeconds": 2,
+        "gustSeconds": 2,
+        "directions": [
+          "right",
+          "left"
+        ],
+        "seedSpeedPlayWidthsPerSecond": 0.08
+      }
+    },
+    {
+      "id": "noon-06",
+      "number": 12,
+      "title": "A future like that",
+      "hour": "noon",
+      "hourLabel": "Noon · Visit XII",
+      "scene": "atrium",
+      "transitionText": "It's hard for me to think of a future like that.",
       "durationSeconds": 100,
       "population": {
         "brimstone": 2,
@@ -203,7 +440,13 @@
         "seedTrio": 2
       },
       "instruction": "Make six combinations, including two loops with a seed and three different insects. The web and the hornet cut a cord they touch.",
-      "designNote": "The longest loop of the day against the web, the hornet, and the breeze, and five more drawings around it. The bean is what makes the four-target loop reachable.",
+      "designNote": "Nothing new. The longest loop of the day against the web, the hornet, and the breeze, and five more drawings around it.",
+      "webPatches": [
+        [
+          0.29,
+          0.31
+        ]
+      ],
       "gestures": [
         "string"
       ],
@@ -217,19 +460,14 @@
           "left"
         ],
         "seedSpeedPlayWidthsPerSecond": 0.08
-      },
-      "webPatches": [
-        [
-          0.29,
-          0.31
-        ]
-      ]
+      }
     },
     {
       "id": "dusk-01",
-      "number": 7,
+      "number": 13,
       "title": "The way through",
       "hour": "dusk",
+      "hourLabel": "Dusk · Visit XIII",
       "scene": "passage",
       "transitionText": "I always find myself walking home through here.",
       "durationSeconds": 100,
@@ -254,18 +492,84 @@
         "string"
       ],
       "stringRules": true,
-      "wind": null,
-      "hourLabel": "Dusk · Visit VII"
+      "wind": null
     },
     {
       "id": "dusk-02",
-      "number": 8,
+      "number": 14,
       "title": "The gaps in the sound",
       "hour": "dusk",
+      "hourLabel": "Dusk · Visit XIV",
       "scene": "passage",
       "transitionText": "I can hear the cicadas. And sometimes I can't.",
+      "durationSeconds": 100,
+      "population": {
+        "brimstone": 2,
+        "damselfly": 0,
+        "hoverfly": 2,
+        "hawkmoth": 0,
+        "seed": 0,
+        "snail": 0,
+        "lacewing": 2,
+        "firefly": 0
+      },
+      "motionScale": 0.85,
+      "objectives": {
+        "any": 5,
+        "counterpartPair": 3
+      },
+      "instruction": "Make five combinations, including three figure-eights with two different kinds in separate pockets.",
+      "designNote": "Nothing new on the field. Brimstones join, so the figure-eight is drawn around a flier that does not wait. The cicada layer plays here.",
+      "gestures": [
+        "string"
+      ],
+      "stringRules": true,
+      "wind": null,
+      "cicadas": true
+    },
+    {
+      "id": "dusk-03",
+      "number": 15,
+      "title": "Carrying something home",
+      "hour": "dusk",
+      "hourLabel": "Dusk · Visit XV",
+      "scene": "passage",
+      "transitionText": "Bringing home medicine today.",
+      "durationSeconds": 100,
+      "population": {
+        "brimstone": 2,
+        "damselfly": 0,
+        "hoverfly": 2,
+        "hawkmoth": 0,
+        "seed": 3,
+        "snail": 0,
+        "lacewing": 2,
+        "firefly": 0
+      },
+      "motionScale": 0.85,
+      "objectives": {
+        "any": 5,
+        "nursery": 2
+      },
+      "instruction": "Make five combinations, including two Nurseries: one flier in one pocket and one seed in the other.",
+      "designNote": "Add seeds to the resting-insect field and introduce the Nursery, with no snail and no flax flower yet.",
+      "gestures": [
+        "string"
+      ],
+      "stringRules": true,
+      "wind": null
+    },
+    {
+      "id": "dusk-04",
+      "number": 16,
+      "title": "Almost nominal",
+      "hour": "dusk",
+      "hourLabel": "Dusk · Visit XVI",
+      "scene": "passage",
+      "transitionText": "Some health coverages are almost nominal.",
       "durationSeconds": 95,
       "population": {
+        "bean": 1,
         "brimstone": 2,
         "damselfly": 0,
         "hoverfly": 2,
@@ -273,32 +577,64 @@
         "seed": 3,
         "snail": 1,
         "lacewing": 2,
-        "firefly": 0,
-        "bean": 1
+        "firefly": 0
       },
+      "beanRegrowSeconds": 24,
       "motionScale": 0.85,
       "objectives": {
         "any": 5,
         "nursery": 1,
         "lacewingCounterpart": 1
       },
-      "instruction": "Make five combinations, including a Nursery (1 flier and 1 seed) and a lacewing Counterpart Pair.",
-      "designNote": "Add seeds to the resting-insect field; defer mixed Echoes pending gesture calibration.",
+      "instruction": "Make five combinations, including a Nursery (1 flier and 1 seed) and a lacewing Counterpart Pair. The snail and the flax flower are back.",
+      "designNote": "The snail and the flax flower return to the Nursery field; defer mixed Echoes pending gesture calibration.",
       "gestures": [
         "string"
       ],
       "stringRules": true,
-      "wind": null,
-      "hourLabel": "Dusk · Visit VIII",
-      "beanRegrowSeconds": 24
+      "wind": null
     },
     {
-      "id": "dusk-03",
-      "number": 9,
-      "title": "Carrying something home",
+      "id": "dusk-05",
+      "number": 17,
+      "title": "The long way home",
       "hour": "dusk",
+      "hourLabel": "Dusk · Visit XVII",
       "scene": "passage",
-      "transitionText": "Bringing home medicine today.",
+      "transitionText": "The long way home, where I pass by tall grasses and scrap metal",
+      "durationSeconds": 100,
+      "population": {
+        "brimstone": 2,
+        "damselfly": 0,
+        "hoverfly": 2,
+        "hawkmoth": 0,
+        "seed": 2,
+        "snail": 1,
+        "lacewing": 2,
+        "firefly": 0
+      },
+      "motionScale": 0.9,
+      "objectives": {
+        "any": 5,
+        "single": 2,
+        "figure8": 2
+      },
+      "instruction": "Make five combinations, including two single loops and two figure-eights.",
+      "designNote": "First visit that asks for both shapes by name. Six fliers, so the switch is practised before the field fills.",
+      "gestures": [
+        "string"
+      ],
+      "stringRules": true,
+      "wind": null
+    },
+    {
+      "id": "dusk-06",
+      "number": 18,
+      "title": "What places absorb",
+      "hour": "dusk",
+      "hourLabel": "Dusk · Visit XVIII",
+      "scene": "passage",
+      "transitionText": "Some places absorb what developments expel.",
       "durationSeconds": 100,
       "population": {
         "brimstone": 2,
@@ -317,21 +653,21 @@
         "figure8": 2
       },
       "instruction": "Make six combinations, including three single loops and two figure-eights.",
-      "designNote": "Require switching gestures amid eight fliers.",
+      "designNote": "Nothing new. Require switching gestures amid eight fliers.",
       "gestures": [
         "string"
       ],
       "stringRules": true,
-      "wind": null,
-      "hourLabel": "Dusk · Visit IX"
+      "wind": null
     },
     {
       "id": "midnight-01",
-      "number": 10,
-      "title": "The window corner",
+      "number": 19,
+      "title": "Trying to sleep",
       "hour": "midnight",
+      "hourLabel": "Midnight · Visit XIX",
       "scene": "window",
-      "transitionText": "I wake up often, and there's always rustling in the corner.",
+      "transitionText": "I'm trying to sleep.",
       "durationSeconds": 95,
       "population": {
         "brimstone": 0,
@@ -357,16 +693,52 @@
         "firefly",
         "lacewing",
         "firefly"
-      ],
-      "hourLabel": "Midnight · Visit X"
+      ]
     },
     {
       "id": "midnight-02",
-      "number": 11,
-      "title": "Figures",
+      "number": 20,
+      "title": "Rows of car lights",
       "hour": "midnight",
+      "hourLabel": "Midnight · Visit XX",
       "scene": "window",
-      "transitionText": "I trace figures, while the world moves around me.",
+      "transitionText": "I dream about endless rows of car lights.",
+      "durationSeconds": 105,
+      "population": {
+        "brimstone": 0,
+        "damselfly": 0,
+        "hoverfly": 2,
+        "hawkmoth": 0,
+        "seed": 0,
+        "snail": 0,
+        "lacewing": 2,
+        "firefly": 3
+      },
+      "motionScale": 0.9,
+      "objectives": {
+        "trace": 4
+      },
+      "instruction": "Make four traces: firefly, lacewing, then another firefly. A hoverfly threaded on the way spoils the trace.",
+      "designNote": "Nothing new. Hoverflies stand in the way of the same trace, so the line has to be routed and not only ordered.",
+      "gestures": [
+        "string"
+      ],
+      "stringRules": true,
+      "wind": null,
+      "traceSequence": [
+        "firefly",
+        "lacewing",
+        "firefly"
+      ]
+    },
+    {
+      "id": "midnight-03",
+      "number": 21,
+      "title": "Day shift, night shift",
+      "hour": "midnight",
+      "hourLabel": "Midnight · Visit XXI",
+      "scene": "window",
+      "transitionText": "I don't know if I like the day shift or night shift more.",
       "durationSeconds": 110,
       "population": {
         "brimstone": 0,
@@ -387,7 +759,91 @@
         "trace": 2
       },
       "instruction": "Make six combinations: include a pair, Seed & Wing, a figure-eight, and two traces.",
-      "designNote": "Add hoverflies and seeds to the familiar cast; combine looping and threading without mode switching. Xyh played it through without help, so the jasmine waits for XII.",
+      "designNote": "Add seeds to the familiar cast; combine looping and threading without mode switching. Xyh played it through without help.",
+      "gestures": [
+        "string"
+      ],
+      "stringRules": true,
+      "wind": null,
+      "traceSequence": [
+        "firefly",
+        "lacewing",
+        "firefly"
+      ]
+    },
+    {
+      "id": "midnight-04",
+      "number": 22,
+      "title": "The window corner",
+      "hour": "midnight",
+      "hourLabel": "Midnight · Visit XXII",
+      "scene": "window",
+      "transitionText": "I wake up often, and there's always rustling in the corner.",
+      "durationSeconds": 110,
+      "population": {
+        "brimstone": 0,
+        "damselfly": 0,
+        "hoverfly": 2,
+        "hawkmoth": 0,
+        "seed": 2,
+        "snail": 0,
+        "lacewing": 2,
+        "firefly": 3
+      },
+      "motionScale": 0.95,
+      "objectives": {
+        "any": 5,
+        "lacewingTrace": 3
+      },
+      "instruction": "A second trace: thread lacewing, firefly, then the other lacewing. Make five combinations, including three of these.",
+      "designNote": "Introduce the second Trace recipe, the first one turned round: two resting ends and a moving middle, so the player waits for a firefly to pass between the leaves. Only this recipe scores as a trace here.",
+      "gestures": [
+        "string"
+      ],
+      "stringRules": true,
+      "wind": null,
+      "traceSequence": [
+        "lacewing",
+        "firefly",
+        "lacewing"
+      ]
+    },
+    {
+      "id": "midnight-05",
+      "number": 23,
+      "title": "Figures",
+      "hour": "midnight",
+      "hourLabel": "Midnight · Visit XXIII",
+      "scene": "window",
+      "transitionText": "Just tracing figures, while the world moves around me.",
+      "durationSeconds": 110,
+      "population": {
+        "brimstone": 0,
+        "damselfly": 0,
+        "hoverfly": 2,
+        "hawkmoth": 0,
+        "seed": 2,
+        "snail": 0,
+        "lacewing": 2,
+        "firefly": 3,
+        "jasmine": 1
+      },
+      "motionScale": 0.95,
+      "objectives": {
+        "any": 6,
+        "single": 2,
+        "figure8": 1,
+        "trace": 2,
+        "lacewingTrace": 1
+      },
+      "instruction": "Make six combinations, including two single loops, a figure-eight, and two traces, one of them lacewing first. The jasmine settles one insect at a time.",
+      "designNote": "Introduce the night jasmine on the cast of the two visits before. Both Trace recipes score from here on.",
+      "jasminePlaces": [
+        [
+          0.18,
+          0.4
+        ]
+      ],
       "gestures": [
         "string"
       ],
@@ -398,13 +854,25 @@
         "lacewing",
         "firefly"
       ],
-      "hourLabel": "Midnight · Visit XI"
+      "traceSequences": [
+        [
+          "firefly",
+          "lacewing",
+          "firefly"
+        ],
+        [
+          "lacewing",
+          "firefly",
+          "lacewing"
+        ]
+      ]
     },
     {
-      "id": "midnight-03",
-      "number": 12,
+      "id": "midnight-06",
+      "number": 24,
       "title": "Tomorrow keeps happening",
       "hour": "midnight",
+      "hourLabel": "Midnight · Visit XXIV",
       "scene": "window",
       "transitionText": "And the world does move. Because tomorrow keeps happening.",
       "durationSeconds": 110,
@@ -420,6 +888,7 @@
         "firefly": 3,
         "jasmine": 1
       },
+      "beanRegrowSeconds": 24,
       "motionScale": 1,
       "objectives": {
         "any": 7,
@@ -428,8 +897,14 @@
         "trace": 2,
         "nursery": 1
       },
-      "instruction": "Make seven combinations, including two single loops, two figure-eights, two traces, and a Nursery. The jasmine settles one insect at a time.",
-      "designNote": "Return Brimstones and one perimeter snail; synthesize familiar gestures without a new rule. The jasmine arrives here, where the cast is fullest and the figures interact most.",
+      "instruction": "Make seven combinations, including two single loops, two figure-eights, two traces of either kind, and a Nursery.",
+      "designNote": "Nothing new. Brimstones, one perimeter snail, and the flax flower return; every gesture of the day on the fullest field, with the jasmine to thin it.",
+      "jasminePlaces": [
+        [
+          0.18,
+          0.4
+        ]
+      ],
       "gestures": [
         "string"
       ],
@@ -440,12 +915,16 @@
         "lacewing",
         "firefly"
       ],
-      "hourLabel": "Midnight · Visit XII",
-      "beanRegrowSeconds": 24,
-      "jasminePlaces": [
+      "traceSequences": [
         [
-          0.18,
-          0.4
+          "firefly",
+          "lacewing",
+          "firefly"
+        ],
+        [
+          "lacewing",
+          "firefly",
+          "lacewing"
         ]
       ]
     }

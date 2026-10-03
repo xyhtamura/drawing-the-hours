@@ -79,7 +79,7 @@
         <span class="entry-badge" style="background:#e9efe0; color:#3f5b34;">Thread</span>
         <div class="recipe-info">
           <h3>Night Jasmine</h3>
-          <p>Appears at Midnight. Begin a thread <em>inside</em> the flower and the first insect that thread crosses settles on it: the cord ends there and the insect stays put for 24 seconds, which is long enough to draw around it at leisure. It gathers nothing by itself — it thins a crowded field and leaves you a target that holds still. The bloom is spent once its guest arrives, and another opens later.</p>
+          <p>Appears in the last two Midnight visits. Begin a thread <em>inside</em> the flower and the first insect that thread crosses settles on it: the cord ends there and the insect stays put for 24 seconds, which is long enough to draw around it at leisure. It gathers nothing by itself — it thins a crowded field and leaves you a target that holds still. The bloom is spent once its guest arrives, and another opens later.</p>
         </div>
       </div>
       <div class="recipe-entry" data-reveal-hour="dusk">
@@ -167,7 +167,7 @@
         <span class="entry-badge" style="background:#ede7d6; color:#5c4837;">Thread</span>
         <div class="recipe-info">
           <h3>Flax Flower</h3>
-          <p>Appears throughout Noon and returns in Dusk VIII and Midnight XII. Drawing the cord over a flax flower picks it. Your <em>next</em> cord runs 400 px longer — the mark on the cord meter moves right before you start it — and the length is spent on that one cord. A picked flower wilts after twelve seconds. Another grows eight seconds after picking at Noon, or twenty-four seconds later in Dusk and Midnight. A flower is never part of a combination.</p>
+          <p>Appears throughout Noon and returns in Dusk XVI and Midnight XXIV. Drawing the cord over a flax flower picks it. Your <em>next</em> cord runs 400 px longer — the mark on the cord meter moves right before you start it — and the length is spent on that one cord. A picked flower wilts after twelve seconds. Another grows eight seconds after picking at Noon, or twenty-four seconds later in Dusk and Midnight. A flower is never part of a combination.</p>
         </div>
       </div>
       <div class="recipe-entry" data-reveal-hour="noon">
@@ -233,7 +233,7 @@
         <span class="entry-badge" style="background:#e9efe0; color:#3f5b34;">Thread</span>
         <div class="recipe-info">
           <h3>Ordered Trace</h3>
-          <p>Thread a firefly, a lacewing, then a different firefly in one stroke. Release to finish; the line can stay open or close. Numbered badges show the sequence. Repeating an insect does not count again. A wrong order, extra insects, or enclosing another creature cancels the trace. Leaves do not count.</p>
+          <p>Thread a firefly, a lacewing, then a different firefly in one stroke. From Midnight XXII there is a second order: a lacewing, a firefly, then the other lacewing. Release to finish; the line can stay open or close. Numbered badges show the sequence. Repeating an insect does not count again. A wrong order, extra insects, or enclosing another creature cancels the trace. Leaves do not count.</p>
         </div>
         <canvas class="combo-diagram" data-combo="trace" data-w="160" data-h="60" role="img" aria-label="Diagram: one open stroke threading a firefly, a lacewing, then a different firefly, numbered 1 to 3"></canvas>
       </div>
@@ -322,8 +322,9 @@
     const headerSub = document.getElementById('header-sub');
 
     const updateLevelUI = (level = game.currentLevel) => {
-      document.getElementById('gesture-hint').textContent = level?.traceSequence
-        ? 'Thread firefly → lacewing → firefly in sequence to trace. Draw around insects to loop.'
+      const traceRecipes = level?.traceSequences || (level?.traceSequence ? [level.traceSequence] : []);
+      document.getElementById('gesture-hint').textContent = traceRecipes.length
+        ? `Thread ${traceRecipes.map(r => r.join(' → ')).join(', or ')} in sequence to trace. Draw around insects to loop.`
         : 'The held cord is a wall. Draw around insects; crossing the cord closes the loop.';
       btnVisit.textContent = 'Visits';
 

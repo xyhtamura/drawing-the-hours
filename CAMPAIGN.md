@@ -1,4 +1,4 @@
-# Drawing the Hours: first twelve visits
+# Drawing the Hours: the first day of visits
 
 Implementation specification, updated 2026-09-16. **All twelve visits (Dawn I–III, Noon IV–VI, Dusk VII–IX, Midnight X–XII) are implemented under one-gesture string rules ([STRING.md](STRING.md)).** Xyh confirmed four successive groups of three levels: Dawn,
 Noon, Dusk, Midnight. Each of their twelve lines introduces one level.
@@ -304,6 +304,71 @@ palette and framing treatment in these twelve levels. The selected
 flier kinds remain available for the grammar at each hour as fictional game
 inhabitants; this is not a claim about their real activity cycles. If realistic
 regional species become a goal, do that research separately before relabeling.
+
+## Twenty-four visits revision, 2026-10-03
+
+Xyh's call: the twelve visits introduced mechanics too quickly. The order of
+introduction is unchanged; each hour now has six visits, so there is room
+between one new thing and the next. Three rules shape the sequence:
+
+- A visit adds at most one thing. Where a twelve-visit level added two at once
+  (seeds with the snail, the hornet with the gusts, the web with Seed & Trio,
+  the Nursery with the snail and the flax flower), they are now separate visits.
+- The sixth visit of an hour adds nothing. It asks for what the hour taught.
+- The transition lines in [first12levels.md](first12levels.md) are used in
+  order, one per visit. They are not tied to the mechanics; the titles follow
+  the lines and are agent proposals.
+
+The sections above describe the twelve-visit campaign and keep its numbering.
+This table is the current sequence. "Was" gives the twelve-visit level whose
+field and requirement the visit keeps unchanged.
+
+| Visit | id | Title | Adds | Requirement | Was |
+| --- | --- | --- | --- | --- | --- |
+| I | `dawn-01` | Before the bus | The loop, on matching pairs | 4 single loops | `dawn-01` |
+| II | `dawn-02` | The curbside patch | Nothing: equal numbers of two kinds | 5 pairs | new |
+| III | `dawn-03` | Something in the air | Seeds, Seed & Wing | 5, with 2 Seed & Wing | new |
+| IV | `dawn-04` | In my thirties | The seam snail | 5, with 2 Seed & Wing | `dawn-02` |
+| V | `dawn-05` | Hard to save | The hawkmoth, the trio | 4, with 2 trios | `dawn-03` |
+| VI | `dawn-06` | Not how I imagined | Nothing | 6, with 1 pair, 2 Seed & Wing, 1 trio | new |
+| VII | `noon-01` | Lunch in the atrium | The hoverfly, the flax flower | 6, with 2 trios | `noon-01` |
+| VIII | `noon-02` | For now | Gusts | 6, with 3 Seed & Wing | new |
+| IX | `noon-03` | The glass and the leaves | The hornet | 6, with 3 Seed & Wing | `noon-02` |
+| X | `noon-04` | At my age | Seed & Trio | 6, with 1 Seed & Trio | new |
+| XI | `noon-05` | Six years old | The web | 6, with 2 Seed & Wing, 1 trio | new |
+| XII | `noon-06` | A future like that | Nothing | 6, with 2 Seed & Trio | `noon-03` |
+| XIII | `dusk-01` | The way through | The lacewing, the crossing | 5, with 2 lacewing Counterpart Pairs | `dusk-01` |
+| XIV | `dusk-02` | The gaps in the sound | Nothing: Brimstones join; the cicada layer plays | 5, with 3 Counterpart Pairs | new |
+| XV | `dusk-03` | Carrying something home | Seeds, the Nursery | 5, with 2 Nurseries | new |
+| XVI | `dusk-04` | Almost nominal | The snail and the flax flower return | 5, with 1 Nursery, 1 lacewing Counterpart Pair | `dusk-02` |
+| XVII | `dusk-05` | The long way home | Both shapes asked for by name | 5, with 2 single loops, 2 figure-eights | new |
+| XVIII | `dusk-06` | What places absorb | Nothing | 6, with 3 single loops, 2 figure-eights | `dusk-03` |
+| XIX | `midnight-01` | Trying to sleep | The firefly, the Trace | 3 traces | `midnight-01` |
+| XX | `midnight-02` | Rows of car lights | Nothing: hoverflies stand in the way | 4 traces | new |
+| XXI | `midnight-03` | Day shift, night shift | Looping beside threading | 6, with 1 pair, 1 Seed & Wing, 1 figure-eight, 2 traces | `midnight-02` |
+| XXII | `midnight-04` | The window corner | The second Trace recipe | 5, with 3 lacewing-first traces | new |
+| XXIII | `midnight-05` | Figures | The night jasmine | 6, with 2 single loops, 1 figure-eight, 2 traces, 1 of them lacewing-first | new |
+| XXIV | `midnight-06` | Tomorrow keeps happening | Nothing | 7, with 2 single loops, 2 figure-eights, 2 traces of either kind, 1 Nursery | `midnight-03` |
+
+**The second Trace recipe** is lacewing → firefly → the other lacewing: the
+first recipe turned round. Its ends rest on leaves and its middle moves, so the
+player waits for a firefly to pass between two lacewings instead of chasing two
+fireflies. In XXII only this recipe scores as a trace. From XXIII both score: a
+level lists them in `traceSequences`, and a stroke is read against the recipe
+it follows furthest. A lacewing-first trace carries the `lacewingTrace`
+objective tag as well as `trace`.
+
+**The jasmine moved from the last visit to the one before it,** so that XXIV
+adds nothing. XXIV keeps the twelve-visit XII field and requirement and takes
+either trace, and it remains the fullest field of the day.
+
+**Noon keeps its rule that every visit asks for at least six combinations**
+(Xyh, 2026-09-16); the two new teaching visits there were raised to six to hold
+it.
+
+The save key is now `dth_campaign_save_v2`. A v1 save indexes the twelve-visit
+list, so it is left unread and the campaign starts again from Visit I.
+`campaign-plan.json` was regenerated from `src/campaign.js`.
 
 ## Implementation changes and boundaries
 

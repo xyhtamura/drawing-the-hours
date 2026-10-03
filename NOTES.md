@@ -10,9 +10,33 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Playtest the fixed-size field and pause-menu flow on touch devices, including Noon IV–VI and Midnight XII.
+Play the twenty-four visits through and retune counts and durations by hand, starting with the twelve new visits (II, III, VI, VIII, X, XI, XIV, XV, XVII, XX, XXII, XXIII); the touch playtest of the fixed-size field and pause menu is still owed.
 
 ## Activity
+
+2026-10-03 — Claude Code — Stretched the campaign from twelve visits to twenty-four, six an hour, on Xyh's call that mechanics arrived too quickly.
+
+- **Sequence.** The order of introduction is the same. A visit now adds at most one thing, and the sixth visit of each hour adds nothing. The table, with which visits keep a twelve-visit field unchanged, is in [CAMPAIGN.md](CAMPAIGN.md) under "Twenty-four visits revision, 2026-10-03". Xyh's six lines per hour in [first12levels.md](first12levels.md) are used in order and are not tied to the mechanics.
+- **Ids moved.** `dawn-02`→`dawn-04`, `dawn-03`→`dawn-05`, `noon-02`→`noon-03`, `noon-03`→`noon-06`, `dusk-02`→`dusk-04`, `dusk-03`→`dusk-06`, `midnight-02`→`midnight-03`, `midnight-03`→`midnight-06`. Entries below this one use the old ids and the old visit numbers.
+- **Second Trace recipe** (Midnight XXII): lacewing → firefly → the other lacewing. `Game.traceStatus` reads `traceSequences` when a level lists more than one recipe and picks the one the stroke follows furthest; a lacewing-first trace is tagged `lacewingTrace` as well as `trace`. New objective label, hint text, and diagram for it.
+- **Jasmine** moved to XXIII so that XXIV adds nothing. XXIV takes either trace.
+- **Cicadas** follow a `cicadas: true` level flag instead of a level id; the flag sits on XIV, the visit whose line is about them.
+- **Ready cards.** New teaching visits reuse the nearest existing diagram with the line that does not apply swapped out (III, XV, XXII, XXIII). The buffer and culmination visits (II, VI, VIII, X, XI, XIV, XVII, XX) show the instruction and the requirement diagrams only.
+- **Save key** is `dth_campaign_save_v2`; a v1 save is left unread, so progress restarts at Visit I. "Unlock all visits" still works.
+- `campaign-plan.json` regenerated from `src/campaign.js`. Field Book flax, jasmine, and Ordered Trace entries, the gesture hint, the final card ("Twenty-Four Visits Complete"), and the STRING.md status paragraph updated.
+
+Verification:
+- All eight `node test/test_*.js` suites pass. New assertions: six visits per hour numbered by position; each Noon and Dusk visit's added element and requirement; the jasmine in XXIII and XXIV only; one cicada visit; and, through real pointer events on `Game`, that the lacewing-first trace scores in XXII while firefly-first does not, that XXIII and XXIV score both, and that a stroke following neither recipe scores nothing.
+- In the page at `http://localhost:8000/drawing-the-hours/`: started each of the 24 visits, drew its ready card, ran 30 update steps and one draw, and read the spawned entities — every population matched its level, with no console errors. The Visits list shows six per hour. The XXII card was checked by screenshot: lacewing, firefly, lacewing, numbered 1 to 3.
+
+Not done:
+- **No visit was played.** Counts, durations, and motion scales on the twelve new visits are first-pass numbers set by analogy with their neighbours. Whether VI, XII, XVIII each feel like a culmination, and whether XXIV is still the hardest, is unobserved.
+- The lacewing-first recipe needs both lacewings at once; with two on the field there is exactly one such trace available at a time. Not checked in play whether that waits too long.
+- Titles for the new visits are proposals drawn from Xyh's lines, not Xyh's.
+- `test/*-browser.html` had ids renamed but were not run.
+- `DAY-1-PACING.md`, `DUSK.md`, `MIDNIGHT.md`, `HOURS.md`, and the dated sections of STRING.md and CAMPAIGN.md still describe twelve visits. Left as dated record; STRING.md and CAMPAIGN.md say so at the top of the relevant section.
+- `first12levels.md` keeps its filename though it now holds twenty-four lines; tests and docs cite it.
+- Decided against requiring one trace of each recipe in XXIV: it would add a sixth requirement row to the card. XXIII requires one lacewing-first trace instead.
 
 2026-09-18 — Antigravity — Added close X buttons to popups and an on/off hints toggle setting in Settings.
 

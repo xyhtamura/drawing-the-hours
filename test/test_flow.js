@@ -51,7 +51,7 @@ function installStorage(initial) {
   return store;
 }
 
-const SAVE_KEY = 'dth_campaign_save_v1';
+const SAVE_KEY = 'dth_campaign_save_v2';
 
 console.log('--- Running Flow Test Suite (failure, hint, resume, gates) ---');
 
@@ -65,9 +65,9 @@ const { Game, HINTS_STORAGE_KEY } = await import('../src/game.js');
   assert.equal(isHourReached(fresh, 'noon'), false, 'Noon is not reached from a fresh save');
   assert.equal(isHourReached(fresh, 'midnight'), false, 'Midnight is not reached from a fresh save');
 
-  const afterDawn = { ...fresh, highestUnlockedIndex: 3 };
-  assert.equal(isHourReached(afterDawn, 'noon'), true, 'Unlocking visit IV reaches Noon');
-  assert.equal(isHourReached(afterDawn, 'dusk'), false, 'Dusk stays unreached at visit IV');
+  const afterDawn = { ...fresh, highestUnlockedIndex: 6 };
+  assert.equal(isHourReached(afterDawn, 'noon'), true, 'Unlocking visit VII reaches Noon');
+  assert.equal(isHourReached(afterDawn, 'dusk'), false, 'Dusk stays unreached at visit VII');
 
   const completedDusk = { ...fresh, completedLevelIds: ['dusk-01'] };
   assert.equal(isHourReached(completedDusk, 'dusk'), true, 'A completed Dusk visit reaches Dusk');
@@ -79,14 +79,14 @@ const { Game, HINTS_STORAGE_KEY } = await import('../src/game.js');
 {
   installStorage({
     [SAVE_KEY]: JSON.stringify({
-      completedLevelIds: ['dawn-01', 'dawn-02'],
+      completedLevelIds: ['dawn-01', 'dawn-04'],
       highestUnlockedIndex: 2,
       bestScores: { 'dawn-01': 400 },
-      currentLevelId: 'dawn-03',
+      currentLevelId: 'dawn-05',
     }),
   });
   const resumed = new CampaignManager();
-  assert.equal(resumed.currentLevel.id, 'dawn-03', 'A reload resumes the saved visit');
+  assert.equal(resumed.currentLevel.id, 'dawn-05', 'A reload resumes the saved visit');
   assert.equal(resumed.resumedFromSave, true, 'A resumed visit is flagged so the ready screen is shown');
 
   installStorage({ [SAVE_KEY]: JSON.stringify({ currentLevelId: 'not-a-visit' }) });
@@ -106,15 +106,15 @@ const { Game, HINTS_STORAGE_KEY } = await import('../src/game.js');
   installStorage({});
   const canvas = makeCanvas();
   const game = new Game(canvas);
-  game.initLevel('dawn-02');
+  game.initLevel('dawn-04');
   const timedDuration = game.clock.remainingSeconds;
 
   assert.equal(game.startPracticeOfCurrent(), true, 'Practice of a campaign visit starts');
   assert.equal(game.currentLevel.id, 'practice-visit', 'Practice runs its own level ID');
-  assert.equal(game.currentLevel.practiceOf, 'dawn-02', 'Practice records the visit it copies');
+  assert.equal(game.currentLevel.practiceOf, 'dawn-04', 'Practice records the visit it copies');
   assert.equal(game.isUntimed(), true, 'Practice of a visit is untimed');
   assert.equal(game.state, 'READY', 'Practice opens at the ready screen, not the story card');
-  assert.deepEqual(game.currentLevel.objectives, CAMPAIGN_LEVELS.find(l => l.id === 'dawn-02').objectives,
+  assert.deepEqual(game.currentLevel.objectives, CAMPAIGN_LEVELS.find(l => l.id === 'dawn-04').objectives,
     'Practice keeps the visit objectives');
 
   game.state = 'PLAYING';
@@ -123,9 +123,9 @@ const { Game, HINTS_STORAGE_KEY } = await import('../src/game.js');
   assert.equal(game.state, 'PLAYING', 'Untimed practice never reaches the failure screen');
 
   game.campaign.recordVictory(900);
-  assert.equal(game.campaign.saveState.completedLevelIds.includes('dawn-02'), false,
+  assert.equal(game.campaign.saveState.completedLevelIds.includes('dawn-04'), false,
     'Practice writes no completion');
-  assert.equal(game.campaign.saveState.bestScores['dawn-02'], undefined, 'Practice writes no best score');
+  assert.equal(game.campaign.saveState.bestScores['dawn-04'], undefined, 'Practice writes no best score');
   assert.equal(game.campaign.saveState.highestUnlockedIndex, 0, 'Practice unlocks nothing');
 
   console.log('✔ Untimed practice of a visit runs without a clock and writes no progress.');

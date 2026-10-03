@@ -305,7 +305,7 @@ export class AudioManager {
     } catch (_) {}
   }
 
-  // --- Dusk Intermittent Cicada Ambient Layer (Visit VIII) ---
+  // --- Dusk Intermittent Cicada Ambient Layer (the visit flagged `cicadas`) ---
   startCicadaVoice() {
     if (this.isMuted) return;
     this.ensureContext();

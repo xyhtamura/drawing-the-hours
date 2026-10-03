@@ -26,7 +26,7 @@ const noonLevels = CAMPAIGN_LEVELS.filter(l => l.hour === 'noon');
 // 1. Objectives, populations, and plan agreement
 {
   const plan = JSON.parse(fs.readFileSync(new URL('../campaign-plan.json', import.meta.url)));
-  assert.equal(noonLevels.length, 3, 'Noon has three visits');
+  assert.equal(noonLevels.length, 6, 'Noon has six visits');
 
   for (const level of noonLevels) {
     for (const key of CROSSING_KEYS) {
@@ -41,21 +41,31 @@ const noonLevels = CAMPAIGN_LEVELS.filter(l => l.hour === 'noon');
     assert.equal(source.instruction, level.instruction, `${level.id}: plan instruction agrees`);
   }
 
-  const [four, five, six] = noonLevels;
-  assert.deepEqual(four.objectives, { any: 6, trio: 2 }, 'Noon IV asks for trios');
-  assert.equal(four.population.hornet, undefined, 'Noon IV keeps a clear field for the bean lesson');
-  assert.deepEqual(five.objectives, { any: 6, seedWing: 3 }, 'Noon V asks for Seed & Wing loops');
-  assert.equal(five.population.hornet, 1, 'Noon V introduces the hornet');
-  assert.equal(five.population.web, undefined, 'Noon V holds the webs back');
-  assert.deepEqual(six.objectives, { any: 6, seedTrio: 2 }, 'Noon VI asks for Seed & Trio loops');
+  // One new thing a visit: flax, gusts, hornet, Seed & Trio, web, then nothing.
+  const [four, gusts, five, seedTrio, webbed, six] = noonLevels;
+  assert.deepEqual(four.objectives, { any: 6, trio: 2 }, 'Noon VII asks for trios');
+  assert.equal(four.population.hornet, undefined, 'Noon VII keeps a clear field for the bean lesson');
+  assert.equal(four.wind, null, 'Noon VII has no gusts');
+  assert.deepEqual(gusts.objectives, five.objectives, 'Noon VIII asks what IX asks');
+  assert.ok(gusts.wind, 'Noon VIII introduces the gusts');
+  assert.equal(gusts.population.hornet, undefined, 'Noon VIII has no hornet');
+  assert.deepEqual(five.objectives, { any: 6, seedWing: 3 }, 'Noon IX asks for Seed & Wing loops');
+  assert.equal(five.population.hornet, 1, 'Noon IX introduces the hornet');
+  assert.equal(five.population.web, undefined, 'Noon IX holds the webs back');
+  assert.deepEqual(seedTrio.objectives, { any: 6, seedTrio: 1 }, 'Noon X introduces Seed & Trio');
+  assert.equal(seedTrio.population.web, undefined, 'Noon X holds the web back');
+  assert.equal(webbed.population.web, 1, 'Noon XI introduces the web');
+  assert.equal(webbed.objectives.seedTrio, undefined, 'Noon XI asks only for figures already learned');
+  assert.deepEqual(six.objectives, { any: 6, seedTrio: 2 }, 'Noon XII asks for Seed & Trio loops');
+  assert.deepEqual(six.population, webbed.population, 'Noon XII adds nothing to the field of XI');
 
   // Noon's pressure is the count, not the shape: more drawings than Dawn asks
   // for, in the same order of time (Xyh, 2026-09-16).
   for (const level of noonLevels) {
     assert.ok(level.objectives.any >= 6, `${level.id} asks for at least six combinations`);
   }
-  assert.equal(six.population.web, 1, 'Noon VI strings one web');
-  assert.equal(six.webPatches.length, 1, 'Noon VI authors where the web hangs');
+  assert.equal(six.population.web, 1, 'Noon XII strings one web');
+  assert.equal(six.webPatches.length, 1, 'Noon XII authors where the web hangs');
   assert.deepEqual(
     JSON.parse(JSON.stringify(plan.levels.find(l => l.id === six.id).webPatches)),
     six.webPatches,
@@ -163,7 +173,7 @@ try {
   // 3. A cord touching a hazard is cut, and says which
   {
     const hornet = new Hornet(480, 320);
-    setup('noon-02', [hornet]);
+    setup('noon-03', [hornet]);
     stroke([[200, hornet.y], [400, hornet.y], [600, hornet.y]]);
     assert.equal(game.feedbackBanner.text, 'The hornet cut the cord.',
       'The break names the hornet');
@@ -171,7 +181,7 @@ try {
 
     const web = new WebPatch(0.5, 0.5, 30);
     web.update(0, { width: 960, height: 640 });
-    setup('noon-03', [web]);
+    setup('noon-06', [web]);
     stroke([[300, 320], [420, 320], [560, 320]]);
     assert.equal(game.feedbackBanner.text, 'The cord stuck in the web. Draw around it.',
       'The break names the web');
@@ -190,7 +200,7 @@ try {
   {
     const web = new WebPatch(0.5, 0.5, 26);
     web.update(0, { width: 960, height: 640 });
-    setup('noon-03', [web, new Insect(440, 320, 'brimstone'), new Insect(520, 320, 'brimstone')]);
+    setup('noon-06', [web, new Insect(440, 320, 'brimstone'), new Insect(520, 320, 'brimstone')]);
     stroke(circle(480, 320, 95));
     assert.ok(game.feedbackBanner.text.startsWith('Kindred Pair'),
       `A loop drawn clear of a web still scores (got "${game.feedbackBanner.text}")`);
@@ -276,7 +286,7 @@ try {
     assert.equal(game.campaign.objectiveProgress.trio.current, 1, "Noon IV's trio objective advances");
 
     // And a seed with three kinds still scores the Seed & Trio Noon VI asks for.
-    setup('noon-03', [
+    setup('noon-06', [
       new Insect(440, 300, 'brimstone'),
       new Insect(500, 300, 'hoverfly'),
       new Insect(470, 350, 'hawkmoth'),
@@ -288,7 +298,7 @@ try {
     console.log('✔ Trio at Noon IV and Seed & Trio at Noon VI both score.');
   }
   // Later-hour returns keep the same pickup contract with slower regrowth.
-  for (const id of ['dusk-02', 'midnight-03']) {
+  for (const id of ['dusk-04', 'midnight-06']) {
     game.initLevel(id);
     assert.equal(game.currentLevel.population.bean, 1);
     assert.equal(game.entities.filter(e => e.type === 'bean').length + game.respawnQueue.filter(e => e.kind === 'bean').length, 1, `${id}: one flower, live or queued`);

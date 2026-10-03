@@ -37,14 +37,14 @@ for (let i = 0; i < 1800; i++) small.update(0.01, wide);
 assert.ok(Math.hypot(big.x - small.x, big.y - small.y) < 1e-6, 'Large and small timesteps agree');
 
 const campaign = new CampaignManager();
-campaign.setLevelById('noon-03');
+campaign.setLevelById('noon-06');
 assert.equal(campaign.getNextLevel().id, 'dusk-01');
 
-// Dusk 1 (Visit VII: The way through)
+// Dusk 1 (Visit XIII: The way through)
 const level = campaign.setLevelById('dusk-01');
 assert.equal(level.transitionText, 'I always find myself walking home through here.');
 assert.equal(campaign.getNextLevel().id, 'dusk-02');
-assert.ok(PLAYABLE_LEVEL_IDS.has('dusk-02') && PLAYABLE_LEVEL_IDS.has('dusk-03'));
+for (const n of [2, 3, 4, 5, 6]) assert.ok(PLAYABLE_LEVEL_IDS.has(`dusk-0${n}`));
 const pockets = [new Insect(0, 0, 'lacewing'), new Insect(0, 0, 'hoverfly')]
   .map(entity => ({ entities: [entity], area: 4000, centroid: {x:0,y:0} }));
 const result = evaluateDrawing(pockets, 600);
@@ -55,12 +55,12 @@ assert.equal(campaign.objectiveProgress.lacewingCounterpart.current, 2);
 assert.ok(campaign.isComplete());
 assert.equal(clock.remainingSeconds, 115, 'Progress bonus remains capped');
 
-// Dusk 2 (Visit VIII: The gaps in the sound)
-const dusk2 = campaign.setLevelById('dusk-02');
-assert.equal(dusk2.transitionText, "I can hear the cicadas. And sometimes I can't.");
+// Dusk 4 (Visit XVI: Almost nominal): the Nursery field with the snail and flax back
+const dusk2 = campaign.setLevelById('dusk-04');
+assert.equal(dusk2.transitionText, 'Some health coverages are almost nominal.');
 assert.deepEqual(dusk2.objectives, { any: 5, nursery: 1, lacewingCounterpart: 1 });
 assert.equal(dusk2.durationSeconds, 95);
-assert.equal(campaign.getNextLevel().id, 'dusk-03');
+assert.equal(campaign.getNextLevel().id, 'dusk-05');
 
 // Nursery in Dusk: 1 lacewing in A, 1 seed in B
 const nurseryPockets = [
@@ -98,9 +98,9 @@ assert.equal(campaign.objectiveProgress.any.current, 2);
 for (let i = 0; i < 3; i++) campaign.processDrawing(cpEval, cpPockets, nurseryClock);
 assert.ok(campaign.isComplete(), 'Dusk 2 completed');
 
-// Dusk 3 (Visit IX: Carrying something home)
-const dusk3 = campaign.setLevelById('dusk-03');
-assert.equal(dusk3.transitionText, 'Bringing home medicine today.');
+// Dusk 6 (Visit XVIII: What places absorb)
+const dusk3 = campaign.setLevelById('dusk-06');
+assert.equal(dusk3.transitionText, 'Some places absorb what developments expel.');
 assert.deepEqual(dusk3.objectives, { any: 6, single: 3, figure8: 2 });
 assert.equal(dusk3.durationSeconds, 100);
 assert.equal(campaign.getNextLevel().id, 'midnight-01');

@@ -33,6 +33,7 @@ export const COMBO_DIAGRAMS = {
   // Field Book only: two kindred pairs, one in each pocket.
   crossMeadow: EIGHT(['brimstone', 'brimstone'], ['damselfly', 'damselfly']),
   trace: { shape: 'trace', sequence: ['firefly', 'lacewing', 'firefly'] },
+  lacewingTrace: { shape: 'trace', sequence: ['lacewing', 'firefly', 'lacewing'] },
 };
 
 const HEADINGS = [-1.95, -1.25, -1.6, -1.1];

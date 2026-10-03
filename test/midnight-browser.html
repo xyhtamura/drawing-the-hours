@@ -20,7 +20,7 @@ try {
   const { Insect } = await import('../src/entities.js');
   // The iframe imports its own module instance; mute through its UI.
   w.document.getElementById('btn-audio').click();
-  const stored = w.localStorage.getItem('dth_campaign_save_v1');
+  const stored = w.localStorage.getItem('dth_campaign_save_v2');
   game.startLevel('practice-midnight');
   check(game.gestureMode === 'trace' && !game.setGestureMode('enclose'), 'Visit X must lock to Trace');
   check(game.entities.filter(e => e.kind === 'firefly').length === 3, 'Missing three fireflies');
@@ -117,7 +117,7 @@ try {
   check(game.score === score, 'Completion delay permits duplicate score');
   game.update(0.02); game.update(1.1);
   check(game.state === 'LEVEL_COMPLETE', 'Final qualifying release did not win');
-  check(w.localStorage.getItem('dth_campaign_save_v1') === stored, 'Practice changed campaign save');
+  check(w.localStorage.getItem('dth_campaign_save_v2') === stored, 'Practice changed campaign save');
   // Exercise the reusable mode setter without enabling an unfinished campaign visit.
   const mixed = {...game.currentLevel, gestures:['enclose','trace']};
   game.initLevel(mixed); game.state = 'PLAYING';

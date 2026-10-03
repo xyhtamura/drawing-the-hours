@@ -4,12 +4,16 @@ This document specifies the rules that replace the Enclose and Trace modes in
 Drawing the Hours with a single drawing gesture whose cord acts on the field
 while it is held. Xyh decided these rules on 2026-09-15. **Implemented in the
 String sandbox (`practice-string`), the String Trace sandbox
-(`practice-string-trace`), Dawn I–III (`dawn-01`, `dawn-02`, `dawn-03`), Noon
-IV–VI (`noon-01`, `noon-02`, `noon-03`, and Noon IV's practice copy
-`practice-noon`), Dusk VII–IX (`dusk-01`, `dusk-02`, `dusk-03`, and Dusk
-VII's practice copy `practice-dusk`), and Midnight X–XII (`midnight-01`,
-`midnight-02`, `midnight-03`, and Midnight X's practice copy
-`practice-midnight`).**
+(`practice-string-trace`), Dawn I–VI (`dawn-01`, `dawn-02`, `dawn-03`,
+`dawn-04`, `dawn-05`, `dawn-06`), Noon VII–XII (`noon-01`, `noon-02`,
+`noon-03`, `noon-04`, `noon-05`, `noon-06`, and Noon VII's practice copy
+`practice-noon`), Dusk XIII–XVIII (`dusk-01`, `dusk-02`, `dusk-03`, `dusk-04`,
+`dusk-05`, `dusk-06`, and Dusk XIII's practice copy `practice-dusk`), and
+Midnight XIX–XXIV (`midnight-01`, `midnight-02`, `midnight-03`, `midnight-04`,
+`midnight-05`, `midnight-06`, and Midnight XIX's practice copy
+`practice-midnight`).** The campaign grew from twelve visits to twenty-four on
+2026-10-03; visit numbers and level ids in the dated sections below are the
+twelve-visit ones, and [CAMPAIGN.md](CAMPAIGN.md) maps old to new.
 The next build step is named in [NOTES.md](NOTES.md) and in the project's
 [ROADMAP.md](../ROADMAP.md) entry.
 
@@ -247,7 +251,7 @@ example by drawing every loop in the same rotational direction so the gap trails
 downwind. Gust direction varies within a visit so that one habit does not answer
 every gust. The warning phase shows the coming direction before the gust starts.
 
-This applies to Noon V–VI (`noon-02`, `noon-03`), the visits that have wind.
+This applies to Noon VIII–XII (`noon-02` through `noon-06`), the visits that have wind.
 Whether other hours gain wind is open. Built on 2026-09-16 in Enclose mode, before
 Noon adopts the string rules; `Game.chooseWindDirection`, `Game.windVelocity`,
 and `Game.windBadgeText` hold the logic, and the atrium wind test in
