@@ -14,6 +14,15 @@ Play the twenty-four visits through and retune counts and durations by hand, sta
 
 ## Activity
 
+2026-10-03 — Claude Code — Checked the eight new ready cards at phone width (375 x 812 emulation) and fixed four caption overlaps.
+
+- **Nothing is clipped.** At that width the game keeps its 640 x 960 field and scales it by 375/640, so a card is the same 500-unit card as on desktop, drawn smaller. No picture reaches the card edge.
+- **Four loops ran into their own captions**, at every width: the pair loops on II under their labels, and the loop on VIII, on X and XII (the Seed & Trio picture), and on VII (the flax picture) through the first caption line. The last two predate this work. Each loop is now flatter and sits higher.
+
+Verification: screenshots of all eight cards at 375 x 812, then of II, VII, VIII, and X again after the fix; all eight `node test/test_*.js` suites pass.
+
+Open: at 375 px the scale is 0.59, so the 11-unit caption lines render at about 6.5 CSS px and the 13-unit instruction at about 7.6. That is true of every ready card, old and new, and follows from the fixed-size field; it was not changed here. Checked in emulation only, not on a phone.
+
 2026-10-03 — Claude Code — Gave the eight visits that had no teaching picture one each, on Xyh's request.
 
 - **Six new pictures** in `Game.drawReadyModal`: II a matching pair beside a two-kind loop that gathers nothing; VI the three Dawn figures side by side; VIII a Seed & Wing loop beside a seed carried along a gust; XI a loop closed clear of the web beside a cord cut at it; XIV a Counterpart Pair beside one kind divided across the crossing; XX the firefly-first trace bent over a hoverfly.

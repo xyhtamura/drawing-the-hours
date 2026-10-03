@@ -2828,7 +2828,7 @@ export class Game {
         ctx.save(); ctx.translate(0, boxH / 2 - 100);
         // One loop around three kinds, with a bean picked on the way round.
         ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.ellipse(0, 2, 80, 38, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(0, -2, 80, 30, 0, 0, Math.PI * 2); ctx.stroke();
 
         ctx.fillStyle = themeColor('brimstone', '#f1d152'); ctx.beginPath(); ctx.ellipse(-42, 6, 10, 14, -0.4, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = themeColor('hoverfly', '#eab765'); ctx.beginPath(); ctx.ellipse(2, 8, 7, 11, 0, 0, Math.PI * 2); ctx.fill();
@@ -2836,7 +2836,7 @@ export class Game {
         ctx.fillStyle = '#de99a5'; ctx.beginPath(); ctx.ellipse(44, 6, 7, 12, 0.4, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#a8b894'; ctx.beginPath(); ctx.ellipse(44, 0, 4, 8, 0.8, 0, Math.PI * 2); ctx.fill();
 
-        this.drawBeanGlyph(ctx, -2, -36);
+        this.drawBeanGlyph(ctx, -2, -32);
 
         ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('Three different kinds in one loop. Cross your start to close.', 0, 39);
@@ -2878,7 +2878,7 @@ export class Game {
         // Single loop cord (circle)
         ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.ellipse(0, 2, 78, 38, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, -3, 78, 31, 0, 0, Math.PI * 2);
         ctx.stroke();
 
         // 1 Seed at center-top
@@ -2973,9 +2973,9 @@ export class Game {
         ctx.save(); ctx.translate(0, boxH / 2 - 108);
         // Left: two of one kind
         ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.ellipse(-80, -6, 50, 28, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(-80, -10, 50, 24, 0, 0, Math.PI * 2); ctx.stroke();
         for (const [x, tilt] of [[-98, 0], [-62, 0.4]]) {
-          ctx.save(); ctx.translate(x, -6); ctx.scale(0.75, 0.75);
+          ctx.save(); ctx.translate(x, -10); ctx.scale(0.75, 0.75);
           const d = new Butterfly(0, 0, 'damselfly'); d.heading = -Math.PI / 2 + tilt; d.draw(ctx);
           ctx.restore();
         }
@@ -2984,9 +2984,9 @@ export class Game {
 
         // Right: two different kinds in one loop
         ctx.strokeStyle = '#b85c38'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.ellipse(78, -6, 50, 28, 0, 0, Math.PI * 2); ctx.stroke();
-        const b1 = new Butterfly(60, -6, 'brimstone'); b1.heading = -0.4; b1.draw(ctx);
-        ctx.save(); ctx.translate(96, -6); ctx.scale(0.75, 0.75);
+        ctx.beginPath(); ctx.ellipse(78, -10, 50, 24, 0, 0, Math.PI * 2); ctx.stroke();
+        const b1 = new Butterfly(60, -10, 'brimstone'); b1.heading = -0.4; b1.draw(ctx);
+        ctx.save(); ctx.translate(96, -10); ctx.scale(0.75, 0.75);
         const d3 = new Butterfly(0, 0, 'damselfly'); d3.heading = -Math.PI / 2; d3.draw(ctx);
         ctx.restore();
         this.drawCardCross(ctx, 124, -30);
@@ -3027,23 +3027,23 @@ export class Game {
         ctx.save(); ctx.translate(0, boxH / 2 - 100);
         // A Seed & Wing loop on the left, and a seed being carried off on the right.
         ctx.strokeStyle = themeColor('petite', '#ac647e'); ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.ellipse(-72, 2, 52, 30, 0, 0, Math.PI * 2); ctx.stroke();
-        const fly = new Butterfly(-92, 2, 'brimstone'); fly.heading = -0.4; fly.draw(ctx);
-        ctx.save(); ctx.translate(-54, 2); ctx.scale(0.85, 0.85); new DandelionSeed(0, 0).draw(ctx); ctx.restore();
+        ctx.beginPath(); ctx.ellipse(-72, -6, 52, 28, 0, 0, Math.PI * 2); ctx.stroke();
+        const fly = new Butterfly(-92, -6, 'brimstone'); fly.heading = -0.4; fly.draw(ctx);
+        ctx.save(); ctx.translate(-54, -6); ctx.scale(0.85, 0.85); new DandelionSeed(0, 0).draw(ctx); ctx.restore();
 
         // Streaks: what the field shows before and during a gust
         ctx.strokeStyle = themeColor('muted', '#8a7e6f'); ctx.lineWidth = 1.3; ctx.lineCap = 'round';
-        for (const [x, y, len] of [[8, -30, 46], [44, -18, 60], [16, 22, 52]]) {
+        for (const [x, y, len] of [[8, -34, 46], [44, -24, 60], [16, 14, 52]]) {
           ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + len, y); ctx.stroke();
         }
         // The same seed at three moments, fading in along the gust
         for (const [x, alpha] of [[36, 0.3], [70, 0.55], [104, 1]]) {
-          ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, 2); ctx.scale(0.8, 0.8);
+          ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, -6); ctx.scale(0.8, 0.8);
           const seed = new DandelionSeed(0, 0); seed.tilt = 0.5; seed.draw(ctx);
           ctx.restore();
         }
         ctx.strokeStyle = themeColor('ink', '#5c4538'); ctx.lineWidth = 1.4;
-        ctx.beginPath(); ctx.moveTo(122, 2); ctx.lineTo(140, 2); ctx.moveTo(134, -3); ctx.lineTo(140, 2); ctx.lineTo(134, 7); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(122, -6); ctx.lineTo(140, -6); ctx.moveTo(134, -11); ctx.lineTo(140, -6); ctx.lineTo(134, -1); ctx.stroke();
 
         ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('A gust carries seeds sideways for two seconds.', 0, 39);
