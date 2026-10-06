@@ -34,15 +34,20 @@ export const PAPERS = {
   leafFleck: { file: 'cit60069.jpg', scale: 0.34 },
   canvas: { file: 'CANVAS10.JPG', scale: 0.7 },
   strands: { file: 'STRANDS2.JPG', scale: 1.28 },
+  asphalt: { file: 'asphalt.png', scale: 0.3 },
+  glass: { file: 'glass.png', scale: 0.14 },
+  plastic: { file: 'plastic.png', scale: 0.12 },
+  metal: { file: 'metal.png', scale: 0.12 },
+  rubber: { file: 'rubber.png', scale: 0.3 },
 };
 
 // Role → texture and recolour settings. Tuned in texture-lab.html.
 export const PAPER_USE = {
   backdrop: {
-    dawn: { paper: 'mulberry', relief: 0.022, keep: 0.5, split: 10 },
-    noon: { paper: 'mulberry', relief: 0.02, keep: 0.5, split: 10 },
-    dusk: { paper: 'tissue', relief: 0.026, keep: 0.5, split: 14 },
-    midnight: { paper: 'crepe', relief: 0.022, keep: 0.6, split: 14 },
+    dawn: { paper: 'asphalt', relief: 0.03, keep: 0.8, split: 10 },
+    noon: { paper: 'glass', relief: 0.024, keep: 0, split: 12 },
+    dusk: { paper: 'plastic', relief: 0.035, keep: 0, split: 16 },
+    midnight: { paper: 'metal', relief: 0.05, keep: 0.5, split: 14 },
     none: { paper: 'mulberry', relief: 0.02, keep: 0.5, split: 8 },
   },
   default: { paper: 'mulberry', relief: 0.05, keep: 0.6, split: 12 },
@@ -61,6 +66,7 @@ export const PAPER_USE = {
 const TILE = 128;        // logical units covered by one fill tile
 const TILE_BAKE = 2;     // tile pixels per logical unit
 const BACKDROP_MAX = 1024; // longest backdrop side worked on, in pixels
+const SOURCE_MAX = 1280;   // longest side kept of a source image
 const hasDom = typeof document !== 'undefined' && typeof Image !== 'undefined';
 
 const sources = new Map();   // paper name → HTMLImageElement, once loaded
@@ -78,9 +84,20 @@ export function paperChanged() {
   bumpThemeVersion();
 }
 
+/** Large sources are reduced once on load, so each bake starts from a small image. */
+function shrunk(image) {
+  const k = SOURCE_MAX / Math.max(image.naturalWidth, image.naturalHeight);
+  if (k >= 1) return image;
+  const canvas = Object.assign(document.createElement('canvas'), { width: Math.round(image.naturalWidth * k), height: Math.round(image.naturalHeight * k) });
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return Object.assign(canvas, { naturalWidth: canvas.width, naturalHeight: canvas.height });
+}
+
 export const papersLoaded = hasDom ? Promise.all(Object.entries(PAPERS).map(([name, spec]) => new Promise((resolve) => {
   const image = new Image();
-  image.onload = () => { sources.set(name, image); resolve(true); };
+  image.onload = () => { sources.set(name, shrunk(image)); resolve(true); };
   image.onerror = () => resolve(false);
   image.src = new URL(`../textures/${spec.file}`, import.meta.url).href;
 }))).then((results) => { paperChanged(); return results.every(Boolean); }) : Promise.resolve(false);

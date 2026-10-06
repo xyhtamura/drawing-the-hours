@@ -1862,3 +1862,28 @@ style; Pure light colours; portrait; a touch device. The mirrored card tile
 shows a faint symmetric pattern; relief was lowered to 0.011 and the tile
 enlarged to 420 px to quiet it, and that last tweak was not looked at again.
 Brimstone yellow on the sand wash is lower in contrast than it was on mint.
+
+
+2026-10-07 — Claude Code — Backdrops moved to Xyh's synthetic textures: Dawn
+`asphalt.png`, Noon `glass.png`, Dusk `plastic.png`, Midnight `metal.png`
+(`rubber.png` is registered and unused). Only `PAPERS` and
+`PAPER_USE.backdrop` in `src/paper.js` changed; the palette is untouched and
+each texture is recoloured to the hour's wash as before. Relief per hour:
+asphalt 0.03 with `keep` 0.8 so its coloured flecks survive, glass 0.024,
+plastic 0.035, metal 0.05 (raised from 0.03, where the dark wash left it
+reading as plain cloud). The title sheets and menu cards follow, since they
+read the same table. Creatures still use the earlier paper set.
+
+Sources larger than 1280 px on the long side are now reduced once on load.
+Backdrop bake in the lab, on this desktop: 445–640 ms per hour (about 0.9–1.1 s
+before the reduction).
+
+Verified in the preview browser: all four hours in the lab and the title
+screen, no console errors. All eight Node suites pass.
+
+Not done: the four PNGs total about 8 MB (glass 3.4 MB at 1800×2700), far more
+than the 1280 px the code keeps; resized copies would cut the download and were
+not made, since the files are Xyh's. Their source and licence are unrecorded,
+as for the earlier set. `textures/2026-10-07 00-21-59.png` has the same size as
+`glass.png` and is not referenced. Each hour was not looked at in play, only in
+the lab.
