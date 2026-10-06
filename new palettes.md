@@ -1,8 +1,8 @@
 /* Palette study: dawn. Proposed roles, not an installed game theme. */
 :root {
-  --dth-top: #e7d9d3;
-  --dth-middle: #e4f0ec;
-  --dth-bottom: #d9e3d5;
+  --dth-top: #dcc3b6;
+  --dth-middle: #e5d7c4;
+  --dth-bottom: #cdcbb3;
   --dth-edge: #b49b87;
   --dth-leaf: #a6b58c;
   --dth-vein: #718066;

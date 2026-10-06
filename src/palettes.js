@@ -1,9 +1,9 @@
 // Chapter colors selected by Xyh in new palettes.md. Keep light-mode fallbacks at draw sites.
 export const CHAPTER_PALETTES = {
   "dawn": {
-    "top": "#e7d9d3",
-    "middle": "#e4f0ec",
-    "bottom": "#d9e3d5",
+    "top": "#dcc3b6",
+    "middle": "#e5d7c4",
+    "bottom": "#cdcbb3",
     "edge": "#b49b87",
     "leaf": "#a6b58c",
     "vein": "#718066",

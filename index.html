@@ -14,6 +14,7 @@
     <canvas id="game-canvas" tabindex="0" aria-label="Draw on the field"></canvas>
     <button id="btn-pause" class="stage-pause" title="Open pause menu (Escape)">Pause</button>
     <section id="title-screen" class="recipe-modal active" role="dialog" aria-modal="true" aria-labelledby="title-heading">
+      <canvas id="title-art" aria-hidden="true"></canvas>
       <div class="recipe-card shell-card">
         <h1 id="title-heading">Drawing the Hours</h1>
         <button id="btn-begin">Begin</button>
@@ -22,15 +23,16 @@
     <section id="pause-menu" class="recipe-modal" role="dialog" aria-modal="true" aria-labelledby="menu-heading" hidden>
       <div class="recipe-card shell-card">
         <button class="modal-close-btn close-btn" id="btn-close-pause-x" aria-label="Resume game" title="Resume game">✕</button>
+        <div class="hour-strip" aria-hidden="true"></div>
         <h1 id="menu-heading">Drawing the Hours</h1>
         <p id="header-sub"></p>
         <nav class="menu-buttons" aria-label="Pause menu">
-          <button id="btn-resume">Resume</button>
-          <button id="btn-visit-card">Visit Card</button>
-          <button id="btn-visit">Visits</button>
-          <button id="btn-fieldbook">Field Book</button>
-          <button id="btn-settings">Settings</button>
-          <button id="btn-restart">Restart visit</button>
+          <button id="btn-resume"><canvas class="menu-icon" width="72" height="72" data-creature="brimstone" aria-hidden="true"></canvas>Resume</button>
+          <button id="btn-visit-card"><canvas class="menu-icon" width="72" height="72" data-creature="lacewing" aria-hidden="true"></canvas>Visit Card</button>
+          <button id="btn-visit"><canvas class="menu-icon" width="72" height="72" data-creature="damselfly" aria-hidden="true"></canvas>Visits</button>
+          <button id="btn-fieldbook"><canvas class="menu-icon" width="72" height="72" data-creature="hoverfly" aria-hidden="true"></canvas>Field Book</button>
+          <button id="btn-settings"><canvas class="menu-icon" width="72" height="72" data-creature="firefly" aria-hidden="true"></canvas>Settings</button>
+          <button id="btn-restart"><canvas class="menu-icon" width="72" height="72" data-creature="hawkmoth" aria-hidden="true"></canvas>Restart visit</button>
         </nav>
         <p id="gesture-hint"></p>
       </div>
@@ -291,6 +293,7 @@
     import { Game } from './src/game.js';
     import { renderComboCanvases } from './src/combo-diagrams.js';
     import { audio } from './src/audio.js';
+    import { createTitleArt, dressMenus } from './src/shell-art.js';
     import { CAMPAIGN_LEVELS, PRACTICE_LEVELS, PLAYABLE_LEVEL_IDS, CampaignSaveManager, isHourReached } from './src/campaign.js';
 
     const canvas = document.getElementById('game-canvas');
@@ -326,7 +329,6 @@
       document.getElementById('gesture-hint').textContent = traceRecipes.length
         ? `Thread ${traceRecipes.map(r => r.join(' → ')).join(', or ')} in sequence to trace. Draw around insects to loop.`
         : 'The held cord is a wall. Draw around insects; crossing the cord closes the loop.';
-      btnVisit.textContent = 'Visits';
 
       if (headerSub && level) {
         headerSub.textContent = `${level.hourLabel || 'Dawn'}: ${level.title}`;
@@ -561,6 +563,8 @@
     game.onOpenVisitModal = () => toggleVisitModal(true);
     updateLevelUI(game.currentLevel); renderVisitModal(); applyFieldBookReveal();
     showPanel('title-screen');
+    dressMenus();
+    createTitleArt(document.getElementById('title-art'), document.getElementById('title-screen'));
 
     // Playtesting route: ?dev shows the save controls. Players never see them;
     // the console hooks below stay available either way.

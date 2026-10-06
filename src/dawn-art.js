@@ -17,7 +17,14 @@ export function createDawnArt(width, height, pixelRatio = 1) {
   wash.addColorStop(1, themeColor('bottom', '#e6edd9'));
   ctx.fillStyle = wash;
   ctx.fillRect(0, 0, width, height);
-  if (paperBackdrop(canvas, 'dawn')) return canvas;
+  if (paperBackdrop(canvas, 'dawn')) {
+    // Dust: fine dark and pale specks over the pressed paper.
+    for (let i = 0; i < width * height / 150; i++) {
+      ctx.fillStyle = random() < 0.6 ? 'rgba(96,74,58,.13)' : 'rgba(255,250,240,.2)';
+      ctx.fillRect(random() * width, random() * height, 0.5 + random() * 0.9, 0.5 + random() * 0.9);
+    }
+    return canvas;
+  }
   // Thin fibers are generated once, not randomized on each animation frame.
   for (let i = 0; i < width * height / 190; i++) {
     const x = random() * width, y = random() * height;

@@ -1828,3 +1828,37 @@ back to `true` restores unlocking. Verified in the preview browser from the
 existing save: 31 list items, none locked, and choosing Midnight XXIV started
 it. All eight Node suites pass. Not changed: the Field Book still hides hours
 not yet reached or in play.
+
+
+2026-10-07 — Claude Code — Dawn made dustier, and the title screen and menu
+cards redrawn, at Xyh's request.
+
+Dawn: the wash moved from pale rose, mint, and sage (`#e7d9d3`, `#e4f0ec`,
+`#d9e3d5`) to clay, sand, and dry olive (`#dcc3b6`, `#e5d7c4`, `#cdcbb3`) in
+`src/palettes.js` and `new palettes.md`, so it no longer sits beside Noon's
+blue, cream, and mint. `dawn-art.js` scatters fine dark and pale specks over the
+pressed paper. Other Dawn roles are unchanged.
+
+Title screen: `src/shell-art.js` draws the four hours as overlapping torn sheets
+of their own papers, a terracotta cord loop round the title, and the six fliers
+circling it. The title sits on a tilted paper card. The sheets bake one per
+timer tick; fliers stop animating once the screen is dismissed, and stay still
+under `prefers-reduced-motion`.
+
+Menu cards (`.shell-card`: pause and settings): the hour's paper as a mirrored
+CSS tile in the panel colour, no ruled border, a cut-paper shadow, a strip of
+four hour swatches with the current hour taller, and a flier drawn by the
+game's own code on each pause-menu button. `dressMenus()` redraws these when
+the hour or colour mode changes. The line that reset the Visits button label on
+every level change was removed, since it erased the button's icon and the label
+never changes.
+
+Verified in the preview browser: title screen with all four sheets, loop, and
+fliers; Dawn Visit I in play on the new wash; pause menu with icons and hour
+strip. No console errors. All eight Node suites pass.
+
+Not checked: the settings card, Field Book, and Visits list on the new card
+style; Pure light colours; portrait; a touch device. The mirrored card tile
+shows a faint symmetric pattern; relief was lowered to 0.011 and the tile
+enlarged to 420 px to quiet it, and that last tweak was not looked at again.
+Brimstone yellow on the sand wash is lower in contrast than it was on mint.
