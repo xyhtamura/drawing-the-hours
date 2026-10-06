@@ -38,3 +38,13 @@ font, or audio asset was added for Midnight.
 
 2026-09-16 — Codex — Flax flower pickup and card glyph drawn with original
 Canvas paths in `src/entities.js`; no external image or font added.
+
+## Paper textures
+
+2026-10-07 — Claude Code — `src/paper.js` reads ten photographs of paper and
+fibre from `textures/` (`SB012`, `SB013`, `SB034`, `SB035`, `cip60062`,
+`cip60095`, `cip60097`, `cit60069`, `CANVAS10`, `STRANDS2`). Xyh supplied them;
+their source and licence are not recorded here, and the filenames read like a
+stock texture collection. They are untracked and must not be committed or
+published until that is settled. The game falls back to flat colour and
+outlines when the folder is absent.

@@ -1769,3 +1769,51 @@ visit-complete recap and pause menu are unchanged. Known and not from this
 change: on the Midnight XI card the begin prompt overlaps the last line of the
 teaching diagram (same at HEAD). Not checked on a touch device or in Pure light
 colours.
+
+
+2026-10-07 — Claude Code — Paper textures on backdrops and creatures, outlines
+off. `src/paper.js` loads the ten images in `textures/`, reduces each to OKLab
+residuals around its own mean, and rebuilds it around whatever colour the draw
+site asked for. Three settings per role, in `PAPER_USE`: `relief` (lightness
+swing), `keep` (how much of the texture's own hue variation survives, turned to
+sit on the target hue), and `split` (degrees of hue shift between creases and
+highlights). `keep` and `split` at zero give a one-hue tint; the other two are
+the answer to recoloured textures going monochrome. The palette stays the
+authority for colour, so `palettes.js` and the Pure light fallbacks are
+unchanged.
+
+Draw sites: every `fill(); stroke()` outline pair in `entities.js`,
+`lacewing.js`, and the Dusk and Midnight leaves now calls `paperShape(ctx,
+role)`, which fills with a tinted pattern tile, casts a short cut-paper shadow,
+and strokes only when `paperStyle.outlines` is on or the texture is missing.
+Veins, antennae, and other inner lines are kept. The four hour backdrops press
+a texture into the colour wash through `paperBackdrop`; the procedural fibres
+remain as the fallback. The soft ellipse under each flier is hidden while
+cut-paper shadows are drawn (`paperStyle.contact`). `themeKey()` gained a
+version counter so cached art rebuilds when textures finish loading.
+
+[texture-lab.html](texture-lab.html) shows every species at 3×, 1.6×, and field
+size on the hour's backdrop, with texture, relief, keep, and split per role,
+toggles for outlines, shadows, and contact ellipses, a strip comparing tint
+only / keep / split / both on the role being edited, and the settings as JSON
+to paste back into `PAPER_USE`. The values in `PAPER_USE` now are first
+guesses, not choices.
+
+Verified: all eight Node suites pass (no DOM, so they exercise the flat-colour
+and outline fallback). In the preview browser the lab was looked at for all
+four hours with no console errors, and the game was opened to Dawn Visit I,
+which showed the textured backdrop and creatures. Measured in the lab on this
+desktop: backdrop bake about 400 ms per hour, once per theme or size change
+(3.6 s before the bake was capped at 1024 px on the long side); a frame of 30
+creatures with shadows 1.3–2 ms.
+
+Not done: `textures/` is untracked and was not committed, because the images'
+source and licence are unrecorded (see ASSETS.md); without them the published
+game draws exactly as before. Texture and setting choices per hour and per
+species are Xyh's to make in the lab. Visit cards, Field Book diagrams, pocket
+fills, stamps, the cord, the dandelion seed, and the web patch are untextured;
+card and diagram creatures pick up textures because they call the same draw
+code, and were not inspected. Not checked: Pure light colours, portrait
+layout, a touch device, Safari, and frame time or memory on a tablet (each
+tinted tile is 256×256, one per texture, colour, and setting). The Next in Dev
+line is unchanged.

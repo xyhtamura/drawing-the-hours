@@ -1,4 +1,5 @@
 import { themeColor } from './theme.js';
+import { paperShape } from './paper.js';
 /** Shared geometry for the visible leaves and their resting insects. */
 export function duskSafeArea({ width, height }) {
   const margin = Math.min(70, width * 0.18);
@@ -57,7 +58,7 @@ export function drawLacewing(ctx, insect) {
     ctx.fillStyle = themeColor('lacewing', '#e5f4de'); ctx.strokeStyle = themeColor('outline', '#3f7158'); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0, -9);
     ctx.bezierCurveTo(25, -12, 26, 19, 8, 24);
-    ctx.quadraticCurveTo(2, 10, 0, -9); ctx.fill(); ctx.stroke();
+    ctx.quadraticCurveTo(2, 10, 0, -9); paperShape(ctx, 'lacewing');
     ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(12, 20);
     for (let y = -3; y <= 15; y += 6) {
       ctx.moveTo((y + 9) * 0.4, y); ctx.lineTo(19, y + 1);

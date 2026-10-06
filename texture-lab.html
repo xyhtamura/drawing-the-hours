@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drawing the Hours — texture lab</title>
+<style>
+  body { margin: 0; padding: 16px; font: 14px/1.4 system-ui, sans-serif; background: #2b2a28; color: #eee; }
+  h1 { font-size: 16px; margin: 0 0 12px; }
+  h2 { font-size: 14px; margin: 18px 0 6px; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; margin-bottom: 10px; }
+  label { display: inline-flex; gap: 6px; align-items: center; }
+  input[type=range] { width: 150px; }
+  output { min-width: 3.2em; font-variant-numeric: tabular-nums; }
+  canvas { display: block; max-width: 100%; height: auto; }
+  #strip { display: flex; flex-wrap: wrap; gap: 10px; }
+  #strip figure { margin: 0; }
+  #strip figcaption { font-size: 12px; color: #bbb; margin-top: 3px; }
+  textarea { width: 100%; max-width: 960px; height: 150px; font: 12px/1.3 ui-monospace, monospace; }
+  #status { color: #bbb; }
+</style>
+</head>
+<body>
+<h1>Texture lab</h1>
+<div class="row">
+  <label>Hour <select id="hour"><option>dawn</option><option>noon</option><option>dusk</option><option>midnight</option></select></label>
+  <label>Colors <select id="mode"><option value="default">Default</option><option value="light">Pure light</option></select></label>
+  <label><input type="checkbox" id="textures" checked> Textures</label>
+  <label><input type="checkbox" id="outlines"> Outlines</label>
+  <label><input type="checkbox" id="shadows" checked> Cut-paper shadows</label>
+  <label><input type="checkbox" id="contact"> Contact ellipses</label>
+  <label><input type="checkbox" id="animate" checked> Animate</label>
+  <span id="status"></span>
+</div>
+<div class="row">
+  <label>Editing <select id="role"></select></label>
+  <label>Paper <select id="paper"></select></label>
+  <label>Relief <input type="range" id="relief" min="0" max="0.12" step="0.002"><output id="reliefOut"></output></label>
+  <label>Keep texture hues <input type="range" id="keep" min="0" max="1.5" step="0.05"><output id="keepOut"></output></label>
+  <label>Hue split (°) <input type="range" id="split" min="-60" max="60" step="1"><output id="splitOut"></output></label>
+</div>
+<canvas id="field" width="1920" height="1280" style="width:960px"></canvas>
+
+<h2>Recolor methods on the role being edited</h2>
+<div id="strip"></div>
+
+<h2>Settings</h2>
+<p>Paste into <code>PAPER_USE</code> in <code>src/paper.js</code> to keep them.</p>
+<textarea id="json" readonly></textarea>
+
+<script type="module">
+import { setThemeHour, setColorMode, themeColor } from './src/theme.js';
+import { PAPERS, PAPER_USE, paperStyle, paperChanged, papersLoaded, paperTile } from './src/paper.js';
+import { Insect, DandelionSeed, Snail, Hornet, FlaxFlower, NightJasmine } from './src/entities.js';
+import { createDawnArt } from './src/dawn-art.js';
+import { createNoonArt } from './src/noon-art.js';
+import { createDuskArt } from './src/dusk-art.js';
+import { createMidnightArt } from './src/midnight-art.js';
+
+const W = 960, H = 640, SCALE = 2;
+const $ = (id) => document.getElementById(id);
+const field = $('field'), ctx = field.getContext('2d');
+const ART = { dawn: createDawnArt, noon: createNoonArt, dusk: createDuskArt, midnight: createMidnightArt };
+const KINDS = ['brimstone', 'damselfly', 'hawkmoth', 'hoverfly', 'lacewing', 'firefly'];
+let hour = 'dawn', art = null, artMs = 0;
+
+// A fixed cast: one large specimen of each species, and a field-size crowd below.
+const big = KINDS.map((kind, i) => Object.assign(new Insect(0, 0, kind), { heading: -Math.PI / 2, lacePhase: 'travel', flapPhase: 0.6 + i }));
+const crowd = [];
+for (let i = 0; i < 18; i++) {
+  const insect = new Insect(70 + (i % 9) * 100, 440 + Math.floor(i / 9) * 80, KINDS[i % KINDS.length]);
+  insect.heading = i * 1.3; insect.lacePhase = 'travel'; insect.flapPhase = i;
+  crowd.push(insect);
+}
+const extras = [new DandelionSeed(120, 590), new Snail(260, 590), new Hornet(400, 590), new FlaxFlower(540, 585), new NightJasmine(0, 0)];
+extras[4].x = 700; extras[4].y = 585;
+
+function rebuildArt() {
+  const t = performance.now();
+  art = ART[hour](W, H, SCALE);
+  artMs = performance.now() - t;
+}
+
+function draw() {
+  const t = performance.now();
+  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+  ctx.drawImage(art, 0, 0, W, H);
+  big.forEach((insect, i) => {
+    ctx.save(); ctx.translate(90 + i * 155, 110); ctx.scale(3, 3);
+    insect.x = 0; insect.y = 0; insect.draw(ctx); ctx.restore();
+    ctx.save(); ctx.translate(90 + i * 155, 300); ctx.scale(1.6, 1.6);
+    insect.draw(ctx); ctx.restore();
+  });
+  for (const insect of crowd) insect.draw(ctx);
+  for (const extra of extras) extra.draw(ctx);
+  ctx.fillStyle = themeColor('ink', '#3a3225'); ctx.font = '13px system-ui';
+  ctx.fillText('3×', 12, 24); ctx.fillText('1.6×', 12, 250); ctx.fillText('1× (field size)', 12, 400);
+  return performance.now() - t;
+}
+
+let frameMs = 0;
+function tick() {
+  if ($('animate').checked) {
+    for (const insect of [...big, ...crowd]) insect.flapPhase += insect.config.flutterFreq / 60 * 0.25;
+    frameMs = frameMs * 0.9 + draw() * 0.1;
+    $('status').textContent = `backdrop bake ${artMs.toFixed(0)} ms · frame ${frameMs.toFixed(2)} ms`;
+  }
+  requestAnimationFrame(tick);
+}
+
+// --- Controls ---
+const roleKeys = () => [...['dawn', 'noon', 'dusk', 'midnight'].map((h) => `backdrop:${h}`), ...Object.keys(PAPER_USE).filter((k) => k !== 'backdrop')];
+function current() {
+  const key = $('role').value;
+  return key.startsWith('backdrop:') ? PAPER_USE.backdrop[key.slice(9)] : PAPER_USE[key];
+}
+function sampleColor() {
+  const key = $('role').value;
+  if (key.startsWith('backdrop:')) return themeColor('middle', '#fcf8e9');
+  const fallback = { body: '#524a35', leaf: '#c6ccb6', shell: '#a67c52', petal: '#bdd4fa', default: '#eddcc8' };
+  return themeColor(key, fallback[key] ?? '#e07a8f');
+}
+function syncControls() {
+  const s = current();
+  $('paper').value = s.paper;
+  for (const k of ['relief', 'keep', 'split']) { $(k).value = s[k]; $(`${k}Out`).textContent = s[k]; }
+  $('json').value = JSON.stringify(PAPER_USE, null, 2);
+}
+function strip() {
+  const s = current(), color = sampleColor();
+  const variants = [
+    ['Tint only (one hue)', { ...s, keep: 0, split: 0 }],
+    ['Keep texture hues', { ...s, split: 0 }],
+    ['Hue split', { ...s, keep: 0 }],
+    ['Both (current)', { ...s }],
+    ['Both, doubled', { ...s, keep: s.keep * 2, split: s.split * 2 }],
+  ];
+  const el = $('strip'); el.replaceChildren();
+  for (const [label, settings] of variants) {
+    const tile = paperTile('lab', color, settings);
+    if (!tile) continue;
+    const fig = document.createElement('figure');
+    const c = Object.assign(document.createElement('canvas'), { width: 256, height: 256 });
+    c.style.width = '180px';
+    const cc = c.getContext('2d'); cc.fillStyle = '#888'; cc.fillRect(0, 0, 256, 256); cc.drawImage(tile.canvas, 0, 0);
+    fig.append(c, Object.assign(document.createElement('figcaption'), { textContent: label }));
+    el.append(fig);
+  }
+}
+function refresh() { paperChanged(); rebuildArt(); syncControls(); strip(); draw(); }
+
+for (const key of roleKeys()) $('role').append(new Option(key));
+for (const name of Object.keys(PAPERS)) $('paper').append(new Option(`${name} (${PAPERS[name].file})`, name));
+$('hour').onchange = () => { hour = $('hour').value; setThemeHour(hour); $('role').value = `backdrop:${hour}`; refresh(); };
+$('mode').onchange = () => { setColorMode($('mode').value); refresh(); };
+for (const k of ['textures', 'outlines', 'shadows', 'contact']) $(k).onchange = () => { paperStyle[k] = $(k).checked; refresh(); };
+$('role').onchange = () => { syncControls(); strip(); };
+$('paper').onchange = () => { current().paper = $('paper').value; refresh(); };
+for (const k of ['relief', 'keep', 'split']) $(k).oninput = () => { current()[k] = Number($(k).value); refresh(); };
+
+setThemeHour(hour);
+$('role').value = 'backdrop:dawn';
+await papersLoaded;
+refresh();
+window.lab = { draw, refresh, PAPER_USE, paperStyle, get artMs() { return artMs; } };
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

@@ -9,7 +9,11 @@ export function themeColor(role, fallback) {
   return mode === 'light' ? fallback : CHAPTER_PALETTES[hour][role] ?? fallback;
 }
 
-export function themeKey() { return `${mode}:${hour}`; }
+let version = 0;
+/** Invalidates art cached under themeKey(), for changes that are not a mode or an hour. */
+export function bumpThemeVersion() { version++; }
+export function themeKey() { return `${mode}:${hour}:${version}`; }
+export function themeHour() { return hour; }
 export function getColorMode() { return mode; }
 
 export function setColorMode(value) {

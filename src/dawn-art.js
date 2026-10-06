@@ -1,4 +1,5 @@
 import { themeColor } from './theme.js';
+import { paperBackdrop } from './paper.js';
 
 /** Cached chapter wash and paper grain; resting leaves remain gameplay cues. */
 export function createDawnArt(width, height, pixelRatio = 1) {
@@ -16,6 +17,7 @@ export function createDawnArt(width, height, pixelRatio = 1) {
   wash.addColorStop(1, themeColor('bottom', '#e6edd9'));
   ctx.fillStyle = wash;
   ctx.fillRect(0, 0, width, height);
+  if (paperBackdrop(canvas, 'dawn')) return canvas;
   // Thin fibers are generated once, not randomized on each animation frame.
   for (let i = 0; i < width * height / 190; i++) {
     const x = random() * width, y = random() * height;
