@@ -1817,3 +1817,14 @@ code, and were not inspected. Not checked: Pure light colours, portrait
 layout, a touch device, Safari, and frame time or memory on a tablet (each
 tinted tile is 256×256, one per texture, colour, and setting). The Next in Dev
 line is unchanged.
+
+
+2026-10-07 — Claude Code — Visit gating turned off at Xyh's request. `VISIT_GATE
+= false` in `index.html` opens every visit and practice verge in the Visits
+list; the intro line now reads "Select any visit or practice verge." and
+unfinished visits are badged Open. Saves still record progress, and
+`isHourReached` and `CampaignSaveManager` are unchanged, so setting the constant
+back to `true` restores unlocking. Verified in the preview browser from the
+existing save: 31 list items, none locked, and choosing Midnight XXIV started
+it. All eight Node suites pass. Not changed: the Field Book still hides hours
+not yet reached or in play.

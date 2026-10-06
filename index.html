@@ -256,7 +256,7 @@
       <button class="modal-close-btn close-btn" id="btn-close-visit-modal-x" aria-label="Back to menu" title="Back to menu">✕</button>
       <h2>Meadow Visits &amp; Hours</h2>
       <div class="field-intro">
-        Select a visit you have reached, or return to an open practice verge. Later visits unlock as you finish the one before.
+        Select any visit or practice verge.
       </div>
 
       <div class="visit-section">
@@ -333,6 +333,10 @@
       }
     };
 
+    // Visit gating is off for now: every visit and practice verge can be opened from
+    // the list. Set to true to restore unlocking by progress. Saves still record progress.
+    const VISIT_GATE = false;
+
     const renderVisitModal = () => {
       const save = game.campaign.saveState;
       const highestUnlocked = save.highestUnlockedIndex || 0;
@@ -344,7 +348,8 @@
         list.innerHTML = CAMPAIGN_LEVELS.filter(lvl => lvl.hour === hour && PLAYABLE_LEVEL_IDS.has(lvl.id)).map(lvl => {
           // Reached visits only: the save's highest unlocked index, anything already
           // completed, and the visit in play. Unlock All in Save opens the rest.
-          const isUnlocked = CAMPAIGN_LEVELS.indexOf(lvl) <= highestUnlocked
+          const isUnlocked = !VISIT_GATE
+            || CAMPAIGN_LEVELS.indexOf(lvl) <= highestUnlocked
             || save.completedLevelIds.includes(lvl.id)
             || lvl.id === currentId;
           const isCompleted = save.completedLevelIds.includes(lvl.id);
@@ -361,7 +366,7 @@
             badgeText = 'Current';
           } else if (isUnlocked) {
             badgeClass = 'current';
-            badgeText = 'Unlocked';
+            badgeText = VISIT_GATE ? 'Unlocked' : 'Open';
           }
 
           return `
@@ -381,7 +386,7 @@
 
       // Practice levels
       if (visitListPractice) {
-        visitListPractice.innerHTML = PRACTICE_LEVELS.filter(lvl => isHourReached(save, lvl.hour)).map(lvl => {
+        visitListPractice.innerHTML = PRACTICE_LEVELS.filter(lvl => !VISIT_GATE || isHourReached(save, lvl.hour)).map(lvl => {
           const isActive = lvl.id === currentId;
           return `
             <div class="visit-item ${isActive ? 'active' : ''}" data-level-id="${lvl.id}" role="button" tabindex="0">
