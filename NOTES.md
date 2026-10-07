@@ -1887,3 +1887,5 @@ not made, since the files are Xyh's. Their source and licence are unrecorded,
 as for the earlier set. `textures/2026-10-07 00-21-59.png` has the same size as
 `glass.png` and is not referenced. Each hour was not looked at in play, only in
 the lab.
+
+2026-10-07 — Codex — Added favicon.svg and a relative SVG icon link to index.html. The icon is an original drawing documented in ASSETS.md. Rendered it in headless Microsoft Edge at 16, 32, and 96 pixels on light and dark backgrounds and inspected the screenshot; the motif remains legible at tab size. Parsed the SVG as XML and confirmed the local page's favicon link, HTTP 200 delivery, and image/svg+xml content type. Browser-chrome tab display was not directly checked. No gameplay or development plans changed.

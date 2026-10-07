@@ -48,3 +48,7 @@ their source and licence are not recorded here, and the filenames read like a
 stock texture collection. They are untracked and must not be committed or
 published until that is settled. The game falls back to flat colour and
 outlines when the folder is absent.
+
+## Favicon
+
+favicon.svg is an original SVG drawing of a moth inside a gesture loop, using the game's cream, terracotta, and green palette. Drawn by Codex on 2026-10-07. It contains no third-party artwork, fonts, or samples.
