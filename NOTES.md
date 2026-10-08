@@ -1889,3 +1889,48 @@ as for the earlier set. `textures/2026-10-07 00-21-59.png` has the same size as
 the lab.
 
 2026-10-07 — Codex — Added favicon.svg and a relative SVG icon link to index.html. The icon is an original drawing documented in ASSETS.md. Rendered it in headless Microsoft Edge at 16, 32, and 96 pixels on light and dark backgrounds and inspected the screenshot; the motif remains legible at tab size. Parsed the SVG as XML and confirmed the local page's favicon link, HTTP 200 delivery, and image/svg+xml content type. Browser-chrome tab display was not directly checked. No gameplay or development plans changed.
+
+2026-10-08 — Codex — Built [Aquarium](aquarium/index.html), an eight-tank
+detour with its own runtime and save, linked from the meadow title and pause
+menu. The aquarium reuses pocket extraction from `src/geometry.js` without
+changing the meadow engine. Bangus, tamban, tilapia, danggit, and protected fry
+have original Canvas drawings. Authored visitor cards connect the hatchery,
+mangrove nursery, school, pen, seagrass, tidal channel, sorting tank, and last
+window. See [the chapter README](aquarium/README.md) for the tank rules.
+
+Accepted loops guide fish into a refuge ring, and count arrivals rather than
+removing fish. Mechanics include schooling, minimum group sizes, cord walls,
+protected fry, cutting roots and jellyfish, netting that spoils pockets,
+aeration loops, a temporary seaweed slowdown, a slack-tide transfer window,
+and a two-species figure eight. Every tank is open; practice removes oxygen
+depletion and writes no completion. Aquarium cord limit: 1,500 logical pixels;
+there is no bead threading here. That departure is deliberate, so the detour
+can centre on group transfer and water conditions. Meadow rules are unchanged.
+
+Verified with `node test/test_aquarium.js`: closure, length, roots, fry,
+netting, minimum school sizes, pocket purity, tidal rejection, aeration,
+already-safe fish, and a two-pocket figure eight. All eight existing Node
+test files also passed. Opened `test/aquarium-browser.html` in the in-app
+browser: synthetic pointer events transferred real fish to refuge, reached
+the completion card, advanced to tank 2, opened all eight tank cards, froze
+oxygen on pause, and toggled practice. The check uses the aquarium save, so
+running it changes aquarium progress. The browser console reported no errors.
+Inspected the pen's active desktop field at 1100×900 and its card at 390×844;
+both retained the tank proportions and readable controls. Fixed a pause-time
+HUD lag found by that browser check and a pointer event with no coalesced
+samples found during the gesture check.
+
+Exhibit claims were checked against SEAFDEC's milkfish culture page and
+mangrove code and BFAR's sardine closed-season explanation, linked in the
+chapter. The oxygen meter, slowdown, refuge transfer, and tide timings are
+fictional game units, stated explicitly in Exhibit notes. Downloading the
+48-page SEAFDEC code into `library/drawing-the-hours-aquarium/` failed through
+the host connection; the web reader could inspect it, but no local PDF was
+retained. No external artwork or texture was added; provenance is in ASSETS.md.
+
+Undone: a full human playthrough of all eight tanks, touch and pen input,
+orientation changes on a tablet, difficulty tuning, and aquarium audio.
+Next: play the eight tanks on a touch device and tune counts, motion, oxygen,
+and slack-tide timing. The earlier meadow pacing pass remains pending after
+that playthrough. Both Drawing the Hours entries in ROADMAP.md were updated;
+the duplicate entries predate this change and were retained.

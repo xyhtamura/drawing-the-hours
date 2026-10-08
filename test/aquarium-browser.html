@@ -1,0 +1,35 @@
+<!doctype html><meta charset="utf-8"><title>Aquarium browser checks</title>
+<pre id="result">Running</pre><iframe id="game" width="1100" height="950" src="../aquarium/index.html"></iframe>
+<script type="module">
+const iframe=document.getElementById('game'),out=document.getElementById('result');
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const checks=[];const check=(ok,label)=>{if(!ok)throw Error(label);checks.push(label);out.textContent=checks.join('\n');};
+try{
+  await new Promise(r=>iframe.onload=r);await wait(300);
+  const d=iframe.contentDocument,w=iframe.contentWindow;
+  const button=text=>[...d.querySelectorAll('button')].find(b=>b.textContent===text);
+  const c=d.getElementById('field');
+  d.getElementById('menu').click();d.querySelector('.map button').click();
+  check(button('Enter tank')!==undefined,'Module loaded and ready card rendered');
+  button('Enter tank').click();check(d.getElementById('overlay').hidden,'Enter tank dismisses card');
+  function draw(cx,cy,r){const box=c.getBoundingClientRect(),sx=box.width/c.width,sy=box.height/c.height;
+    const event=(type,x,y)=>c.dispatchEvent(new w.PointerEvent(type,{bubbles:true,pointerId:1,button:0,clientX:box.left+x*sx,clientY:box.top+y*sy}));
+    event('pointerdown',cx+r,cy);
+    for(let i=1;i<=72;i++)event('pointermove',cx+Math.cos(i/72*Math.PI*2)*r,cy+Math.sin(i/72*Math.PI*2)*r);
+    event('pointerup',cx+r,cy);
+  }
+  // Synthetic events do not activate pointer capture. Ignore only that native guard.
+  c.setPointerCapture=()=>{};
+  draw(30,30,15);check(d.getElementById('status').textContent.includes('water'),'Empty loop is rejected through pointer handlers');
+  for(const x of [200,420,640])for(const y of [220,390])draw(x,y,145);
+  await wait(7500);
+  check(d.getElementById('card').textContent.includes('Tank complete'),'Fish transfer reaches the real completion card');
+  button('Next window').click();check(d.getElementById('title').textContent==='Between the roots','Completion advances to tank 2');
+  d.getElementById('menu').click();check(d.querySelectorAll('.map button').length===8,'Map exposes eight authored tanks');
+  for(let i=0;i<8;i++){d.querySelectorAll('.map button')[i].click();check(d.getElementById('card').textContent.includes('Enter tank'),`Tank ${i+1} opens its card`);d.getElementById('menu').click();}
+  d.querySelectorAll('.map button')[3].click();button('Enter tank').click();await wait(400);d.getElementById('pause').click();
+  const oxygen=d.getElementById('oxygen').value;await wait(600);check(d.getElementById('oxygen').value===oxygen,'Pause freezes oxygen');
+  d.getElementById('practice').click();check(d.getElementById('practice').getAttribute('aria-pressed')==='true','Practice toggles and restarts');
+  out.textContent+='\nPASS';
+}catch(e){out.textContent+='\nFAIL: '+e.stack;}
+</script>

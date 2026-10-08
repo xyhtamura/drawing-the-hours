@@ -52,3 +52,10 @@ outlines when the folder is absent.
 ## Favicon
 
 favicon.svg is an original SVG drawing of a moth inside a gesture loop, using the game's cream, terracotta, and green palette. Drawn by Codex on 2026-10-07. It contains no third-party artwork, fonts, or samples.
+
+## Aquarium chapter
+
+2026-10-08 — Codex — The fish, aquatic pickups, hazards, glass, sand,
+vegetation, and visitor reflection in `aquarium/aquarium.js` are original
+Canvas drawings. The chapter reuses the Mali font files and original favicon
+listed above. No third-party artwork, texture, or audio was added.
