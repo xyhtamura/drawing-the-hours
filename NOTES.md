@@ -2171,3 +2171,22 @@ audio, and story text. Next: play the revised levels on a touch device and tune
 shoal separation, beetle pacing, and bubble disturbance strength. Both root
 roadmap entries were brought into agreement; the meadow pacing pass remains
 pending.
+
+## 2026-10-10 — Codex — Aquarium water colors and paper fish
+
+Paired the eight levels into blue, green, peach, and purple water washes.
+Removed the straight submerged paving lines, retaining faint vegetation and
+water ripples. Fish bodies, tails, and fins reuse mulberry, coir, gold tissue,
+and fibre textures through the existing cached paper renderer. Softer body
+outlines leave spots, cyan stripes, eyes, and beaks readable. Texture fills
+follow each fish's position and heading; flat fills remain the loading fallback.
+
+Checked the rendered first and eighth levels in the in-app browser at its
+portrait viewport. All four species showed texture and the paving lines were
+absent; the preview reported no console warnings or errors. The Node aquarium
+suite passed, and the mounted `test/aquarium-browser.html` check reported PASS
+through all eight levels. This replaces the previous turn's blocked browser check.
+
+Undone: touch/pen difficulty and texture contrast on other displays, orientation
+changes during play, audio, and story text. Next remains the touch playtest for
+shoal separation, beetle pacing, and bubble disturbance strength.

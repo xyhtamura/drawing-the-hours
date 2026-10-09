@@ -80,3 +80,8 @@ no photograph, illustration, or other external asset was copied into the game.
 2026-10-10 — Codex — Water beetles, round leaf clumps, and rising bubbles in
 `aquarium/aquarium.js` are original Canvas drawings. Existing fish, shade,
 fonts, and paving were reused. No external artwork or sample was added.
+
+2026-10-10 — Codex — Aquarium fish reuse the supplied textures documented above:
+`SB012.webp` (mulberry) for ricefish, `cip60095.jpg` (coir) for gobies,
+`SB035.webp` (gold tissue) for barbs, and `cip60097.jpg` (fibre) for halfbeaks.
+The existing paper renderer tints their bodies, tails, and fins. No asset was added.

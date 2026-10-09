@@ -3,6 +3,15 @@ import {judgeStroke, strokeDisruption} from './rules.js';
 import {Aquarium, shadePatches} from './simulation.js';
 import {StringGesture} from '../src/string.js';
 import {getLengthBand} from '../src/geometry.js';
+import {paperTile, loadPaper} from '../src/paper.js';
+
+const FISH_PAPER = {
+  ricefish: {paper: 'mulberry', relief: .075, keep: .6, split: 12},
+  goby: {paper: 'coir', relief: .075, keep: .6, split: 12},
+  barb: {paper: 'tissueGold', relief: .08, keep: .7, split: 14},
+  halfbeak: {paper: 'fibre', relief: .075, keep: .6, split: 14},
+};
+Object.values(FISH_PAPER).forEach(settings => loadPaper(settings.paper));
 
 const $ = id => document.getElementById(id), canvas = $('field'), ctx = canvas.getContext('2d');
 const portrait = matchMedia('(max-width:650px)').matches;
@@ -119,6 +128,15 @@ canvas.addEventListener('pointerup', e => {
 });
 canvas.addEventListener('pointercancel', cancel); canvas.addEventListener('lostpointercapture', cancel);
 function path(points) {ctx.beginPath(); points.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));}
+function fishPaper(kind) {
+  const tile = paperTile('default', ctx.fillStyle, FISH_PAPER[kind]);
+  if (!tile) {ctx.fill(); return;}
+  if (!tile.pattern) {
+    tile.pattern = ctx.createPattern(tile.canvas, 'repeat');
+    tile.pattern.setTransform(new DOMMatrix().translate(-64, -64).scale(.5));
+  }
+  ctx.save(); ctx.fillStyle = tile.pattern; ctx.fill(); ctx.restore();
+}
 function fishArt(f) {
   const s = SPECIES[f.kind], n = s.size, beat = Math.sin(game.time * (f.kind === 'goby' ? 15 : 8) + f.phase);
   ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.heading);
@@ -126,21 +144,21 @@ function fishArt(f) {
   ctx.fillStyle = '#3a6a5d18'; ctx.beginPath(); ctx.ellipse(3, 6, n * 1.2, n * .42, 0, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = s.trim; ctx.beginPath(); ctx.moveTo(-n * .5, 0);
   ctx.lineTo(-n * 1.15, -n * .24 + beat * 1.5); ctx.lineTo(-n * 1.15, n * .24 + beat * 1.5);
-  ctx.closePath(); ctx.fill();
-  ctx.fillStyle = s.color; ctx.strokeStyle = '#496d5d90'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.ellipse(0, 0, n * .85, n * (f.kind === 'goby' ? .34 : f.kind === 'halfbeak' ? .16 : f.kind === 'barb' ? .28 : .22), 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.closePath(); fishPaper(f.kind);
+  ctx.fillStyle = s.color; ctx.strokeStyle = '#496d5d40'; ctx.lineWidth = .7;
+  ctx.beginPath(); ctx.ellipse(0, 0, n * .85, n * (f.kind === 'goby' ? .34 : f.kind === 'halfbeak' ? .16 : f.kind === 'barb' ? .28 : .22), 0, 0, Math.PI * 2); fishPaper(f.kind); ctx.stroke();
   if (f.kind === 'barb') {
     ctx.fillStyle = '#59614f'; for (const x of [-.45, -.1, .28]) {ctx.beginPath(); ctx.arc(n * x, 0, 1.8, 0, Math.PI * 2); ctx.fill();}
   }
   if (f.kind === 'goby') {
     ctx.strokeStyle = '#71bec5'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-n * .55, -1); ctx.lineTo(n * .5, -1); ctx.stroke();
-    ctx.fillStyle = '#5b8d85aa'; for (const y of [-1, 1]) {ctx.beginPath(); ctx.ellipse(n * .1, n * .35 * y, n * .28, n * .15, y * .4, 0, Math.PI * 2); ctx.fill();}
+    ctx.fillStyle = '#5b8d85aa'; for (const y of [-1, 1]) {ctx.beginPath(); ctx.ellipse(n * .1, n * .35 * y, n * .28, n * .15, y * .4, 0, Math.PI * 2); fishPaper(f.kind);}
   }
   if (f.kind === 'halfbeak') {
     ctx.strokeStyle = '#edf5e4'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-n * .55, 0); ctx.lineTo(n * .6, 0); ctx.stroke();
     ctx.strokeStyle = '#809375'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(n * .6, 2); ctx.lineTo(n * 1.45, 2); ctx.stroke();
   }
-  ctx.fillStyle = s.trim + '70'; ctx.beginPath(); ctx.ellipse(-n * .1, -n * .3, n * .28, n * .16, -.3, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = s.trim + '70'; ctx.beginPath(); ctx.ellipse(-n * .1, -n * .3, n * .28, n * .16, -.3, 0, Math.PI * 2); fishPaper(f.kind);
   ctx.strokeStyle = '#fbf3daaa'; ctx.beginPath(); ctx.moveTo(-n * .5, -1); ctx.quadraticCurveTo(0, -n * .14, n * .55, -1); ctx.stroke();
   ctx.fillStyle = '#34564a'; for (const y of [-1, 1]) {ctx.beginPath(); ctx.arc(n * .56, y * n * .12, 1.3, 0, Math.PI * 2); ctx.fill();}
   if (f.isBead) {ctx.strokeStyle = '#a15e69'; ctx.beginPath(); ctx.arc(0, 0, n, 0, Math.PI * 2); ctx.stroke();}
@@ -150,9 +168,7 @@ function draw() {
   ctx.fillStyle = game.level.wash; ctx.fillRect(0, 0, W, H);
   const wash = ctx.createRadialGradient(W * .38, H * .3, 30, W * .6, H * .45, W * .7);
   wash.addColorStop(0, '#f7ecd74a'); wash.addColorStop(1, '#456b5c21'); ctx.fillStyle = wash; ctx.fillRect(0, 0, W, H);
-  // A faint built edge beside the stream, without a horizon or tank rim.
-  ctx.save(); ctx.globalAlpha = .16; ctx.strokeStyle = '#738477'; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.moveTo(-40, H * .78); ctx.lineTo(W * .2, H * .68); ctx.lineTo(W * .19, H + 30); ctx.moveTo(W * .2, H * .68); ctx.lineTo(W + 50, H * .81); ctx.stroke();
+  ctx.save(); ctx.globalAlpha = .16;
   ctx.fillStyle = '#8eac81';
   for (let i = 0; i < 28; i++) {
     const x = i % 2 ? W - 12 - (i * 31 % 115) : 8 + (i * 43 % 100), y = 135 + i * 67 % (H - 120);

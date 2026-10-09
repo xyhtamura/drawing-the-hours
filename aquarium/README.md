@@ -16,6 +16,12 @@ cord they touch, including a held cord. Merely enclosing an obstacle is allowed.
 Rising bubbles mildly displace nearby fish; they expire without changing the
 countdown. These are disturbances, separate from the archived timer pickups.
 
+The water uses four palettes, each shared by two consecutive levels: blue
+(1–2), green (3–4), peach (5–6), and purple (7–8).
+
+Fish bodies, tails, and fins reuse the project's paper textures, tinted to each
+species' colors. Soft vegetation and water washes form the background.
+
 ## Levels
 
 1. Shallow water: three ricefish pairs, with gentle drifting movement.
