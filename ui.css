@@ -1,0 +1,11 @@
+/* Shared pill treatment for field controls and objectives. */
+button, .ui-pill {
+  border-radius: 999px;
+  font-family: Mali, sans-serif;
+  border: 1px solid var(--border-paper, #52706550);
+  background-color: var(--panel-bg, #eeeada);
+  color: var(--text-dark, #34574f);
+}
+button {min-height: 44px; padding: 8px 14px;}
+.ui-pill {background: #eeeada8a; border: 0;}
+.shell-card .menu-buttons button:nth-child(n), #btn-begin {border-radius: 999px; margin-left: 0; margin-right: 0;}

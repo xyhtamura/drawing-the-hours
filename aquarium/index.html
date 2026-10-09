@@ -5,17 +5,18 @@
   <title>Aquarium · Drawing the Hours</title>
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../assets/fonts/fonts.css"><link rel="stylesheet" href="aquarium.css">
+  <link rel="stylesheet" href="../ui.css">
 </head>
 <body>
   <main>
-    <header><a href="../index.html">Drawing the Hours</a><span>Aquarium</span><button id="visits">Levels</button><button id="pause">Pause</button></header>
     <section class="water" aria-label="Aquarium drawing field">
+      <header><a href="../index.html">Drawing the Hours</a><span>Aquarium</span></header>
       <canvas id="field" tabindex="0" aria-label="Draw around two fish of the same kind. Cross the cord to close a loop, then lift."></canvas>
       <div class="hud"><div><p id="number"></p><h1 id="title"></h1></div><div id="goals" aria-label="Figure objectives"></div><span id="clock" role="timer" aria-label="Bubble timer: full"></span></div>
       <div id="overlay"><article id="card" tabindex="-1"></article></div>
       <p id="status" role="status" aria-live="polite"></p>
+      <footer><button id="visits">Levels</button><button id="practice" aria-pressed="false">Practice: off</button><button id="pause">Pause</button></footer>
     </section>
-    <footer><span>Draw around fish · Cross to close · Lift to release</span><button id="practice" aria-pressed="false">Practice: off</button></footer>
   </main>
   <script type="module" src="aquarium.js"></script>
 </body>

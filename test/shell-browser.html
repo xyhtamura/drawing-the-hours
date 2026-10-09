@@ -17,7 +17,7 @@ try {
   check(g && g.uiSuspended, 'Title must suspend the game');
   const rect = g.canvas.getBoundingClientRect();
   const stage = d.querySelector('.stage-wrapper').getBoundingClientRect();
-  check(Math.abs(stage.width-w.innerWidth)<2 && Math.abs(stage.height-w.innerHeight)<2, 'Stage must fill viewport');
+  check(Math.abs(stage.width-rect.width)<2 && Math.abs(stage.height-rect.height)<2, 'Stage must fit the logical field');
   check(g.width*g.height === 960*640, 'Logical field area changed');
   check(Math.abs(rect.width/g.width-rect.height/g.height)<.002, 'Field stretched');
   check(!d.querySelector('header, footer'), 'External chrome remains');
@@ -29,6 +29,8 @@ try {
     const r=g.canvas.getBoundingClientRect();
     check(Math.abs(r.width/g.width-r.height/g.height)<.002, 'Resize stretched field');
     check(r.left>=-.1 && r.top>=-.1 && r.right<=width+.1 && r.bottom<=height+.1, 'Field cropped');
+    const pause=d.getElementById('btn-pause').getBoundingClientRect();
+    check(pause.left>=r.left && pause.top>=r.top && pause.right<=r.right+.1 && pause.bottom<=r.bottom+.1, 'Pause escaped field');
     const point=g.canvasPoint(r.left+r.width/2,r.top+r.height/2);
     check(Math.abs(point.x-g.width/2)<.01 && Math.abs(point.y-g.height/2)<.01, 'Pointer mapping shifted');
     g.state='PLAYING'; g.entities=[]; g.victoryDelay=0; g.clock.remainingSeconds=100;

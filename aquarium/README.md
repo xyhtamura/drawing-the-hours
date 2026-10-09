@@ -25,6 +25,12 @@ The water uses fabric, glass, and paint textures supplied in `tex/`, recolored
 into finished images in `water/`. Run `python scripts/bake_aquarium_water.py`
 from the project folder to rebuild both orientations. The source files stay local.
 
+Both chapters use a 960 × 640 logical field, or 640 × 960 in portrait, scaled
+uniformly to fit the viewport. Navigation, objectives, practice, pause, and menus
+stay inside the field. Resizing preserves aquarium progress and remaining time;
+rotation moves fish and terrain into the new orientation. Both pages load
+`ui.css` for their pill controls; meadow objectives use translucent Canvas pills.
+
 ## Levels
 
 1. Shallow water: three ricefish pairs, with gentle drifting movement.
@@ -57,6 +63,11 @@ Story text is reserved for Xyh. Counts, school spacing, contrast, and durations
 await a touch playtest.
 
 ## Checks
+
+Open [the aquarium layout check](../test/aquarium-layout.html) for five viewport
+sizes, fixed field area, uniform scaling, contained controls, and preserved play
+through rotation. The [main shell check](../test/shell-browser.html) checks the
+same field fit, pause placement, pointer scaling, and menu behavior.
 
 From the project folder, run `node test/test_aquarium.js` for the recipes,
 timer, departures, replenishment, goby rests and darts, halfbeak turns, shoal spacing, leaf contacts and spawn clearance, swept beetle

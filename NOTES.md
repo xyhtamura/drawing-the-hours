@@ -2212,3 +2212,30 @@ browser check reported PASS through all eight levels with the new backgrounds.
 Undone: human touch/pen playtests, contrast on other displays, orientation
 changes during play, audio, and story text. Next remains the touch playtest for
 shoal separation, beetle pacing, and bubble disturbance strength.
+
+## 2026-10-10 — Codex — Shared field sizing and pill UI
+
+Aquarium now uses the main game's `fitField` sizing: 960 × 640 landscape or
+640 × 960 portrait, with uniform scaling and letterboxing. Navigation, objectives,
+practice, pause, status, and menu cards sit inside the fitted field. The main
+stage also follows the fitted field, so its pause button and menus stay within
+those bounds on wide screens. Aquarium resize cancels an active cord and
+repositions fish and terrain on rotation without resetting progress or time.
+Both water orientations are preloaded.
+
+Added `ui.css` for shared pill controls. Meadow objectives are separate
+translucent Canvas pills, with wrapped labels and dimmed completed backgrounds.
+The existing clock, cord meter, palettes, and menu icons remain in use.
+
+Verified with all ten Node suites and the mounted aquarium progression check
+through all eight levels. `test/aquarium-layout.html` passed at 390 × 780,
+1200 × 800, 1600 × 900, 844 × 390, and 320 × 568, checking logical area,
+uniform scaling, UI containment, and preserved play through rotation.
+`test/shell-browser.html` passed field sizing, pointer/cord scaling, menu
+behavior, and pause placement. Inspected aquarium in portrait and the main
+Midnight XXIV screen with five objective pills in landscape. Neither page
+reported console warnings or errors.
+
+Undone: human touch/pen playtests, contrast on other displays, audio, and story
+text. Aquarium next remains the touch playtest for shoal separation, beetle
+pacing, and bubble disturbance strength; the meadow pacing pass remains pending.

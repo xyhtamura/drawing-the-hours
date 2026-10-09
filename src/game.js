@@ -203,8 +203,12 @@ export class Game {
   }
 
   layoutCanvas() {
-    const viewport = (this.canvas.parentElement || this.canvas).getBoundingClientRect();
-    const field = fitField(viewport.width || 960, viewport.height || 640);
+    const viewport = this.canvas.parentElement?.getBoundingClientRect() || {width: 960, height: 640};
+    const field = fitField(globalThis.window?.innerWidth || viewport.width || 960, globalThis.window?.innerHeight || viewport.height || 640);
+    if (this.canvas.parentElement?.style) {
+      this.canvas.parentElement.style.width = `${field.displayWidth}px`;
+      this.canvas.parentElement.style.height = `${field.displayHeight}px`;
+    }
     if (this.canvas.style) {
       this.canvas.style.width = `${field.displayWidth}px`;
       this.canvas.style.height = `${field.displayHeight}px`;
@@ -2256,6 +2260,28 @@ export class Game {
     ctx.restore();
   }
 
+  drawObjectivePills(ctx, right, top, maxWidth) {
+    const entries = Object.values(this.campaign.objectiveProgress);
+    const labels = entries.length ? entries.map(o => `${o.label}: ${o.current}/${o.target}`) : [`Harmonies: ${this.harmoniesCount}`];
+    ctx.font = '500 11px Mali, sans-serif';
+    ctx.textAlign = 'right';
+    let y = top;
+    labels.forEach((label, i) => {
+      const lines = wrapText(ctx, label, maxWidth - 20);
+      const w = Math.min(maxWidth, Math.max(...lines.map(line => ctx.measureText(line).width)) + 20);
+      const h = lines.length * 14 + 8;
+      ctx.save();
+      ctx.globalAlpha = entries[i]?.current >= entries[i]?.target ? .4 : .6;
+      ctx.fillStyle = themeColor('panel', '#eeeada');
+      ctx.beginPath(); drawRoundedRect(ctx, right - w, y, w, h, 12); ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = themeColor('ink', '#4a4235');
+      lines.forEach((line, j) => ctx.fillText(line, right - 10, y + 15 + j * 14));
+      y += h + 5;
+    });
+    return y - top;
+  }
+
   drawHUD(ctx) {
     ctx.save();
     // Keep status text readable when the logical field shrinks on a phone.
@@ -2282,18 +2308,12 @@ export class Game {
       ctx.fillText(this.isUntimed() ? 'Untimed' : (this.isClockHeld() ? 'Waiting' : 'Clock'), 52, 40);
 
       // Top-Right: Objective & Score
-      const objEntries = Object.entries(this.campaign.objectiveProgress);
-      const objText = objEntries.length > 0
-        ? objEntries.map(([k, o]) => `${o.label}: ${o.current}/${o.target}`).join(' • ')
-        : `Harmonies: ${this.harmoniesCount}`;
       const lvlTitle = this.currentLevel ? `${this.currentLevel.title}` : `Wave ${this.currentWave}`;
 
       ctx.textAlign = 'right';
       ctx.fillStyle = themeColor('ink', '#4a4235');
       ctx.font = '600 11px system-ui, -apple-system, sans-serif';
-      const objectiveLines = wrapText(ctx, objText, width - 126);
-      objectiveLines.forEach((line, i) => ctx.fillText(line, width - 16, 26 + i * 14));
-      const extraHUDHeight = (objectiveLines.length - 1) * 14;
+      const extraHUDHeight = this.drawObjectivePills(ctx, width - 16, 12, width - 126) - 14;
 
       ctx.fillStyle = themeColor('muted', '#7a6c57');
       ctx.font = 'italic 10.5px Mali, sans-serif';
@@ -2392,10 +2412,6 @@ export class Game {
       ctx.textAlign = 'center';
       ctx.fillText(`CORD: ${this.activeBand.name.toUpperCase()}`, cx, 37);
 
-      const objEntries = Object.entries(this.campaign.objectiveProgress);
-      const objText = objEntries.length > 0
-        ? objEntries.map(([k, o]) => `${o.label}: ${o.current}/${o.target}`).join(' • ')
-        : `Harmonies: ${this.harmoniesCount}`;
       const lvlTitle = this.currentLevel ? `${this.currentLevel.title}` : `Wave ${this.currentWave}`;
 
       ctx.textAlign = 'right';
@@ -2405,9 +2421,7 @@ export class Game {
       // requirements used to run its list back across the meter and the clock.
       const objRight = width - 24;
       const objWidth = Math.max(160, objRight - (cx + meterW / 2) - 16);
-      const objectiveLines = wrapText(ctx, objText, objWidth);
-      objectiveLines.forEach((line, i) => ctx.fillText(line, objRight, 34 + i * 15));
-      const objectiveDrop = (objectiveLines.length - 1) * 15;
+      const objectiveDrop = this.drawObjectivePills(ctx, objRight, 16, objWidth) - 15;
 
       ctx.fillStyle = themeColor('muted', '#7a6c57');
       ctx.font = 'italic 11px Mali, sans-serif';

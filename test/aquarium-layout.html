@@ -1,0 +1,36 @@
+<!doctype html><meta charset="utf-8"><title>Aquarium layout checks</title>
+<pre id="result">RUNNING</pre><iframe id="game" title="Aquarium layout" width="1200" height="800" src="../aquarium/?test"></iframe>
+<script type="module">
+const frame = document.getElementById('game');
+const check = (ok, message) => {if (!ok) throw Error(message);};
+frame.addEventListener('load', () => {
+  const script = frame.contentDocument.createElement('script'); script.type = 'module';
+  script.textContent = `
+    import {game, load} from '../aquarium/aquarium.js';
+    const check = (ok, message) => {if (!ok) throw Error(message);};
+    try {
+      load(7); game.mode='play'; game.progress.ricefish=1; game.elapsed=12;
+      const count=game.fish.length;
+      for (const [width,height] of [[390,780],[1200,800],[1600,900],[844,390],[320,568]]) {
+        const frame=parent.document.getElementById('game');
+        frame.style.width=width+'px';frame.style.height=height+'px';
+        document.body.getBoundingClientRect(); dispatchEvent(new Event('resize'));
+        const canvas=document.getElementById('field'), r=canvas.getBoundingClientRect();
+        check(canvas.width*canvas.height===614400,'Logical field area changed');
+        check(Math.abs(r.width/canvas.width-r.height/canvas.height)<.002,'Field stretched');
+        check(r.left>=-.1&&r.top>=-.1&&r.right<=width+.1&&r.bottom<=height+.1,'Field cropped');
+        for(const element of document.querySelectorAll('header,footer,.hud')) {
+          const b=element.getBoundingClientRect();
+          check(b.left>=r.left-.1&&b.right<=r.right+.1&&b.top>=r.top-.1&&b.bottom<=r.bottom+.1,'Chrome escaped field');
+        }
+        check(game.progress.ricefish===1&&game.elapsed===12&&game.fish.length===count,'Resize reset play');
+        check(game.fish.every(f=>Number.isFinite(f.x)&&Number.isFinite(f.y)),'Resize invalidated fish');
+      }
+      document.getElementById('visits').click();
+      check(!document.getElementById('overlay').hidden,'Map missing');
+      parent.document.getElementById('result').textContent='PASS: fixed area, uniform scaling, contained UI, resize preserves play, level map';
+    } catch(error) {parent.document.getElementById('result').textContent='FAIL: '+error.message;}
+  `;
+  frame.contentDocument.body.append(script);
+});
+</script>

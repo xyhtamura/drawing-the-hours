@@ -3,6 +3,7 @@ import {judgeStroke, strokeDisruption} from './rules.js';
 import {Aquarium, shadePatches} from './simulation.js';
 import {StringGesture} from '../src/string.js';
 import {getLengthBand} from '../src/geometry.js';
+import {fitField} from '../src/viewport.js';
 import {paperTile, loadPaper} from '../src/paper.js';
 
 const FISH_PAPER = {
@@ -14,14 +15,24 @@ const FISH_PAPER = {
 Object.values(FISH_PAPER).forEach(settings => loadPaper(settings.paper));
 
 const $ = id => document.getElementById(id), canvas = $('field'), ctx = canvas.getContext('2d');
-const portrait = matchMedia('(max-width:650px)').matches;
-canvas.width = portrait ? 640 : 960; canvas.height = portrait ? 960 : 640;
-const W = canvas.width, H = canvas.height;
+let portrait, W, H;
+function layout() {
+  const field = fitField(innerWidth, innerHeight);
+  W = field.width; H = field.height; portrait = H > W;
+  canvas.width = W; canvas.height = H;
+  const water = document.querySelector('.water');
+  water.style.width = `${field.displayWidth}px`; water.style.height = `${field.displayHeight}px`;
+  water.classList.toggle('portrait', portrait);
+  water.classList.toggle('compact', field.displayWidth < 560);
+}
+layout();
 const waterArt = new Map();
 for (const color of new Set(LEVELS.map(level => level.wash))) {
-  const image = new Image();
-  image.onload = () => waterArt.set(color, image);
-  image.src = new URL(`./water/${color.slice(1)}-${portrait ? 'portrait' : 'landscape'}.webp`, import.meta.url).href;
+  for (const orientation of ['portrait', 'landscape']) {
+    const image = new Image(), key = `${color}-${orientation}`;
+    image.onload = () => waterArt.set(key, image);
+    image.src = new URL(`./water/${color.slice(1)}-${orientation}.webp`, import.meta.url).href;
+  }
 }
 const SAVE_KEY = 'drawing-hours-aquarium-v2';
 const testMode = new URLSearchParams(location.search).has('test');
@@ -37,6 +48,19 @@ let gesture = null, pointer = null, practice = false, last = 0, hudTime = 0, rip
 const reduced = matchMedia('(prefers-reduced-motion:reduce)').matches;
 function store() {if (!testMode) try {localStorage.setItem(SAVE_KEY, JSON.stringify(saved));} catch {}}
 function cancel() {gesture?.releaseBeads(); gesture = null; pointer = null;}
+window.addEventListener('resize', () => {
+  cancel(); const oldW = W, oldH = H, oldTop = game.top; layout();
+  if (W !== oldW || H !== oldH) {
+    game.width = W; game.height = H;
+    game.top = portrait ? (Object.keys(game.level.goals).length > 2 ? 240 : 180) : 110;
+    for (const entity of [...game.fish, ...game.rocks, ...game.leafClumps, ...game.leafDisks, ...game.beetles, ...game.bubbles]) {
+      entity.x *= W / oldW;
+      entity.y = game.top + (entity.y - oldTop) * (H - game.top - 48) / (oldH - oldTop - 48);
+    }
+    ripples = [];
+  }
+  draw();
+});
 function message(text) {$('status').textContent = text;}
 function fishGlyph(kind) {
   const s = SPECIES[kind];
@@ -74,7 +98,7 @@ export function load(index) {
   cancel(); game.load(index); game.practice = practice; ripples = []; saved.visit = index; store();
   $('title').textContent = game.level.title; $('number').textContent = `${String(index + 1).padStart(2, '0')} / 08`;
   canvas.setAttribute('aria-label', `${game.level.instruction} Cross the cord to close a loop, then lift.`);
-  $('goals').innerHTML = Object.keys(game.level.goals).map(k => `<span class="goal" id="goal-${k}">${fishGlyph(k)}<span></span></span>`).join('');
+  $('goals').innerHTML = Object.keys(game.level.goals).map(k => `<span class="goal ui-pill" id="goal-${k}">${fishGlyph(k)}<span></span></span>`).join('');
   message(''); ready(); draw();
 }
 function map() {
@@ -172,7 +196,7 @@ function fishArt(f) {
 }
 function draw() {
   ctx.fillStyle = game.level.wash; ctx.fillRect(0, 0, W, H);
-  const water = waterArt.get(game.level.wash);
+  const water = waterArt.get(`${game.level.wash}-${portrait ? 'portrait' : 'landscape'}`);
   if (water) ctx.drawImage(water, 0, 0, W, H);
   const wash = ctx.createRadialGradient(W * .38, H * .3, 30, W * .6, H * .45, W * .7);
   wash.addColorStop(0, '#f7ecd74a'); wash.addColorStop(1, '#456b5c21'); ctx.fillStyle = wash; ctx.fillRect(0, 0, W, H);
@@ -230,7 +254,7 @@ function draw() {
   }
   if (gesture) {path(gesture.points); ctx.strokeStyle = getLengthBand(gesture.totalLength).cordHue; ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();}
   // Visible bubble area is proportional to remaining time.
-  const radius = 24 * Math.sqrt(game.practice ? 1 : game.remaining), bx = W - 46, by = 43;
+  const radius = 24 * Math.sqrt(game.practice ? 1 : game.remaining), bx = W - 46, by = 70;
   if (radius > 0) {
     ctx.save(); ctx.translate(bx, by); ctx.beginPath();
     for (let i = 0; i <= 64; i++) {const a = i / 64 * Math.PI * 2, r = radius * (1 + (reduced ? 0 : .025 * Math.sin(a * 3 + game.time * .7))); const x = Math.cos(a) * r, y = Math.sin(a) * r; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);}
