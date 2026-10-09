@@ -1,5 +1,15 @@
-import {LEVELS, SPECIES} from './levels.js';
+import {LEVELS, SPECIES, recipeSize} from './levels.js';
 import {constrainToWalls} from '../src/string.js';
+import {polylineTouchesDisk} from '../src/geometry.js';
+
+/** Soft leaf shade for the top-view stream scenes. */
+export function shadePatches(width, height, time) {
+  return [0, 1, 2].map(i => ({x: width * (.22 + i * .28) + Math.sin(time * .08 + i) * 18,
+    y: height * (.38 + (i % 2) * .26), rx: width * .19, ry: height * .14}));
+}
+export function shadeAt(x, y, width, height, time) {
+  return Math.max(...shadePatches(width, height, time).map(p => Math.max(0, 1 - Math.hypot((x - p.x) / p.rx, (y - p.y) / p.ry))));
+}
 
 export class Aquarium {
   constructor(width, height, random = Math.random) {
@@ -10,19 +20,57 @@ export class Aquarium {
     this.index = index; this.level = LEVELS[index]; this.time = 0; this.elapsed = 0;
     this.started = false; this.mode = 'ready'; this.practice = false;
     this.fish = []; this.progress = Object.fromEntries(Object.keys(this.level.goals).map(k => [k, 0]));
+    this.rocks = this.level.rocks ? [0,1,2,5,4,3].map(i => ({x: this.width * (.20 + i % 3 * .30),
+      y: this.top + (this.height - this.top - 80) * (i < 3 ? .35 : .72), radius: 25 + i % 2 * 4})) : [];
+    this.stems = this.level.stems ? [.25, .51, .77].map((x, i) => ({radius: 7, points: [
+      {x: this.width * (x - .06), y: this.top + (this.height - this.top) * (.30 + i % 2 * .18)},
+      {x: this.width * x, y: this.top + (this.height - this.top) * .62},
+      {x: this.width * (x + .035), y: this.height - 70},
+    ]})) : [];
+    this.stemWalls = this.stems.flatMap(s => s.points.slice(1).map((p, i) => ({p1: s.points[i], p2: p})));
     for (const [kind, count] of Object.entries(this.level.population)) {
-      for (let i = 0; i < count; i += 2) {
+      const batch = recipeSize(this.level, kind);
+      for (let i = 0; i < count; i += batch) {
         const x = 100 + this.random() * (this.width - 200), y = this.top + 40 + this.random() * (this.height - this.top - 150);
-        this.spawn(kind, x - 24, y); this.spawn(kind, x + 24, y + 12);
+        for (let slot = 0; slot < batch && i + slot < count; slot++) this.spawn(kind, x + (slot - .5) * 48, y + slot * 12);
       }
     }
   }
   spawn(kind, x, y) {
     const heading = this.random() * Math.PI * 2;
-    this.fish.push({kind, x: x ?? 80 + this.random() * (this.width - 160),
-      y: y ?? this.top + 20 + this.random() * (this.height - this.top - 100), heading, targetHeading: heading,
+    let school = null, slot = 0, rock = null;
+    if (kind === 'goby' && this.rocks.length) {
+      rock = this.fish.filter(f => f.kind === 'goby').length % this.rocks.length;
+      x = this.rocks[rock].x; y = this.rocks[rock].y;
+    }
+    if (kind === 'barb') {
+      const total = Math.ceil((this.level.population.barb ?? 9) / 3);
+      school = Array.from({length: total}, (_, i) => i).find(i => this.fish.filter(f => f.kind === 'barb' && f.school === i).length < 3) ?? 0;
+      slot = [0, 1, 2].find(i => !this.fish.some(f => f.kind === 'barb' && f.school === school && f.schoolSlot === i)) ?? 0;
+      const pose = this.schoolPose(school); x = pose.x + Math.cos(slot * Math.PI * 2 / 3) * 32; y = pose.y + Math.sin(slot * Math.PI * 2 / 3) * 32;
+    }
+    x ??= 80 + this.random() * (this.width - 160); y ??= this.top + 20 + this.random() * (this.height - this.top - 100);
+    for (let attempt = 0; attempt < 80 && this.stems.some(s => polylineTouchesDisk(s.points, x, y, SPECIES[kind].radius + s.radius + 8)); attempt++) {
+      x = 70 + this.random() * (this.width - 140); y = this.top + 20 + this.random() * (this.height - this.top - 90);
+    }
+    if (this.stems.some(s => polylineTouchesDisk(s.points, x, y, SPECIES[kind].radius + s.radius + 8))) {
+      const clear = [];
+      for (let cy = this.top + 30; cy < this.height - 60; cy += 48) for (let cx = 60; cx < this.width - 60; cx += 48) {
+        if (!this.stems.some(s => polylineTouchesDisk(s.points, cx, cy, SPECIES[kind].radius + s.radius + 8))) clear.push({x: cx, y: cy});
+      }
+      if (!clear.length) throw Error('No clear fish spawn position.');
+      ({x, y} = clear[this.fish.length % clear.length]);
+    }
+    this.fish.push({kind, x, y, heading, targetHeading: heading, school, schoolSlot: slot, rock,
+      resting: kind === 'goby', restTime: .7 + this.random() * 1.5, turnTime: 2 + this.random() * 3,
       radius: SPECIES[kind].radius, type: 'insect', state: 'roaming', phase: this.random() * Math.PI * 2,
       motionClock: this.random() * 2.6, departure: 0, isBead: false});
+  }
+  schoolPose(index) {
+    const phase = index * 2.1;
+    return {x: this.width * (.20 + index * .30) + Math.sin(this.time * .18 + phase) * this.width * .045,
+      y: this.top + (this.height - this.top - 70) * (.35 + index % 2 * .25) + Math.sin(this.time * .23 + phase) * 30,
+      spread: 26 + (1 + Math.sin(this.time * .38 + phase)) * 18};
   }
   get remaining() {return Math.max(0, 1 - this.elapsed / this.level.duration);}
   get complete() {return Object.entries(this.level.goals).every(([k, n]) => this.progress[k] >= n);}
@@ -48,18 +96,37 @@ export class Aquarium {
       }
       const from = {x: f.x, y: f.y};
       f.motionClock += dt;
-      const dart = f.kind === 'ricefish' && f.motionClock % 2.6 > 1.85;
-      const speed = f.kind === 'ricefish' ? (dart ? 158 : 7) : 26;
-      if (f.kind === 'ricefish' && Math.floor(f.motionClock / 2.6) !== Math.floor((f.motionClock - dt) / 2.6)) {
-        f.targetHeading += (this.random() - .5) * 2.7;
+      let dart = false, speed = 26;
+      if (f.kind === 'goby') {
+        if (f.resting) {
+          f.restTime -= dt; speed = 0;
+          if (f.restTime <= 0) {f.resting = false; f.rock = (f.rock + 1) % this.rocks.length;}
+        }
+        if (!f.resting) {
+          const target = this.rocks[f.rock], dx = target.x - f.x, dy = target.y - f.y;
+          if (Math.hypot(dx, dy) < 7) {f.resting = true; f.restTime = 1.1 + this.random() * 1.4; speed = 0;}
+          else {f.targetHeading = Math.atan2(dy, dx); dart = true; speed = Math.min(158, Math.hypot(dx, dy) * 5);}
+        }
       }
-      if (f.kind === 'guppy') f.targetHeading += Math.sin(this.time * .8 + f.phase) * dt * .5;
+      if (f.kind === 'barb') {
+        const pose = this.schoolPose(f.school), angle = f.schoolSlot * Math.PI * 2 / 3 + this.time * .16;
+        const dx = pose.x + Math.cos(angle) * pose.spread - f.x, dy = pose.y + Math.sin(angle) * pose.spread - f.y;
+        f.targetHeading = Math.atan2(dy, dx); speed = Math.min(42, Math.hypot(dx, dy) * 1.8);
+      }
+      if (f.kind === 'halfbeak') {
+        speed = 38; f.turnTime -= dt;
+        if (f.turnTime <= 0) {f.targetHeading += (this.random() < .5 ? -1 : 1) * (1.2 + this.random() * .6); f.turnTime = 3 + this.random() * 3;}
+      }
+      if (f.kind === 'ricefish') f.targetHeading += Math.sin(this.time * .8 + f.phase) * dt * .5;
       const delta = Math.atan2(Math.sin(f.targetHeading - f.heading), Math.cos(f.targetHeading - f.heading));
-      f.heading += delta * Math.min(1, dt * (dart ? 9 : 2));
+      f.heading += delta * Math.min(1, dt * (dart ? 12 : f.kind === 'barb' ? 5 : f.kind === 'halfbeak' ? 10 : 2));
       f.x += Math.cos(f.heading) * speed * dt; f.y += Math.sin(f.heading) * speed * dt;
       if (f.x < 48 || f.x > this.width - 48) {f.heading = Math.PI - f.heading; f.targetHeading = f.heading;}
       if (f.y < this.top || f.y > this.height - 48) {f.heading = -f.heading; f.targetHeading = f.heading;}
       f.x = Math.max(48, Math.min(this.width - 48, f.x)); f.y = Math.max(this.top, Math.min(this.height - 48, f.y));
+      // Stem width is included in the swept collision; the cord keeps its original hit radius.
+      const radius = f.radius; f.radius += 7;
+      constrainToWalls(f, from, this.stemWalls, {width: this.width, height: this.height}, dt); f.radius = radius;
       constrainToWalls(f, from, walls, {width: this.width, height: this.height}, dt);
     }
     gesture?.updateBeads(dt, {width: this.width, height: this.height});

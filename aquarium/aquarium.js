@@ -1,6 +1,6 @@
-import {LEVELS, SPECIES} from './levels.js';
-import {judgeStroke} from './rules.js';
-import {Aquarium} from './simulation.js';
+import {LEVELS, SPECIES, recipeSize} from './levels.js';
+import {judgeStroke, strokeCutsStems} from './rules.js';
+import {Aquarium, shadePatches} from './simulation.js';
 import {StringGesture} from '../src/string.js';
 import {getLengthBand} from '../src/geometry.js';
 
@@ -25,11 +25,13 @@ function cancel() {gesture?.releaseBeads(); gesture = null; pointer = null;}
 function message(text) {$('status').textContent = text;}
 function fishGlyph(kind) {
   const s = SPECIES[kind];
-  return `<svg viewBox="0 0 60 28" aria-hidden="true"><path d="M20 14 4 3 4 25Z" fill="${s.trim}"/><ellipse cx="33" cy="14" rx="16" ry="7" fill="${s.color}" stroke="${s.trim}"/><circle cx="43" cy="12" r="2" fill="#34574f"/></svg>`;
+  return `<svg viewBox="0 0 60 28" aria-hidden="true"><path d="M20 14 7 8 7 20Z" fill="${s.trim}"/><ellipse cx="33" cy="14" rx="16" ry="${kind === 'goby' ? 8 : 5}" fill="${s.color}" stroke="${s.trim}"/>${kind === 'barb' ? '<g fill="#586554"><circle cx="25" cy="14" r="2"/><circle cx="33" cy="14" r="2"/><circle cx="40" cy="14" r="2"/></g>' : ''}${kind === 'goby' ? '<path d="M23 12h18" stroke="#71bec5" stroke-width="2"/>' : ''}${kind === 'halfbeak' ? '<path d="M43 15h16" stroke="#8a9c80" stroke-width="2"/>' : ''}<circle cx="43" cy="12" r="2" fill="#34574f"/></svg>`;
 }
 function diagram() {
   const kinds = Object.keys(game.level.goals);
-  return `<svg class="diagram" viewBox="0 0 340 115" role="img" aria-label="A closed loop around two matching fish"><path d="M65 90C15 30 80 3 152 25C213 44 188 97 114 97C87 97 65 90 51 77" fill="none" stroke="#af7376" stroke-width="3"/>${[85,130].map(x => `<g transform="translate(${x} 48)"><path d="M0 5 -10 -2 -10 12Z" fill="${SPECIES[kinds.at(-1)].trim}"/><ellipse cx="10" cy="5" rx="13" ry="6" fill="${SPECIES[kinds.at(-1)].color}" stroke="#527065"/></g>`).join('')}<path d="M226 54h60m-12-8 12 8-12 8" fill="none" stroke="#78938b" stroke-width="2"/></svg>`;
+  const kind = kinds.find(k => recipeSize(game.level, k) > 2) ?? kinds[0], count = recipeSize(game.level, kind);
+  const positions = count === 3 ? [{x:76,y:45},{x:124,y:42},{x:104,y:71}] : [{x:85,y:48},{x:130,y:48}];
+  return `<svg class="diagram" viewBox="0 0 340 115" role="img" aria-label="A closed loop containing ${count} fish of the same kind"><path d="M65 90C15 30 80 3 152 25C213 44 188 97 114 97C87 97 65 90 51 77" fill="none" stroke="#af7376" stroke-width="3"/>${positions.map(p => `<g transform="translate(${p.x} ${p.y})"><path d="M0 5 -10 -2 -10 12Z" fill="${SPECIES[kind].trim}"/><ellipse cx="10" cy="5" rx="13" ry="6" fill="${SPECIES[kind].color}" stroke="#527065"/></g>`).join('')}<path d="M226 54h60m-12-8 12 8-12 8" fill="none" stroke="#78938b" stroke-width="2"/></svg>`;
 }
 function show(title, content, buttons) {
   cancel(); $('overlay').hidden = false;
@@ -48,12 +50,13 @@ function ready() {
 export function load(index) {
   cancel(); game.load(index); game.practice = practice; ripples = []; saved.visit = index; store();
   $('title').textContent = game.level.title; $('number').textContent = `${String(index + 1).padStart(2, '0')} / 08`;
+  canvas.setAttribute('aria-label', `${game.level.instruction} Cross the cord to close a loop, then lift.`);
   $('goals').innerHTML = Object.keys(game.level.goals).map(k => `<span class="goal" id="goal-${k}">${fishGlyph(k)}<span></span></span>`).join('');
   message(''); ready(); draw();
 }
 function map() {
   game.mode = 'map';
-  show('Levels', '<div class="map"></div><p>Two of eight levels are playable.</p>', [['Return', ready]]);
+  show('Levels', `<div class="map"></div><p>${LEVELS.length} of 8 levels are playable.</p>`, [['Return', ready]]);
   LEVELS.forEach((l, i) => {
     const b = document.createElement('button'); b.textContent = `${i + 1} · ${l.title}`;
     const s = document.createElement('small'); s.textContent = saved.done.includes(i) ? 'Complete' : 'Open'; b.append(s);
@@ -67,7 +70,8 @@ function pause() {
 }
 function completion() {
   if (!practice) {saved.done = [...new Set([...saved.done, game.index])]; store();}
-  show('Level complete', '', game.index === 0 ? [['Next level', () => load(1), true], ['Play again', () => load(0)]] : [['Play again', () => load(1), true], ['Levels', map]]);
+  const index = game.index;
+  show('Level complete', '', index < LEVELS.length - 1 ? [['Next level', () => load(index + 1), true], ['Play again', () => load(index)]] : [['Play again', () => load(index), true], ['Levels', map]]);
 }
 function failure() {
   cancel(); show('Time ended', '', [['Retry', () => load(game.index), true], ['Practice', () => {practice = true; practiceLabel(); load(game.index); start();}], ['Levels', map]]);
@@ -90,6 +94,7 @@ function sample(e, force = false) {
   if (!gesture) return;
   const result = gesture.sample(point(e), game.fish, force);
   if (result.snapped) {cancel(); message('The cord snapped. Draw a smaller figure.');}
+  else if (strokeCutsStems(gesture.points, game.stems)) {cancel(); message('A stem cut the cord. Draw through clear water.');}
 }
 canvas.addEventListener('pointermove', e => {
   if (e.pointerId !== pointer) return;
@@ -99,7 +104,7 @@ canvas.addEventListener('pointermove', e => {
 canvas.addEventListener('pointerup', e => {
   if (e.pointerId !== pointer || !gesture) return;
   sample(e, true); if (!gesture) return;
-  const result = judgeStroke(gesture.points, game.fish, gesture.hasBeads); cancel();
+  const result = judgeStroke(gesture.points, game.fish, gesture.hasBeads, game.level, game.stems); cancel();
   if (result.error) {message(result.error); return;}
   game.accept(result); result.pockets.forEach(p => ripples.push({polygon: p.polygon, life: 1.2}));
   message(''); updateHud();
@@ -107,16 +112,26 @@ canvas.addEventListener('pointerup', e => {
 canvas.addEventListener('pointercancel', cancel); canvas.addEventListener('lostpointercapture', cancel);
 function path(points) {ctx.beginPath(); points.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));}
 function fishArt(f) {
-  const s = SPECIES[f.kind], n = s.size, beat = Math.sin(game.time * (f.kind === 'ricefish' ? 15 : 8) + f.phase);
+  const s = SPECIES[f.kind], n = s.size, beat = Math.sin(game.time * (f.kind === 'goby' ? 15 : 8) + f.phase);
   ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.heading);
   ctx.globalAlpha = f.state === 'departing' ? Math.max(0, 1 - f.departure / 1.5) : 1;
   ctx.fillStyle = '#3a6a5d18'; ctx.beginPath(); ctx.ellipse(3, 6, n * 1.2, n * .42, 0, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = s.trim; ctx.beginPath(); ctx.moveTo(-n * .5, 0);
-  if (f.kind === 'guppy') {ctx.bezierCurveTo(-n, -n * .35, -n * 1.9, -n * .65 + beat * 2, -n * 1.5, beat * 3); ctx.bezierCurveTo(-n * 1.9, n * .65 + beat * 2, -n, n * .35, -n * .5, 0);}
-  else {ctx.lineTo(-n * 1.25, -n * .3 + beat * 2); ctx.lineTo(-n * 1.25, n * .3 + beat * 2);}
+  ctx.lineTo(-n * 1.15, -n * .24 + beat * 1.5); ctx.lineTo(-n * 1.15, n * .24 + beat * 1.5);
   ctx.closePath(); ctx.fill();
   ctx.fillStyle = s.color; ctx.strokeStyle = '#496d5d90'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.ellipse(0, 0, n * .85, n * (f.kind === 'guppy' ? .32 : .22), 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(0, 0, n * .85, n * (f.kind === 'goby' ? .34 : f.kind === 'halfbeak' ? .16 : f.kind === 'barb' ? .28 : .22), 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  if (f.kind === 'barb') {
+    ctx.fillStyle = '#59614f'; for (const x of [-.45, -.1, .28]) {ctx.beginPath(); ctx.arc(n * x, 0, 1.8, 0, Math.PI * 2); ctx.fill();}
+  }
+  if (f.kind === 'goby') {
+    ctx.strokeStyle = '#71bec5'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-n * .55, -1); ctx.lineTo(n * .5, -1); ctx.stroke();
+    ctx.fillStyle = '#5b8d85aa'; for (const y of [-1, 1]) {ctx.beginPath(); ctx.ellipse(n * .1, n * .35 * y, n * .28, n * .15, y * .4, 0, Math.PI * 2); ctx.fill();}
+  }
+  if (f.kind === 'halfbeak') {
+    ctx.strokeStyle = '#edf5e4'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-n * .55, 0); ctx.lineTo(n * .6, 0); ctx.stroke();
+    ctx.strokeStyle = '#809375'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(n * .6, 2); ctx.lineTo(n * 1.45, 2); ctx.stroke();
+  }
   ctx.fillStyle = s.trim + '70'; ctx.beginPath(); ctx.ellipse(-n * .1, -n * .3, n * .28, n * .16, -.3, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = '#fbf3daaa'; ctx.beginPath(); ctx.moveTo(-n * .5, -1); ctx.quadraticCurveTo(0, -n * .14, n * .55, -1); ctx.stroke();
   ctx.fillStyle = '#34564a'; for (const y of [-1, 1]) {ctx.beginPath(); ctx.arc(n * .56, y * n * .12, 1.3, 0, Math.PI * 2); ctx.fill();}
@@ -127,7 +142,7 @@ function draw() {
   ctx.fillStyle = game.level.wash; ctx.fillRect(0, 0, W, H);
   const wash = ctx.createRadialGradient(W * .38, H * .3, 30, W * .6, H * .45, W * .7);
   wash.addColorStop(0, '#f7ecd74a'); wash.addColorStop(1, '#456b5c21'); ctx.fillStyle = wash; ctx.fillRect(0, 0, W, H);
-  // Indistinct paving and vegetation seen through water, without a horizon or tank rim.
+  // A faint built edge beside the stream, without a horizon or tank rim.
   ctx.save(); ctx.globalAlpha = .16; ctx.strokeStyle = '#738477'; ctx.lineWidth = 3;
   ctx.beginPath(); ctx.moveTo(-40, H * .78); ctx.lineTo(W * .2, H * .68); ctx.lineTo(W * .19, H + 30); ctx.moveTo(W * .2, H * .68); ctx.lineTo(W + 50, H * .81); ctx.stroke();
   ctx.fillStyle = '#8eac81';
@@ -137,6 +152,28 @@ function draw() {
     ctx.beginPath(); ctx.ellipse(0, 0, 12 + i % 4 * 3, 45 + i % 5 * 8, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
   }
   ctx.restore();
+  for (const rock of game.rocks) {
+    ctx.save(); ctx.translate(rock.x, rock.y); ctx.rotate(rock.x * .01);
+    ctx.fillStyle = '#6e827c20'; ctx.beginPath(); ctx.ellipse(3, 5, rock.radius * 1.3, rock.radius * .82, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#96a797'; ctx.strokeStyle = '#bcc7ad'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.ellipse(0, 0, rock.radius * 1.2, rock.radius * .76, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#7e9b764a'; ctx.beginPath(); ctx.ellipse(-5, -2, rock.radius * .55, rock.radius * .38, -.4, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  }
+  if (game.level.shade) {
+    for (const p of shadePatches(W, H, game.time)) {
+      ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.rx, p.ry);
+      const shade = ctx.createRadialGradient(0, 0, 0, 0, 0, 1); shade.addColorStop(0, '#375d5b75'); shade.addColorStop(1, '#375d5b00');
+      ctx.fillStyle = shade; ctx.beginPath(); ctx.arc(0, 0, 1, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+  }
+  for (const stem of game.stems) {
+    path(stem.points); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#76946c'; ctx.lineWidth = stem.radius * 2; ctx.stroke();
+    ctx.strokeStyle = '#cbd6a7'; ctx.lineWidth = 2; ctx.stroke();
+    for (const p of stem.points.slice(1)) {
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(-.65); ctx.fillStyle = '#87a478';
+      ctx.beginPath(); ctx.ellipse(-8, -8, 7, 17, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+  }
   ctx.fillStyle = '#f7eed638'; for (let i = 0; i < 140; i++) {const x = (i * 137.3 + game.time * 1.5) % W, y = (i * 83.7) % H; ctx.fillRect(x, y, i % 3 ? 1 : 2, 1);}
   ctx.strokeStyle = '#f2f0d42b'; ctx.lineWidth = 2;
   for (let i = 0; i < 4; i++) {const x = W * (.2 + i * .2), y = H * (.29 + i % 2 * .24); ctx.beginPath(); ctx.ellipse(x, y, 95 + Math.sin(game.time * .5 + i) * 12, 20, -.35, 0, Math.PI * 2); ctx.stroke();}
@@ -155,8 +192,9 @@ function draw() {
 function updateHud() {
   for (const [k, target] of Object.entries(game.level.goals)) {
     const el = $(`goal-${k}`); if (!el) continue;
-    el.querySelector('span').textContent = `${SPECIES[k].name} ${game.progress[k]} / ${target}`;
-    el.setAttribute('aria-label', `${SPECIES[k].name}: ${game.progress[k]} of ${target} matching pairs`);
+    const size = recipeSize(game.level, k);
+    el.querySelector('span').textContent = `${SPECIES[k].name}${size > 2 ? ` ×${size}` : ''} ${game.progress[k]} / ${target}`;
+    el.setAttribute('aria-label', `${SPECIES[k].name}: ${game.progress[k]} of ${target} ${size === 2 ? 'matching pairs' : `schools of ${size}`}`);
     el.classList.toggle('done', game.progress[k] >= target);
   }
   $('clock').setAttribute('aria-label', practice ? 'Bubble timer: untimed practice' : `Bubble timer: ${Math.ceil(game.remaining * 100)} percent remaining`);

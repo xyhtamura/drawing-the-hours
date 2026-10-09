@@ -10,7 +10,7 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Play the two aquarium prototype levels on a touch device and assess pair availability, ricefish timing, and the bubble duration before building the schooling level; the twenty-four-visit meadow pacing pass remains pending.
+Play aquarium levels 3–5 on a touch device and tune school spacing, stem passages, and fish contrast before building level 6; the twenty-four-visit meadow pacing pass remains pending.
 
 ## Activity
 
@@ -2059,3 +2059,47 @@ tuning, aquarium audio, levels 3–8, and Xyh's text. Next: play both levels on 
 touch device and assess pair availability, ricefish timing, and bubble duration
 before building the schooling level. Both Drawing the Hours entries in
 ROADMAP.md were brought into agreement; the meadow pacing pass remains pending.
+
+2026-10-09 — Codex — Added levels 3–5 and revised all five built levels toward
+Xyh's wild, pastoral fish direction. The cast now draws on Luzon ricefish,
+blue stream gobies, spotted barbs, and Palawan halfbeaks; see
+[species references](aquarium/NATIVE-FISH.md). Ricefish drift gently. Gobies rest
+on six stones and dart between them. Spotted barbs form three small schools
+that gather and spread; level 3 asks for three fish per pocket, plus a ricefish
+pair in a separate pocket. School replacements fill vacant slots. Level 4
+adds three stems that cut the cord and block fish; initial and replacement
+fish spawn clear of them. Level 5 introduces halfbeaks that glide before sharp
+turns, beneath drifting leaf shade. Movement, recipes, colours, and timing are
+authored game values, not a biological simulation.
+
+Dropped the interim neon-tetra and glass-catfish cast after Xyh's direction
+changed. The proposed transparency mechanic was replaced by halfbeak turns;
+shade remains part of the background and does not affect scoring. No story
+text was added. Reused the canvas, vegetation, paving, gesture modules, and
+bubble clock. New artwork uses original Canvas paths and inline SVG.
+
+The map exposes five levels and stops after level 5. Save key and earlier
+progress are retained. Ready-card diagrams and objective labels follow the
+recipe size. The archive and meadow runtime modules were not edited.
+
+Verified with all ten `test/test_*.js` suites: recipes, school expansion and
+contraction over 56 simulated seconds, replacement slots, goby rests and darts,
+halfbeak turns, stem contacts and spawn clearance in both field orientations,
+and all five completion states. The mounted browser check tests real pointer
+handlers with injected fish positions, including school-size rejection, live
+stem cuts, practice, bubble expiry, and completion. It waits for observable
+states rather than assuming animation frames run within a fixed wall time.
+Read PASS for all five levels in `test/aquarium-browser.html`. Inspected the
+barb schools, stems, halfbeaks, and goby stones in the 504 px portrait browser
+pane; desktop pointer checks run in its 1,100 px test iframe. Human difficulty
+is not established by these checks.
+
+Primary fish papers were downloaded to `library/drawing-the-hours-aquarium/`,
+checked by title and page count, and cached as Markdown with the library's PDF
+converter. The ricefish monograph download returned HTTP 403; the species
+identity and locality were checked against the Catalog of Fishes instead.
+
+Undone: human timing and touch/pen playtests, orientation changes during play,
+audio, story text, and levels 6–8. Next: play levels 3–5 on a touch device and
+tune school spacing, stem passages, and fish contrast before building level 6.
+Both root roadmap entries were updated; the meadow pacing pass remains pending.

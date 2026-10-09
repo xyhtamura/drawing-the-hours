@@ -70,3 +70,9 @@ bubble timer, faint submerged paving, leaves, and water in
 `aquarium/aquarium.js` are original Canvas and inline SVG drawings. The prototype
 reuses the Mali fonts and favicon. No external asset was added. The earlier
 chapter's artwork is preserved in `aquariumarchive/`.
+
+2026-10-09 — Codex — Reskinned the active cast as ricefish, blue stream gobies,
+spotted barbs, and halfbeaks. Fish bodies, spots, lateral stripes, beaks, stones,
+stems, school diagrams, and shade patches in `aquarium/aquarium.js` are original
+Canvas and inline SVG graphics. Scientific references informed the cast;
+no photograph, illustration, or other external asset was copied into the game.
