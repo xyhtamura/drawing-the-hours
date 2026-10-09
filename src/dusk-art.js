@@ -1,5 +1,5 @@
 import { themeColor } from './theme.js';
-import { paperBackdrop, paperShape } from './paper.js';
+import { paperBackdrop, paperShape, PAPER_USE } from './paper.js';
 import { leafAnchors } from './lacewing.js';
 
 /** Cached chapter wash and paper grain; resting leaves remain gameplay cues. */
@@ -9,7 +9,7 @@ export function createDuskArt(width, height, pixelRatio = 1) {
   canvas.width = Math.ceil(width * scale); canvas.height = Math.ceil(height * scale);
   const ctx = canvas.getContext('2d'); ctx.scale(scale, scale);
   const wash = ctx.createLinearGradient(0, 0, width, height);
-  wash.addColorStop(0, themeColor('top', '#e6d6da')); wash.addColorStop(0.5, themeColor('middle', '#f2e6d9')); wash.addColorStop(1, themeColor('bottom', '#d1d8ca'));
+  wash.addColorStop(0, themeColor('top', '#e6d6da')); wash.addColorStop(PAPER_USE.backdrop.dusk.mid, themeColor('middle', '#f2e6d9')); wash.addColorStop(1, themeColor('bottom', '#d1d8ca'));
   ctx.fillStyle = wash; ctx.fillRect(0, 0, width, height);
   if (!paperBackdrop(canvas, 'dusk')) {
     let seed = 719;

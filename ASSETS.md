@@ -45,7 +45,11 @@ Fifteen photographs of paper, fibre, asphalt, glass, plastic film, metal, and
 rubber, supplied by Xyh, who stated on 2026-10-09 that all of them are public
 domain. Where each came from is not recorded here. The masters are kept in
 `textures/`; the game loads compressed copies from `assets/textures/`,
-written by `scripts/compress_textures.py` from the table in `src/paper.js`.
+written by `scripts/compress_textures.py` from the table in `src/paper.js`. The masters are
+not versioned (`.gitignore`), so they exist only on Xyh's machine; the scripts
+keep the committed copies when a master is absent. `assets/backdrops/` holds
+the four hour backdrops baked from the same images by
+`scripts/bake_backdrops.py`.
 Nine are resized to 1024 px and encoded as WebP; six small ones are copied
 unchanged. The game falls back to flat colour and outlines when a file is
 absent.

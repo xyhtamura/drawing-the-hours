@@ -5,7 +5,7 @@ The list of textures is read from PAPERS in src/paper.js, so that table is the
 only place a texture is named. Each entry gives `source` (a file in textures/)
 and `file` (the name written to assets/textures/). A `.webp` target is resized
 and encoded; any other target is copied unchanged, which is right for masters
-that are already small.
+that are already small. An entry marked `grey: true` is encoded without colour.
 
 Usage:
     python scripts/compress_textures.py            # write missing or stale files
@@ -21,12 +21,12 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-ENTRY = re.compile(r"\{\s*file:\s*'([^']+)',\s*source:\s*'([^']+)'")
+ENTRY = re.compile(r"\{\s*file:\s*'([^']+)',\s*source:\s*'([^']+)'([^}]*)\}")
 
 
 def entries():
     text = (ROOT / 'src' / 'paper.js').read_text(encoding='utf-8')
-    found = ENTRY.findall(text)
+    found = [(file, source, 'grey: true' in rest) for file, source, rest in ENTRY.findall(text)]
     if not found:
         sys.exit('No { file, source } entries found in src/paper.js')
     return found
@@ -48,7 +48,7 @@ def main():
 
     out_dir = ROOT / 'assets' / 'textures'
     behind, before, after = [], 0, 0
-    for file, name in entries():
+    for file, name, grey in entries():
         source, target = ROOT / 'textures' / name, out_dir / file
         if not source.exists():
             if target.exists():
@@ -64,7 +64,8 @@ def main():
             out_dir.mkdir(parents=True, exist_ok=True)
             if target.suffix.lower() == '.webp':
                 from PIL import Image
-                image = Image.open(source).convert('RGB')
+                # A grey entry drops colour, which its texture is never asked for (keep 0).
+                image = Image.open(source).convert('L' if grey else 'RGB')
                 k = min(1, args.max_side / max(image.size))
                 if k < 1:
                     image = image.resize((round(image.width * k), round(image.height * k)), Image.LANCZOS)

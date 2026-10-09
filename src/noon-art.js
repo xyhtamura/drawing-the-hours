@@ -1,5 +1,5 @@
 import { themeColor } from './theme.js';
-import { paperBackdrop } from './paper.js';
+import { paperBackdrop, PAPER_USE } from './paper.js';
 /** Cached chapter wash and paper grain; resting leaves remain gameplay cues. */
 export function createNoonArt(width, height, pixelRatio = 1) {
   const canvas = document.createElement('canvas');
@@ -9,7 +9,7 @@ export function createNoonArt(width, height, pixelRatio = 1) {
   const ctx = canvas.getContext('2d');
   ctx.scale(scale, scale);
   const wash = ctx.createLinearGradient(0, 0, width, height);
-  wash.addColorStop(0, themeColor('top', '#fff8e5')); wash.addColorStop(0.65, themeColor('middle', '#f3f3df')); wash.addColorStop(1, themeColor('bottom', '#e4e9dd'));
+  wash.addColorStop(0, themeColor('top', '#fff8e5')); wash.addColorStop(PAPER_USE.backdrop.noon.mid, themeColor('middle', '#f3f3df')); wash.addColorStop(1, themeColor('bottom', '#e4e9dd'));
   ctx.fillStyle = wash; ctx.fillRect(0, 0, width, height);
   if (paperBackdrop(canvas, 'noon')) return canvas;
   // Deterministic fibers keep the quiet paper texture stable as fliers move.

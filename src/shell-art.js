@@ -23,7 +23,8 @@ function hourSheet(hour, width, height) {
   const wash = ctx.createLinearGradient(0, 0, width, height);
   wash.addColorStop(0, p.top); wash.addColorStop(0.5, p.middle); wash.addColorStop(1, p.bottom);
   ctx.fillStyle = wash; ctx.fillRect(0, 0, width, height);
-  paperBackdrop(canvas, hour);
+  // The same copy the field will use, so the title fetches nothing the game will not.
+  paperBackdrop(canvas, hour, undefined, window.innerWidth >= window.innerHeight ? 'landscape' : 'portrait');
   return canvas;
 }
 

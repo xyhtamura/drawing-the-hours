@@ -1,5 +1,5 @@
 import { themeColor } from './theme.js';
-import { paperBackdrop } from './paper.js';
+import { paperBackdrop, PAPER_USE } from './paper.js';
 
 /** Cached chapter wash and paper grain; resting leaves remain gameplay cues. */
 export function createDawnArt(width, height, pixelRatio = 1) {
@@ -13,7 +13,7 @@ export function createDawnArt(width, height, pixelRatio = 1) {
   const random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
   const wash = ctx.createLinearGradient(0, 0, width, height);
   wash.addColorStop(0, themeColor('top', '#f9eae6'));
-  wash.addColorStop(0.42, themeColor('middle', '#fcf8e9'));
+  wash.addColorStop(PAPER_USE.backdrop.dawn.mid, themeColor('middle', '#fcf8e9'));
   wash.addColorStop(1, themeColor('bottom', '#e6edd9'));
   ctx.fillStyle = wash;
   ctx.fillRect(0, 0, width, height);

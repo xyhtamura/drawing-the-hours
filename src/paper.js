@@ -1,4 +1,6 @@
-import { bumpThemeVersion } from './theme.js';
+import { bumpThemeVersion, getColorMode } from './theme.js';
+import { CHAPTER_PALETTES } from './palettes.js';
+import { BAKED_BACKDROPS } from './backdrops.js';
 
 /**
  * Paper textures for fills and backdrops.
@@ -26,6 +28,7 @@ export const paperStyle = { textures: true, outlines: false, shadows: true, cont
 // file: what the game loads from assets/textures/. source: its master in textures/.
 // scripts/compress_textures.py reads this table and writes one from the other.
 // scale: logical units per source pixel when the texture is used as a fill tile.
+// grey: the compressed copy drops colour; only for textures used with keep 0.
 export const PAPERS = {
   mulberry: { file: 'SB012.webp', source: 'SB012.JPG', scale: 0.3 },
   crepe: { file: 'SB013.webp', source: 'SB013.JPG', scale: 0.3 },
@@ -38,20 +41,23 @@ export const PAPERS = {
   canvas: { file: 'CANVAS10.JPG', source: 'CANVAS10.JPG', scale: 0.7 },
   strands: { file: 'STRANDS2.JPG', source: 'STRANDS2.JPG', scale: 1.28 },
   asphalt: { file: 'asphalt.webp', source: 'asphalt.png', scale: 0.3 },
-  glass: { file: 'glass.webp', source: 'glass.png', scale: 0.14 },
-  plastic: { file: 'plastic.webp', source: 'plastic.png', scale: 0.12 },
+  glass: { file: 'glass.webp', source: 'glass.png', scale: 0.14, grey: true },
+  plastic: { file: 'plastic.webp', source: 'plastic.png', scale: 0.12, grey: true },
   metal: { file: 'metal.webp', source: 'metal.png', scale: 0.12 },
   rubber: { file: 'rubber.webp', source: 'rubber.png', scale: 0.3 },
 };
 
 // Role → texture and recolour settings. Tuned in texture-lab.html.
+// mid: where the wash's middle colour sits along the diagonal. After changing a
+// backdrop line, run scripts/bake_backdrops.py; until then the game presses that
+// backdrop at runtime instead of using the baked file.
 export const PAPER_USE = {
   backdrop: {
-    dawn: { paper: 'asphalt', relief: 0.03, keep: 0.8, split: 10 },
-    noon: { paper: 'glass', relief: 0.024, keep: 0, split: 12 },
-    dusk: { paper: 'plastic', relief: 0.035, keep: 0, split: 16 },
-    midnight: { paper: 'metal', relief: 0.05, keep: 0.5, split: 14 },
-    none: { paper: 'mulberry', relief: 0.02, keep: 0.5, split: 8 },
+    dawn: { paper: 'asphalt', relief: 0.03, keep: 0.8, split: 10, mid: 0.42 },
+    noon: { paper: 'glass', relief: 0.024, keep: 0, split: 12, mid: 0.65 },
+    dusk: { paper: 'plastic', relief: 0.035, keep: 0, split: 16, mid: 0.5 },
+    midnight: { paper: 'metal', relief: 0.05, keep: 0.5, split: 14, mid: 0.5 },
+    none: { paper: 'mulberry', relief: 0.02, keep: 0.5, split: 8, mid: 0.5 },
   },
   default: { paper: 'mulberry', relief: 0.05, keep: 0.6, split: 12 },
   brimstone: { paper: 'tissueGold', relief: 0.055, keep: 0.7, split: 14 },
@@ -74,6 +80,7 @@ const hasDom = typeof document !== 'undefined' && typeof Image !== 'undefined';
 
 const sources = new Map();   // paper name → HTMLImageElement, once loaded
 const loading = new Map();   // paper name → Promise<boolean>, once requested
+const baked = new Map();     // baked file name → HTMLImageElement, or false if it failed
 const listeners = new Set();
 let announce = 0;
 const tileData = new Map();  // paper name → residuals for the fill tile
@@ -361,9 +368,53 @@ export function paperFill(ctx, role) {
 /**
  * Presses the hour's paper into a canvas that already holds the colour wash.
  * Returns false, leaving the canvas untouched, when the texture is unavailable.
+ * A baked file from scripts/bake_backdrops.py is used instead whenever one
+ * matches the live settings; `orient` picks its landscape or portrait copy.
  */
-export function paperBackdrop(canvas, hour, override) {
+/** The settings a baked backdrop must have been made from. scripts/bake_backdrops.py builds the same string. */
+export function backdropKey(hour) {
+  const s = PAPER_USE.backdrop[hour], p = CHAPTER_PALETTES[hour];
+  return s && p ? [s.paper, s.relief, s.keep, s.split, s.mid, p.top, p.middle, p.bottom].join('|') : '';
+}
+
+/**
+ * Draws the hour's baked backdrop over the canvas. Returns true when drawn,
+ * false while the file is still loading, and null when no baked file applies:
+ * Pure light colours, settings changed since the bake, or a file that failed.
+ */
+function bakedBackdrop(canvas, hour, orient) {
+  const entry = BAKED_BACKDROPS[hour];
+  if (!entry || getColorMode() !== 'default' || entry.key !== backdropKey(hour)) return null;
+  const file = entry[orient ?? (canvas.width >= canvas.height ? 'landscape' : 'portrait')];
+  const image = baked.get(file);
+  if (image === false) return null;
+  if (!image) {
+    if (!baked.has(file)) {
+      baked.set(file, undefined);
+      const pending = new Image();
+      pending.onload = () => { baked.set(file, pending); arrived(); };
+      pending.onerror = () => { baked.set(file, false); arrived(); };
+      pending.src = new URL(`../assets/backdrops/${file}`, import.meta.url).href;
+    }
+    return false;
+  }
+  const ctx = canvas.getContext('2d');
+  const fit = Math.max(canvas.width / image.naturalWidth, canvas.height / image.naturalHeight);
+  const w = image.naturalWidth * fit, h = image.naturalHeight * fit;
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(image, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+  ctx.restore();
+  return true;
+}
+
+export function paperBackdrop(canvas, hour, override, orient) {
   if (!hasDom || !paperStyle.textures) return false;
+  if (!override) {
+    const drawn = bakedBackdrop(canvas, hour, orient);
+    if (drawn !== null) return drawn;
+  }
   const settings = override ?? PAPER_USE.backdrop[hour] ?? PAPER_USE.backdrop.none;
   const image = sourceFor(settings.paper);
   if (!image) return false;

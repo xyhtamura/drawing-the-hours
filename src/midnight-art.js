@@ -1,5 +1,5 @@
 import { themeColor } from './theme.js';
-import { paperBackdrop, paperShape } from './paper.js';
+import { paperBackdrop, paperShape, PAPER_USE } from './paper.js';
 import { leafAnchors } from './lacewing.js';
 
 /** Cached chapter wash and paper grain; resting leaves remain gameplay cues. */
@@ -9,7 +9,7 @@ export function createMidnightArt(width, height, pixelRatio = 1) {
   canvas.width = Math.ceil(width * scale); canvas.height = Math.ceil(height * scale);
   const ctx = canvas.getContext('2d'); ctx.scale(scale, scale);
   const wash = ctx.createLinearGradient(0, 0, width, height);
-  wash.addColorStop(0, themeColor('top', '#d3d9e4')); wash.addColorStop(0.5, themeColor('middle', '#e5e7e3')); wash.addColorStop(1, themeColor('bottom', '#c6d2d0'));
+  wash.addColorStop(0, themeColor('top', '#d3d9e4')); wash.addColorStop(PAPER_USE.backdrop.midnight.mid, themeColor('middle', '#e5e7e3')); wash.addColorStop(1, themeColor('bottom', '#c6d2d0'));
   ctx.fillStyle = wash; ctx.fillRect(0, 0, width, height);
   const pressed = paperBackdrop(canvas, 'midnight');
   for (const {x, y} of leafAnchors({width, height})) {

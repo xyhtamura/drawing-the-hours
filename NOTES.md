@@ -1971,3 +1971,45 @@ localhost, likely visible on a slow connection.
 Not done: `textures/2026-10-07 00-21-59.png` is still in the masters folder
 and unreferenced. Creature papers are still whole sheets rather than tile
 crops. Not checked on a throttled connection or a tablet.
+
+
+2026-10-09 — Claude Code — Masters untracked, backdrops baked, grey sources, at
+Xyh's request.
+
+Masters: `textures/` is removed from the index and listed in `.gitignore`.
+The files stay on disk. They remain in earlier commits (`c5bfec3`), so a clone
+still downloads them; removing them from history would need a rewrite and a
+force push, which was not done.
+
+Baked backdrops: `scripts/bake_backdrops.py` writes a landscape and a portrait
+WebP per hour to `assets/backdrops/` (8 files, 358 KB; Dawn's asphalt grain is
+114 KB each, the rest 9–31 KB) and generates `src/backdrops.js`, which records
+the settings each was baked from. `paperBackdrop` draws the baked file when
+that record equals `backdropKey(hour)` and colours are Default. Otherwise it
+presses at runtime as before: Pure light colours, the lab while a slider is
+moved, or any backdrop line in `PAPER_USE` or wash colour in `palettes.js`
+edited since the bake. So a stale bake is ignored, not shown; rerun the script
+to get it back, and `--check` exits 1 when one is stale. The wash's middle stop
+moved from literals in the four art modules into `PAPER_USE.backdrop[hour].mid`
+so the script and the game read one value. Dawn's dust specks and the Dusk and
+Midnight leaves are still drawn at runtime over the baked sheet. The script is
+a NumPy port of `recolor()`; a change to one needs the same change in the
+other.
+
+Grey: `glass` and `plastic` are marked `grey: true` and encoded without
+colour. It saved under 1 KB each, because both masters were already neutral and
+WebP spends almost nothing on flat chroma. It was applied only where `keep` is
+0; a grey source under `keep` > 0 would lose the hue variation that setting
+exists to carry.
+
+Verified in the preview browser. Baked against runtime press of the same
+settings, per channel out of 255: mean absolute difference 1.3 (Noon,
+Midnight), 1.6 (Dusk), 4.6 (Dawn, whose grain is pixel-scale so resampling
+differences count for more); all eight keys matched. Title screen fetched 11
+files, 474 KB; Dawn I in play brought the total to 13 files, 692 KB. Both
+rendered with no console errors. Node suites pass.
+
+Not done: the menu card still tints the hour's backdrop texture for its paper,
+so each hour's source texture (34–82 KB) is still fetched once that card is
+dressed; the baked files did not remove that. Portrait copies were compared by
+pixels but not seen in a portrait viewport. Pure light colours not looked at.
