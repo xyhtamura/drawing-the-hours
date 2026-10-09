@@ -9,7 +9,7 @@ const loop = [{x:60,y:60},{x:200,y:60},{x:200,y:200},{x:60,y:200},{x:60,y:60}];
 const figure = [{x:250,y:250},{x:100,y:100},{x:60,y:250},{x:100,y:400},{x:250,y:250},{x:400,y:100},{x:440,y:250},{x:400,y:400},{x:250,y:250}];
 const fish = (kind='ricefish',x=120,y=120,state='roaming') => ({kind,x,y,state});
 assert.equal(CORD_LIMIT,1300);
-assert.equal(LEVELS.length,5);
+assert.equal(LEVELS.length,8);
 assert.equal(judgeStroke(loop,[fish(),fish('ricefish',150)]).released.length,2);
 assert.match(judgeStroke(loop,[fish()]).error,/exactly two/);
 assert.match(judgeStroke(loop,[fish(),fish('goby',150)]).error,/own pocket/);
@@ -97,6 +97,20 @@ assert.equal(judgeStroke(loop,[fish('halfbeak'),fish('halfbeak',150)],false,LEVE
 game.load(4);game.mode='play';const halfbeak=game.fish.find(f=>f.kind==='halfbeak');
 Object.assign(halfbeak,{x:300,y:300,heading:0,targetHeading:0,turnTime:.01});
 game.update(.04);assert.ok(Math.abs(halfbeak.targetHeading)>1,'Halfbeaks turn sharply between glides');
+const pairedKinds=[fish('ricefish',82,175),fish('ricefish',104,180),fish('goby',270,180),fish('goby',292,180)];
+assert.equal(judgeStroke(smallFigure,pairedKinds,false,LEVELS[5]).groups.length,2);
+assert.match(judgeStroke(loop,[fish(),fish('ricefish',150)],false,LEVELS[5]).error,/two pockets/);
+assert.match(judgeStroke(smallFigure,pairedKinds.map(f=>({...f,kind:'ricefish'})),false,LEVELS[5]).error,/different kind/);
+const schoolPair=[...trio.map(f=>({...f,x:f.x*.6+20,y:f.y*.4+130})),fish('halfbeak',270,180),fish('halfbeak',292,180)];
+assert.equal(judgeStroke(smallFigure,schoolPair,false,LEVELS[6]).released.length,5);
+assert.match(judgeStroke(smallFigure,schoolPair.slice(1),false,LEVELS[6]).error,/exactly 3/);
+assert.equal(judgeStroke(loop,trio,false,LEVELS[7]).released.length,3);
+for (const [width,height] of [[960,640],[640,960]]) for (const index of [5,6,7]) {
+  const finalGame=new Aquarium(width,height,()=>.5);finalGame.load(index);finalGame.mode='play';
+  for(let i=0;i<500;i++)finalGame.update(.04);
+  assert.ok(finalGame.fish.every(f=>Number.isFinite(f.x)&&Number.isFinite(f.y)&&f.x>=48&&f.x<=width-48&&f.y>=finalGame.top&&f.y<=height-48),'Final mixed populations remain finite and in bounds');
+  for(const [kind,count] of Object.entries(finalGame.level.population)) assert.equal(finalGame.fish.filter(f=>f.kind===kind).length,count);
+}
 for(let index=0;index<LEVELS.length;index++) {
   game.load(index);game.mode='play';
   for(const [kind,count] of Object.entries(game.level.goals)) {
@@ -105,4 +119,4 @@ for(let index=0;index<LEVELS.length;index++) {
   }
   assert.equal(game.mode,'settling');for(let i=0;i<40;i++)game.update(.04);assert.equal(game.mode,'complete',`Level ${index+1} completes`);
 }
-console.log('Aquarium: recipes, purity, cord rules, clock, departures, schooling, replenishment, stems in both orientations, shade, and all five completions passed.');
+console.log('Aquarium: recipes, purity, cord rules, clock, departures, schooling, replenishment, stems in both orientations, shade, and all eight completions passed.');

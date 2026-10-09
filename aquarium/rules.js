@@ -29,5 +29,8 @@ export function judgeStroke(points, fish, hasBeads = false, level = LEVELS[0], s
     const kind = group[0].kind, size = recipeSize(level, kind);
     if (group.length !== size) return {error: size === 2 ? 'Each pocket needs exactly two fish.' : `Each ${SPECIES[kind].name.toLowerCase()} pocket needs exactly ${size} fish.`};
   }
+  if (level.separateKinds && (groups.length !== 2 || groups[0][0].kind === groups[1][0].kind)) {
+    return {error: 'Draw two pockets with a different kind in each.'};
+  }
   return {pockets, groups, released: [...new Set(groups.flat())]};
 }

@@ -19,6 +19,15 @@ export const LEVELS = [
   {id: 'shade', title: 'Under leaves', duration: 125, population: {halfbeak: 8, ricefish: 4}, shade: true,
     goals: {halfbeak: 3, ricefish: 1},
     instruction: 'Enclose matching pairs. Halfbeaks glide, then turn sharply.', wash: '#b5c9c1'},
+  {id: 'two-pockets', title: 'Two pockets', duration: 150, population: {ricefish: 8, goby: 6}, rocks: true, separateKinds: true,
+    goals: {ricefish: 3, goby: 3},
+    instruction: 'Draw a figure eight: two ricefish in one pocket, two gobies in the other.', wash: '#adc5b3'},
+  {id: 'school-and-pair', title: 'School and pair', duration: 165, population: {barb: 9, halfbeak: 6}, shade: true, separateKinds: true,
+    goals: {barb: 3, halfbeak: 3}, recipes: {barb: 3},
+    instruction: 'Draw a figure eight: three barbs in one pocket, two halfbeaks in the other.', wash: '#b6c6a7'},
+  {id: 'open-water', title: 'Open water', duration: 180, population: {ricefish: 6, goby: 6, barb: 6, halfbeak: 4}, rocks: true, shade: true,
+    goals: {ricefish: 2, goby: 2, barb: 2, halfbeak: 2}, recipes: {barb: 3},
+    instruction: 'Enclose pairs, or three barbs. Keep each kind in its own pocket.', wash: '#adc8bb'},
 ];
 
 export const recipeSize = (level, kind) => level.recipes?.[kind] ?? 2;

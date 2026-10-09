@@ -29,6 +29,14 @@ function fishGlyph(kind) {
 }
 function diagram() {
   const kinds = Object.keys(game.level.goals);
+  if (game.level.separateKinds) {
+    const groups = kinds.map((kind, i) => {
+      const count = recipeSize(game.level, kind), x = i ? 243 : 91;
+      const positions = count === 3 ? [{x:x-20,y:43},{x:x+20,y:43},{x,y:66}] : [{x:x-20,y:54},{x:x+20,y:54}];
+      return positions.map(p => `<g transform="translate(${p.x-20} ${p.y-10})">${fishGlyph(kind).replace('viewBox=', 'width="40" height="20" viewBox=')}</g>`).join('');
+    }).join('');
+    return `<svg class="diagram" viewBox="0 0 340 115" role="img" aria-label="A figure eight containing ${kinds.map(k => `${recipeSize(game.level,k)} ${SPECIES[k].name.toLowerCase()}`).join(' and ')} in separate pockets"><path d="M167 57C105-15 12 11 35 64C58 118 126 98 167 57C208 16 278-6 304 44C333 103 230 117 167 57" fill="none" stroke="#af7376" stroke-width="3"/>${groups}</svg>`;
+  }
   const kind = kinds.find(k => recipeSize(game.level, k) > 2) ?? kinds[0], count = recipeSize(game.level, kind);
   const positions = count === 3 ? [{x:76,y:45},{x:124,y:42},{x:104,y:71}] : [{x:85,y:48},{x:130,y:48}];
   return `<svg class="diagram" viewBox="0 0 340 115" role="img" aria-label="A closed loop containing ${count} fish of the same kind"><path d="M65 90C15 30 80 3 152 25C213 44 188 97 114 97C87 97 65 90 51 77" fill="none" stroke="#af7376" stroke-width="3"/>${positions.map(p => `<g transform="translate(${p.x} ${p.y})"><path d="M0 5 -10 -2 -10 12Z" fill="${SPECIES[kind].trim}"/><ellipse cx="10" cy="5" rx="13" ry="6" fill="${SPECIES[kind].color}" stroke="#527065"/></g>`).join('')}<path d="M226 54h60m-12-8 12 8-12 8" fill="none" stroke="#78938b" stroke-width="2"/></svg>`;
@@ -71,7 +79,7 @@ function pause() {
 function completion() {
   if (!practice) {saved.done = [...new Set([...saved.done, game.index])]; store();}
   const index = game.index;
-  show('Level complete', '', index < LEVELS.length - 1 ? [['Next level', () => load(index + 1), true], ['Play again', () => load(index)]] : [['Play again', () => load(index), true], ['Levels', map]]);
+  show(index === LEVELS.length - 1 ? 'Chapter complete' : 'Level complete', '', index < LEVELS.length - 1 ? [['Next level', () => load(index + 1), true], ['Play again', () => load(index)]] : [['Play again', () => load(index), true], ['Levels', map]]);
 }
 function failure() {
   cancel(); show('Time ended', '', [['Retry', () => load(game.index), true], ['Practice', () => {practice = true; practiceLabel(); load(game.index); start();}], ['Levels', map]]);

@@ -54,7 +54,25 @@ try {
   await until(()=>game.mode==='complete');check(game.mode==='complete','Ricefish pairs count in the passages between stems');
   button('Next level').click();check(game.index===4&&game.level.shade,'Fifth level opens halfbeaks under leaves');button('Begin').click();
   for(let i=0;i<3;i++){fixture('halfbeak');draw(loop);}fixture('ricefish');draw(loop);
-  await until(()=>game.mode==='complete');check(game.mode==='complete'&&button('Next level')===undefined,'Fifth level completes without linking to an unbuilt sixth level');
-  document.getElementById('visits').click();check(document.querySelectorAll('.map button').length===5,'Level map exposes the five playable levels');
+  await until(()=>game.mode==='complete');check(button('Next level')!==undefined,'Fifth level advances to the sixth');
+  const figure=[{x:250,y:250},{x:100,y:100},{x:60,y:250},{x:100,y:400},{x:250,y:250},{x:400,y:100},{x:440,y:250},{x:400,y:400},{x:250,y:250}].map(p=>({x:p.x*.75,y:p.y*.75+100}));
+  function sortedFixture(first,second,count=2) {
+    fixture(first,count,82,275);
+    for(let i=0;i<2;i++){game.spawn(second);Object.assign(game.fish.at(-1),{x:270+i*22,y:275+i*12});}
+  }
+  button('Next level').click();check(game.index===5&&document.querySelector('.diagram').getAttribute('aria-label').includes('figure eight'),'Sixth level illustrates two distinct pockets');button('Begin').click();
+  fixture();draw(loop);check(game.progress.ricefish===0&&document.getElementById('status').textContent.includes('two pockets'),'Sixth level rejects a lone matching pair');
+  sortedFixture('ricefish','ricefish');draw(figure);check(game.progress.ricefish===0&&document.getElementById('status').textContent.includes('different kind'),'Sixth level rejects identical kinds in both pockets');
+  for(let i=0;i<3;i++){sortedFixture('ricefish','goby');draw(figure);}
+  await until(()=>game.mode==='complete');check(game.progress.ricefish===3&&game.progress.goby===3,'Sixth level completes with three sorted figures');
+  button('Next level').click();check(game.index===6&&document.querySelector('.diagram').getAttribute('aria-label').includes('3 spotted barb'),'Seventh level illustrates the school and pair');button('Begin').click();
+  sortedFixture('barb','halfbeak',2);draw(figure);check(game.progress.barb===0,'Seventh level rejects an undersized school');
+  for(let i=0;i<3;i++){sortedFixture('barb','halfbeak',3);draw(figure);}
+  await until(()=>game.mode==='complete');check(game.progress.barb===3&&game.progress.halfbeak===3,'Seventh level completes with school-and-pair figures');
+  button('Next level').click();check(game.index===7&&Object.keys(game.level.goals).length===4,'Final level brings together all four kinds');button('Begin').click();
+  for(const kind of Object.keys(game.level.goals)) for(let i=0;i<2;i++){fixture(kind,kind==='barb'?3:2);draw(loop);}
+  await until(()=>game.mode==='complete');check(document.getElementById('card').querySelector('h2').textContent==='Chapter complete'&&button('Next level')===undefined,'Eighth level ends the chapter without a ninth-level link');
+  button('Play again').click();check(game.index===7&&Object.values(game.progress).every(n=>n===0),'Final level can be replayed');
+  document.getElementById('visits').click();check(document.querySelectorAll('.map button').length===8,'Level map exposes all eight levels');
   out.textContent+='\nPASS';
 } catch(e) {out.textContent+='\nFAIL: '+e.stack;}

@@ -10,7 +10,7 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Play aquarium levels 3–5 on a touch device and tune school spacing, stem passages, and fish contrast before building level 6; the twenty-four-visit meadow pacing pass remains pending.
+Play all eight aquarium levels on a touch device and tune figure-eight spacing, fish contrast, and bubble durations; the twenty-four-visit meadow pacing pass remains pending.
 
 ## Activity
 
@@ -2103,3 +2103,32 @@ Undone: human timing and touch/pen playtests, orientation changes during play,
 audio, story text, and levels 6–8. Next: play levels 3–5 on a touch device and
 tune school spacing, stem passages, and fish contrast before building level 6.
 Both root roadmap entries were updated; the meadow pacing pass remains pending.
+
+2026-10-09 — Codex — Completed aquarium levels 6–8 at Xyh's request. Level 6
+requires three figure eights, each with a ricefish pair and a goby pair in
+separate pockets. Level 7 combines a three-barb school with a halfbeak pair
+in each of three figure eights. Both reject single loops and identical kinds
+in both pockets. Level 8 brings all four kinds into open water, with two groups
+of each kind and a choice of single loops or figure eights. Existing movement,
+stones, shade, fish artwork, and the bubble clock were reused. The final level
+opens a chapter completion card with replay and level selection.
+
+Added two-pocket ready-card diagrams with the actual kinds and group sizes.
+The portrait objectives sit below the title; the four-kind finale reserves
+more space above the fish. Kept the final field clear of stems so its challenge
+comes from the mixed movements and recipes. Story text remains for Xyh.
+
+Verified with all ten `test/test_*.js` suites and the mounted browser check at
+`test/aquarium-browser.html`, which read PASS for all eight levels. The checks
+cover the required two-pocket figures, rejected lone pairs and undersized
+schools, progression from level 5 to level 8, chapter completion, replay, and
+the eight-entry map. Simulated the final three populations for 20 seconds in
+landscape and portrait and checked finite positions, bounds, and counts.
+Inspected the two-pocket diagrams and the final four-kind HUD at 390 px width;
+the game console reported no errors. The browser uses injected fish positions,
+so these checks do not establish human difficulty.
+
+Undone: human timing, touch and pen input, orientation changes during play,
+audio, and story text. Next: play all eight levels on a touch device and tune
+figure-eight spacing, fish contrast, and bubble durations. Both root roadmap
+entries were updated; the meadow pacing pass remains pending.

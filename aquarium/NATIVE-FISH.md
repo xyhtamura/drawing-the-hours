@@ -1,6 +1,6 @@
 # Fish references
 
-The five built levels draw on wild Philippine freshwater fish. These are
+The eight levels draw on wild Philippine freshwater fish. These are
 visual and movement inspirations; the field is an imagined place, not a
 single river assemblage. Recipes, school sizes, resting intervals, and speeds
 are designed for play. Story text remains for Xyh.

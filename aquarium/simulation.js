@@ -18,6 +18,7 @@ export class Aquarium {
   }
   load(index) {
     this.index = index; this.level = LEVELS[index]; this.time = 0; this.elapsed = 0;
+    this.top = this.height > this.width ? (Object.keys(this.level.goals).length > 2 ? 240 : 180) : 110;
     this.started = false; this.mode = 'ready'; this.practice = false;
     this.fish = []; this.progress = Object.fromEntries(Object.keys(this.level.goals).map(k => [k, 0]));
     this.rocks = this.level.rocks ? [0,1,2,5,4,3].map(i => ({x: this.width * (.20 + i % 3 * .30),
