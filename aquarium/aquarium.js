@@ -1,152 +1,172 @@
-import {LEVELS,SPECIES} from './levels.js';
-import {judgeStroke,strokeCuts,CORD_LIMIT} from './rules.js';
-import {polylineLength,polylineTouchesDisk} from '../src/geometry.js';
+import {LEVELS, SPECIES} from './levels.js';
+import {judgeStroke} from './rules.js';
+import {Aquarium} from './simulation.js';
+import {StringGesture} from '../src/string.js';
+import {getLengthBand} from '../src/geometry.js';
 
-const $=id=>document.getElementById(id), canvas=$('field'), ctx=canvas.getContext('2d');
-const portrait=matchMedia('(max-width:650px)').matches;
-const W=portrait?640:960,H=portrait?760:600;
-canvas.width=W;canvas.height=H;
-const refuge={x:W-95,y:H-115,r:65};
-let saved={visit:0,done:[]};
-try{const s=JSON.parse(localStorage.getItem('drawing-hours-aquarium-v1'));if(s && Number.isInteger(s.visit) && s.visit>=0 && s.visit<8 && Array.isArray(s.done))saved={visit:s.visit,done:s.done.filter(n=>Number.isInteger(n)&&n>=0&&n<8)};}catch{}
-let index=saved.visit,level=LEVELS[index],fish=[],hazards=[],pickups=[],rings=[],stroke=[],activePointer=null;
-let mode='card',time=0,oxygen=100,slowUntil=0,practice=false,last=0,lastHud=0;
-const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const slack=()=>!level.tidal || Math.abs(Math.sin(time*Math.PI/6))<.48;
-function store(){try{localStorage.setItem('drawing-hours-aquarium-v1',JSON.stringify(saved));}catch{}}
-function message(s){$('status').textContent=s;}
-function show(html){stroke=[];activePointer=null;mode='card';updateHud();$('card').innerHTML=html;$('overlay').hidden=false;$('card').focus();$('pause').textContent='Pause';}
-function action(label,fn,primary=false){const b=document.createElement('button');b.textContent=label;if(primary)b.className='primary';b.onclick=fn;$('card').querySelector('.actions').append(b);}
-function run(){mode='play';$('overlay').hidden=true;last=performance.now();canvas.focus();message(level.rule);}
-function pickup(kind){return {kind,x:100+Math.random()*(W-260),y:100+Math.random()*(H-270),radius:18,ready:time};}
-function load(n){
-  index=n;level=LEVELS[n];time=0;oxygen=100;slowUntil=0;rings=[];stroke=[];activePointer=null;
-  saved.visit=n;store();
-  hazards=[];pickups=[];fish=[];
-  if(level.roots)for(let i=0;i<3;i++)hazards.push({kind:'root',x:W*(.2+.25*i),y:H-105-(i%2)*40,endY:H,radius:22,cuts:true});
-  if(level.jelly)hazards.push({kind:'jelly',x:W*.66,y:H*.48,radius:27,cuts:true});
-  for(let i=0;i<(level.debris||0);i++)hazards.push({kind:'net',x:W*(.32+i*.32),y:H*.65,radius:26,cuts:false});
-  if(level.bubbles)pickups.push(pickup('bubble'),pickup('bubble'));
-  if(level.grass)pickups.push(pickup('seaweed'));
-  const count=level.goal+8;
-  for(let i=0;i<count+(level.fry||0);i++){
-    const kind=i>=count?'fry':level.kinds[i%level.kinds.length];
-    const band=level.kinds.indexOf(kind);
-    let x,y,attempt=0;
-    do{x=level.split?W*(band===0?.28:.65)+(Math.random()-.5)*110:70+Math.random()*(W-220);y=100+Math.random()*(H-260);attempt++;}while(attempt<50 && hazards.some(h=>Math.hypot(x-h.x,y-h.y)<h.radius+40));
-    const a=Math.random()*Math.PI*2;
-    fish.push({kind,x,y,vx:Math.cos(a)*SPECIES[kind].speed,vy:Math.sin(a)*SPECIES[kind].speed,phase:Math.random()*6.28,safe:false,guiding:false});
+const $ = id => document.getElementById(id), canvas = $('field'), ctx = canvas.getContext('2d');
+const portrait = matchMedia('(max-width:650px)').matches;
+canvas.width = portrait ? 640 : 960; canvas.height = portrait ? 960 : 640;
+const W = canvas.width, H = canvas.height;
+const SAVE_KEY = 'drawing-hours-aquarium-v2';
+const testMode = new URLSearchParams(location.search).has('test');
+let saved = {visit: 0, done: []};
+try {
+  const value = !testMode && JSON.parse(localStorage.getItem(SAVE_KEY));
+  if (value && Number.isInteger(value.visit) && value.visit >= 0 && value.visit < LEVELS.length && Array.isArray(value.done)) {
+    saved = {visit: value.visit, done: value.done.filter(n => Number.isInteger(n) && n >= 0 && n < LEVELS.length)};
   }
-  $('number').textContent=level.place;$('title').textContent=level.title;
-  $('objective').textContent=`Guide ${level.goal} fish into refuge${level.group>1?`, at least ${level.group} per pocket`:''}.`;
-  $('oxygen-label').hidden=!level.oxygen;
-  updateHud();message(level.rule);visitCard();
+} catch {}
+export const game = new Aquarium(W, H);
+let gesture = null, pointer = null, practice = false, last = 0, hudTime = 0, ripples = [], lastMode = '';
+const reduced = matchMedia('(prefers-reduced-motion:reduce)').matches;
+function store() {if (!testMode) try {localStorage.setItem(SAVE_KEY, JSON.stringify(saved));} catch {}}
+function cancel() {gesture?.releaseBeads(); gesture = null; pointer = null;}
+function message(text) {$('status').textContent = text;}
+function fishGlyph(kind) {
+  const s = SPECIES[kind];
+  return `<svg viewBox="0 0 60 28" aria-hidden="true"><path d="M20 14 4 3 4 25Z" fill="${s.trim}"/><ellipse cx="33" cy="14" rx="16" ry="7" fill="${s.color}" stroke="${s.trim}"/><circle cx="43" cy="12" r="2" fill="#34574f"/></svg>`;
 }
-function visitCard(){
-  show(`<p class="eyebrow">${level.place}</p><h2>${level.title}</h2><p class="story">${level.story}</p><p>${level.rule}</p><p>Hold and drag to draw. Cross an earlier part of the cord to close it, then lift. The cord blocks fish while held. The dashed circle is refuge.</p><div class="legend">${level.kinds.map(k=>`<span>${SPECIES[k].name}</span>`).join('')} ${level.fry?'<span>Gold fry: leave free</span>':''}</div><div class="actions"></div>`);
-  action('Enter tank',run,true);action('Tank map',map);
+function diagram() {
+  const kinds = Object.keys(game.level.goals);
+  return `<svg class="diagram" viewBox="0 0 340 115" role="img" aria-label="A closed loop around two matching fish"><path d="M65 90C15 30 80 3 152 25C213 44 188 97 114 97C87 97 65 90 51 77" fill="none" stroke="#af7376" stroke-width="3"/>${[85,130].map(x => `<g transform="translate(${x} 48)"><path d="M0 5 -10 -2 -10 12Z" fill="${SPECIES[kinds.at(-1)].trim}"/><ellipse cx="10" cy="5" rx="13" ry="6" fill="${SPECIES[kinds.at(-1)].color}" stroke="#527065"/></g>`).join('')}<path d="M226 54h60m-12-8 12 8-12 8" fill="none" stroke="#78938b" stroke-width="2"/></svg>`;
 }
-function map(){
-  show('<p class="eyebrow">Aquarium / detour</p><h2>Eight windows</h2><p>Every tank is open. Aquarium progress is saved separately from the meadow.</p><div class="map"></div><div class="actions"></div>');
-  LEVELS.forEach((l,i)=>{const b=document.createElement('button');b.textContent=`${String(i+1).padStart(2,'0')} · ${l.title}`;const s=document.createElement('small');s.textContent=saved.done.includes(i)?'Visited':i===index?'Current tank':'Open';b.append(s);b.onclick=()=>load(i);$('card').querySelector('.map').append(b);});
-  action('Return to tank',visitCard);
+function show(title, content, buttons) {
+  cancel(); $('overlay').hidden = false;
+  $('card').innerHTML = `<p class="card-number">${String(game.index + 1).padStart(2, '0')} / 08</p><h2>${title}</h2>${content}<div class="actions"></div>`;
+  for (const [label, action, primary] of buttons) {
+    const b = document.createElement('button'); b.textContent = label; b.onclick = action;
+    if (primary) b.className = 'primary'; $('card').querySelector('.actions').append(b);
+  }
+  $('card').focus(); updateHud();
 }
-function pause(){if(mode!=='play')return;show(`<h2>Paused</h2><p>${level.rule}</p><div class="actions"></div>`);action('Resume',run,true);action('Tank card',visitCard);action('Retry',()=>load(index));action('Tank map',map);}
-function finish(){
-  if(!practice){saved.done=[...new Set([...saved.done,index])];if(index<7)saved.visit=index+1;store();}
-  const final=index===7;
-  show(`<p class="eyebrow">${practice?'Practice complete':'Tank complete'}</p><h2>${final?'Back to the path':level.title}</h2><p>${final?'I pick up my bag. Outside, the light has moved across the pavement. For a moment, the traffic turns like the school behind the glass.':'The fish settle inside the resting ring. I move along the glass to the next window.'}</p><p>${level.context}</p><div class="actions"></div>`);
-  if(!final)action('Next window',()=>load(index+1),true);else action('Tank map',map,true);
-  action('Visit again',()=>load(index));const a=document.createElement('a');a.href='../index.html';a.textContent='Return to the meadow';$('card').querySelector('.actions').append(a);
+function start() {game.mode = 'play'; $('overlay').hidden = true; canvas.focus(); last = performance.now(); message('');}
+function ready() {
+  game.mode = 'ready';
+  show(game.level.title, `${diagram()}<p>${game.level.instruction}</p><p>Cross the cord to close the loop, then lift. Draw around the fish.</p>`, [['Begin', start, true], ['Levels', map]]);
 }
-function failed(){show('<h2>The pump needs a rest</h2><p>Oxygen ran out before the transfer finished. Retry the tank, or turn on practice to remove oxygen pressure.</p><div class="actions"></div>');action('Retry',()=>load(index),true);action('Practice this tank',()=>{practice=true;practiceLabel();load(index);run();});action('Tank map',map);}
-function notes(){
-  show(`<p class="eyebrow">Exhibit notes</p><h2>Philippine waters</h2><p>${level.context}</p><p>These tanks are fictional aquarium exhibits. Fish motion, refuge rings, seaweed pickups, oxygen units, and tide timing are game rules, not husbandry advice.</p><ul><li><a href="https://www.seafdec.org.ph/milkfish/" target="_blank" rel="noopener">SEAFDEC: farming milkfish</a> describes hatcheries, ponds, cages, water exchange, and water-quality requirements.</li><li><a href="https://www.seafdec.org.ph/wp-content/content/pages/FreeDownloads/code%20of%20practice/Code_of_Practice_Mangrove.pdf" target="_blank" rel="noopener">SEAFDEC: sustainable use of mangroves for aquaculture</a> discusses habitat protection alongside farming.</li><li><a href="https://www.bfar.da.gov.ph/sardines-closed-fishing-season-now-on-its-12th-year-implementation-2/" target="_blank" rel="noopener">BFAR: sardine closed seasons</a> explains protection during spawning. This chapter specifies no legal dates or boundaries.</li></ul><div class="actions"></div>`);
-  action('Return to tank',visitCard,true);
+export function load(index) {
+  cancel(); game.load(index); game.practice = practice; ripples = []; saved.visit = index; store();
+  $('title').textContent = game.level.title; $('number').textContent = `${String(index + 1).padStart(2, '0')} / 08`;
+  $('goals').innerHTML = Object.keys(game.level.goals).map(k => `<span class="goal" id="goal-${k}">${fishGlyph(k)}<span></span></span>`).join('');
+  message(''); ready(); draw();
 }
-function practiceLabel(){$('practice').textContent=`Practice: ${practice?'on':'off'}`;$('practice').setAttribute('aria-pressed',String(practice));}
-$('menu').onclick=map;$('pause').onclick=pause;$('notes').onclick=notes;
-$('practice').onclick=()=>{practice=!practice;practiceLabel();load(index);message(practice?'Practice removes oxygen pressure and does not write completion.':'Practice is off. The tank restarted.');};
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();if(mode==='play')pause();else if($('card').querySelector('.primary')?.textContent==='Resume')run();}if(e.key.toLowerCase()==='r' && e.target===canvas)load(index);});
-document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});
-const point=e=>{const r=canvas.getBoundingClientRect();return{x:clamp((e.clientX-r.left)*W/r.width,5,W-5),y:clamp((e.clientY-r.top)*H/r.height,5,H-5)};};
-canvas.addEventListener('pointerdown',e=>{if(mode!=='play'||activePointer!==null||e.button!==0)return;e.preventDefault();activePointer=e.pointerId;canvas.setPointerCapture(e.pointerId);stroke=[point(e)];});
-canvas.addEventListener('pointermove',e=>{
-  if(mode!=='play'||e.pointerId!==activePointer)return;
-  const samples=e.getCoalescedEvents?.();
-  for(const sample of samples?.length?samples:[e]){const p=point(sample),a=stroke.at(-1);if(a && Math.hypot(p.x-a.x,p.y-a.y)>5)stroke.push(p);}
-  if(polylineLength(stroke)>CORD_LIMIT){stroke=[];activePointer=null;message('The cord snapped. Draw a smaller loop.');}
-  else if(strokeCuts(stroke,hazards)){stroke=[];activePointer=null;message('A root or jellyfish cut the cord.');}
-});
-canvas.addEventListener('pointerup',e=>{
-  if(e.pointerId!==activePointer)return;stroke.push(point(e));activePointer=null;
-  const result=judgeStroke(stroke,fish,hazards,pickups.filter(p=>p.ready<=time),level,slack());stroke=[];
-  if(result.error){message(result.error);return;}
-  result.guided.forEach(f=>{f.guiding=true;});
-  result.taken.forEach(p=>{if(p.kind==='bubble')oxygen=Math.min(100,oxygen+32);else slowUntil=time+8;p.ready=time+10;});
-  result.pockets.forEach(p=>rings.push({polygon:p.polygon,life:1.6}));
-  message(result.guided.length?`${result.guided.length} fish are moving into refuge.`:result.taken.some(p=>p.kind==='bubble')?'Aeration restored oxygen.':'Seaweed slows the fish for 8 seconds.');
-  updateHud();
-});
-const cancel=()=>{stroke=[];activePointer=null;};canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);
-
-function update(dt){
-  time+=dt;
-  const flow=(level.current||0)*Math.sin(time*Math.PI/6),slow=time<slowUntil?.35:1;
-  if(level.oxygen&&!practice)oxygen=Math.max(0,oxygen-dt*level.oxygen*(stroke.length?1.25:1));
-  hazards.forEach(h=>{if(h.kind==='jelly'){h.x=W*.66+Math.sin(time*.37)*W*.15;h.y=H*.47+Math.sin(time*.51)*60;}});
-  fish.forEach(f=>{
-    if(f.guiding){const dx=refuge.x-f.x,dy=refuge.y-f.y,d=Math.hypot(dx,dy);f.x+=dx*dt*1.5;f.y+=dy*dt*1.5;f.vx=dx;f.vy=dy;if(d<35){f.guiding=false;f.safe=true;f.phase=Math.random()*6.28;}return;}
-    if(f.safe){f.x=refuge.x+Math.cos(time*.5+f.phase)*40;f.y=refuge.y+Math.sin(time*.5+f.phase)*30;return;}
-    const spec=SPECIES[f.kind];
-    let ax=Math.cos(time*.8+f.phase)*9,ay=Math.sin(time*.6+f.phase)*9;
-    if(level.school && f.kind==='sardine'){ax+=(W*.43+Math.sin(time*.45)*W*.19-f.x)*.6;ay+=(H*.37+Math.sin(time*.8)*H*.1-f.y)*.6;}
-    if(level.split){ax+=(W*(f.kind==='bangus'?.27:.67)-f.x)*.15;}
-    if(f.kind==='tilapia'){ax*=.5;ay*=.5;}
-    f.vx+=ax*dt;f.vy+=ay*dt;const speed=Math.hypot(f.vx,f.vy);if(speed>spec.speed){f.vx*=spec.speed/speed;f.vy*=spec.speed/speed;}
-    let nx=f.x+(f.vx*slow+flow)*dt,ny=f.y+f.vy*slow*dt;
-    if(nx<40||nx>W-45){f.vx*=-1;nx=clamp(nx,40,W-45);}if(ny<65||ny>H-65){f.vy*=-1;ny=clamp(ny,65,H-65);}
-    if(stroke.length>1 && polylineTouchesDisk(stroke,nx,ny,spec.size*.5)){f.vx*=-1;f.vy*=-1;}else{f.x=nx;f.y=ny;}
+function map() {
+  game.mode = 'map';
+  show('Levels', '<div class="map"></div><p>Two of eight levels are playable.</p>', [['Return', ready]]);
+  LEVELS.forEach((l, i) => {
+    const b = document.createElement('button'); b.textContent = `${i + 1} · ${l.title}`;
+    const s = document.createElement('small'); s.textContent = saved.done.includes(i) ? 'Complete' : 'Open'; b.append(s);
+    b.onclick = () => load(i); $('card').querySelector('.map').append(b);
   });
-  rings.forEach(r=>r.life-=dt);rings=rings.filter(r=>r.life>0);
-  if(fish.filter(f=>f.safe).length>=level.goal)finish();else if(oxygen<=0)failed();
 }
-function path(points){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));}
-function fishArt(f){
-  const s=SPECIES[f.kind],n=s.size;ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.safe?Math.cos(time*.5+f.phase)*.25:Math.atan2(f.vy,f.vx));
-  ctx.shadowColor='#18494235';ctx.shadowBlur=0;ctx.shadowOffsetY=3;
-  ctx.fillStyle=s.trim;ctx.beginPath();ctx.moveTo(-n*.65,0);ctx.lineTo(-n*1.3,-n*.6);ctx.lineTo(-n*1.2,n*.55);ctx.closePath();ctx.fill();
-  ctx.fillStyle=s.color;ctx.beginPath();ctx.ellipse(0,0,n,f.kind==='tilapia'?n*.65:n*.42,0,0,6.28);ctx.fill();ctx.shadowOffsetY=0;
-  ctx.fillStyle=s.trim;ctx.beginPath();ctx.moveTo(-n*.45,-n*.32);ctx.lineTo(0,-n*.75);ctx.lineTo(n*.35,-n*.28);ctx.fill();
-  ctx.strokeStyle=s.trim;ctx.lineWidth=1;ctx.beginPath();ctx.arc(n*.3,0,n*.25,-1.25,1.25);ctx.stroke();
-  if(f.kind==='tilapia'||f.kind==='siganid')for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(-n*.5+i*n*.3,-n*.27);ctx.lineTo(-n*.6+i*n*.3,n*.27);ctx.stroke();}
-  ctx.fillStyle='#244746';ctx.beginPath();ctx.arc(n*.68,-n*.08,2,0,6.28);ctx.fill();ctx.restore();
+function pause() {
+  if (!['play', 'settling'].includes(game.mode)) return;
+  const previous = game.mode; game.mode = 'paused';
+  show('Paused', '', [['Resume', () => {game.mode = previous; $('overlay').hidden = true; last = performance.now(); canvas.focus();}, true], ['Retry', () => load(game.index)], ['Levels', map]]);
 }
-function draw(){
-  const grad=ctx.createLinearGradient(0,0,W,H);grad.addColorStop(0,'#c2d9c6');grad.addColorStop(.5,'#8dbbb1');grad.addColorStop(1,'#487d7b');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
-  // Original canvas artwork: glass reflections, grain, sand, and a visitor's reflection.
-  ctx.fillStyle='#f6edc512';for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(80+i*165,0);ctx.lineTo(125+i*165,0);ctx.lineTo(230+i*150,H);ctx.lineTo(175+i*150,H);ctx.fill();}
-  ctx.fillStyle='#b9bfa1';ctx.beginPath();ctx.moveTo(0,H-65);for(let x=0;x<=W;x+=20)ctx.lineTo(x,H-65+Math.sin(x*.011)*13);ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.fill();
-  ctx.fillStyle='#2c605316';for(let i=0;i<550;i++)ctx.fillRect((i*137.3)%W,(i*83.7)%H,1.3,1.3);
-  if(level.grass||level.roots){ctx.strokeStyle='#4a796560';ctx.lineWidth=5;for(let i=0;i<18;i++){const x=25+i*W/18;ctx.beginPath();ctx.moveTo(x,H-50);ctx.quadraticCurveTo(x-15,H-95,x+Math.sin(time*.7+i)*10,H-135-(i%4)*13);ctx.stroke();}}
-  ctx.save();ctx.strokeStyle='#edf0d6aa';ctx.setLineDash([6,7]);ctx.lineWidth=2;ctx.beginPath();ctx.arc(refuge.x,refuge.y,refuge.r,0,6.28);ctx.stroke();ctx.restore();
-  ctx.font='13px Mali, serif';ctx.fillStyle='#eef1d6';ctx.textAlign='center';ctx.fillText('REFUGE',refuge.x,refuge.y+refuge.r+23);
-  ctx.fillStyle='#194e4430';ctx.beginPath();ctx.ellipse(W*.13,H-11,32,70,-.2,0,6.28);ctx.fill();ctx.beginPath();ctx.arc(W*.13,H-99,18,0,6.28);ctx.fill();
-  ctx.strokeStyle='#f4ecd44a';ctx.lineWidth=2;for(let i=0;i<6;i++){let x=60+i*(W-120)/5;ctx.beginPath();ctx.moveTo(x,43);ctx.lineTo(x+Math.sin(time*Math.PI/6)*(level.current||0),43);ctx.lineTo(x+Math.sin(time*Math.PI/6)*(level.current||0)-Math.sign(Math.sin(time*Math.PI/6))*6,39);if(level.current)ctx.stroke();}
-  hazards.forEach(h=>{
-    ctx.save();ctx.translate(h.x,h.y);
-    if(h.kind==='root'){ctx.strokeStyle='#756452';ctx.lineWidth=8;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(0,H-h.y);ctx.quadraticCurveTo(-15,20,0,-20);ctx.moveTo(0,8);ctx.lineTo(18,28);ctx.stroke();ctx.fillStyle='#eee6c1';ctx.font='10px Mali';ctx.fillText('ROOT',0,45);}
-    else if(h.kind==='jelly'){ctx.fillStyle='#ddaaaab0';ctx.beginPath();ctx.ellipse(0,-12,24,18,0,Math.PI,6.28);ctx.lineTo(24,0);ctx.lineTo(-24,0);ctx.fill();ctx.strokeStyle='#ac7f96';ctx.lineWidth=2;for(let i=-2;i<3;i++){ctx.beginPath();ctx.moveTo(i*8,0);ctx.quadraticCurveTo(i*8+Math.sin(time*2+i)*8,12,i*7,24);ctx.stroke();}ctx.fillStyle='#6a4964';ctx.font='10px Mali';ctx.fillText('JELLY',0,-36);}
-    else{ctx.rotate(.25);ctx.strokeStyle='#667571';ctx.lineWidth=1.5;ctx.strokeRect(-22,-18,44,36);for(let i=-2;i<3;i++){ctx.beginPath();ctx.moveTo(i*8,-18);ctx.lineTo(i*8,18);ctx.moveTo(-22,i*7);ctx.lineTo(22,i*7);ctx.stroke();}ctx.fillStyle='#274c45';ctx.font='10px Mali';ctx.fillText('NET',0,33);}
-    ctx.restore();
-  });
-  pickups.filter(p=>p.ready<=time).forEach(p=>{ctx.save();ctx.translate(p.x,p.y+Math.sin(time*2+p.x)*4);ctx.strokeStyle=p.kind==='bubble'?'#edf8ee':'#396e4d';ctx.lineWidth=2;ctx.fillStyle=p.kind==='bubble'?'#c9efed80':'#9eb56c';if(p.kind==='bubble')for(let i=0;i<3;i++){ctx.beginPath();ctx.arc((i-1)*11,-(i%2)*12,7,0,6.28);ctx.fill();ctx.stroke();}else{ctx.beginPath();ctx.moveTo(0,17);ctx.bezierCurveTo(-35,-15,20,-30,0,-17);ctx.bezierCurveTo(38,-12,-18,5,0,17);ctx.fill();ctx.stroke();}ctx.fillStyle='#224d43';ctx.font='11px Mali';ctx.fillText(p.kind==='bubble'?'AIR +32':'SLOW · 8s',0,36);ctx.restore();});
-  fish.forEach(fishArt);
-  rings.forEach(r=>{ctx.globalAlpha=r.life/1.6;path(r.polygon);ctx.closePath();ctx.fillStyle='#faf1c130';ctx.fill();ctx.strokeStyle='#f5eac1';ctx.lineWidth=3;ctx.stroke();ctx.globalAlpha=1;});
-  if(stroke.length){path(stroke);ctx.strokeStyle='#f5e0b7';ctx.lineWidth=4;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();ctx.fillStyle='#f5e0b7';ctx.beginPath();ctx.arc(stroke[0].x,stroke[0].y,6,0,6.28);ctx.fill();}
-  ctx.textAlign='left';ctx.font='12px Mali, serif';ctx.fillStyle='#204e48';ctx.fillText('AQUARIUM / '+String(index+1).padStart(2,'0'),24,30);
+function completion() {
+  if (!practice) {saved.done = [...new Set([...saved.done, game.index])]; store();}
+  show('Level complete', '', game.index === 0 ? [['Next level', () => load(1), true], ['Play again', () => load(0)]] : [['Play again', () => load(1), true], ['Levels', map]]);
 }
-function updateHud(){const count=fish.filter(f=>f.safe).length;$('progress').textContent=`${count} / ${level.goal} fish in refuge`;$('oxygen').value=oxygen;$('oxygen').setAttribute('aria-label',`Oxygen ${Math.round(oxygen)} game units`);$('tide').textContent=time<slowUntil?`Slowed · ${Math.ceil(slowUntil-time)}s`:level.tidal?(slack()?'Tide: Slack · transfer open':'Tide: Running · wait'):level.current?'Tidal current':'Still water';}
-function frame(now){const dt=Math.min(.04,(now-(last||now))/1000);last=now;if(mode==='play')update(dt);if(mode==='play'||!reduced)draw();if(now-lastHud>150){updateHud();lastHud=now;}requestAnimationFrame(frame);}
-load(index);draw();requestAnimationFrame(frame);
+function failure() {
+  cancel(); show('Time ended', '', [['Retry', () => load(game.index), true], ['Practice', () => {practice = true; practiceLabel(); load(game.index); start();}], ['Levels', map]]);
+}
+function practiceLabel() {$('practice').textContent = `Practice: ${practice ? 'on' : 'off'}`; $('practice').setAttribute('aria-pressed', String(practice));}
+$('pause').onclick = pause; $('visits').onclick = map;
+$('practice').onclick = () => {practice = !practice; practiceLabel(); load(game.index);};
+document.addEventListener('visibilitychange', () => {if (document.hidden) pause();});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {e.preventDefault(); if (game.mode === 'paused') $('card').querySelector('.primary').click(); else pause();}
+  if (e.key.toLowerCase() === 'r' && e.target === canvas) load(game.index);
+});
+const point = e => {const b = canvas.getBoundingClientRect(); return {x: Math.max(5, Math.min(W - 5, (e.clientX - b.left) * W / b.width)), y: Math.max(5, Math.min(H - 5, (e.clientY - b.top) * H / b.height))};};
+canvas.addEventListener('pointerdown', e => {
+  if (game.mode !== 'play' || pointer !== null || e.button !== 0) return;
+  e.preventDefault(); pointer = e.pointerId; canvas.setPointerCapture(pointer);
+  gesture = new StringGesture(point(e)); game.started = true;
+});
+function sample(e, force = false) {
+  if (!gesture) return;
+  const result = gesture.sample(point(e), game.fish, force);
+  if (result.snapped) {cancel(); message('The cord snapped. Draw a smaller figure.');}
+}
+canvas.addEventListener('pointermove', e => {
+  if (e.pointerId !== pointer) return;
+  const samples = e.getCoalescedEvents?.();
+  for (const event of samples?.length ? samples : [e]) sample(event);
+});
+canvas.addEventListener('pointerup', e => {
+  if (e.pointerId !== pointer || !gesture) return;
+  sample(e, true); if (!gesture) return;
+  const result = judgeStroke(gesture.points, game.fish, gesture.hasBeads); cancel();
+  if (result.error) {message(result.error); return;}
+  game.accept(result); result.pockets.forEach(p => ripples.push({polygon: p.polygon, life: 1.2}));
+  message(''); updateHud();
+});
+canvas.addEventListener('pointercancel', cancel); canvas.addEventListener('lostpointercapture', cancel);
+function path(points) {ctx.beginPath(); points.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));}
+function fishArt(f) {
+  const s = SPECIES[f.kind], n = s.size, beat = Math.sin(game.time * (f.kind === 'ricefish' ? 15 : 8) + f.phase);
+  ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.heading);
+  ctx.globalAlpha = f.state === 'departing' ? Math.max(0, 1 - f.departure / 1.5) : 1;
+  ctx.fillStyle = '#3a6a5d18'; ctx.beginPath(); ctx.ellipse(3, 6, n * 1.2, n * .42, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = s.trim; ctx.beginPath(); ctx.moveTo(-n * .5, 0);
+  if (f.kind === 'guppy') {ctx.bezierCurveTo(-n, -n * .35, -n * 1.9, -n * .65 + beat * 2, -n * 1.5, beat * 3); ctx.bezierCurveTo(-n * 1.9, n * .65 + beat * 2, -n, n * .35, -n * .5, 0);}
+  else {ctx.lineTo(-n * 1.25, -n * .3 + beat * 2); ctx.lineTo(-n * 1.25, n * .3 + beat * 2);}
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = s.color; ctx.strokeStyle = '#496d5d90'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.ellipse(0, 0, n * .85, n * (f.kind === 'guppy' ? .32 : .22), 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = s.trim + '70'; ctx.beginPath(); ctx.ellipse(-n * .1, -n * .3, n * .28, n * .16, -.3, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#fbf3daaa'; ctx.beginPath(); ctx.moveTo(-n * .5, -1); ctx.quadraticCurveTo(0, -n * .14, n * .55, -1); ctx.stroke();
+  ctx.fillStyle = '#34564a'; for (const y of [-1, 1]) {ctx.beginPath(); ctx.arc(n * .56, y * n * .12, 1.3, 0, Math.PI * 2); ctx.fill();}
+  if (f.isBead) {ctx.strokeStyle = '#a15e69'; ctx.beginPath(); ctx.arc(0, 0, n, 0, Math.PI * 2); ctx.stroke();}
+  ctx.restore();
+}
+function draw() {
+  ctx.fillStyle = game.level.wash; ctx.fillRect(0, 0, W, H);
+  const wash = ctx.createRadialGradient(W * .38, H * .3, 30, W * .6, H * .45, W * .7);
+  wash.addColorStop(0, '#f7ecd74a'); wash.addColorStop(1, '#456b5c21'); ctx.fillStyle = wash; ctx.fillRect(0, 0, W, H);
+  // Indistinct paving and vegetation seen through water, without a horizon or tank rim.
+  ctx.save(); ctx.globalAlpha = .16; ctx.strokeStyle = '#738477'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(-40, H * .78); ctx.lineTo(W * .2, H * .68); ctx.lineTo(W * .19, H + 30); ctx.moveTo(W * .2, H * .68); ctx.lineTo(W + 50, H * .81); ctx.stroke();
+  ctx.fillStyle = '#8eac81';
+  for (let i = 0; i < 28; i++) {
+    const x = i % 2 ? W - 12 - (i * 31 % 115) : 8 + (i * 43 % 100), y = 135 + i * 67 % (H - 120);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(i * .9 + Math.sin(game.time * .3 + i) * .06);
+    ctx.beginPath(); ctx.ellipse(0, 0, 12 + i % 4 * 3, 45 + i % 5 * 8, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  }
+  ctx.restore();
+  ctx.fillStyle = '#f7eed638'; for (let i = 0; i < 140; i++) {const x = (i * 137.3 + game.time * 1.5) % W, y = (i * 83.7) % H; ctx.fillRect(x, y, i % 3 ? 1 : 2, 1);}
+  ctx.strokeStyle = '#f2f0d42b'; ctx.lineWidth = 2;
+  for (let i = 0; i < 4; i++) {const x = W * (.2 + i * .2), y = H * (.29 + i % 2 * .24); ctx.beginPath(); ctx.ellipse(x, y, 95 + Math.sin(game.time * .5 + i) * 12, 20, -.35, 0, Math.PI * 2); ctx.stroke();}
+  for (const r of ripples) {ctx.globalAlpha = r.life / 1.2; path(r.polygon); ctx.closePath(); ctx.fillStyle = '#f8efd320'; ctx.fill(); ctx.strokeStyle = '#f5ebc5'; ctx.lineWidth = 2; ctx.stroke();} ctx.globalAlpha = 1;
+  game.fish.forEach(fishArt);
+  if (gesture) {path(gesture.points); ctx.strokeStyle = getLengthBand(gesture.totalLength).cordHue; ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();}
+  // Visible bubble area is proportional to remaining time.
+  const radius = 24 * Math.sqrt(game.practice ? 1 : game.remaining), bx = W - 46, by = 43;
+  if (radius > 0) {
+    ctx.save(); ctx.translate(bx, by); ctx.beginPath();
+    for (let i = 0; i <= 64; i++) {const a = i / 64 * Math.PI * 2, r = radius * (1 + (reduced ? 0 : .025 * Math.sin(a * 3 + game.time * .7))); const x = Math.cos(a) * r, y = Math.sin(a) * r; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);}
+    ctx.closePath(); ctx.fillStyle = '#edf6e544'; ctx.fill(); ctx.strokeStyle = game.remaining < .2 && !practice ? '#9a6574' : '#f5f2d6'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(-radius * .27, -radius * .3, radius * .24, Math.PI, Math.PI * 1.6); ctx.strokeStyle = '#fff8e7'; ctx.stroke(); ctx.restore();
+  }
+}
+function updateHud() {
+  for (const [k, target] of Object.entries(game.level.goals)) {
+    const el = $(`goal-${k}`); if (!el) continue;
+    el.querySelector('span').textContent = `${SPECIES[k].name} ${game.progress[k]} / ${target}`;
+    el.setAttribute('aria-label', `${SPECIES[k].name}: ${game.progress[k]} of ${target} matching pairs`);
+    el.classList.toggle('done', game.progress[k] >= target);
+  }
+  $('clock').setAttribute('aria-label', practice ? 'Bubble timer: untimed practice' : `Bubble timer: ${Math.ceil(game.remaining * 100)} percent remaining`);
+  $('pause').disabled = !['play', 'settling'].includes(game.mode);
+}
+function frame(now) {
+  const dt = Math.min(.04, (now - (last || now)) / 1000); last = now;
+  game.update(dt, gesture);
+  if (['play', 'settling'].includes(game.mode)) {ripples.forEach(r => r.life -= dt); ripples = ripples.filter(r => r.life > 0);}
+  if (game.mode !== lastMode) {if (game.mode === 'complete') completion(); if (game.mode === 'failed') failure(); lastMode = game.mode;}
+  draw(); if (now - hudTime > 150) {updateHud(); hudTime = now;} requestAnimationFrame(frame);
+}
+load(saved.visit); requestAnimationFrame(frame);

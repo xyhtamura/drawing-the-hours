@@ -1,52 +1,43 @@
 # Aquarium
 
-An eight-tank bonus chapter for Drawing the Hours, at [aquarium/index.html](index.html).
-The visitor turns through a fictional aquarium displaying Philippine fish and
-aquaculture situations. It uses the meadow's pocket geometry, with separate
-movement, objectives, graphics, and saved progress.
+A two-level prototype of an eight-level drawing chapter. Fish are seen from
+above, against faint vegetation and paving under water. Enclosing exactly two
+fish of the same kind releases them; they swim away, and replacements enter.
 
-Draw around fish and cross the cord before lifting. Accepted pockets send fish
-into a resting ring; the transfer takes time, and progress counts arrivals.
-The cord blocks fish while held and snaps at 1,500 logical pixels. There is no
-threading rule in this chapter. Fry must remain free. Each tank card introduces
-its group size, sorting requirement, or hazard before play.
+Hold and drag to draw. Cross the cord to close a loop, then lift. Each occupied
+pocket needs a matching pair. A figure eight can release two pairs in separate
+pockets. Passing the pointer through a fish threads it onto the cord and cancels
+the enclosure. The held cord blocks fish, and snaps beyond 1,300 logical pixels.
+Geometry, cord walls, threading, bead movement, and length colours come from the
+meadow modules. Pair evaluation is specific to this chapter.
 
-| Tank | Added decision |
-| --- | --- |
-| Hatchery | Guide bangus into refuge. |
-| Mangrove | Leave fry free and avoid roots. |
-| Sardines | Gather at least three schooling tamban per pocket. |
-| Pen | Restore oxygen with bubble loops and avoid loose netting. |
-| Seagrass | Slow danggit with a seaweed pickup and avoid jellyfish. |
-| Channel | Finish paired bangus loops during slack tide. |
-| Sorting | Put bangus and tilapia into separate figure-eight pockets. |
-| Last window | Combine groups, species purity, fry protection, oxygen, and hazards. |
+## Levels
 
-Every tank is open from the map. Practice restarts the selected tank, removes
-oxygen depletion, and records no completion. Escape pauses, R retries while
-the canvas has focus, and changing tabs pauses the field. The save uses
-`drawing-hours-aquarium-v1`, independently of the meadow. Storage failures do
-not prevent play.
+1. Guppies: three matching pairs, with slow wandering movement.
+2. Ricefish: two guppy pairs and two ricefish pairs. Ricefish pause, then dart.
 
-Exhibit notes link to SEAFDEC's [milkfish culture overview](https://www.seafdec.org.ph/milkfish/)
-and [mangrove aquaculture code](https://www.seafdec.org.ph/wp-content/content/pages/FreeDownloads/code%20of%20practice/Code_of_Practice_Mangrove.pdf),
-and BFAR's [sardine closed-season explanation](https://www.bfar.da.gov.ph/sardines-closed-fishing-season-now-on-its-12th-year-implementation-2/).
-The oxygen units, refuge transfers, fish motion, seaweed effect, and 12-second
-tide are authored game rules. They are not numerical ecological models or
-aquaculture instructions. Tilapia and coastal fish share a field only in the
-sorting exhibit, which explicitly marks that arrangement as a puzzle.
+The bubble's area decreases with remaining time. Timing begins with the first
+drawing gesture. Pause freezes movement and time. Practice removes the time limit
+and writes no completion. The prototype saves separately under
+`drawing-hours-aquarium-v2`; the archived chapter's save is left intact.
+
+Story text is reserved for Xyh. Levels 3–8 are unbuilt. The intended later
+variation comes from schooling, fish movement, and recipes, with grouping and
+sorting introduced after these first two levels have been played.
 
 ## Checks
 
-From the project folder, run `node test/test_aquarium.js` for the pocket rules.
-Open [test/aquarium-browser.html](../test/aquarium-browser.html) through the
-shared HTTP server for a pointer-handler transfer, completion, map, pause,
-and practice check. This browser check exercises the aquarium save and can
-change the remembered tank and completion stamps. It does not touch meadow progress.
+From the project folder, run `node test/test_aquarium.js` for the recipes,
+timer, departures, replenishment, completion, and darting fish against a wall.
+Open [the browser check](../test/aquarium-browser.html) through the shared server
+for real pointer handlers and the mounted game. Its `?test` iframe ignores saves
+and disables storage writes. It injects known fish positions for deterministic
+gesture checks; it does not measure human difficulty.
 
-The fish, glass, sand, vegetation, visitor reflection, jellyfish, and pickups
-are original Canvas drawings. The chapter reuses the project's licensed Mali
-fonts and original favicon. It does not load the meadow's texture images.
+The earlier eight-tank chapter is preserved in [aquariumarchive](../aquariumarchive/).
+Its files are unchanged. Its relocated checks are
+`node test/test_aquariumarchive.js` and
+[the archived browser check](../test/aquariumarchive-browser.html).
 
-Next: play all eight tanks on a touch device and tune group counts, motion,
-oxygen depletion, and the slack-tide window from those play sessions.
+Next: play both levels on a touch device and assess pair availability, ricefish
+timing, and the bubble duration before building the schooling level.

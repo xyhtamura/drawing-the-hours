@@ -1,24 +1,21 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Aquarium · Drawing the Hours</title>
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="../assets/fonts/fonts.css">
-  <link rel="stylesheet" href="aquarium.css">
+  <link rel="stylesheet" href="../assets/fonts/fonts.css"><link rel="stylesheet" href="aquarium.css">
 </head>
 <body>
   <main>
-    <header><a href="../index.html">Drawing the Hours</a><span>A bonus chapter</span><button id="menu">Tank map</button><button id="pause">Pause</button></header>
-    <div class="heading"><div><p id="number" class="eyebrow">Aquarium / eight tanks</p><h1 id="title">A turn through the aquarium</h1></div><p id="objective">Draw a loop. Give the fish somewhere to go.</p></div>
-    <section class="tank" aria-label="Aquarium drawing field">
-      <canvas id="field" width="960" height="600" tabindex="0" aria-label="Draw closed loops around fish to guide them into refuge. Tank instructions appear before play."></canvas>
-      <div id="overlay" class="overlay"><article id="card" tabindex="-1"></article></div>
+    <header><a href="../index.html">Drawing the Hours</a><span>Aquarium</span><button id="visits">Levels</button><button id="pause">Pause</button></header>
+    <section class="water" aria-label="Aquarium drawing field">
+      <canvas id="field" tabindex="0" aria-label="Draw around two fish of the same kind. Cross the cord to close a loop, then lift."></canvas>
+      <div class="hud"><div><p id="number"></p><h1 id="title"></h1></div><div id="goals" aria-label="Matching pair objectives"></div><span id="clock" role="timer" aria-label="Bubble timer: full"></span></div>
+      <div id="overlay"><article id="card" tabindex="-1"></article></div>
+      <p id="status" role="status" aria-live="polite"></p>
     </section>
-    <div class="instruments"><span id="progress">0 fish guided</span><label id="oxygen-label">Oxygen <meter id="oxygen" min="0" max="100" low="25" optimum="100" value="100"></meter></label><span id="tide">Still water</span><button id="practice" aria-pressed="false">Practice: off</button></div>
-    <p id="status" role="status" aria-live="polite">Eight short visits, separate from the meadow save.</p>
-    <footer><span>Drag to draw · Cross the cord to close · Escape to pause · R to retry</span><button id="notes">Exhibit notes</button></footer>
+    <footer><span>Draw around fish · Cross to close · Lift to release</span><button id="practice" aria-pressed="false">Practice: off</button></footer>
   </main>
   <script type="module" src="aquarium.js"></script>
 </body>

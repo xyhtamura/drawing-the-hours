@@ -61,6 +61,12 @@ favicon.svg is an original SVG drawing of a moth inside a gesture loop, using th
 ## Aquarium chapter
 
 2026-10-08 — Codex — The fish, aquatic pickups, hazards, glass, sand,
-vegetation, and visitor reflection in `aquarium/aquarium.js` are original
+vegetation, and visitor reflection in `aquariumarchive/aquarium.js` are original
 Canvas drawings. The chapter reuses the Mali font files and original favicon
 listed above. No third-party artwork, texture, or audio was added.
+
+2026-10-09 — Codex — The top-view guppies and ricefish, pair diagrams,
+bubble timer, faint submerged paving, leaves, and water in
+`aquarium/aquarium.js` are original Canvas and inline SVG drawings. The prototype
+reuses the Mali fonts and favicon. No external asset was added. The earlier
+chapter's artwork is preserved in `aquariumarchive/`.

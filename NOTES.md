@@ -10,7 +10,7 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Play the twenty-four visits through and retune counts and durations by hand, starting with the twelve new visits (II, III, VI, VIII, X, XI, XIV, XV, XVII, XX, XXII, XXIII); the touch playtest of the fixed-size field and pause menu is still owed.
+Play the two aquarium prototype levels on a touch device and assess pair availability, ricefish timing, and the bubble duration before building the schooling level; the twenty-four-visit meadow pacing pass remains pending.
 
 ## Activity
 
@@ -2013,3 +2013,49 @@ Not done: the menu card still tints the hour's backdrop texture for its paper,
 so each hour's source texture (34–82 KB) is still fetched once that card is
 dressed; the baked files did not remove that. Portrait copies were compared by
 pixels but not seen in a portrait viewport. Pure light colours not looked at.
+
+2026-10-09 — Codex — Archived the first aquarium chapter in
+[aquariumarchive](aquariumarchive/ARCHIVE.md) and built the first two levels of
+its replacement at [aquarium](aquarium/README.md), at Xyh's request. All six
+archived files matched their original SHA-256 hashes after the move. The old
+tests were relocated and retargeted to the archive; its original save remains
+intact. No worktree was created.
+
+The replacement uses top-view guppies and ricefish against faint underwater
+plants and paving. A matching pair swims away along its heading, fades, and is
+replaced. There is no refuge destination. Guppies wander slowly; ricefish pause
+and dart. Level 1 asks for three guppy pairs. Level 2 asks for two pairs of each
+kind. One loop or two separate pockets can score, with exactly two matching
+fish in each pocket. The meadow's geometry, StringGesture, swept wall
+collision, bead movement, length colours, and 1,300 px limit are reused without
+editing those modules. Pointer contact threads fish and cancels an enclosure.
+
+The bubble's visible area decreases with remaining time, beginning on the first
+gesture. Pause freezes fish and time; practice removes timing and writes no
+completion. Save key: `drawing-hours-aquarium-v2`. Browser checks use `?test`,
+which ignores saves and disables storage writes. Completion waits for the final
+pair's departure. Only the two built levels are selectable; the field numbers
+retain the planned total of eight. Story text is left for Xyh.
+
+Decided against the proposed single-fish introduction: matching pairs retain
+the main game's recipe structure and let these levels test movement against
+the same gesture. Refuge transfer, oxygen pickups, tidal acceptance gates,
+fry protection, and exhibit commentary remain in the archive. Schooling and
+additional recipes are deferred until the prototype has been played.
+
+Verified with `node test/test_aquarium.js`: pair purity, separate pockets,
+closure, threading, length, first-gesture clock start, pause, practice,
+departure, replenishment, completion, and darting fish against a held wall.
+All ten `test/test_*.js` suites passed, including the archived aquarium suite.
+Opened `test/aquarium-browser.html` in the in-app browser and read PASS for the
+mounted pointer-handler, timer, pause, practice, replenishment, objective, and
+completion checks. Inspected the desktop field through its 1,100 px iframe
+and the portrait field in the 504 px browser pane. The game tab reported no
+console errors. The browser checks use injected fish positions and synthetic
+pointer events, so they do not establish human pacing.
+
+Undone: human playthrough, touch and pen input, orientation changes, difficulty
+tuning, aquarium audio, levels 3–8, and Xyh's text. Next: play both levels on a
+touch device and assess pair availability, ricefish timing, and bubble duration
+before building the schooling level. Both Drawing the Hours entries in
+ROADMAP.md were brought into agreement; the meadow pacing pass remains pending.
