@@ -76,3 +76,7 @@ spotted barbs, and halfbeaks. Fish bodies, spots, lateral stripes, beaks, stones
 stems, school diagrams, and shade patches in `aquarium/aquarium.js` are original
 Canvas and inline SVG graphics. Scientific references informed the cast;
 no photograph, illustration, or other external asset was copied into the game.
+
+2026-10-10 — Codex — Water beetles, round leaf clumps, and rising bubbles in
+`aquarium/aquarium.js` are original Canvas drawings. Existing fish, shade,
+fonts, and paving were reused. No external artwork or sample was added.

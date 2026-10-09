@@ -1,5 +1,5 @@
 import {LEVELS, SPECIES, recipeSize} from './levels.js';
-import {judgeStroke, strokeCutsStems} from './rules.js';
+import {judgeStroke, strokeDisruption} from './rules.js';
 import {Aquarium, shadePatches} from './simulation.js';
 import {StringGesture} from '../src/string.js';
 import {getLengthBand} from '../src/geometry.js';
@@ -102,7 +102,7 @@ function sample(e, force = false) {
   if (!gesture) return;
   const result = gesture.sample(point(e), game.fish, force);
   if (result.snapped) {cancel(); message('The cord snapped. Draw a smaller figure.');}
-  else if (strokeCutsStems(gesture.points, game.stems)) {cancel(); message('A stem cut the cord. Draw through clear water.');}
+  else {const disruption=strokeDisruption(gesture.points,game.leafDisks,game.beetles);if(disruption){cancel();message(disruption);}}
 }
 canvas.addEventListener('pointermove', e => {
   if (e.pointerId !== pointer) return;
@@ -112,7 +112,7 @@ canvas.addEventListener('pointermove', e => {
 canvas.addEventListener('pointerup', e => {
   if (e.pointerId !== pointer || !gesture) return;
   sample(e, true); if (!gesture) return;
-  const result = judgeStroke(gesture.points, game.fish, gesture.hasBeads, game.level, game.stems); cancel();
+  const result = judgeStroke(gesture.points, game.fish, gesture.hasBeads, game.level, game.leafDisks, game.beetles); cancel();
   if (result.error) {message(result.error); return;}
   game.accept(result); result.pockets.forEach(p => ripples.push({polygon: p.polygon, life: 1.2}));
   message(''); updateHud();
@@ -174,19 +174,36 @@ function draw() {
       ctx.fillStyle = shade; ctx.beginPath(); ctx.arc(0, 0, 1, 0, Math.PI * 2); ctx.fill(); ctx.restore();
     }
   }
-  for (const stem of game.stems) {
-    path(stem.points); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#76946c'; ctx.lineWidth = stem.radius * 2; ctx.stroke();
-    ctx.strokeStyle = '#cbd6a7'; ctx.lineWidth = 2; ctx.stroke();
-    for (const p of stem.points.slice(1)) {
-      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(-.65); ctx.fillStyle = '#87a478';
-      ctx.beginPath(); ctx.ellipse(-8, -8, 7, 17, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-    }
+  for (const leaf of game.leafDisks) {
+    ctx.save();ctx.translate(leaf.x,leaf.y);ctx.rotate(leaf.angle);
+    ctx.fillStyle='#425b4520';ctx.beginPath();ctx.arc(3,4,leaf.radius,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#769267';ctx.strokeStyle='#526f50';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(0,0,leaf.radius,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.strokeStyle='#afbf83';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-17,0);ctx.lineTo(17,0);
+    for(const x of [-9,0,9]){ctx.moveTo(x,0);ctx.lineTo(x-5,-11);ctx.moveTo(x,0);ctx.lineTo(x-5,11);}ctx.stroke();ctx.restore();
+  }
+  for(const bubble of game.bubbles) {
+    ctx.save();ctx.globalAlpha=Math.min(1,bubble.age*2)*Math.min(1,(3.2-bubble.age)*2);
+    ctx.strokeStyle='#edf1dfb0';ctx.lineWidth=1.5;ctx.fillStyle='#e7efdc20';
+    ctx.beginPath();ctx.arc(bubble.x,bubble.y,bubble.radius,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.arc(bubble.x-bubble.radius*.2,bubble.y-bubble.radius*.2,bubble.radius*.45,Math.PI,Math.PI*1.5);ctx.stroke();ctx.restore();
   }
   ctx.fillStyle = '#f7eed638'; for (let i = 0; i < 140; i++) {const x = (i * 137.3 + game.time * 1.5) % W, y = (i * 83.7) % H; ctx.fillRect(x, y, i % 3 ? 1 : 2, 1);}
   ctx.strokeStyle = '#f2f0d42b'; ctx.lineWidth = 2;
   for (let i = 0; i < 4; i++) {const x = W * (.2 + i * .2), y = H * (.29 + i % 2 * .24); ctx.beginPath(); ctx.ellipse(x, y, 95 + Math.sin(game.time * .5 + i) * 12, 20, -.35, 0, Math.PI * 2); ctx.stroke();}
   for (const r of ripples) {ctx.globalAlpha = r.life / 1.2; path(r.polygon); ctx.closePath(); ctx.fillStyle = '#f8efd320'; ctx.fill(); ctx.strokeStyle = '#f5ebc5'; ctx.lineWidth = 2; ctx.stroke();} ctx.globalAlpha = 1;
   game.fish.forEach(fishArt);
+  for(const beetle of game.beetles) {
+    ctx.save();ctx.translate(beetle.x,beetle.y);ctx.rotate(beetle.heading);
+    const paddle=reduced?0:Math.sin(beetle.clock*12)*3;
+    ctx.strokeStyle='#48605b';ctx.lineWidth=2;
+    for(const side of [-1,1])for(const x of [-8,0,7]){ctx.beginPath();ctx.moveTo(x,side*7);ctx.lineTo(x-5+paddle,side*15);ctx.lineTo(x-9+paddle,side*17);ctx.stroke();}
+    ctx.fillStyle='#394f49';ctx.strokeStyle='#b9c7a0';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.ellipse(0,0,14,9,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.ellipse(12,0,5,6,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.strokeStyle='#8caa87';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-12,0);ctx.lineTo(8,0);ctx.stroke();
+    ctx.fillStyle='#e3d9a6';for(const y of [-3,3]){ctx.beginPath();ctx.arc(15,y,1,0,Math.PI*2);ctx.fill();}ctx.restore();
+  }
   if (gesture) {path(gesture.points); ctx.strokeStyle = getLengthBand(gesture.totalLength).cordHue; ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();}
   // Visible bubble area is proportional to remaining time.
   const radius = 24 * Math.sqrt(game.practice ? 1 : game.remaining), bx = W - 46, by = 43;
@@ -210,7 +227,8 @@ function updateHud() {
 }
 function frame(now) {
   const dt = Math.min(.04, (now - (last || now)) / 1000); last = now;
-  game.update(dt, gesture);
+  const disruption=game.update(dt, gesture);
+  if(disruption && gesture && game.mode==='play'){cancel();message(disruption);}
   if (['play', 'settling'].includes(game.mode)) {ripples.forEach(r => r.life -= dt); ripples = ripples.filter(r => r.life > 0);}
   if (game.mode !== lastMode) {if (game.mode === 'complete') completion(); if (game.mode === 'failed') failure(); lastMode = game.mode;}
   draw(); if (now - hudTime > 150) {updateHud(); hudTime = now;} requestAnimationFrame(frame);

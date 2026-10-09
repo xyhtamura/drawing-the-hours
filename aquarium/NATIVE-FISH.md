@@ -7,9 +7,9 @@ are designed for play. Story text remains for Xyh.
 
 | Game name | Taxon | Reference | Game treatment |
 | --- | --- | --- | --- |
-| Ricefish | *Oryzias luzonensis* | Luzon freshwater species; [Catalog of Fishes](https://researcharchive.calacademy.org/research/ichthyology/catalog/fishcatget.asp?spid=53309) | Small, pale bodies and gentle drifting movement. |
+| Ricefish | *Oryzias luzonensis* | Luzon freshwater species; [Catalog of Fishes](https://researcharchive.calacademy.org/research/ichthyology/catalog/fishcatget.asp?spid=53309) | Small, pale bodies, gentle drifting, and a larger gathering in level 3. |
 | Blue goby | *Stiphodon atropurpureus* | Recorded in the Philippines and elsewhere; [Maeda and Palla, 2015](https://mapress.com/zt/article/download/zootaxa.4018.3.3/37431/38815), pp. 392–393 | Dark body, blue stripe, rests on stones followed by darts between them. |
-| Spotted barb | *Barbodes montanoi* | Mindanao distribution, golden sides, dark spots, and warm fin colours; [Tan and Husana, 2021](https://lkcnhm.nus.edu.sg/wp-content/uploads/sites/10/2021/09/RBZ-2021-0054.pdf), pp. 317–318 | Simplified spots and three-fish schools that gather and spread. |
+| Spotted barb | *Barbodes montanoi* | Mindanao distribution, golden sides, dark spots, and warm fin colours; [Tan and Husana, 2021](https://lkcnhm.nus.edu.sg/wp-content/uploads/sites/10/2021/09/RBZ-2021-0054.pdf), pp. 317–318 | Simplified spots and gathering shoals; the enclosure recipe uses three fish. |
 | Halfbeak | *Dermogenys palawanensis* | Palawan freshwater species; [Catalog of Fishes](https://researcharchive.calacademy.org/research/ichthyology/catalog/fishcatget.asp?spid=66420) | Slender body, projecting lower jaw, steady glides interrupted by turns. |
 
 The blue goby is native rather than Philippine-endemic. Leyte is the locality

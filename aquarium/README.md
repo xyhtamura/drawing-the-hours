@@ -10,25 +10,30 @@ A figure eight can release two groups in separate
 pockets. Passing the pointer through a fish threads it onto the cord and cancels
 the enclosure. The held cord blocks fish, and snaps beyond 1,300 logical pixels.
 Geometry, cord walls, threading, bead movement, and length colours come from the
-meadow modules. Recipe evaluation is specific to this chapter. Stems cut a cord
-on contact and block roaming fish; fish spawn clear of them.
+meadow modules. Recipe evaluation is specific to this chapter. Leaf clumps cut a cord
+on contact and block roaming fish; fish spawn clear of them. Beetles cut any
+cord they touch, including a held cord. Merely enclosing an obstacle is allowed.
+Rising bubbles mildly displace nearby fish; they expire without changing the
+countdown. These are disturbances, separate from the archived timer pickups.
 
 ## Levels
 
 1. Shallow water: three ricefish pairs, with gentle drifting movement.
 2. Stream stones: two ricefish pairs and two blue-goby pairs. Gobies pause on
    stones, then dart between them.
-3. Small schools: three groups of three spotted barbs and one ricefish pair.
-   Schools gradually spread and gather; each kind needs its own pocket.
-4. Between stems: four ricefish pairs through passages between three stems.
+3. Small schools: peel exactly three barbs from shoals of six and seven, or two
+   ricefish from a gathering of six. Complete three barb groups and one ricefish
+   pair. Shoals spread and gather; each kind needs its own pocket.
+4. Between leaves: four ricefish pairs around two leaf clumps and one beetle.
 5. Under leaves: three halfbeak pairs and one ricefish pair. Halfbeaks glide,
-   then turn sharply beneath drifting leaf shade.
+   then turn sharply beneath drifting leaf shade. Two beetles cross the field.
 6. Two pockets: three figure eights, each enclosing a ricefish pair and a goby
    pair in separate pockets. A single loop does not count.
 7. School and pair: three figure eights, each enclosing three barbs and two
    halfbeaks in separate pockets.
 8. Open water: two groups of each of the four kinds. Barbs need three fish;
-   the others need pairs. Single loops and figure eights both count. Completing
+   the others need pairs. One beetle crosses the field. Single loops and figure
+   eights both count. Completing
    the objectives opens the chapter completion card.
 
 The cast draws on wild Philippine freshwater fish. [Species references](NATIVE-FISH.md)
@@ -45,8 +50,8 @@ await a touch playtest.
 ## Checks
 
 From the project folder, run `node test/test_aquarium.js` for the recipes,
-timer, departures, replenishment, goby rests and darts, halfbeak turns, school spacing, stem contacts in both field
-orientations, shade, and all eight completions.
+timer, departures, replenishment, goby rests and darts, halfbeak turns, shoal spacing, leaf contacts and spawn clearance, swept beetle
+contacts, bubble displacement and expiry, shade, and all eight completions.
 Open [the browser check](../test/aquarium-browser.html) through the shared server
 for real pointer handlers and the mounted game. Its `?test` iframe ignores saves
 and disables storage writes. It injects known fish positions for deterministic
@@ -57,5 +62,5 @@ Its files are unchanged. Its relocated checks are
 `node test/test_aquariumarchive.js` and
 [the archived browser check](../test/aquariumarchive-browser.html).
 
-Next: play all eight levels on a touch device and tune figure-eight spacing,
-fish contrast, and bubble durations.
+Next: play all eight levels on a touch device and tune shoal separation, beetle pacing,
+and bubble disturbance strength.

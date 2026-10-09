@@ -10,7 +10,7 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Play all eight aquarium levels on a touch device and tune figure-eight spacing, fish contrast, and bubble durations; the twenty-four-visit meadow pacing pass remains pending.
+Play the revised aquarium levels on a touch device and tune shoal separation, beetle pacing, and bubble disturbance strength; the twenty-four-visit meadow pacing pass remains pending.
 
 ## Activity
 
@@ -2132,3 +2132,42 @@ Undone: human timing, touch and pen input, orientation changes during play,
 audio, and story text. Next: play all eight levels on a touch device and tune
 figure-eight spacing, fish contrast, and bubble durations. Both root roadmap
 entries were updated; the meadow pacing pass remains pending.
+
+2026-10-10 — Codex — Revised aquarium levels 3–5 and 8 after Xyh's playtest.
+Level 3 has two barb shoals of six and seven and a ricefish gathering of six;
+the player peels off exactly three barbs or two ricefish. Replacements fill
+vacant slots in the larger shoals. Levels 6–7 keep their existing populations,
+recipes, timings, and movement, including the original school spawn spacing.
+
+Level 4 replaces three stems with two compact leaf clumps and one water beetle.
+Level 5 adds two beetles; level 8 adds one. Beetles paddle, pause, and turn.
+Leaves and beetles cut any cord they touch, including when a beetle crosses a
+stationary held cord. Swept contact checks prevent a beetle skipping across it.
+Enclosing an obstacle without touching it is allowed. Leaf clumps block roaming
+fish; initial and replacement spawns clear the leaf disks.
+
+Rising bubbles in levels 3–5 and 8 mildly displace nearby unthreaded fish and
+expire. They are disturbances, not pickups. The old timer-restoring bubbles
+remain in the archive; timer restoration was deliberately not reintroduced
+with these bubbles. The countdown still starts with the first drawing gesture.
+Xyh's design distinction is retained: moving disruptors are animals; static
+disruptors are terrain, materials, or flora; power-ups are flora, objects, or
+materials. This change adds no power-up or story text. Beetles, leaves, and
+bubbles use original Canvas drawings.
+
+Verified with all ten `test/test_*.js` suites. The aquarium checks cover larger
+shoal membership and replenishment, leaf contact and fish clearance in both
+orientations, beetle movement crossing a held cord, paused disturbances, bubble
+displacement, bubble expiry, unchanged countdown rate, and all eight completion
+states. Populations and beetles remain finite and within bounds after 20
+simulated seconds in both orientations. The mounted browser check covers leaf
+cuts, pointer contact with a beetle, and a beetle moving into an idle cord,
+alongside progression and final replay. Read PASS for all eight levels in `test/aquarium-browser.html`. Inspected the
+leaf clumps, beetle, and larger shoals at 390 px width. Browser fixtures inject
+fish positions; they do not establish human difficulty.
+
+Undone: human timing, touch/pen playtests, orientation changes during play,
+audio, and story text. Next: play the revised levels on a touch device and tune
+shoal separation, beetle pacing, and bubble disturbance strength. Both root
+roadmap entries were brought into agreement; the meadow pacing pass remains
+pending.

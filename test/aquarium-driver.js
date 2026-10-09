@@ -11,6 +11,7 @@ const button=text=>[...document.querySelectorAll('button')].find(b=>b.textConten
 const canvas=document.getElementById('field');
 function fixture(kind='ricefish', count=2, x=260, y=260) {
   game.fish=[];
+  for(const b of game.beetles)Object.assign(b,{x:game.width-80,y:game.height-80,heading:0,targetHeading:0});
   for(let i=0;i<count;i++) {game.spawn(kind);Object.assign(game.fish.at(-1),{x:x+i*22,y:y+i%2*12});}
 }
 function draw(points) {
@@ -46,13 +47,21 @@ try {
   button('Begin').click();fixture('barb');draw(loop);check(game.progress.barb===0,'Two barbs do not count as a school');
   for(let i=0;i<3;i++){fixture('barb',3);draw(loop);}fixture();draw(loop);
   await until(()=>game.mode==='complete');check(game.mode==='complete','Schooling level completes through real gestures');
-  button('Next level').click();check(game.index===3&&game.stems.length===3,'Fourth level introduces stems');button('Begin').click();
-  const mid=game.stems[0].points[1];game.fish=[];draw([{x:mid.x-50,y:mid.y},{x:mid.x+50,y:mid.y}]);
-  check(game.progress.ricefish===0&&document.getElementById('status').textContent.includes('stem'),'A stem cuts the cord during pointer movement');
+  button('Next level').click();check(game.index===3&&game.leafClumps.length===2&&game.beetles.length===1,'Fourth level introduces two leaf clumps and a beetle');button('Begin').click();
+  const mid=game.leafDisks[0];game.fish=[];draw([{x:mid.x-80,y:mid.y},{x:mid.x+80,y:mid.y}]);
+  check(game.progress.ricefish===0&&document.getElementById('status').textContent.includes('Leaves'),'Leaves cut the cord during pointer movement');
+  const b=game.beetles[0];Object.assign(b,{x:280,y:205});draw([{x:205,y:205},{x:360,y:205}]);
+  check(document.getElementById('status').textContent.includes('beetle')&&game.progress.ricefish===0,'Drawing across a beetle cancels the cord');
+  Object.assign(b,{x:280,y:181,heading:Math.PI/2,targetHeading:Math.PI/2,clock:0,turnTime:5});
+  const rect=canvas.getBoundingClientRect(),eventAt=(type,x,y)=>canvas.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:1,button:0,clientX:rect.left+x*rect.width/canvas.width,clientY:rect.top+y*rect.height/canvas.height}));
+  document.getElementById('status').textContent='';
+  eventAt('pointerdown',205,205);eventAt('pointermove',360,205);
+  await until(()=>document.getElementById('status').textContent.includes('beetle'));
+  eventAt('pointerup',360,205);check(game.progress.ricefish===0,'A moving beetle cuts a held cord without another pointer move');
   const clearLoop=[{x:50,y:160},{x:170,y:160},{x:170,y:270},{x:50,y:270},{x:50,y:160}];
   for(let i=0;i<4;i++){fixture('ricefish',2,85,210);draw(clearLoop);}
-  await until(()=>game.mode==='complete');check(game.mode==='complete','Ricefish pairs count in the passages between stems');
-  button('Next level').click();check(game.index===4&&game.level.shade,'Fifth level opens halfbeaks under leaves');button('Begin').click();
+  await until(()=>game.mode==='complete');check(game.mode==='complete','Ricefish pairs count in the passages between leaf clumps');
+  button('Next level').click();check(game.index===4&&game.level.shade&&game.beetles.length===2,'Fifth level opens halfbeaks under leaves');button('Begin').click();
   for(let i=0;i<3;i++){fixture('halfbeak');draw(loop);}fixture('ricefish');draw(loop);
   await until(()=>game.mode==='complete');check(button('Next level')!==undefined,'Fifth level advances to the sixth');
   const figure=[{x:250,y:250},{x:100,y:100},{x:60,y:250},{x:100,y:400},{x:250,y:250},{x:400,y:100},{x:440,y:250},{x:400,y:400},{x:250,y:250}].map(p=>({x:p.x*.75,y:p.y*.75+100}));
