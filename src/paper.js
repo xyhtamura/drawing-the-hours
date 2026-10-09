@@ -15,30 +15,33 @@ import { bumpThemeVersion } from './theme.js';
  * keep = 0 and split = 0 gives a single-hue tint. The other two terms are what
  * stop a recoloured texture from reading as one flat hue.
  *
- * Without a DOM, or before an image has loaded, every function falls back to
- * the flat colour and the outline, so Node suites see the original draw calls.
+ * A texture is fetched the first time something asks for it. Without a DOM, or
+ * until its image has loaded, every function falls back to the flat colour and
+ * the outline, so Node suites see the original draw calls.
  */
 
 // contact: the soft ellipse under a flier, which the cut-paper shadow replaces.
 export const paperStyle = { textures: true, outlines: false, shadows: true, contact: false };
 
+// file: what the game loads from assets/textures/. source: its master in textures/.
+// scripts/compress_textures.py reads this table and writes one from the other.
 // scale: logical units per source pixel when the texture is used as a fill tile.
 export const PAPERS = {
-  mulberry: { file: 'SB012.JPG', scale: 0.3 },
-  crepe: { file: 'SB013.JPG', scale: 0.3 },
-  tissue: { file: 'SB034.JPG', scale: 0.18 },
-  tissueGold: { file: 'SB035.JPG', scale: 0.18 },
-  lace: { file: 'cip60062.jpg', scale: 0.34 },
-  coir: { file: 'cip60095.jpg', scale: 0.34 },
-  fibre: { file: 'cip60097.jpg', scale: 0.34 },
-  leafFleck: { file: 'cit60069.jpg', scale: 0.34 },
-  canvas: { file: 'CANVAS10.JPG', scale: 0.7 },
-  strands: { file: 'STRANDS2.JPG', scale: 1.28 },
-  asphalt: { file: 'asphalt.png', scale: 0.3 },
-  glass: { file: 'glass.png', scale: 0.14 },
-  plastic: { file: 'plastic.png', scale: 0.12 },
-  metal: { file: 'metal.png', scale: 0.12 },
-  rubber: { file: 'rubber.png', scale: 0.3 },
+  mulberry: { file: 'SB012.webp', source: 'SB012.JPG', scale: 0.3 },
+  crepe: { file: 'SB013.webp', source: 'SB013.JPG', scale: 0.3 },
+  tissue: { file: 'SB034.webp', source: 'SB034.JPG', scale: 0.18 },
+  tissueGold: { file: 'SB035.webp', source: 'SB035.JPG', scale: 0.18 },
+  lace: { file: 'cip60062.jpg', source: 'cip60062.jpg', scale: 0.34 },
+  coir: { file: 'cip60095.jpg', source: 'cip60095.jpg', scale: 0.34 },
+  fibre: { file: 'cip60097.jpg', source: 'cip60097.jpg', scale: 0.34 },
+  leafFleck: { file: 'cit60069.jpg', source: 'cit60069.jpg', scale: 0.34 },
+  canvas: { file: 'CANVAS10.JPG', source: 'CANVAS10.JPG', scale: 0.7 },
+  strands: { file: 'STRANDS2.JPG', source: 'STRANDS2.JPG', scale: 1.28 },
+  asphalt: { file: 'asphalt.webp', source: 'asphalt.png', scale: 0.3 },
+  glass: { file: 'glass.webp', source: 'glass.png', scale: 0.14 },
+  plastic: { file: 'plastic.webp', source: 'plastic.png', scale: 0.12 },
+  metal: { file: 'metal.webp', source: 'metal.png', scale: 0.12 },
+  rubber: { file: 'rubber.webp', source: 'rubber.png', scale: 0.3 },
 };
 
 // Role → texture and recolour settings. Tuned in texture-lab.html.
@@ -70,6 +73,9 @@ const SOURCE_MAX = 1280;   // longest side kept of a source image
 const hasDom = typeof document !== 'undefined' && typeof Image !== 'undefined';
 
 const sources = new Map();   // paper name → HTMLImageElement, once loaded
+const loading = new Map();   // paper name → Promise<boolean>, once requested
+const listeners = new Set();
+let announce = 0;
 const tileData = new Map();  // paper name → residuals for the fill tile
 const tiles = new Map();     // `${paper}|${color}|${settings}` → { canvas, pattern }
 let version = 0;
@@ -95,12 +101,49 @@ function shrunk(image) {
   return Object.assign(canvas, { naturalWidth: canvas.width, naturalHeight: canvas.height });
 }
 
-export const papersLoaded = hasDom ? Promise.all(Object.entries(PAPERS).map(([name, spec]) => new Promise((resolve) => {
-  const image = new Image();
-  image.onload = () => { sources.set(name, shrunk(image)); resolve(true); };
-  image.onerror = () => resolve(false);
-  image.src = new URL(`../textures/${spec.file}`, import.meta.url).href;
-}))).then((results) => { paperChanged(); return results.every(Boolean); }) : Promise.resolve(false);
+/** Fetches one texture, once. Resolves false if it cannot be loaded. */
+export function loadPaper(name) {
+  if (!hasDom || !PAPERS[name]) return Promise.resolve(false);
+  let pending = loading.get(name);
+  if (!pending) {
+    pending = new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => { sources.set(name, shrunk(image)); arrived(); resolve(true); };
+      image.onerror = () => resolve(false);
+      image.src = new URL(`../assets/textures/${PAPERS[name].file}`, import.meta.url).href;
+    });
+    loading.set(name, pending);
+  }
+  return pending;
+}
+
+/** Textures that land close together are announced once, so cached art is rebuilt once. */
+function arrived() {
+  clearTimeout(announce);
+  announce = setTimeout(() => {
+    version++;
+    bumpThemeVersion();
+    for (const listener of listeners) listener();
+  }, 80);
+}
+
+/** Calls back after textures arrive. Art that drew a fallback redraws from here. */
+export function onPapersArrived(listener) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+/** Every texture in the table. The game never needs this; the lab does. */
+export function loadAllPapers() {
+  return Promise.all(Object.keys(PAPERS).map(loadPaper)).then((results) => results.every(Boolean));
+}
+
+/** The loaded source for a texture, or null after asking for it. */
+function sourceFor(name) {
+  const image = sources.get(name);
+  if (!image) loadPaper(name);
+  return image ?? null;
+}
 
 // --- OKLab ---------------------------------------------------------------
 
@@ -224,7 +267,7 @@ function parseColor(color) {
 function tileResiduals(name) {
   let data = tileData.get(name);
   if (data) return data;
-  const image = sources.get(name);
+  const image = sourceFor(name);
   if (!image) return null;
   const size = TILE * TILE_BAKE;
   const region = Math.min(size / (PAPERS[name].scale * TILE_BAKE), image.naturalWidth, image.naturalHeight);
@@ -322,7 +365,7 @@ export function paperFill(ctx, role) {
 export function paperBackdrop(canvas, hour, override) {
   if (!hasDom || !paperStyle.textures) return false;
   const settings = override ?? PAPER_USE.backdrop[hour] ?? PAPER_USE.backdrop.none;
-  const image = sources.get(settings.paper);
+  const image = sourceFor(settings.paper);
   if (!image) return false;
   // Work no larger than the source can resolve, then scale the result up.
   const shrink = Math.min(1, BACKDROP_MAX / Math.max(canvas.width, canvas.height));

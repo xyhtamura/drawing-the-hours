@@ -1934,3 +1934,40 @@ Next: play the eight tanks on a touch device and tune counts, motion, oxygen,
 and slack-tide timing. The earlier meadow pacing pass remains pending after
 that playthrough. Both Drawing the Hours entries in ROADMAP.md were updated;
 the duplicate entries predate this change and were retained.
+
+
+2026-10-09 — Claude Code — Textures compressed and loaded on demand, at Xyh's
+request. Xyh stated the images are public domain, so the compressed set is now
+committed; ASSETS.md records that.
+
+Compression: each `PAPERS` entry in `src/paper.js` now names `file` (loaded
+from `assets/textures/`) and `source` (its master in `textures/`).
+`scripts/compress_textures.py` reads that table and writes one from the other:
+a `.webp` target is resized to 1024 px on the long side at quality 70, any
+other target is copied. Masters 9840 KB, compressed 863 KB. The six smallest
+masters are copied, because re-encoding them made them larger. Run the script
+after adding or replacing a master; `--check` exits 1 if anything is stale.
+
+Loading: no texture is fetched at startup. `paperTile` and `paperBackdrop`
+ask for a texture the first time something needs it and draw the flat-colour
+fallback until it lands; arrivals within 80 ms are announced together, which
+bumps the theme version once so cached backdrops rebuild once.
+`onPapersArrived` replaces `papersLoaded` for the title art and menu cards.
+The lab calls `loadAllPapers()`.
+
+Verified in the preview browser, from the page's resource timing: the title
+screen fetched 10 textures, 452 KB; entering Dusk I fetched one more
+(`SB013.webp`, for the leaves), 587 KB in all. Before this the page fetched
+15 files, 9.8 MB. Title screen and Dusk I rendered textured with no console
+errors; the lab loaded all 15. Node suites pass.
+
+Known limit: the title screen shows all four hours and all six fliers, so it
+alone pulls most of the set. Loading per hour saves little until the title
+uses less; what it does save is the three textures nothing draws and
+`SB012.webp` (159 KB) until a snail or flower appears. A creature drawn before
+its texture lands shows flat with outlines for a moment; not observed on
+localhost, likely visible on a slow connection.
+
+Not done: `textures/2026-10-07 00-21-59.png` is still in the masters folder
+and unreferenced. Creature papers are still whole sheets rather than tile
+crops. Not checked on a throttled connection or a tablet.

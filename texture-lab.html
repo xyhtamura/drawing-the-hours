@@ -50,7 +50,7 @@
 
 <script type="module">
 import { setThemeHour, setColorMode, themeColor } from './src/theme.js';
-import { PAPERS, PAPER_USE, paperStyle, paperChanged, papersLoaded, paperTile } from './src/paper.js';
+import { PAPERS, PAPER_USE, paperStyle, paperChanged, loadAllPapers, paperTile } from './src/paper.js';
 import { Insect, DandelionSeed, Snail, Hornet, FlaxFlower, NightJasmine } from './src/entities.js';
 import { createDawnArt } from './src/dawn-art.js';
 import { createNoonArt } from './src/noon-art.js';
@@ -160,7 +160,7 @@ for (const k of ['relief', 'keep', 'split']) $(k).oninput = () => { current()[k]
 
 setThemeHour(hour);
 $('role').value = 'backdrop:dawn';
-await papersLoaded;
+await loadAllPapers();
 refresh();
 window.lab = { draw, refresh, PAPER_USE, paperStyle, get artMs() { return artMs; } };
 requestAnimationFrame(tick);

@@ -1,5 +1,5 @@
 import { CHAPTER_PALETTES } from './palettes.js';
-import { paperBackdrop, papersLoaded, paperTile, PAPER_USE } from './paper.js';
+import { paperBackdrop, onPapersArrived, paperTile, PAPER_USE } from './paper.js';
 import { Insect } from './entities.js';
 
 /**
@@ -146,7 +146,7 @@ export function createTitleArt(canvas, panel) {
   start = performance.now();
   resize();
   window.addEventListener('resize', () => { if (!panel.hidden) resize(); });
-  papersLoaded.then(() => { if (!panel.hidden) bake(); });
+  onPapersArrived(() => { if (!panel.hidden) bake(); });
   const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   if (!still && !running) { running = true; requestAnimationFrame(tick); }
   return { resize, frame };
@@ -197,7 +197,7 @@ export function dressMenus(root = document) {
     }
   };
   new MutationObserver(refresh).observe(html, { attributes: true, attributeFilter: ['data-hour', 'data-color-mode'] });
-  papersLoaded.then(refresh);
+  onPapersArrived(refresh);
   refresh();
   return refresh;
 }
