@@ -5,3 +5,5 @@ Thumbs.db
 
 # Texture masters; the game loads assets/textures/ and assets/backdrops/.
 /textures/
+/aquarium/tex/
+/scripts/__pycache__/

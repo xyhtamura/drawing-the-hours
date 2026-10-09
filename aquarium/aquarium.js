@@ -17,6 +17,12 @@ const $ = id => document.getElementById(id), canvas = $('field'), ctx = canvas.g
 const portrait = matchMedia('(max-width:650px)').matches;
 canvas.width = portrait ? 640 : 960; canvas.height = portrait ? 960 : 640;
 const W = canvas.width, H = canvas.height;
+const waterArt = new Map();
+for (const color of new Set(LEVELS.map(level => level.wash))) {
+  const image = new Image();
+  image.onload = () => waterArt.set(color, image);
+  image.src = new URL(`./water/${color.slice(1)}-${portrait ? 'portrait' : 'landscape'}.webp`, import.meta.url).href;
+}
 const SAVE_KEY = 'drawing-hours-aquarium-v2';
 const testMode = new URLSearchParams(location.search).has('test');
 let saved = {visit: 0, done: []};
@@ -166,6 +172,8 @@ function fishArt(f) {
 }
 function draw() {
   ctx.fillStyle = game.level.wash; ctx.fillRect(0, 0, W, H);
+  const water = waterArt.get(game.level.wash);
+  if (water) ctx.drawImage(water, 0, 0, W, H);
   const wash = ctx.createRadialGradient(W * .38, H * .3, 30, W * .6, H * .45, W * .7);
   wash.addColorStop(0, '#f7ecd74a'); wash.addColorStop(1, '#456b5c21'); ctx.fillStyle = wash; ctx.fillRect(0, 0, W, H);
   ctx.save(); ctx.globalAlpha = .16;

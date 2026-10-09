@@ -85,3 +85,20 @@ fonts, and paving were reused. No external artwork or sample was added.
 `SB012.webp` (mulberry) for ricefish, `cip60095.jpg` (coir) for gobies,
 `SB035.webp` (gold tissue) for barbs, and `cip60097.jpg` (fibre) for halfbeaks.
 The existing paper renderer tints their bodies, tails, and fins. No asset was added.
+
+## Aquarium water textures
+
+2026-10-10 — Codex — Xyh supplied seven Texturelabs images in `aquarium/tex/`.
+The blue water uses `Texturelabs_Fabric_180S.jpg`, green uses
+`Texturelabs_Glass_163S.jpg`, peach uses `Texturelabs_Fabric_176S.jpg`, and
+purple uses `Texturelabs_Grunge_328S.jpg`. `scripts/bake_aquarium_water.py`
+uses the meadow backdrop script's recoloring functions to incorporate their
+relief into the four water colors. Finished artwork in both orientations is
+versioned in `aquarium/water/`; the originals are excluded from Git.
+
+Texturelabs owns these sources. Its [texture terms](https://texturelabs.org/terms/),
+checked on 2026-10-10, permit incorporation into video game scenes and levels
+and prohibit redistribution of the original resources and competing texture
+products. These are game backgrounds, not a reusable texture pack. Fabric 181
+and Grunge 350 were left unused because their large stains compete with fish;
+Grunge 325 was left unused because its cracks introduce sharp background lines.

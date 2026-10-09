@@ -2190,3 +2190,25 @@ through all eight levels. This replaces the previous turn's blocked browser chec
 Undone: touch/pen difficulty and texture contrast on other displays, orientation
 changes during play, audio, and story text. Next remains the touch playtest for
 shoal separation, beetle pacing, and bubble disturbance strength.
+
+## 2026-10-10 — Codex — Supplied water textures
+
+Added finished water artwork for the four level pairs in both orientations:
+blue Fabric 180, green Glass 163, peach Fabric 176, and purple Grunge 328.
+`scripts/bake_aquarium_water.py` reuses the meadow backdrop script's cover and
+OKLab recoloring functions. Source colors are replaced with the level washes;
+lightness relief and some hue variation survive. Images load once, with the
+plain wash as fallback, beneath the existing radial light and vegetation.
+Supplied originals in `aquarium/tex/` stay local and are excluded from Git;
+finished backgrounds are recorded in `ASSETS.md` with the Texturelabs terms.
+
+Left Fabric 181 and Grunge 350 unused because their large stains compete with
+fish. Left Grunge 325 unused because its cracks restore sharp background lines.
+
+Inspected all four water treatments in the rendered portrait game, with no
+console warnings or errors. The Node aquarium suite passed. The mounted
+browser check reported PASS through all eight levels with the new backgrounds.
+
+Undone: human touch/pen playtests, contrast on other displays, orientation
+changes during play, audio, and story text. Next remains the touch playtest for
+shoal separation, beetle pacing, and bubble disturbance strength.

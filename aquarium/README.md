@@ -21,6 +21,9 @@ The water uses four palettes, each shared by two consecutive levels: blue
 
 Fish bodies, tails, and fins reuse the project's paper textures, tinted to each
 species' colors. Soft vegetation and water washes form the background.
+The water uses fabric, glass, and paint textures supplied in `tex/`, recolored
+into finished images in `water/`. Run `python scripts/bake_aquarium_water.py`
+from the project folder to rebuild both orientations. The source files stay local.
 
 ## Levels
 
