@@ -3,7 +3,7 @@
 
 Usage: python scripts/bake_aquarium_water.py
 Requires Pillow and NumPy, as does bake_backdrops.py. Originals stay local;
-the game ships finished water artwork in aquarium/water/.
+the game ships finished water artwork in between-banks/water/.
 """
 import argparse
 import sys
@@ -26,8 +26,8 @@ SIZES = {'landscape': (960, 640), 'portrait': (640, 960)}
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--source-dir', type=Path, default=ROOT / 'aquarium' / 'tex')
-    parser.add_argument('--output-dir', type=Path, default=ROOT / 'aquarium' / 'water')
+    parser.add_argument('--source-dir', type=Path, default=ROOT / 'between-banks' / 'tex')
+    parser.add_argument('--output-dir', type=Path, default=ROOT / 'between-banks' / 'water')
     parser.add_argument('--quality', type=int, default=70, help='WebP quality (default 70)')
     args = parser.parse_args()
     if hasattr(sys.stdout, 'reconfigure'):

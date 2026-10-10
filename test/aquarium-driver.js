@@ -1,5 +1,5 @@
 // Runs inside the test iframe so imports resolve to the actual mounted runtime.
-import {game,load} from '../aquarium/aquarium.js';
+import {game,load} from '../between-banks/aquarium.js';
 const out=parent.document.getElementById('result'),wait=ms=>new Promise(r=>setTimeout(r,ms));
 const checks=[];
 async function until(predicate) {

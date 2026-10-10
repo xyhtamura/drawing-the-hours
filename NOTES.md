@@ -1890,13 +1890,13 @@ the lab.
 
 2026-10-07 — Codex — Added favicon.svg and a relative SVG icon link to index.html. The icon is an original drawing documented in ASSETS.md. Rendered it in headless Microsoft Edge at 16, 32, and 96 pixels on light and dark backgrounds and inspected the screenshot; the motif remains legible at tab size. Parsed the SVG as XML and confirmed the local page's favicon link, HTTP 200 delivery, and image/svg+xml content type. Browser-chrome tab display was not directly checked. No gameplay or development plans changed.
 
-2026-10-08 — Codex — Built [Aquarium](aquarium/index.html), an eight-tank
+2026-10-08 — Codex — Built [Aquarium](between-banks/index.html), an eight-tank
 detour with its own runtime and save, linked from the meadow title and pause
 menu. The aquarium reuses pocket extraction from `src/geometry.js` without
 changing the meadow engine. Bangus, tamban, tilapia, danggit, and protected fry
 have original Canvas drawings. Authored visitor cards connect the hatchery,
 mangrove nursery, school, pen, seagrass, tidal channel, sorting tank, and last
-window. See [the chapter README](aquarium/README.md) for the tank rules.
+window. See [the chapter README](between-banks/README.md) for the tank rules.
 
 Accepted loops guide fish into a refuge ring, and count arrivals rather than
 removing fish. Mechanics include schooling, minimum group sizes, cord walls,
@@ -2016,7 +2016,7 @@ pixels but not seen in a portrait viewport. Pure light colours not looked at.
 
 2026-10-09 — Codex — Archived the first aquarium chapter in
 [aquariumarchive](aquariumarchive/ARCHIVE.md) and built the first two levels of
-its replacement at [aquarium](aquarium/README.md), at Xyh's request. All six
+its replacement at [aquarium](between-banks/README.md), at Xyh's request. All six
 archived files matched their original SHA-256 hashes after the move. The old
 tests were relocated and retargeted to the archive; its original save remains
 intact. No worktree was created.
@@ -2063,7 +2063,7 @@ ROADMAP.md were brought into agreement; the meadow pacing pass remains pending.
 2026-10-09 — Codex — Added levels 3–5 and revised all five built levels toward
 Xyh's wild, pastoral fish direction. The cast now draws on Luzon ricefish,
 blue stream gobies, spotted barbs, and Palawan halfbeaks; see
-[species references](aquarium/NATIVE-FISH.md). Ricefish drift gently. Gobies rest
+[species references](between-banks/NATIVE-FISH.md). Ricefish drift gently. Gobies rest
 on six stones and dart between them. Spotted barbs form three small schools
 that gather and spread; level 3 asks for three fish per pocket, plus a ricefish
 pair in a separate pocket. School replacements fill vacant slots. Level 4
@@ -2199,7 +2199,7 @@ blue Fabric 180, green Glass 163, peach Fabric 176, and purple Grunge 328.
 OKLab recoloring functions. Source colors are replaced with the level washes;
 lightness relief and some hue variation survive. Images load once, with the
 plain wash as fallback, beneath the existing radial light and vegetation.
-Supplied originals in `aquarium/tex/` stay local and are excluded from Git;
+Supplied originals in `between-banks/tex/` stay local and are excluded from Git;
 finished backgrounds are recorded in `ASSETS.md` with the Texturelabs terms.
 
 Left Fabric 181 and Grunge 350 unused because their large stains compete with
@@ -2267,7 +2267,7 @@ Updated level 8 to Xyh's revised passage, preserving its wording and italics.
 Rebaked the finished water images at WebP quality 70 rather than 88, retaining
 both 960 × 640 and 640 × 960 versions. Combined size fell from 631,480 to
 195,368 bytes (69%). The browser already used these baked images rather than
-original JPEGs in `aquarium/tex/`; no source texture is shipped. Water images
+original JPEGs in `between-banks/tex/`; no source texture is shipped. Water images
 now load only when their color and orientation are shown, then stay cached.
 The plain wash remains visible while an image loads or if it fails.
 
@@ -2283,7 +2283,7 @@ strength; the meadow pacing pass remains pending.
 
 ## 2026-10-10 — Codex — Between Banks concept and mechanics
 
-[Between Banks](aquarium/README.md), developed under the working name Aquarium,
+[Between Banks](between-banks/README.md), developed under the working name Aquarium,
 is an eight-level freshwater chapter of Drawing the Hours. It carries the
 meadow's childlike wonder into an overlooked stream-and-pool setting, with
 leaves, stones, shade, and wild fish. The view is almost top-down; textured
@@ -2319,3 +2319,22 @@ chapter remains in [aquariumarchive](aquariumarchive/).
 This overview was checked against the chapter README, level definitions, and
 the recorded design decisions. Next remains a touch playtest to tune shoal
 separation, beetle pacing, and bubble disturbance strength.
+
+## 2026-10-10 — Codex — Chapter folder renamed
+
+Moved the active chapter and its local texture masters from `aquarium/` to
+`between-banks/`. Updated main-game links, test imports and iframe URLs, the
+water bake script, the texture ignore rule, asset records, and notes links.
+Existing filenames and the save key are retained; `aquariumarchive/` and the
+fish-reference library folder are unchanged.
+
+The Node aquarium suite passed through the new imports, and the renamed page
+returned HTTP 200 and rendered its opening card in the in-app browser. The
+mounted browser progression check passed through all eight levels at the new
+path. Original textures remain ignored by Git at their new location.
+
+Windows prevented renaming the directory itself because another process holds
+it open. Its contents were moved individually; an empty `aquarium/` directory
+remains until that handle is released. No chapter file remains in it.
+Next remains the touch playtest for shoal separation, beetle pacing, and bubble
+strength; the meadow pacing pass remains pending.

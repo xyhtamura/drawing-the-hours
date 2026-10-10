@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import {judgeStroke, strokeDisruption, CORD_LIMIT} from '../aquarium/rules.js';
-import {Aquarium, shadePatches, shadeAt} from '../aquarium/simulation.js';
+import {judgeStroke, strokeDisruption, CORD_LIMIT} from '../between-banks/rules.js';
+import {Aquarium, shadePatches, shadeAt} from '../between-banks/simulation.js';
 import {StringGesture} from '../src/string.js';
-import {LEVELS} from '../aquarium/levels.js';
+import {LEVELS} from '../between-banks/levels.js';
 import {polylineTouchesDisk} from '../src/geometry.js';
 
 const loop = [{x:60,y:60},{x:200,y:60},{x:200,y:200},{x:60,y:200},{x:60,y:60}];

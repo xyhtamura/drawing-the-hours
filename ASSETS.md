@@ -67,18 +67,18 @@ listed above. No third-party artwork, texture, or audio was added.
 
 2026-10-09 — Codex — The top-view guppies and ricefish, pair diagrams,
 bubble timer, faint submerged paving, leaves, and water in
-`aquarium/aquarium.js` are original Canvas and inline SVG drawings. The prototype
+`between-banks/aquarium.js` are original Canvas and inline SVG drawings. The prototype
 reuses the Mali fonts and favicon. No external asset was added. The earlier
 chapter's artwork is preserved in `aquariumarchive/`.
 
 2026-10-09 — Codex — Reskinned the active cast as ricefish, blue stream gobies,
 spotted barbs, and halfbeaks. Fish bodies, spots, lateral stripes, beaks, stones,
-stems, school diagrams, and shade patches in `aquarium/aquarium.js` are original
+stems, school diagrams, and shade patches in `between-banks/aquarium.js` are original
 Canvas and inline SVG graphics. Scientific references informed the cast;
 no photograph, illustration, or other external asset was copied into the game.
 
 2026-10-10 — Codex — Water beetles, round leaf clumps, and rising bubbles in
-`aquarium/aquarium.js` are original Canvas drawings. Existing fish, shade,
+`between-banks/aquarium.js` are original Canvas drawings. Existing fish, shade,
 fonts, and paving were reused. No external artwork or sample was added.
 
 2026-10-10 — Codex — Aquarium fish reuse the supplied textures documented above:
@@ -88,13 +88,13 @@ The existing paper renderer tints their bodies, tails, and fins. No asset was ad
 
 ## Aquarium water textures
 
-2026-10-10 — Codex — Xyh supplied seven Texturelabs images in `aquarium/tex/`.
+2026-10-10 — Codex — Xyh supplied seven Texturelabs images in `between-banks/tex/`.
 The blue water uses `Texturelabs_Fabric_180S.jpg`, green uses
 `Texturelabs_Glass_163S.jpg`, peach uses `Texturelabs_Fabric_176S.jpg`, and
 purple uses `Texturelabs_Grunge_328S.jpg`. `scripts/bake_aquarium_water.py`
 uses the meadow backdrop script's recoloring functions to incorporate their
 relief into the four water colors. Finished artwork in both orientations is
-versioned in `aquarium/water/`; the originals are excluded from Git.
+versioned in `between-banks/water/`; the originals are excluded from Git.
 
 Texturelabs owns these sources. Its [texture terms](https://texturelabs.org/terms/),
 checked on 2026-10-10, permit incorporation into video game scenes and levels

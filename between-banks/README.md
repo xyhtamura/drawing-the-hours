@@ -62,7 +62,7 @@ and writes no completion. The prototype saves separately under
 `drawing-hours-aquarium-v2`; the archived chapter's save is left intact.
 
 Each opening card carries Xyh's level text, preserved as supplied in
-`levels.js`. The chapter keeps the `aquarium/` path and existing save key.
+`levels.js`. The chapter lives at `between-banks/` and keeps its existing save key.
 Counts, school spacing, contrast, and durations await a touch playtest.
 
 ## Checks
