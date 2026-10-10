@@ -16,6 +16,12 @@ cord they touch, including a held cord. Merely enclosing an obstacle is allowed.
 Rising bubbles mildly displace nearby fish; they expire without changing the
 countdown. These are disturbances, separate from the archived timer pickups.
 
+Sound effects come from the meadow's `src/audio.js`: a speed-sensitive drawing
+rustle, a cord pluck on release, harmony chimes for valid groups, and a fray
+sound for broken cords or rejected figures. Pause, cancellation, and leaving
+the page stop the drawing rustle. Toggle Sound in the pause menu or press M.
+Audio starts after interaction; drawing still works when Web Audio is unavailable.
+
 The water uses four palettes, each shared by two consecutive levels: blue
 (1–2), green (3–4), peach (5–6), and purple (7–8).
 

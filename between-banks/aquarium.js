@@ -5,6 +5,7 @@ import {StringGesture} from '../src/string.js';
 import {getLengthBand} from '../src/geometry.js';
 import {fitField} from '../src/viewport.js';
 import {paperTile, loadPaper} from '../src/paper.js';
+import {audio} from '../src/audio.js';
 
 const FISH_PAPER = {
   ricefish: {paper: 'mulberry', relief: .075, keep: .6, split: 12},
@@ -47,10 +48,10 @@ try {
   }
 } catch {}
 export const game = new Aquarium(W, H);
-let gesture = null, pointer = null, practice = false, last = 0, hudTime = 0, ripples = [], lastMode = '';
+let gesture = null, pointer = null, practice = false, last = 0, hudTime = 0, ripples = [], lastMode = '', lastPointerTime = 0;
 const reduced = matchMedia('(prefers-reduced-motion:reduce)').matches;
 function store() {if (!testMode) try {localStorage.setItem(SAVE_KEY, JSON.stringify(saved));} catch {}}
-function cancel() {gesture?.releaseBeads(); gesture = null; pointer = null;}
+function cancel() {audio.stopDrawingRustle(); gesture?.releaseBeads(); gesture = null; pointer = null;}
 window.addEventListener('resize', () => {
   cancel(); const oldW = W, oldH = H, oldTop = game.top; layout();
   if (W !== oldW || H !== oldH) {
@@ -92,7 +93,7 @@ function show(title, content, buttons) {
   }
   $('card').focus(); updateHud();
 }
-function start() {game.mode = 'play'; $('overlay').hidden = true; canvas.focus(); last = performance.now(); message('');}
+function start() {audio.ensureContext(); game.mode = 'play'; $('overlay').hidden = true; canvas.focus(); last = performance.now(); message('');}
 function ready() {
   game.mode = 'ready';
   show(game.level.title, `${diagram()}<p>${game.level.instruction}</p><p>Cross the cord to close the loop, then lift. Draw around the fish.</p>`, [['Begin', start, true], ['Levels', map]]);
@@ -121,7 +122,15 @@ function map() {
 function pause() {
   if (!['play', 'settling'].includes(game.mode)) return;
   const previous = game.mode; game.mode = 'paused';
-  show('Paused', '', [['Resume', () => {game.mode = previous; $('overlay').hidden = true; last = performance.now(); canvas.focus();}, true], ['Retry', () => load(game.index)], ['Levels', map]]);
+  show('Paused', '', [['Resume', () => {game.mode = previous; $('overlay').hidden = true; last = performance.now(); canvas.focus();}, true], ['Retry', () => load(game.index)], ['Levels', map], [audio.isMuted ? 'Sound: Off' : 'Sound: On', toggleSound]]);
+  const sound = [...$('card').querySelectorAll('button')].find(b => b.textContent.startsWith('Sound:'));
+  sound.id = 'sound'; sound.setAttribute('aria-pressed', String(!audio.isMuted));
+}
+function toggleSound() {
+  audio.toggleMute();
+  const sound = $('sound');
+  if (sound) {sound.textContent = audio.isMuted ? 'Sound: Off' : 'Sound: On'; sound.setAttribute('aria-pressed', String(!audio.isMuted));}
+  if (!audio.isMuted && gesture) audio.startDrawingRustle();
 }
 function completion() {
   if (!practice) {saved.done = [...new Set([...saved.done, game.index])]; store();}
@@ -135,21 +144,28 @@ function practiceLabel() {$('practice').textContent = `Practice: ${practice ? 'o
 $('pause').onclick = pause; $('visits').onclick = map;
 $('practice').onclick = () => {practice = !practice; practiceLabel(); load(game.index);};
 document.addEventListener('visibilitychange', () => {if (document.hidden) pause();});
+window.addEventListener('blur', pause);
+window.addEventListener('pagehide', cancel);
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {e.preventDefault(); if (game.mode === 'paused') $('card').querySelector('.primary').click(); else pause();}
   if (e.key.toLowerCase() === 'r' && e.target === canvas) load(game.index);
+  if (e.key.toLowerCase() === 'm' && !e.repeat) {e.preventDefault(); toggleSound();}
 });
 const point = e => {const b = canvas.getBoundingClientRect(); return {x: Math.max(5, Math.min(W - 5, (e.clientX - b.left) * W / b.width)), y: Math.max(5, Math.min(H - 5, (e.clientY - b.top) * H / b.height))};};
 canvas.addEventListener('pointerdown', e => {
   if (game.mode !== 'play' || pointer !== null || e.button !== 0) return;
   e.preventDefault(); pointer = e.pointerId; canvas.setPointerCapture(pointer);
   gesture = new StringGesture(point(e)); game.started = true;
+  lastPointerTime = performance.now(); audio.startDrawingRustle();
 });
 function sample(e, force = false) {
   if (!gesture) return;
+  const length = gesture.totalLength, now = performance.now();
   const result = gesture.sample(point(e), game.fish, force);
-  if (result.snapped) {cancel(); message('The cord snapped. Draw a smaller figure.');}
-  else {const disruption=strokeDisruption(gesture.points,game.leafDisks,game.beetles);if(disruption){cancel();message(disruption);}}
+  const dt = (now - lastPointerTime) / 1000; lastPointerTime = now;
+  audio.updateDrawingSpeed(dt > 0 ? (gesture.totalLength - length) / dt : 0);
+  if (result.snapped) {audio.playFrayFault(); cancel(); message('The cord snapped. Draw a smaller figure.');}
+  else {const disruption=strokeDisruption(gesture.points,game.leafDisks,game.beetles);if(disruption){audio.playFrayFault();cancel();message(disruption);}}
 }
 canvas.addEventListener('pointermove', e => {
   if (e.pointerId !== pointer) return;
@@ -159,8 +175,11 @@ canvas.addEventListener('pointermove', e => {
 canvas.addEventListener('pointerup', e => {
   if (e.pointerId !== pointer || !gesture) return;
   sample(e, true); if (!gesture) return;
+  const band = getLengthBand(gesture.totalLength).name;
   const result = judgeStroke(gesture.points, game.fish, gesture.hasBeads, game.level, game.leafDisks, game.beetles); cancel();
-  if (result.error) {message(result.error); return;}
+  audio.playCordPluck(band === 'Petite' ? 320 : band === 'Balanced' ? 240 : 180);
+  if (result.error) {audio.playFrayFault(); message(result.error); return;}
+  audio.playHarmonyChord(result.groups.length === 2 ? 'CROSS_MEADOW_CORRESPONDENCE' : result.groups[0].length === 3 ? 'TRIO_OF_FLIGHT' : 'KINDRED_PAIR', band);
   game.accept(result); result.pockets.forEach(p => ripples.push({polygon: p.polygon, life: 1.2}));
   message(''); updateHud();
 });
@@ -284,7 +303,7 @@ function updateHud() {
 function frame(now) {
   const dt = Math.min(.04, (now - (last || now)) / 1000); last = now;
   const disruption=game.update(dt, gesture);
-  if(disruption && gesture && game.mode==='play'){cancel();message(disruption);}
+  if(disruption && gesture && game.mode==='play'){audio.playFrayFault();cancel();message(disruption);}
   if (['play', 'settling'].includes(game.mode)) {ripples.forEach(r => r.life -= dt); ripples = ripples.filter(r => r.life > 0);}
   if (game.mode !== lastMode) {if (game.mode === 'complete') completion(); if (game.mode === 'failed') failure(); lastMode = game.mode;}
   draw(); if (now - hudTime > 150) {updateHud(); hudTime = now;} requestAnimationFrame(frame);

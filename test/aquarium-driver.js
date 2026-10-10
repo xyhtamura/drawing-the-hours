@@ -1,5 +1,11 @@
 // Runs inside the test iframe so imports resolve to the actual mounted runtime.
 import {game,load} from '../between-banks/aquarium.js';
+import {audio} from '../src/audio.js';
+const soundCalls = [];
+for (const name of ['startDrawingRustle','stopDrawingRustle','updateDrawingSpeed','playCordPluck','playFrayFault','playHarmonyChord']) {
+  const original = audio[name].bind(audio);
+  audio[name] = (...args) => {soundCalls.push({name,args}); return original(...args);};
+}
 const out=parent.document.getElementById('result'),wait=ms=>new Promise(r=>setTimeout(r,ms));
 const checks=[];
 async function until(predicate) {
@@ -27,9 +33,13 @@ try {
   await wait(200);check(game.elapsed===0,'Bubble waits for the first gesture');
   fixture();draw(loop.slice(0,3));check(game.progress.ricefish===0&&document.getElementById('status').textContent.includes('close'),'Open stroke is rejected through pointer handlers');
   fixture();draw(loop);check(game.progress.ricefish===1&&game.fish.every(f=>f.state==='departing'),'Matching pair swims away without a refuge');
+  check(['startDrawingRustle','stopDrawingRustle','updateDrawingSpeed','playCordPluck','playFrayFault','playHarmonyChord'].every(name=>soundCalls.some(call=>call.name===name)),'Drawing, release, fault, and success invoke the shared meadow sounds');
   await until(()=>game.fish.length===10&&game.fish.every(f=>f.state==='roaming'));check(game.fish.length===10&&game.fish.every(f=>f.state==='roaming'),'Departures replenish the real population');
   document.getElementById('pause').click();const elapsed=game.elapsed,x=game.fish[0].x;
-  await wait(250);check(game.elapsed===elapsed&&game.fish[0].x===x,'Pause freezes the bubble and fish');button('Resume').click();
+  await wait(250);check(game.elapsed===elapsed&&game.fish[0].x===x,'Pause freezes the bubble and fish');
+  button('Sound: On').click();check(audio.isMuted&&button('Sound: Off').getAttribute('aria-pressed')==='false','Pause sound control mutes audio');
+  document.dispatchEvent(new KeyboardEvent('keydown',{key:'m',bubbles:true}));check(!audio.isMuted&&button('Sound: On').getAttribute('aria-pressed')==='true','M restores sound and updates its control');
+  button('Resume').click();
   await wait(200);check(game.elapsed>elapsed,'Resume restarts the bubble');
   fixture();draw([{x:205,y:260},{x:350,y:260},{x:350,y:325},{x:205,y:325},{x:205,y:260}]);
   check(game.progress.ricefish===1&&document.getElementById('status').textContent.includes('passed through'),'Threaded fish reject the loop');
@@ -83,5 +93,6 @@ try {
   await until(()=>game.mode==='complete');check(document.getElementById('card').querySelector('h2').textContent==='Chapter complete'&&button('Next level')===undefined,'Eighth level ends the chapter without a ninth-level link');
   button('Play again').click();check(game.index===7&&Object.values(game.progress).every(n=>n===0),'Final level can be replayed');
   document.getElementById('visits').click();check(document.querySelectorAll('.map button').length===8,'Level map exposes all eight levels');
+  check(soundCalls.some(call=>call.name==='playHarmonyChord'&&call.args[0]==='TRIO_OF_FLIGHT')&&soundCalls.some(call=>call.name==='playHarmonyChord'&&call.args[0]==='CROSS_MEADOW_CORRESPONDENCE'),'Trios and sorted pockets use their meadow harmony voices');
   out.textContent+='\nPASS';
 } catch(e) {out.textContent+='\nFAIL: '+e.stack;}

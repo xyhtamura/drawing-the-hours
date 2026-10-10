@@ -2283,6 +2283,23 @@ Undone: a visual pass of the other six passages and touch/pen playtests.
 Next remains the touch playtest for shoal separation, beetle pacing, and bubble
 strength; the meadow pacing pass remains pending.
 
+## 2026-10-10 — Codex — Shared sound effects
+
+Between Banks now uses the meadow's existing `src/audio.js` for drawing rustle,
+release plucks, successful-group harmony, and cord or recipe faults. Trios and
+two-pocket figures use their corresponding meadow chords. The pause menu has
+a Sound toggle, with M as its keyboard shortcut. Cancelling, pausing, or leaving
+the page stops the drawing rustle. No samples or new audio assets were added.
+
+The JavaScript syntax check and Node aquarium suite passed. The mounted browser
+check passed through all eight levels, including shared sound calls, trio and
+two-pocket chord selection, and the Sound/M controls. These checks exercised
+the audio code; they did not include listening on the playback device.
+
+Next remains the touch playtest for shoal separation, beetle pacing, and bubble
+strength, with a listening pass to check sound balance. The meadow pacing pass
+remains pending.
+
 ## 2026-10-10 — Codex — Between Banks concept and mechanics
 
 [Between Banks](between-banks/README.md), developed under the working name Aquarium,
