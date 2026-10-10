@@ -2438,3 +2438,23 @@ source crops exactly. The script's check mode, title-lettering syntax check,
 and Git whitespace check passed. The in-app browser rendered the cord title
 from the WebP files, showed frame cycling, and reported no console errors.
 The touch pacing and sound-balance playtest remains pending.
+
+## 2026-10-10 — Codex — Pastel foil title card
+
+The title cover uses Xyh's foil photograph as its shape and texture. A grayscale
+WebP retains the creases and extracted silhouette; CSS adds a low-contrast
+peach, mint, and lilac wash. The rectangular paper cover was removed. Cord
+lettering and Continue remain on the foil, with a soft shadow under the sheet.
+Unused title-paper generation was removed from the menu-art module.
+
+`scripts/compress_foil.py` reduces the 3,485 × 2,903 source to 1,024 × 853 and
+checks the decoded size and alpha silhouette. The export is 132,396 bytes,
+against the source PNG's 11,668,226 bytes, about 98.9% smaller. The PNG and JPG
+foil originals are ignored beside the already-ignored PSD; the lettering PNG
+masters and runtime WebPs remain tracked. All source files stay on disk.
+
+The in-app browser showed the pastel silhouette and folds in desktop and
+360 × 640 phone views. Continue dismissed the title and focused the game
+canvas. No browser console errors appeared. The shell-art syntax and Git
+whitespace checks passed. The photograph's source licence is unrecorded; no
+publication was performed. Touch pacing and sound balance remain pending.

@@ -8,5 +8,7 @@ Thumbs.db
 /between-banks/tex/
 /scripts/__pycache__/
 
-# Editable handwriting master; the title loads the three PNG exports.
+# Local title sources; the browser loads compressed assets/title/ exports.
 /handwritten/*.psd
+/handwritten/foil.png
+/handwritten/foil.jpg

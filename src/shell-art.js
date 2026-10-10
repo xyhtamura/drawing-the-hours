@@ -177,8 +177,6 @@ export function dressMenus(root = document) {
     const url = cardPaper(panel, hour);
     if (url) html.style.setProperty('--paper-card', `url(${url})`);
     else html.style.removeProperty('--paper-card');
-    const titlePaper = cardPaper('#f4efdc', 'dawn');
-    if (titlePaper) html.style.setProperty('--paper-title', `url(${titlePaper})`);
     for (const strip of root.querySelectorAll('.hour-strip')) {
       strip.replaceChildren(...HOURS.map((h) => {
         const p = CHAPTER_PALETTES[h];

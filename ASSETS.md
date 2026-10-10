@@ -15,6 +15,16 @@ padding while keeping frame alignment. `python scripts/compress_title.py --check
 compares each decoded alpha channel against its cropped PNG master. The three
 exports total 90,592 bytes, compared with 272,134 bytes for the PNGs.
 
+## Foil title card
+
+Xyh supplied `handwritten/foil.png` on 2026-10-10 for the title card.
+`python scripts/compress_foil.py` creates `assets/title/foil.webp`, reducing the
+3,485 × 2,903 photograph to 1,024 × 853 and extracting the sheet's outline.
+It requires Pillow, NumPy, and SciPy. CSS applies a pale peach, mint, and lilac
+wash while retaining the folds. The browser loads the 132,396-byte WebP; the
+11,668,226-byte PNG and its JPG companion remain local and ignored by Git.
+The photograph's original source and licence are not recorded.
+
 ## Mali fonts
 
 Mali Regular and SemiBold are hosted locally in `assets/fonts/` and loaded
