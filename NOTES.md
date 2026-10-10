@@ -2373,3 +2373,17 @@ size. Tab reached the chapter link and wrapped to Continue; Continue dismissed
 the title and focused the game canvas. No browser console errors appeared.
 The shell-art syntax check and Git whitespace check passed. The touch pacing
 and sound-balance playtest remains pending; no gameplay rules changed.
+
+## 2026-10-10 — Codex — Title cover simplified
+
+Following Xyh's direction, removed the visit count, hour legend, and companion
+link from the title cover. Only the title and Begin or Continue remain. Larger
+Mali lettering uses green, terracotta, and plum with slight line rotations.
+The light paper cover and existing insect/cord background remain. Between Banks
+is still linked from the pause menu. The removed labels were dropped to let the
+display lettering carry the opening, rather than explaining the campaign.
+
+The in-app browser showed only the heading and Continue in the opening dialog.
+DOM bounds confirmed the cover and heading fit at 360 × 640, 960 × 640, and
+640 × 360. Tab stayed on the sole action, and Continue opened the game canvas.
+The pending touch pacing and sound-balance playtest is unchanged.
