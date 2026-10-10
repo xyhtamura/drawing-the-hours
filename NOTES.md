@@ -2280,3 +2280,42 @@ through all eight levels with on-demand backgrounds.
 Undone: a visual pass of the other six passages and touch/pen playtests.
 Next remains the touch playtest for shoal separation, beetle pacing, and bubble
 strength; the meadow pacing pass remains pending.
+
+## 2026-10-10 — Codex — Between Banks concept and mechanics
+
+[Between Banks](aquarium/README.md), developed under the working name Aquarium,
+is an eight-level freshwater chapter of Drawing the Hours. It carries the
+meadow's childlike wonder into an overlooked stream-and-pool setting, with
+leaves, stones, shade, and wild fish. The view is almost top-down; textured
+water and faint vegetation leave the surroundings vague. Fish have paper
+bodies, and blue, green, peach, and purple water each span two levels.
+
+The player draws a cord around moving fish, crosses it to close a pocket,
+and lifts to release a valid group. Most kinds require exactly two matching
+fish; spotted barbs require three. Fish swim away after a successful figure
+and replacements enter. A figure eight holds different kinds in separate
+pockets. Later levels require a ricefish pair with a goby pair, then a barb
+trio with a halfbeak pair, before the last level brings all four kinds together.
+
+Movement supplies much of the variation: ricefish drift, gobies rest on stones
+and dart, barbs gather into schools, and halfbeaks glide and turn sharply.
+Small Schools asks the player to peel the required count from a larger group.
+The cord blocks fish while held; passing through a fish threads it and spoils
+the enclosure. Leaf clumps obstruct fish and cut the cord, water beetles cut
+it while moving, and rising bubbles gently disturb nearby fish. A shrinking
+bubble measures remaining time. Practice is untimed.
+
+The fish cast draws on Philippine freshwater species, with movement authored
+for play. Xyh's eight opening texts place these encounters alongside introduced
+fish, aquaculture, public-health releases, biogeography, and the aquarium trade.
+The final passage turns toward weekend visits and the feeling of living
+between banks. The chapter retains the meadow's gesture rules and fitted
+screen, with all controls inside it.
+
+Rivers, eddies, and sheltered pockets have been discussed as ways for water
+to influence fish movement. They are not implemented. The earlier tank-based
+chapter remains in [aquariumarchive](aquariumarchive/).
+
+This overview was checked against the chapter README, level definitions, and
+the recorded design decisions. Next remains a touch playtest to tune shoal
+separation, beetle pacing, and bubble disturbance strength.
