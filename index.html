@@ -18,7 +18,7 @@
     <section id="title-screen" class="recipe-modal active" role="dialog" aria-modal="true" aria-labelledby="title-heading">
       <canvas id="title-art" aria-hidden="true"></canvas>
       <div class="title-cover">
-        <h1 id="title-heading"><span class="title-word">Drawing</span> <span class="title-line"><span class="title-the">the</span> <span class="title-hours-word">Hours</span></span></h1>
+        <h1 id="title-heading"><span class="title-fallback"><span class="title-word">Drawing</span> <span class="title-line"><span class="title-the">the</span> <span class="title-hours-word">Hours</span></span></span><canvas id="title-lettering" aria-hidden="true"></canvas></h1>
         <button id="btn-begin">Begin</button>
       </div>
     </section>
@@ -297,6 +297,7 @@
     import { renderComboCanvases } from './src/combo-diagrams.js';
     import { audio } from './src/audio.js';
     import { createTitleArt, dressMenus } from './src/shell-art.js';
+    import { createHandwrittenTitle } from './src/title-lettering.js';
     import { CAMPAIGN_LEVELS, PRACTICE_LEVELS, PLAYABLE_LEVEL_IDS, CampaignSaveManager, isHourReached } from './src/campaign.js';
 
     const canvas = document.getElementById('game-canvas');
@@ -568,6 +569,7 @@
     showPanel('title-screen');
     dressMenus();
     createTitleArt(document.getElementById('title-art'), document.getElementById('title-screen'));
+    createHandwrittenTitle(document.getElementById('title-lettering'), document.getElementById('title-heading'), document.getElementById('title-screen'));
 
     // Playtesting route: ?dev shows the save controls. Players never see them;
     // the console hooks below stay available either way.

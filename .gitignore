@@ -7,3 +7,6 @@ Thumbs.db
 /textures/
 /between-banks/tex/
 /scripts/__pycache__/
+
+# Editable handwriting master; the title loads the three PNG exports.
+/handwritten/*.psd

@@ -540,6 +540,13 @@ body .stage-wrapper canvas#game-canvas {
 .title-line { display: block; margin-top: 8px; transform: rotate(1.5deg); white-space: nowrap; }
 .title-the { color: #b7603c; font-size: .55em; letter-spacing: -.03em; }
 .title-hours-word { color: #795373; }
+#title-lettering { display: none; width: min(100%, 360px); height: auto; margin: 0 auto; }
+.handwritten-ready #title-lettering { display: block; }
+.handwritten-ready .title-fallback {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+#title-heading.handwritten-ready { margin-bottom: 20px; }
 #title-screen #btn-begin {
   width: min(100%, 230px); min-height: 48px; color: #f4efdc;
   background: #34574f; border: 1px solid #34574f; box-shadow: 0 2px 3px #241e1820;
@@ -549,6 +556,7 @@ body .stage-wrapper canvas#game-canvas {
 @media (orientation: landscape) and (max-height: 500px) {
   .title-cover { padding: 24px 22px; }
   #title-heading { font-size: 46px; margin-bottom: 20px; }
+  #title-lettering { width: 180px; }
 }
 
 /* Menu cards are cut paper: the hour's sheet, no ruled border, a shadow underneath. */

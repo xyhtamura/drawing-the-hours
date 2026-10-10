@@ -1,5 +1,13 @@
 # Assets
 
+## Handwritten title
+
+Xyh supplied `handwritten/drawinghand01.png`, `drawinghand02.png`, and
+`drawinghand03.png` on 2026-10-10 as handwritten title frames. The title uses
+their alpha channels to mask coloured mulberry-paper fills from the existing
+texture set. No external lettering or font was added. The editable
+`handwritten/drawinghand.psd` master remains local and is ignored by Git.
+
 ## Mali fonts
 
 Mali Regular and SemiBold are hosted locally in `assets/fonts/` and loaded

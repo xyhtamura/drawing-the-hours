@@ -2387,3 +2387,23 @@ The in-app browser showed only the heading and Continue in the opening dialog.
 DOM bounds confirmed the cover and heading fit at 360 × 640, 960 × 640, and
 640 × 360. Tab stayed on the sole action, and Continue opened the game canvas.
 The pending touch pacing and sound-balance playtest is unchanged.
+
+## 2026-10-10 — Codex — Handwritten title frames
+
+The title uses Xyh's three PNG exports from `handwritten/`, preserving their
+three-line word placement. Their alpha channels mask green, terracotta, and
+plum mulberry-paper fills. Frames cycle 01, 02, 03, 02 at 240 ms per step; the
+cycle stops when the title closes. Reduced-motion mode selects frame 01.
+The accessible text title remains, and the font lettering is the fallback if
+an image fails. The PSD master stays local; the PNG exports are versioned.
+Splitting and repositioning words was unnecessary because the supplied layout
+fits the cover.
+
+The in-app browser displayed the textured lettering and changing frame indices.
+DOM bounds confirmed the cover fits at 360 × 640, 960 × 640, and 640 × 360;
+the short landscape view was also checked visually. Continue dismissed the
+cover and focused the game canvas. Fixed an initial animation timestamp edge
+case found through browser console errors; subsequent frame cycling rendered
+correctly. The title-lettering syntax check and Git whitespace check passed.
+Reduced-motion selection was inspected in code rather than tested through an
+OS preference change. The touch pacing and sound-balance playtest remains pending.
