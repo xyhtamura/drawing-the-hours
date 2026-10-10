@@ -2239,3 +2239,24 @@ reported console warnings or errors.
 Undone: human touch/pen playtests, contrast on other displays, audio, and story
 text. Aquarium next remains the touch playtest for shoal separation, beetle
 pacing, and bubble disturbance strength; the meadow pacing pass remains pending.
+
+## 2026-10-10 — Codex — Between Banks and eight level texts
+
+Renamed the freshwater chapter Between Banks in its page title, header,
+accessible field name, main-game links, README, and both root roadmap entries.
+The folder and save key remain unchanged. Added Xyh's eight supplied passages
+as level data and placed each above its recipe diagram on the opening card.
+Wording, capitalization, and sentence fragments are preserved; the sixth
+passage is upright and the other passages are italicized as supplied.
+
+The Node aquarium suite passed recipes, movement, disturbances, timer,
+replenishment, and all eight completions. Browser card inspection remains
+unverified: the in-app tab reached a connection-refused error, then its URL
+policy blocked access to that generated error page even after restarting the
+root preview server. Existing cards scroll internally on small screens.
+
+Undone: browser inspection of the longer passages, human touch/pen playtests,
+and audio. Texts are Xyh's authored copy, not a new scientific verification.
+Currents and eddies remain a design discussion; no water mechanic was added.
+Next remains the touch playtest for shoal separation, beetle pacing, and bubble
+disturbance strength; the meadow pacing pass remains pending.

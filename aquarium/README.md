@@ -1,7 +1,7 @@
-# Aquarium
+# Between Banks
 
-An eight-level drawing chapter. Fish are seen from
-above, against faint vegetation and paving under water. Completed figures
+An eight-level freshwater drawing chapter. Fish are seen from
+above, against textured water and faint vegetation. Completed figures
 release fish; they swim away, and replacements enter.
 
 Hold and drag to draw. Cross the cord to close a loop, then lift. Each occupied
@@ -59,8 +59,9 @@ drawing gesture. Pause freezes movement and time. Practice removes the time limi
 and writes no completion. The prototype saves separately under
 `drawing-hours-aquarium-v2`; the archived chapter's save is left intact.
 
-Story text is reserved for Xyh. Counts, school spacing, contrast, and durations
-await a touch playtest.
+Each opening card carries Xyh's level text, preserved as supplied in
+`levels.js`. The chapter keeps the `aquarium/` path and existing save key.
+Counts, school spacing, contrast, and durations await a touch playtest.
 
 ## Checks
 

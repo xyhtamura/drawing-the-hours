@@ -93,6 +93,11 @@ function start() {game.mode = 'play'; $('overlay').hidden = true; canvas.focus()
 function ready() {
   game.mode = 'ready';
   show(game.level.title, `${diagram()}<p>${game.level.instruction}</p><p>Cross the cord to close the loop, then lift. Draw around the fish.</p>`, [['Begin', start, true], ['Levels', map]]);
+  const story = document.createElement('p');
+  story.className = 'level-story';
+  const text = game.level.storyItalic === false ? story : story.appendChild(document.createElement('em'));
+  text.textContent = game.level.story;
+  $('card').querySelector('h2').after(story);
 }
 export function load(index) {
   cancel(); game.load(index); game.practice = practice; ripples = []; saved.visit = index; store();
