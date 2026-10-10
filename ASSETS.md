@@ -4,8 +4,9 @@
 
 Xyh supplied `handwritten/drawinghand01.png`, `drawinghand02.png`, and
 `drawinghand03.png` on 2026-10-10 as handwritten title frames. The title uses
-their alpha channels to mask coloured mulberry-paper fills from the existing
-texture set. No external lettering or font was added. The editable
+their alpha channels to form multicoloured cord, with procedural rounded
+shading, twisted fibres, and a cast shadow in `src/title-lettering.js`.
+No external lettering, texture, or font was added. The editable
 `handwritten/drawinghand.psd` master remains local and is ignored by Git.
 
 ## Mali fonts

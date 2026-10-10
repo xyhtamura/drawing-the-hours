@@ -2407,3 +2407,18 @@ case found through browser console errors; subsequent frame cycling rendered
 correctly. The title-lettering syntax check and Git whitespace check passed.
 Reduced-motion selection was inspected in code rather than tested through an
 OS preference change. The touch pacing and sound-balance playtest remains pending.
+
+## 2026-10-10 — Codex — Cord lettering
+
+Replaced the title's paper fills with multicoloured string shading. The three
+handwritten masks retain their silhouettes and frame cycle. Colour changes
+across each word; distance from the stroke edge supplies rounded shading, with
+fine twisted-fibre variation and a small cast shadow to lift the cord from the
+paper. The three shaded frames are baked once, then reused during animation.
+No additional image asset or dependency was added.
+
+Checked the rendered title in the in-app browser: coloured lengths and shadows
+appeared along the handwritten strokes, with no browser console errors. The
+JavaScript syntax and Git whitespace checks passed. Layout, Continue behavior,
+and the reduced-motion branch are unchanged. The touch pacing and sound-balance
+playtest remains pending.

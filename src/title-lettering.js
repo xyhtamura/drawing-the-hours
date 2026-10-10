@@ -1,6 +1,40 @@
-import { loadPaper, onPapersArrived, paperTile } from './paper.js';
+const CORD_COLORS = [[190, 86, 68], [204, 147, 63], [95, 143, 91], [57, 133, 143], [111, 93, 151], [180, 99, 136]];
 
-/** Xyh's three white lettering frames become coloured paper masks. */
+/** Shade the mask as round cord, with coloured lengths and fine twisted fibres. */
+function cordPixels(mask) {
+  const {width, height, data} = mask;
+  const distance = new Float32Array(width * height);
+  for (let i = 0; i < distance.length; i++) distance[i] = data[i * 4 + 3] > 100 ? 1000 : 0;
+  // Two chamfer passes locate each stroke's edge without changing the drawing.
+  for (let y = 1; y < height; y++) for (let x = 1; x < width; x++) {
+    const i = y * width + x;
+    distance[i] = Math.min(distance[i], distance[i - 1] + 1, distance[i - width] + 1, distance[i - width - 1] + Math.SQRT2);
+  }
+  for (let y = height - 2; y >= 0; y--) for (let x = width - 2; x >= 0; x--) {
+    const i = y * width + x;
+    distance[i] = Math.min(distance[i], distance[i + 1] + 1, distance[i + width] + 1, distance[i + width + 1] + Math.SQRT2);
+  }
+  for (let y = 1; y < height - 1; y++) for (let x = 1; x < width - 1; x++) {
+    const i = y * width + x, p = i * 4;
+    if (!data[p + 3]) continue;
+    const phase = (x + y * .42) / 115;
+    const step = Math.floor(phase), blend = phase - step;
+    const a = CORD_COLORS[step % CORD_COLORS.length], b = CORD_COLORS[(step + 1) % CORD_COLORS.length];
+    const nx = (distance[i - 1] - distance[i + 1]) / 2;
+    const ny = (distance[i - width] - distance[i + width]) / 2;
+    const edge = Math.max(0, 1 - distance[i] / 5);
+    const light = .93 + (-nx * .5 - ny * .7) * edge * .3;
+    const twist = Math.sin(x * 1.15 + y * .9) * .075;
+    const fibre = Math.sin(x * 12.9898 + y * 78.233) * .025;
+    for (let c = 0; c < 3; c++) {
+      const color = a[c] + (b[c] - a[c]) * blend;
+      data[p + c] = Math.max(0, Math.min(255, color * (light + twist + fibre) + (1 - edge) * 15));
+    }
+  }
+  return mask;
+}
+
+/** Xyh's three white lettering frames become multicoloured cord masks. */
 export async function createHandwrittenTitle(canvas, heading, panel) {
   const frames = await Promise.all([1, 2, 3].map(n => new Promise(resolve => {
     const image = new Image();
@@ -19,17 +53,12 @@ export async function createHandwrittenTitle(canvas, heading, panel) {
       const ink = layer.getContext('2d');
       // One common crop retains each frame's small handwritten differences.
       ink.drawImage(frame, 110, 190, 800, 760, 0, 0, 800, 760);
-      ink.globalCompositeOperation = 'source-in';
-      // Paint the full mask at once, so each band retains the original alpha.
-      const fill = Object.assign(document.createElement('canvas'), {width: 800, height: 760});
-      const paint = fill.getContext('2d');
-      for (const [x, y, width, height, color] of [[0, 0, 800, 760, '#397568'], [200, 340, 400, 160, '#b7603c'], [0, 500, 800, 260, '#795373']]) {
-        const tile = paperTile('title', color, {paper: 'mulberry', relief: .055, keep: .4, split: 12});
-        paint.fillStyle = tile ? paint.createPattern(tile.canvas, 'repeat') : color;
-        paint.fillRect(x, y, width, height);
-      }
-      ink.drawImage(fill, 0, 0);
-      return layer;
+      ink.putImageData(cordPixels(ink.getImageData(0, 0, 800, 760)), 0, 0);
+      const lifted = Object.assign(document.createElement('canvas'), {width: 800, height: 760});
+      const cord = lifted.getContext('2d');
+      cord.shadowColor = '#3a27194d'; cord.shadowBlur = 3; cord.shadowOffsetX = 1; cord.shadowOffsetY = 3;
+      cord.drawImage(layer, 0, 0);
+      return lifted;
     });
     draw(current);
   }
@@ -41,8 +70,6 @@ export async function createHandwrittenTitle(canvas, heading, panel) {
   }
   bake();
   heading.classList.add('handwritten-ready');
-  loadPaper('mulberry');
-  onPapersArrived(() => { if (!panel.hidden) bake(); });
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const sequence = [0, 1, 2, 1], start = performance.now();
   function tick(now) {
