@@ -9,6 +9,12 @@ shading, twisted fibres, and a cast shadow in `src/title-lettering.js`.
 No external lettering, texture, or font was added. The editable
 `handwritten/drawinghand.psd` master remains local and is ignored by Git.
 
+The browser loads cropped lossless WebP copies from `assets/title/`, generated
+by `python scripts/compress_title.py`. The shared crop removes transparent
+padding while keeping frame alignment. `python scripts/compress_title.py --check`
+compares each decoded alpha channel against its cropped PNG master. The three
+exports total 90,592 bytes, compared with 272,134 bytes for the PNGs.
+
 ## Mali fonts
 
 Mali Regular and SemiBold are hosted locally in `assets/fonts/` and loaded

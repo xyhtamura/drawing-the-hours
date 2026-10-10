@@ -2422,3 +2422,19 @@ appeared along the handwritten strokes, with no browser console errors. The
 JavaScript syntax and Git whitespace checks passed. Layout, Continue behavior,
 and the reduced-motion branch are unchanged. The touch pacing and sound-balance
 playtest remains pending.
+
+## 2026-10-10 — Codex — Compressed title masks
+
+The title loads cropped, lossless WebP masks from `assets/title/`. The current
+PNG exports remain as source masters, including Xyh's updated frames 01 and 02.
+`scripts/compress_title.py` regenerates the three files and supports `--check`.
+It rejects a crop that would cut off lettering and compares decoded alpha values
+with each PNG. The renderer uses the already-cropped exports directly.
+
+Compared lossless and lossy WebP; lossless was smaller for every white mask, so
+lossy encoding was dropped. Cropped exports total 90,592 bytes against 272,134
+bytes of PNGs, a 66.7% reduction. All three decoded alpha channels matched their
+source crops exactly. The script's check mode, title-lettering syntax check,
+and Git whitespace check passed. The in-app browser rendered the cord title
+from the WebP files, showed frame cycling, and reported no console errors.
+The touch pacing and sound-balance playtest remains pending.

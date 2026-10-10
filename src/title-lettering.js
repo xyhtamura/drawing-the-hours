@@ -40,7 +40,7 @@ export async function createHandwrittenTitle(canvas, heading, panel) {
     const image = new Image();
     image.onload = () => resolve(image);
     image.onerror = () => resolve(null);
-    image.src = new URL(`../handwritten/drawinghand0${n}.png`, import.meta.url).href;
+    image.src = new URL(`../assets/title/drawinghand0${n}.webp`, import.meta.url).href;
   })));
   // Keep the readable font title if any frame is unavailable.
   if (frames.some(frame => !frame)) return;
@@ -51,8 +51,8 @@ export async function createHandwrittenTitle(canvas, heading, panel) {
     coloured = frames.map(frame => {
       const layer = Object.assign(document.createElement('canvas'), {width: 800, height: 760});
       const ink = layer.getContext('2d');
-      // One common crop retains each frame's small handwritten differences.
-      ink.drawImage(frame, 110, 190, 800, 760, 0, 0, 800, 760);
+      // Exports share one crop, retaining the handwritten frame differences.
+      ink.drawImage(frame, 0, 0);
       ink.putImageData(cordPixels(ink.getImageData(0, 0, 800, 760)), 0, 0);
       const lifted = Object.assign(document.createElement('canvas'), {width: 800, height: 760});
       const cord = lifted.getContext('2d');
