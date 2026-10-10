@@ -2357,3 +2357,19 @@ it open. Its contents were moved individually; an empty `aquarium/` directory
 remains until that handle is released. No chapter file remains in it.
 Next remains the touch playtest for shoal separation, beetle pacing, and bubble
 strength; the meadow pacing pass remains pending.
+
+## 2026-10-10 — Codex — Main title cover
+
+The main opening screen has a dedicated light paper cover, independent of the
+saved visit's hour. A two-line title, four-hour legend, and twenty-four-visit
+label establish the meadow campaign. Begin or Continue is the main action;
+Between Banks has a smaller companion link. Existing paper textures, cord art,
+Mali fonts, and insect drawings are reused. The modal keyboard focus loop now
+includes links, so the companion chapter is reachable with Tab.
+
+Checked the rendered page in the in-app browser at 360 × 640, 960 × 640, and
+640 × 360. DOM bounds confirmed the cover fits inside the fitted field in each
+size. Tab reached the chapter link and wrapped to Continue; Continue dismissed
+the title and focused the game canvas. No browser console errors appeared.
+The shell-art syntax check and Git whitespace check passed. The touch pacing
+and sound-balance playtest remains pending; no gameplay rules changed.
