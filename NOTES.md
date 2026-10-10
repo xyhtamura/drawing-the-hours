@@ -14,6 +14,8 @@ Play the revised aquarium levels on a touch device and tune shoal separation, be
 
 ## Activity
 
+2026-10-10 — Claude Code — Gave Between Banks its own favicon at Xyh's request for the multicart's three hax: between-banks/favicon.svg, a fish seen from the side on the water blue, an original drawing. between-banks/index.html now links it in place of the meadow's ../favicon.svg. Rendered at 16, 32, and 96 px in headless Edge on light and dark backgrounds and inspected the screenshot; the motif is legible at 16 px. The root server returns the file as image/svg+xml. Display in an actual browser tab was not checked.
+
 2026-10-03 — Claude Code — Checked the eight new ready cards at phone width (375 x 812 emulation) and fixed four caption overlaps.
 
 - **Nothing is clipped.** At that width the game keeps its 640 x 960 field and scales it by 375/640, so a card is the same 500-unit card as on desktop, drawn smaller. No picture reaches the card edge.
