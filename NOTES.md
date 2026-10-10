@@ -2260,3 +2260,23 @@ and audio. Texts are Xyh's authored copy, not a new scientific verification.
 Currents and eddies remain a design discussion; no water mechanic was added.
 Next remains the touch playtest for shoal separation, beetle pacing, and bubble
 disturbance strength; the meadow pacing pass remains pending.
+
+## 2026-10-10 — Codex — Compressed water and revised ending
+
+Updated level 8 to Xyh's revised passage, preserving its wording and italics.
+Rebaked the finished water images at WebP quality 70 rather than 88, retaining
+both 960 × 640 and 640 × 960 versions. Combined size fell from 631,480 to
+195,368 bytes (69%). The browser already used these baked images rather than
+original JPEGs in `aquarium/tex/`; no source texture is shipped. Water images
+now load only when their color and orientation are shown, then stay cached.
+The plain wash remains visible while an image loads or if it fails.
+
+The Node aquarium suite passed. Inspected the first and final opening cards
+in the in-app browser; the revised ending and compressed purple background
+rendered, with no console warnings or errors. This resolves the previous
+browser-access blocker for those cards. The mounted progression check passed
+through all eight levels with on-demand backgrounds.
+
+Undone: a visual pass of the other six passages and touch/pen playtests.
+Next remains the touch playtest for shoal separation, beetle pacing, and bubble
+strength; the meadow pacing pass remains pending.

@@ -24,6 +24,8 @@ species' colors. Soft vegetation and water washes form the background.
 The water uses fabric, glass, and paint textures supplied in `tex/`, recolored
 into finished images in `water/`. Run `python scripts/bake_aquarium_water.py`
 from the project folder to rebuild both orientations. The source files stay local.
+The game loads compressed WebP backgrounds at quality 70, fetching each color
+and orientation when first shown and caching it for later levels.
 
 Both chapters use a 960 × 640 logical field, or 640 × 960 in portrait, scaled
 uniformly to fit the viewport. Navigation, objectives, practice, pause, and menus

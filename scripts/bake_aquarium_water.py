@@ -28,7 +28,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source-dir', type=Path, default=ROOT / 'aquarium' / 'tex')
     parser.add_argument('--output-dir', type=Path, default=ROOT / 'aquarium' / 'water')
-    parser.add_argument('--quality', type=int, default=88)
+    parser.add_argument('--quality', type=int, default=70, help='WebP quality (default 70)')
     args = parser.parse_args()
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')

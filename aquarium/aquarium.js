@@ -27,12 +27,15 @@ function layout() {
 }
 layout();
 const waterArt = new Map();
-for (const color of new Set(LEVELS.map(level => level.wash))) {
-  for (const orientation of ['portrait', 'landscape']) {
-    const image = new Image(), key = `${color}-${orientation}`;
-    image.onload = () => waterArt.set(key, image);
+function waterFor(color) {
+  const orientation = portrait ? 'portrait' : 'landscape', key = `${color}-${orientation}`;
+  if (!waterArt.has(key)) {
+    const image = new Image();
+    waterArt.set(key, image);
     image.src = new URL(`./water/${color.slice(1)}-${orientation}.webp`, import.meta.url).href;
   }
+  const image = waterArt.get(key);
+  return image.complete && image.naturalWidth > 0 ? image : null;
 }
 const SAVE_KEY = 'drawing-hours-aquarium-v2';
 const testMode = new URLSearchParams(location.search).has('test');
@@ -201,7 +204,7 @@ function fishArt(f) {
 }
 function draw() {
   ctx.fillStyle = game.level.wash; ctx.fillRect(0, 0, W, H);
-  const water = waterArt.get(`${game.level.wash}-${portrait ? 'portrait' : 'landscape'}`);
+  const water = waterFor(game.level.wash);
   if (water) ctx.drawImage(water, 0, 0, W, H);
   const wash = ctx.createRadialGradient(W * .38, H * .3, 30, W * .6, H * .45, W * .7);
   wash.addColorStop(0, '#f7ecd74a'); wash.addColorStop(1, '#456b5c21'); ctx.fillStyle = wash; ctx.fillRect(0, 0, W, H);

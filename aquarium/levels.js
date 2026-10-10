@@ -33,7 +33,7 @@ export const LEVELS = [
     goals: {barb: 3, halfbeak: 3}, recipes: {barb: 3},
     instruction: 'Draw a figure eight: three barbs in one pocket, two halfbeaks in the other.', wash: '#beb3ce'},
   {id: 'open-water', title: 'Open water', duration: 180, population: {ricefish: 6, goby: 6, barb: 6, halfbeak: 4}, rocks: true, shade: true, beetles: 1, bubbles: true,
-    story: "Today, It feels like we're all living between banks.",
+    story: "I like to visit the fish on some of my weekends. Today, It feels like we're all living between banks.",
     goals: {ricefish: 2, goby: 2, barb: 2, halfbeak: 2}, recipes: {barb: 3},
     instruction: 'Enclose pairs, or three barbs. Keep each kind in its own pocket.', wash: '#beb3ce'},
 ];
