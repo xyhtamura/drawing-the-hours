@@ -1,6 +1,7 @@
 import {LEVELS, SPECIES, recipeSize} from './levels.js';
 import {constrainToWalls} from '../src/string.js';
 import {strokeDisruption} from './rules.js';
+import {waterAt, waterZones} from './water.js';
 
 /** Soft leaf shade for the top-view stream scenes. */
 export function shadePatches(width, height, time) {
@@ -104,6 +105,7 @@ export class Aquarium {
     dt = Math.min(dt, .04); this.time += dt;
     if (this.mode === 'play' && this.started && !this.practice) this.elapsed += dt;
     const walls = gesture?.wallSegments ?? [];
+    const zones = waterZones(this.level, this.width, this.height, this.top);
     for(const beetle of this.beetles) {
       beetle.from={x:beetle.x,y:beetle.y}; beetle.clock+=dt; beetle.turnTime-=dt;
       if(beetle.turnTime<=0) {beetle.targetHeading+=(this.random()<.5?-1:1)*(1+this.random()*1.3);beetle.turnTime=1.5+this.random()*2;}
@@ -157,7 +159,10 @@ export class Aquarium {
       if (f.kind === 'ricefish' && f.school === null) f.targetHeading += Math.sin(this.time * .8 + f.phase) * dt * .5;
       const delta = Math.atan2(Math.sin(f.targetHeading - f.heading), Math.cos(f.targetHeading - f.heading));
       f.heading += delta * Math.min(1, dt * (dart ? 12 : f.kind === 'barb' ? 5 : f.kind === 'halfbeak' ? 10 : 2));
-      f.x += Math.cos(f.heading) * speed * dt; f.y += Math.sin(f.heading) * speed * dt;
+      const water = f.isBead || (f.kind === 'goby' && f.resting) ? {vx:0,vy:0,drag:1} : waterAt(f.x, f.y, zones);
+      const coupling = f.kind === 'goby' ? .25 : f.kind === 'barb' ? .65 : f.kind === 'halfbeak' ? .7 : 1;
+      f.x += (Math.cos(f.heading) * speed * water.drag + water.vx * coupling) * dt;
+      f.y += (Math.sin(f.heading) * speed * water.drag + water.vy * coupling) * dt;
       if (f.x < 48 || f.x > this.width - 48) {f.heading = Math.PI - f.heading; f.targetHeading = f.heading;}
       if (f.y < this.top || f.y > this.height - 48) {f.heading = -f.heading; f.targetHeading = f.heading;}
       f.x = Math.max(48, Math.min(this.width - 48, f.x)); f.y = Math.max(this.top, Math.min(this.height - 48, f.y));

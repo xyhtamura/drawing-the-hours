@@ -25,6 +25,28 @@ Audio starts after interaction; drawing still works when Web Audio is unavailabl
 The water uses four palettes, each shared by two consecutive levels: blue
 (1–2), green (3–4), peach (5–6), and purple (7–8).
 
+Water conditions add movement within soft-edged regions. Currents carry roaming
+fish, eddies turn them, and pale pools slow their swimming and shelter them from
+overlapping flow. Drifting flecks show direction; pools have a pale wash and
+still flecks. Reduced-motion mode keeps those cues still. These are authored
+game fields, rather than a fluid or habitat simulation.
+
+| Level | Water conditions |
+| --- | --- |
+| 1 | A broad calm pool |
+| 2 | A current between the stones |
+| 3 | Two opposite eddies around the schools and a calm ricefish pool |
+| 4 | A current between leaf clumps, with calm margins |
+| 5 | Two calm pools beneath shade and a gentle passing current |
+| 6 | A calm pool beside a gentle current |
+| 7 | One broad, gentle eddy |
+| 8 | A current, an eddy, and a calm pool together |
+
+Ricefish follow flow most strongly. Barbs and halfbeaks receive weaker drift;
+swimming gobies resist most, and resting gobies hold their stones. Water never
+displaces threaded fish or changes swim-away departures. Cord and leaf walls
+still constrain fish. Pause freezes both movement and the water cues.
+
 Fish bodies, tails, and fins reuse the project's paper textures, tinted to each
 species' colors. Soft vegetation and water washes form the background.
 The water uses fabric, glass, and paint textures supplied in `tex/`, recolored
@@ -76,6 +98,10 @@ shadow. Cord contact radii and school spacing retain their original values.
 
 ## Checks
 
+Run `node test/test_water.js` for flow direction, calm slowdown, opposite eddies,
+anchored gobies, threaded fish, departures, clock, pause, cord containment, and
+field placement in both orientations.
+
 Open [the aquarium layout check](../test/aquarium-layout.html) for five viewport
 sizes, fixed field area, uniform scaling, contained controls, and preserved play
 through rotation. The [main shell check](../test/shell-browser.html) checks the
@@ -95,4 +121,4 @@ Its files are unchanged. Its relocated checks are
 [the archived browser check](../test/aquariumarchive-browser.html).
 
 Next: play all eight levels on a touch device and tune shoal separation, beetle pacing,
-and bubble disturbance strength.
+water strength and cue visibility, and bubble disturbance strength.

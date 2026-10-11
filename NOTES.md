@@ -2475,3 +2475,34 @@ pockets had already been discussed; they remain unimplemented. A movement-based
 approach could carry fish through currents, turn groups in eddies, and offer
 calm sorting areas. The existing touch playtest remains next; sound balance
 and meadow pacing are still pending.
+
+## 2026-10-11 — Codex — Water conditions
+
+Added soft-edged currents, eddies, and calm pools across all eight Between Banks
+levels. Currents carry roaming fish, eddies add tangential drift, and calm pools
+slow swimming and reduce overlapping flow. Ricefish receive full drift; barbs,
+halfbeaks, and gobies receive progressively less. Resting gobies hold their
+stones. Threaded fish and departing groups are unaffected. Water displacement
+passes through the existing cord and leaf constraints. Zone placement is
+relative to the playable field, so rotation preserves the level's arrangement.
+
+Subtle washes and drifting flecks indicate conditions; reduced-motion mode
+keeps the cues still. Removed the decorative oval ripples because they did not
+indicate playable water movement. Each opening card has one short water hint;
+Xyh's story text, recipes, goals, and timers remain unchanged. Levels six and
+seven use gentle fields to limit the added difficulty. The fields are authored
+movement effects, not a fluid simulation or claims about species' habitats.
+
+The new Node water suite passed current direction, calm slowdown, reverse
+eddies, real swimming displacement, anchored gobies, threaded fish, departures,
+timer, pause, cord containment, and zone placement in both orientations. The
+existing Node suite passed sustained movement clear of leaves and all eight
+completions. Mounted browser checks passed real pointer progression through
+all eight levels and the five-size layout/rotation check. Small Schools was
+inspected visually; browser console errors were absent. Syntax and whitespace
+checks passed. Human difficulty and cue visibility still need a touch playtest.
+
+Next is the existing touch playtest, now also tuning water strength and cue
+visibility alongside shoal separation, beetle pacing, and bubble strength.
+ROADMAP.md and the chapter README agree. Sound balance and meadow pacing remain
+pending.

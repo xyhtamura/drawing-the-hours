@@ -6,6 +6,7 @@ import {getLengthBand} from '../src/geometry.js';
 import {fitField} from '../src/viewport.js';
 import {paperTile, loadPaper} from '../src/paper.js';
 import {audio} from '../src/audio.js';
+import {drawWaterConditions, waterZones} from './water.js';
 
 const FISH_PAPER = {
   ricefish: {paper: 'mulberry', relief: .075, keep: .6, split: 12},
@@ -96,7 +97,7 @@ function show(title, content, buttons) {
 function start() {audio.ensureContext(); game.mode = 'play'; $('overlay').hidden = true; canvas.focus(); last = performance.now(); message('');}
 function ready() {
   game.mode = 'ready';
-  show(game.level.title, `${diagram()}<p>${game.level.instruction}</p><p>Cross the cord to close the loop, then lift. Draw around the fish.</p>`, [['Begin', start, true], ['Levels', map]]);
+  show(game.level.title, `${diagram()}<p>${game.level.instruction}</p><p>${game.level.waterHint}</p><p>Cross the cord to close the loop, then lift. Draw around the fish.</p>`, [['Begin', start, true], ['Levels', map]]);
   const story = document.createElement('p');
   story.className = 'level-story';
   const text = game.level.storyItalic === false ? story : story.appendChild(document.createElement('em'));
@@ -229,6 +230,7 @@ function draw() {
   if (water) ctx.drawImage(water, 0, 0, W, H);
   const wash = ctx.createRadialGradient(W * .38, H * .3, 30, W * .6, H * .45, W * .7);
   wash.addColorStop(0, '#f7ecd74a'); wash.addColorStop(1, '#456b5c21'); ctx.fillStyle = wash; ctx.fillRect(0, 0, W, H);
+  drawWaterConditions(ctx, waterZones(game.level, W, H, game.top), game.time, reduced);
   ctx.save(); ctx.globalAlpha = .16;
   ctx.fillStyle = '#8eac81';
   for (let i = 0; i < 28; i++) {
@@ -266,8 +268,6 @@ function draw() {
     ctx.beginPath();ctx.arc(bubble.x-bubble.radius*.2,bubble.y-bubble.radius*.2,bubble.radius*.45,Math.PI,Math.PI*1.5);ctx.stroke();ctx.restore();
   }
   ctx.fillStyle = '#f7eed638'; for (let i = 0; i < 140; i++) {const x = (i * 137.3 + game.time * 1.5) % W, y = (i * 83.7) % H; ctx.fillRect(x, y, i % 3 ? 1 : 2, 1);}
-  ctx.strokeStyle = '#f2f0d42b'; ctx.lineWidth = 2;
-  for (let i = 0; i < 4; i++) {const x = W * (.2 + i * .2), y = H * (.29 + i % 2 * .24); ctx.beginPath(); ctx.ellipse(x, y, 95 + Math.sin(game.time * .5 + i) * 12, 20, -.35, 0, Math.PI * 2); ctx.stroke();}
   for (const r of ripples) {ctx.globalAlpha = r.life / 1.2; path(r.polygon); ctx.closePath(); ctx.fillStyle = '#f8efd320'; ctx.fill(); ctx.strokeStyle = '#f5ebc5'; ctx.lineWidth = 2; ctx.stroke();} ctx.globalAlpha = 1;
   game.fish.forEach(fishArt);
   for(const beetle of game.beetles) {
