@@ -71,6 +71,9 @@ Each opening card carries Xyh's level text, preserved as supplied in
 `levels.js`. The chapter lives at `between-banks/` and keeps its existing save key.
 Counts, school spacing, contrast, and durations await a touch playtest.
 
+Fish artwork is enlarged by 18%, with a darker body edge and a stronger soft
+shadow. Cord contact radii and school spacing retain their original values.
+
 ## Checks
 
 Open [the aquarium layout check](../test/aquarium-layout.html) for five viewport

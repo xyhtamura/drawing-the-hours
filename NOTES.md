@@ -2458,3 +2458,20 @@ The in-app browser showed the pastel silhouette and folds in desktop and
 canvas. No browser console errors appeared. The shell-art syntax and Git
 whitespace checks passed. The photograph's source licence is unrecorded; no
 publication was performed. Touch pacing and sound balance remain pending.
+
+## 2026-10-11 — Codex — Fish visibility
+
+Enlarged Between Banks fish artwork by 18%, including fins and identifying
+marks. Increased the body-edge contrast and soft shadow. Contact radii, school
+spacing, recipes, and movement are unchanged. The in-app browser showed the
+larger fish in Small Schools with visible gaps between individuals. The Node
+suite passed all eight completions and its movement, obstacle, bubble, and cord
+checks; the aquarium JavaScript syntax and Git whitespace checks passed.
+
+Xyh asked about further visibility options and recalled water conditions.
+Quieter background texture and stronger species markings were discussed as
+possible visibility changes, not implemented. Rivers, eddies, and sheltered
+pockets had already been discussed; they remain unimplemented. A movement-based
+approach could carry fish through currents, turn groups in eddies, and offer
+calm sorting areas. The existing touch playtest remains next; sound balance
+and meadow pacing are still pending.

@@ -197,12 +197,14 @@ function fishPaper(kind) {
 function fishArt(f) {
   const s = SPECIES[f.kind], n = s.size, beat = Math.sin(game.time * (f.kind === 'goby' ? 15 : 8) + f.phase);
   ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.heading);
+  // Enlarge the artwork without changing cord contact or school spacing.
+  ctx.scale(1.18, 1.18);
   ctx.globalAlpha = f.state === 'departing' ? Math.max(0, 1 - f.departure / 1.5) : 1;
-  ctx.fillStyle = '#3a6a5d18'; ctx.beginPath(); ctx.ellipse(3, 6, n * 1.2, n * .42, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#3a6a5d24'; ctx.beginPath(); ctx.ellipse(3, 6, n * 1.2, n * .42, 0, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = s.trim; ctx.beginPath(); ctx.moveTo(-n * .5, 0);
   ctx.lineTo(-n * 1.15, -n * .24 + beat * 1.5); ctx.lineTo(-n * 1.15, n * .24 + beat * 1.5);
   ctx.closePath(); fishPaper(f.kind);
-  ctx.fillStyle = s.color; ctx.strokeStyle = '#496d5d40'; ctx.lineWidth = .7;
+  ctx.fillStyle = s.color; ctx.strokeStyle = '#496d5d70'; ctx.lineWidth = .9;
   ctx.beginPath(); ctx.ellipse(0, 0, n * .85, n * (f.kind === 'goby' ? .34 : f.kind === 'halfbeak' ? .16 : f.kind === 'barb' ? .28 : .22), 0, 0, Math.PI * 2); fishPaper(f.kind); ctx.stroke();
   if (f.kind === 'barb') {
     ctx.fillStyle = '#59614f'; for (const x of [-.45, -.1, .28]) {ctx.beginPath(); ctx.arc(n * x, 0, 1.8, 0, Math.PI * 2); ctx.fill();}
