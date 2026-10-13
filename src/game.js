@@ -23,6 +23,8 @@ import { COMBO_DIAGRAMS, drawComboDiagram } from './combo-diagrams.js';
 import { DandelionClock } from './clock.js';
 import { audio } from './audio.js';
 import { storage } from './storage.js';
+import { isLocal } from './edition.js';
+import { drawHourWash, drawHourGauge, washFor } from './hour-clock.js';
 import { createDawnArt, wrapText } from './dawn-art.js';
 import { createNoonArt } from './noon-art.js';
 import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } from './campaign.js';
@@ -1681,6 +1683,9 @@ export class Game {
     // 4b. Placed Salt Grains
     this.drawSaltGrains(ctx);
 
+    // 4c. Local edition: the visit clock crosses the field under the creatures.
+    if (isLocal() && this.state === 'PLAYING') drawHourWash(ctx, this);
+
     // 5. Inhabitants (Folded Butterflies, Seeds, Snail)
     for (const ent of this.entities) {
       ent.draw(ctx);
@@ -2294,7 +2299,7 @@ export class Game {
     if (isNarrow) {
       // --- MOBILE / VERTICAL HUD LAYOUT ---
       // Tier 1: Left Clock, Right Objectives
-      this.clock.draw(ctx, 28, 28, 18);
+      if (isLocal()) drawHourGauge(ctx, this, 28, 28, 15); else this.clock.draw(ctx, 28, 28, 18);
 
       ctx.fillStyle = themeColor('ink', '#4a4235');
       ctx.font = '600 13px system-ui, -apple-system, sans-serif';
@@ -2306,7 +2311,7 @@ export class Game {
 
       ctx.fillStyle = themeColor('muted', '#8a7f70');
       ctx.font = '500 10px system-ui, -apple-system, sans-serif';
-      ctx.fillText(this.isUntimed() ? 'Untimed' : (this.isClockHeld() ? 'Waiting' : 'Clock'), 52, 40);
+      ctx.fillText(this.isUntimed() ? 'Untimed' : (this.isClockHeld() ? 'Waiting' : (isLocal() ? washFor(this.currentLevel).label : 'Clock')), 52, 40);
 
       // Top-Right: Objective & Score
       const lvlTitle = this.currentLevel ? `${this.currentLevel.title}` : `Wave ${this.currentWave}`;
@@ -2360,7 +2365,7 @@ export class Game {
       ctx.fillText(`CORD: ${this.activeBand.name.toUpperCase()}`, cx, meterY + 11);
     } else {
       // --- STANDARD WIDESCREEN HUD LAYOUT ---
-      this.clock.draw(ctx, 42, 40, 24);
+      if (isLocal()) drawHourGauge(ctx, this, 42, 40, 20); else this.clock.draw(ctx, 42, 40, 24);
 
       ctx.fillStyle = themeColor('ink', '#4a4235');
       ctx.font = '600 14px system-ui, -apple-system, sans-serif';
@@ -2373,7 +2378,7 @@ export class Game {
       ctx.fillStyle = themeColor('muted', '#8a7f70');
       ctx.font = '500 11px system-ui, -apple-system, sans-serif';
       ctx.fillText(
-        this.isUntimed() ? 'Untimed practice' : (this.isClockHeld() ? 'Starts after first loop' : 'Dandelion Clock'),
+        this.isUntimed() ? 'Untimed practice' : (this.isClockHeld() ? 'Starts after first loop' : (isLocal() ? washFor(this.currentLevel).label : 'Dandelion Clock')),
         74,
         52
       );

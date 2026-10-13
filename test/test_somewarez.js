@@ -159,4 +159,69 @@ console.log('--- Running SOMEWAREZ kiosk tests ---');
   console.log('✔ The page loads the kiosk only behind the build flag.');
 }
 
+// 5. The local edition's names
+{
+  const { localize, setLocalEdition, isLocal, LOCAL_SPECIES } = await import('../src/edition.js');
+  const { PRACTICE_LEVELS, OBJECTIVE_LABELS } = await import('../src/campaign.js');
+  const { SPECIES_CONFIG } = await import('../src/entities.js');
+  const { midnightHue, clockProgress, HOUR_WASH } = await import('../src/hour-clock.js');
+
+  assert.equal(isLocal(), false, 'the edition is off without the build flag');
+  assert.equal(localize('Thread a firefly.'), 'Thread a firefly.', 'and text is left alone');
+  assert.equal(SPECIES_CONFIG.brimstone.name, 'Brimstone Butterfly', 'as are the species names');
+
+  setLocalEdition(true);
+  const cases = [
+    ['Thread a firefly, then a lacewing, then a different firefly in one stroke.', 'Thread an alitaptap, then a lacewing, then a different alitaptap in one stroke.'],
+    ['Brimstones and the snail return.', 'Paruparo and the snail return.'],
+    ['There are as many damselflies as Brimstones now: pick the match.', 'There are as many tutubi as paruparo now: pick the match.'],
+    ['Pick a flax flower. The next cord is longer.', 'Pick an abaca flower. The next cord is longer.'],
+    ['Roseate Hawkmoth', 'Oleander Hawkmoth'],
+    ['2 hawkmoths, 2 hoverflies', '2 gamugamo, 2 bubuyog'],
+    ['The hornet cut the cord.', 'The putakti cut the cord.'],
+    ['Begin a thread inside the jasmine.', 'Begin a thread inside the dama de noche.'],
+    ['an airborne dandelion seed', 'an airborne cogon plume'],
+    ['The dandelion seeds slipped away into the dark.', 'The night has filled the window.'],
+    ['Dandelion Clock: 75 seconds', 'Time: 75 seconds'],
+    ['Seed & Wing', 'Seed & Wing'],
+  ];
+  for (const [source, expected] of cases) assert.equal(localize(source), expected);
+
+  // Every string a visit carries: nothing of the old cast is left, the result is
+  // stable when localized again, and no article disagrees with its new noun.
+  const old = /brimstone|damselfl|hoverfl|firefl|hornet|cicada|jasmine|flax|dandelion|roseate|(?<!oleander )hawkmoth/i;
+  const strings = [];
+  const collect = value => {
+    if (typeof value === 'string') strings.push(value);
+    else if (value && typeof value === 'object') Object.entries(value).forEach(([key, v]) => { if (!['id', 'hour', 'scene', 'kind', 'practiceOf', 'snailRoute'].includes(key)) collect(v); });
+  };
+  collect([CAMPAIGN_LEVELS.map(({ population, objectives, traceSequence, traceSequences, gestures, ...shown }) => shown), PRACTICE_LEVELS.map(({ population, objectives, traceSequence, traceSequences, gestures, ...shown }) => shown), OBJECTIVE_LABELS]);
+  assert.ok(strings.length > 100, 'the visits were read');
+  for (const source of strings) {
+    const shown = localize(source);
+    assert.ok(!old.test(shown), `still names the old cast: ${shown}`);
+    assert.equal(localize(shown), shown, `not stable: ${shown}`);
+    assert.ok(!/\ban? (?:alitaptap|abaca)/i.test(shown.replace(/\ban (?:alitaptap|abaca)/gi, '')), `wrong article: ${shown}`);
+    assert.ok(!/\ban (?:paruparo|tutubi|gamugamo|bubuyog|putakti|kuliglig|cogon)/i.test(shown), `wrong article: ${shown}`);
+  }
+  for (const kind of Object.keys(LOCAL_SPECIES)) assert.ok(SPECIES_CONFIG[kind], `${kind} is a species`);
+
+  // The clock: six Midnight hues near 321, and progress that follows the visit clock.
+  const hues = CAMPAIGN_LEVELS.filter(l => l.hour === 'midnight').map(midnightHue);
+  assert.equal(new Set(hues).size, 6, 'each Midnight visit has its own hue');
+  for (const hue of hues) assert.ok(Math.min(Math.abs(hue - 321), 360 - Math.abs(hue - 321)) <= 48);
+  assert.deepEqual(Object.keys(HOUR_WASH), ['dawn', 'noon', 'dusk', 'midnight']);
+  const game = new Game(canvas);
+  game.startLevel('noon-02'); game.state = 'PLAYING';
+  game.clock.remainingSeconds = game.clock.totalSeconds / 4;
+  assert.equal(game.isClockHeld() ? 0 : clockProgress(game), game.isClockHeld() ? 0 : 0.75);
+  const { drawHourWash, drawHourGauge } = await import('../src/hour-clock.js');
+  for (const id of ['dawn-02', 'noon-02', 'dusk-02', 'midnight-02']) {
+    game.startLevel(id); game.state = 'PLAYING'; game.clock.remainingSeconds = 1;
+    drawHourWash(ctx, game); drawHourGauge(ctx, game, 40, 40, 20); // neither throws
+  }
+  setLocalEdition(false);
+  console.log('✔ The local edition renames the whole cast and keeps the rest of the text.');
+}
+
 console.log('--- All SOMEWAREZ kiosk tests passed! ---');

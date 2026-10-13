@@ -54,6 +54,15 @@ Only the kiosk build loads them.
 
 The QR code, `somewarez/multicart-qr.svg`, is drawn by `scripts/make_qr.py`.
 
+## Local edition drawings
+
+The kiosk build's oleander hawkmoth colours, cogon plume, and abaca flower are
+drawn in code in `src/entities.js` and `src/edition.js`. Xyh supplied two
+reference images in conversation on 2026-10-13, a plate of an oleander hawkmoth
+and a photograph of a banana-family inflorescence; their sources were not
+recorded. They were looked at for colour and form only. Neither file is in the
+repository and no pixels from them are used.
+
 ## Procedural graphics
 
 The cached Dawn paper texture, pavement, grasses, and flowers in

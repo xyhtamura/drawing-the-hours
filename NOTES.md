@@ -14,6 +14,28 @@ Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet be
 
 ## Activity
 
+2026-10-13 — Claude Code — Gave the SOMEWAREZ kiosk build a local cast and a new visit clock, on Xyh's direction. The main build is unchanged: everything here is behind `isLocal()` in `src/edition.js`, which follows the kiosk flag.
+
+- **Names**, Tagalog where it is the everyday word and English otherwise: Brimstone → Lemon Emigrant / paruparo; Azure Damselfly → Tutubing Karayom / tutubi; Roseate Hawkmoth → Oleander Hawkmoth / gamugamo; Amber Hoverfly → Amber Bubuyog / bubuyog; Paper Lacewing → Green Lacewing; Window Firefly → alitaptap; Atrium Hornet → putakti; cicadas → kuliglig; night jasmine → dama de noche; flax flower → abaca flower; dandelion seed → cogon plume; the snail's Field Book entry → Giant African Snail. Recipe names (Seed & Wing, and the rest) are kept.
+- **One table, applied where text is shown.** `localize()` in `src/edition.js` holds the substitutions, with plural and article fixes (an alitaptap, an abaca flower, no plural s on the Tagalog nouns). It runs on canvas text (`localizeContext` wraps the game context's `fillText`, `strokeText`, and `measureText`), on card text before it is wrapped (`wrapText`), and on the page through a MutationObserver (`localizeDocument`). The strings in `campaign.js`, `game.js`, and `index.html` stay as the main build has them, so the two builds cannot drift apart in wording.
+- **Hawkmoth** is green with a pink band and pink-mauve hindwings, after the oleander hawkmoth plate Xyh supplied. The other insects keep their colours.
+- **Cogon plume** replaces the dandelion seed's drawing, on the same footprint and radius. **Abaca flower** replaces the flax flower's: maroon bracts folded back from a cream bud under a fringe of yellow flowers, after Xyh's photograph. Both are drawn in code in `src/entities.js`; no pixels of either reference are used.
+- **Clock** (`src/hour-clock.js`): Xyh's idea. Time crosses the field as a soft-edged wash drawn under the creatures: warm light from the left at Dawn, blue sky from the top at Noon, shadow from the right at Dusk, and at Midnight a dark saturated colour from the bottom, hue 321 (around `#6e084a`) shifted by 0, 16, -16, 32, -32, 48 degrees across the hour's six visits. When it has covered the field the visit is over. A small disc beside the time shows the same share, labelled Light, Sky, Shadow, or Night. The clock's arithmetic (`src/clock.js`) is untouched. The failure lines name the wash, for example "The shadow has crossed the field."
+
+Verification:
+
+- `test/test_somewarez.js` section 5: twelve fixed sentences; then every string in every campaign and practice visit is localized and checked for any word of the old cast, for stability under a second pass, and for articles; six distinct Midnight hues within 48 degrees of 321; the wash and gauge draw for all four hours. With the edition off, text and species names are unchanged. All twelve suites pass.
+- In the page at 1024x768 emulation, read by screenshot with the game stepped by hand: Noon IV at 55% (sky over the upper field, disc labelled Sky, green-and-pink hawkmoths, an abaca flower, cogon plumes, bubuyog, putakti); Dawn V, Dusk III, and Midnight I and IV at 50 to 70%, each with its own wash and label, Midnight IV redder than Midnight I; the Midnight XXIV card reading "dama de noche", "Paruparo and the snail return", and "Time: 110 seconds". By DOM: all Field Book headings renamed, and no paragraph, visit line, or hint left naming the old cast. No console errors.
+- The main page without the flag still shows Brimstone Butterfly and Roseate Hawkmoth and has no kiosk.
+
+Not done, and open:
+
+- **The species matches are from memory and unchecked** (lemon emigrant, oleander hawkmoth, and giant African snail as Philippine garden species; "bubuyog" used loosely for a striped bee). Check before the names go on a wall label.
+- **Not played.** Whether creatures and the cord stay legible under each wash, and whether a front crossing the field distracts from drawing, is unobserved. The four alphas (0.34, 0.34, 0.4, 0.5), the 90 px soft edge, and the directions are first guesses.
+- The snail's shell is not redrawn; only its Field Book name changed. The hoverfly's body is not redrawn as a bee.
+- The Field Book diagrams' `aria-label` attributes still use the main build's names; the observer changes text nodes only.
+- Field Book prose is renamed but not rewritten: the Seed & Wing entry still says "on the morning breeze", and the Putakti entry still describes an atrium.
+
 2026-10-13 — Claude Code — Revised the kiosk build on Xyh's review: nothing is drawn outside the field, and the multicart card follows the multicart page.
 
 - **Controls inside the field.** Main menu, Level card, and Reset sit at the foot of the field on the right, where the Pause button is in the main build, and stay above the menus so Reset is always in reach. The idle layer, its caption, and the card are children of `.stage-wrapper` too; `document.body` holds only `main` and the script. The space reserved below the field (`Game` `reservedBottom`, `KIOSK_BAR`) is removed, so the field is the size it is in the main build. Menus other than the title end 68 px above the foot so their last button clears the controls.

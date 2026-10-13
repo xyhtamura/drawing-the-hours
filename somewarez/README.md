@@ -36,6 +36,14 @@ Locally, with the root server running:
 
   A touch during the first two returns to the title screen. That touch does not
   press anything under it.
+- **A local cast.** Creatures and plants carry Philippine names (paruparo, tutubi,
+  alitaptap, putakti, dama de noche, abaca, cogon), the hawkmoth is an oleander
+  hawkmoth in green and pink, and dandelion seeds are cogon plumes. Mechanics and
+  recipes are the same. The table is in [src/edition.js](../src/edition.js).
+- **The clock crosses the field** in place of the dandelion head: light at Dawn,
+  blue sky at Noon, shadow at Dusk, and a dark colour at Midnight whose hue
+  changes with each visit ([src/hour-clock.js](../src/hour-clock.js)). A visit ends
+  when it has covered the field.
 - The link to Between Banks is hidden, because that page has no controls and no reset.
 
 ## Settings

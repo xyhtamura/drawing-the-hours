@@ -1,5 +1,6 @@
 import { CHAPTER_PALETTES } from './palettes.js';
 import { storage } from './storage.js';
+import { isLocal, LOCAL_COLORS } from './edition.js';
 
 const STORAGE_KEY = 'drawing-the-hours-color-mode';
 let mode = 'default';
@@ -7,6 +8,7 @@ let hour = 'dawn';
 try { if (storage.getItem(STORAGE_KEY) === 'light') mode = 'light'; } catch {}
 
 export function themeColor(role, fallback) {
+  if (isLocal() && Object.hasOwn(LOCAL_COLORS, role)) return LOCAL_COLORS[role];
   return mode === 'light' ? fallback : CHAPTER_PALETTES[hour][role] ?? fallback;
 }
 

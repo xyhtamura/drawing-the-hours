@@ -1,3 +1,4 @@
+import { localize } from './edition.js';
 import { themeColor } from './theme.js';
 import { paperBackdrop, PAPER_USE } from './paper.js';
 
@@ -37,6 +38,7 @@ export function createDawnArt(width, height, pixelRatio = 1) {
 
 /** Lines are measured using the active canvas font, including local web fonts. */
 export function wrapText(ctx, text, maxWidth) {
+  text = localize(text); // whole, so a renamed phrase is not split across lines first
   const lines = [];
   let line = '';
   for (const word of text.split(/\s+/)) {

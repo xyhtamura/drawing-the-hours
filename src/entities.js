@@ -2,6 +2,7 @@ import { themeColor } from './theme.js';
 import { updateLacewing, drawLacewing } from './lacewing.js';
 import { curbSeamY } from './geometry.js';
 import { paperShape, paperFill, contactShadow } from './paper.js';
+import { isLocal, applyLocalCast } from './edition.js';
 /**
  * Drawing the Hours — Inhabitants of the Meadow
  * Procedural paper entities with distinct morphology and flight physics:
@@ -96,6 +97,7 @@ export const SPECIES_CONFIG = {
   azure: null,
   roseate: null,
 };
+if (isLocal()) applyLocalCast(SPECIES_CONFIG);
 // Aliases
 SPECIES_CONFIG.azure = SPECIES_CONFIG.damselfly;
 SPECIES_CONFIG.roseate = SPECIES_CONFIG.hawkmoth;
@@ -749,6 +751,8 @@ export class DandelionSeed {
     ctx.fill();
     ctx.restore();
 
+    if (isLocal()) { drawCogonPlume(ctx); ctx.restore(); return; }
+
     // Feathery Pappus. Drawn as pencil-grey filaments over a pale tuft rather
     // than in near-white: on cream paper white-on-cream measured 2.1:1 and the
     // seed read as a bare speck, which made Seed & Wing unplayable.
@@ -1044,8 +1048,61 @@ export class FlaxFlower {
   }
 }
 
+/**
+ * Local edition's drifting seed: a cogon plume, a silky spindle on a thin stalk.
+ * It keeps the dandelion seed's footprint, and its hairs are pencil-grey over a
+ * pale body for the same reason the pappus is.
+ */
+function drawCogonPlume(ctx) {
+  ctx.strokeStyle = themeColor('seed', '#8a7f69'); ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(1, 13); ctx.quadraticCurveTo(-2, 4, 0, -4); ctx.stroke();
+  ctx.fillStyle = 'rgba(252, 250, 244, 0.9)';
+  ctx.beginPath(); ctx.moveTo(0, 5);
+  ctx.bezierCurveTo(-8, -1, -7, -17, 1, -25);
+  ctx.bezierCurveTo(8, -16, 8, -1, 0, 5); ctx.fill();
+  ctx.strokeStyle = themeColor('seed', '#948c78'); ctx.lineWidth = 0.9;
+  for (let i = 0; i < 9; i++) {
+    const t = i / 8, y = 3 - t * 24, half = 2.5 + 5 * Math.sin(Math.PI * (0.12 + 0.8 * t));
+    for (const side of [-1, 1]) {
+      ctx.beginPath(); ctx.moveTo(t * 0.8, y); ctx.lineTo(side * half + t * 0.8, y - 4.5); ctx.stroke();
+    }
+  }
+  ctx.beginPath(); ctx.moveTo(0, 5); ctx.lineTo(1, -25); ctx.stroke();
+}
+
+/**
+ * Local edition's cord pickup: an abaca flower. Maroon bracts fold back from a
+ * cream bud that hangs below a fringe of small yellow flowers.
+ */
+function drawAbacaFlower(ctx) {
+  ctx.save();
+  ctx.strokeStyle = themeColor('outline', '#6f8b52'); ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(3, -24); ctx.quadraticCurveTo(-3, -16, 0, -8); ctx.stroke();
+  // Bracts, back pair first.
+  for (const [angle, length, fill] of [[-2.0, 17, '#8f2f33'], [2.0, 17, '#8f2f33'], [-1.15, 19, '#b5453c'], [1.15, 19, '#b5453c'], [0, 15, '#c95f45']]) {
+    ctx.save(); ctx.translate(0, -5); ctx.rotate(angle);
+    ctx.fillStyle = fill; ctx.strokeStyle = '#6e2228'; ctx.lineWidth = 0.9;
+    ctx.beginPath(); ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(-8, -4, -7, -length + 2, 0, -length);
+    ctx.bezierCurveTo(7, -length + 2, 8, -4, 0, 0); paperShape(ctx, 'petal');
+    ctx.strokeStyle = 'rgba(240, 170, 120, 0.7)'; ctx.lineWidth = 0.7;
+    ctx.beginPath(); ctx.moveTo(0, -3); ctx.lineTo(0, -length + 4); ctx.stroke();
+    ctx.restore();
+  }
+  // Cream bud.
+  ctx.fillStyle = '#f3ead2'; ctx.strokeStyle = '#b9a886'; ctx.lineWidth = 0.9;
+  ctx.beginPath(); ctx.moveTo(0, -6);
+  ctx.bezierCurveTo(-9, -3, -7, 11, 0, 17);
+  ctx.bezierCurveTo(7, 11, 9, -3, 0, -6); paperShape(ctx, 'petal');
+  // Fringe of small flowers where the bud meets the bracts.
+  ctx.fillStyle = '#d9a441';
+  for (let i = -3; i <= 3; i++) { ctx.beginPath(); ctx.arc(i * 1.9, -5.5 + Math.abs(i) * 0.5, 1.3, 0, Math.PI * 2); ctx.fill(); }
+  ctx.restore();
+}
+
 /** Five blue petals, fine veins, a warm center, and narrow stem leaves. */
 export function drawFlaxFlower(ctx) {
+  if (isLocal()) { drawAbacaFlower(ctx); return; }
   ctx.save();
   ctx.strokeStyle = themeColor('outline', '#6f8b52'); ctx.lineWidth = 1.3;
   ctx.beginPath(); ctx.moveTo(0, 4); ctx.quadraticCurveTo(-3, 15, 1, 24); ctx.stroke();

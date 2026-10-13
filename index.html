@@ -293,6 +293,7 @@
 
   <script type="module">
     import { KIOSK } from './src/build.js';
+    import { isLocal, localizeContext, localizeDocument } from './src/edition.js';
     import { getColorMode, setColorMode } from './src/theme.js';
     import { Game } from './src/game.js';
     import { renderComboCanvases } from './src/combo-diagrams.js';
@@ -309,6 +310,8 @@
       setColorMode(getColorMode() === 'default' ? 'light' : 'default');
       game.render();
     });
+    // Local edition: cast names are swapped where text is shown (src/edition.js).
+    if (isLocal()) { localizeContext(game.ctx); localizeDocument(); }
     window.game = game; // handle for playtesting from the console
 
     const btnVisit = document.getElementById('btn-visit');
