@@ -1,0 +1,46 @@
+/* SOMEWAREZ kiosk build: control bar below the field, and the idle loop layer. */
+
+/* The field is fitted to the height above the bar (Game reservedBottom). */
+body.kiosk .stage-wrapper { top: calc((100dvh - var(--kiosk-bar)) / 2); }
+body.kiosk .stage-pause { display: none; }
+
+#kiosk-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+  height: var(--kiosk-bar);
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+}
+#kiosk-bar button { justify-content: center; min-width: 124px; min-height: 46px; font-size: 0.95rem; }
+
+#kiosk-attract { position: fixed; inset: 0; z-index: 300; touch-action: none; }
+
+.kiosk-caption {
+  position: absolute; left: 0; right: 0; bottom: 0; height: var(--kiosk-bar);
+  display: flex; align-items: center; justify-content: center; padding: 0 16px;
+  background: var(--bg-cream); color: var(--text-dark);
+  font: 600 clamp(15px, 2.4vmin, 20px) Mali, sans-serif; text-align: center;
+}
+
+.kiosk-statement {
+  position: absolute; left: 50%; top: 10%; transform: translateX(-50%);
+  width: max-content; max-width: min(84vw, 620px); padding: 14px 20px;
+  background: #f4efdcee; color: #34574f; border-radius: 4px 7px 5px 8px;
+  box-shadow: 0 1px 1px rgba(30, 24, 20, 0.25), 0 8px 20px rgba(30, 24, 20, 0.25);
+  font: 600 clamp(17px, 3vmin, 26px)/1.4 Mali, sans-serif; text-align: center;
+}
+
+.kiosk-ad {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: clamp(8px, 2vmin, 18px); padding: 24px; text-align: center;
+  background: #f4efdc; color: #34574f; font-family: Mali, sans-serif;
+}
+.kiosk-ad-kicker { color: #b7603c; font-size: clamp(14px, 2.4vmin, 22px); font-weight: 600; letter-spacing: 0.12em; }
+.kiosk-ad h2 { max-width: 20em; font-size: clamp(20px, 4vmin, 38px); font-weight: 600; line-height: 1.25; }
+.kiosk-ad img {
+  width: min(44vmin, 340px); height: auto; border-radius: 6px;
+  box-shadow: 0 1px 1px rgba(30, 24, 20, 0.25), 0 10px 26px rgba(30, 24, 20, 0.22);
+}
+.kiosk-ad p { font-size: clamp(15px, 2.6vmin, 22px); }
+.kiosk-ad-url { color: #795373; font-weight: 600; overflow-wrap: anywhere; }
+.kiosk-ad-touch { margin-top: clamp(6px, 2vmin, 20px); color: #6d7f77; font-size: clamp(14px, 2.2vmin, 18px); }

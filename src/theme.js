@@ -1,9 +1,10 @@
 import { CHAPTER_PALETTES } from './palettes.js';
+import { storage } from './storage.js';
 
 const STORAGE_KEY = 'drawing-the-hours-color-mode';
 let mode = 'default';
 let hour = 'dawn';
-try { if (globalThis.localStorage?.getItem(STORAGE_KEY) === 'light') mode = 'light'; } catch {}
+try { if (storage.getItem(STORAGE_KEY) === 'light') mode = 'light'; } catch {}
 
 export function themeColor(role, fallback) {
   return mode === 'light' ? fallback : CHAPTER_PALETTES[hour][role] ?? fallback;
@@ -19,7 +20,7 @@ export function getColorMode() { return mode; }
 export function setColorMode(value) {
   if (!['default', 'light'].includes(value)) return;
   mode = value;
-  try { globalThis.localStorage?.setItem(STORAGE_KEY, mode); } catch {}
+  try { storage.setItem(STORAGE_KEY, mode); } catch {}
   applyTheme();
 }
 

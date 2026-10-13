@@ -10,9 +10,39 @@ visits at quiet hours, a broader cast, and candidate timers.
 
 ## Next in Dev
 
-Play the revised aquarium levels on a touch device and tune shoal separation, beetle pacing, and bubble disturbance strength; the twenty-four-visit meadow pacing pass remains pending.
+Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet before the November 6 opening and set its idle timings and card copy with Xyh; tuning Between Banks on a touch device and the twenty-four-visit meadow pacing pass remain pending.
 
 ## Activity
+
+2026-10-13 — Claude Code — Built the SOMEWAREZ kiosk build on Xyh's plan: Drawing the Hours is the one work on the tablet at TOUCH-SCREEN, and the multicart is reached from a QR code. Setup and behaviour are in [somewarez/README.md](somewarez/README.md).
+
+- **One page, one flag.** The build is `index.html?somewarez`; `somewarez/index.html` forwards to it. `src/build.js` reads the flag. No copy of the game was made, so tuning reaches the kiosk.
+- **Nothing saved.** `src/storage.js` is now the one route to storage for the campaign save, hints, and colors. In the kiosk build it is a Map in memory. Every other build still uses localStorage under the same keys.
+- **Bar below the field**: Main menu, Level card, Reset. `Game` takes `reservedBottom`, so the field is fitted to the height above the bar. Reset clears the session and shows the title screen without reloading the page, so it works with the network down.
+- **Idle.** 90 s without input during play resets to the title. 20 s on the title starts a loop: the game playing itself (45 s, silent, hints off), a multicart card with a QR code (18 s), the title (20 s). A touch ends it at the title, and the layer over the demonstration takes that touch.
+- **Scripted player** (`somewarez/autoplay.js`): the circle-drawing player from `test/measure_string_sandbox.js`, sending pointer events through the game's own handlers. It draws Kindred Pairs, Seed & Wing, and trios only.
+- **QR code** drawn by `scripts/make_qr.py`, a QR encoder written here (byte mode, level L, versions 1 to 5). No QR library is installed and none is on the third-party shelf; the script reads its own output back with OpenCV and refuses to write a code that does not decode.
+- **Title animation** (`src/shell-art.js`, `src/title-lettering.js`) no longer stops for good once the title is hidden, because the kiosk shows the title again.
+- `somewarez/config.js` has an empty `STATEMENT` array for Xyh's narration or artist statement; lines put there show over the demonstration.
+
+Verification:
+
+- All twelve `node test/test_*.js` suites pass. New `test/test_somewarez.js`: memory storage leaves localStorage empty and clears; the scripted player gathers at least twice in each of the four demonstration visits over five seeds on a 960x640 and a 640x960 field; the QR drawing records the URL in `config.js`; the page loads the kiosk only behind the flag.
+- Measured before choosing: over 8 seeds and the 4 visits, the player gathered on 51% of strokes at 430 px/s with a 14 px margin and 74% at 700 px/s with 22 px. The second is the default. The `--all` flag of the test prints strokes and gathers for every visit.
+- In the page at `http://localhost:8000/drawing-the-hours/somewarez/`, at 1024x768 and 768x1024 emulation, by DOM and game state with `kiosk.step` and `game.update` stepped by hand (the pane was hidden): the forward lands on `?somewarez`; the field ends above the bar with no overlap; Begin, Level card (story card to requirements card, and CARD during play), and Main menu act as described; after a recorded victory, hints off, light colors, and sound off, Reset returned the title, Visit I, an empty save, and all three settings with their button labels, with localStorage empty throughout. The loop ran demo, card, title four times through dawn-06, noon-04, dusk-03, midnight-03 and back to dawn-06. A pointerdown on the layer during the demonstration returned the title, was default-prevented, and the layer cleared within 500 ms. 89 s idle in play left the visit running and 91 s reset it; a key press at 80 s held off the reset. No console errors. Screenshots read: landscape demonstration, the QR card, portrait play with the bar, portrait menu.
+- The QR code decodes to the multicart URL twice: from the script's own raster, and from a headless Edge screenshot of the SVG as served. The multicart and Drawing the Hours URLs both returned 200 on 2026-10-13.
+- The main page without the flag has no bar, shows the Between Banks link, and writes its save to localStorage.
+
+Not done:
+
+- **Not run on a tablet or by touch.** Real touches, the 350 ms release guard, sound after a reset, and hours of unattended looping are unobserved. No phone camera has scanned the code from a screen.
+- **Not pushed.** The live site does not have the build until this commit is pushed.
+- The card and caption copy, the bar labels, and all five timings are first drafts. The bar says "Level card" (Xyh's word) while the menu says "Visit Card".
+- dawn-06 completed in about 23 s under the scripted player in the page run, so that demonstration ends early and goes to the card. The other three ran the full 45 s.
+- The demonstration never draws a figure-eight or a trace, so Dusk and Midnight are shown through loops only.
+- Decided against reloading the page for Reset: it guarantees a clean state but leaves a blank page if the venue network drops. Decided against a confirmation on Reset: nothing of value is lost.
+- Decided against fetching a QR library: the output is one static SVG, and a decoder checks it.
+- `STATEMENT` display is built but has only been exercised empty.
 
 2026-10-10 — Claude Code — Gave Between Banks its own favicon at Xyh's request for the multicart's three hax: between-banks/favicon.svg, a fish seen from the side on the water blue, an original drawing. between-banks/index.html now links it in place of the meadow's ../favicon.svg. Rendered at 16, 32, and 96 px in headless Edge on light and dark backgrounds and inspected the screenshot; the motif is legible at 16 px. The root server returns the file as image/svg+xml. Display in an actual browser tab was not checked.
 

@@ -5,6 +5,8 @@
  * Based on CAMPAIGN.md, campaign-plan.json, and first12levels.md.
  */
 
+import { storage } from './storage.js';
+
 export const TRACE_FIREFLY = ['firefly', 'lacewing', 'firefly'];
 const TRACE_LACEWING = ['lacewing', 'firefly', 'lacewing'];
 
@@ -1077,7 +1079,7 @@ const STORAGE_KEY = 'dth_campaign_save_v2';
 export class CampaignSaveManager {
   static load() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = storage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         return {
@@ -1100,7 +1102,7 @@ export class CampaignSaveManager {
 
   static save(state) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      storage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
       // Storage unavailable or full
     }
@@ -1128,7 +1130,7 @@ export class CampaignSaveManager {
 
   static reset() {
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      storage.removeItem(STORAGE_KEY);
     } catch {
       // Ignore storage errors
     }

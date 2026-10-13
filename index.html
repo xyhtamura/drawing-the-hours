@@ -292,6 +292,7 @@
   </main>
 
   <script type="module">
+    import { KIOSK, KIOSK_BAR } from './src/build.js';
     import { getColorMode, setColorMode } from './src/theme.js';
     import { Game } from './src/game.js';
     import { renderComboCanvases } from './src/combo-diagrams.js';
@@ -303,7 +304,7 @@
     const canvas = document.getElementById('game-canvas');
     // Finish local font loading before measuring canvas text. Failure uses fallbacks.
     await Promise.allSettled([document.fonts.load('400 18px Mali'), document.fonts.load('600 22px Mali')]);
-    const game = new Game(canvas);
+    const game = new Game(canvas, { reservedBottom: KIOSK_BAR });
     document.getElementById('btn-color-mode').addEventListener('click', () => {
       setColorMode(getColorMode() === 'default' ? 'light' : 'default');
       game.render();
@@ -589,6 +590,19 @@
       applyFieldBookReveal();
       console.log('Campaign progress reset.');
     };
+
+    // SOMEWAREZ kiosk build: control bar, reset to the title screen, and idle loop.
+    if (KIOSK) {
+      const kiosk = await import('./somewarez/kiosk.js');
+      kiosk.startKiosk({
+        game, canvas, showPanel, openMenu, showVisitCard,
+        getActivePanel: () => activePanel,
+        syncSettings: () => {
+          updateHintsUI();
+          btnAudio.textContent = audio.isMuted ? 'Sound: Off' : 'Sound: On';
+        },
+      });
+    }
   </script>
 </body>
 </html>

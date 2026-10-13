@@ -73,9 +73,8 @@ export async function createHandwrittenTitle(canvas, heading, panel) {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const sequence = [0, 1, 2, 1], start = performance.now();
   function tick(now) {
-    if (panel.hidden) return;
     const index = reduced.matches ? 0 : sequence[Math.floor(Math.max(0, now - start) / 240) % sequence.length];
-    if (index !== current) draw(index);
+    if (!panel.hidden && index !== current) draw(index);
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);

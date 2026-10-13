@@ -130,8 +130,8 @@ export function createTitleArt(canvas, panel) {
   }
 
   function tick(now) {
-    if (panel.hidden) { running = false; return; }
-    frame(now);
+    // Keep ticking while hidden: the kiosk build shows the title again after a reset.
+    if (!panel.hidden) frame(now);
     requestAnimationFrame(tick);
   }
 

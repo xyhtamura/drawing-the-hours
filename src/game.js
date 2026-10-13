@@ -22,6 +22,7 @@ import { evaluateDrawing } from './recipes.js';
 import { COMBO_DIAGRAMS, drawComboDiagram } from './combo-diagrams.js';
 import { DandelionClock } from './clock.js';
 import { audio } from './audio.js';
+import { storage } from './storage.js';
 import { createDawnArt, wrapText } from './dawn-art.js';
 import { createNoonArt } from './noon-art.js';
 import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } from './campaign.js';
@@ -108,8 +109,10 @@ function drawRoundedRect(ctx, x, y, w, h, r) {
 }
 
 export class Game {
-  constructor(canvas) {
+  constructor(canvas, options = {}) {
     this.canvas = canvas;
+    // CSS pixels kept clear below the field, for a control bar outside it.
+    this.reservedBottom = options.reservedBottom || 0;
     this.ctx = canvas.getContext('2d');
 
     this.width = 960;
@@ -152,7 +155,7 @@ export class Game {
     // Stalled-play hint and failure-screen options
     let hints = true;
     try {
-      if (globalThis.localStorage?.getItem(HINTS_STORAGE_KEY) === 'off') hints = false;
+      if (storage.getItem(HINTS_STORAGE_KEY) === 'off') hints = false;
     } catch {}
     this.hintsEnabled = hints;
     this.hintTimer = 0;
@@ -204,7 +207,7 @@ export class Game {
 
   layoutCanvas() {
     const viewport = this.canvas.parentElement?.getBoundingClientRect() || {width: 960, height: 640};
-    const field = fitField(globalThis.window?.innerWidth || viewport.width || 960, globalThis.window?.innerHeight || viewport.height || 640);
+    const field = fitField(globalThis.window?.innerWidth || viewport.width || 960, (globalThis.window?.innerHeight || viewport.height || 640) - this.reservedBottom);
     if (this.canvas.parentElement?.style) {
       this.canvas.parentElement.style.width = `${field.displayWidth}px`;
       this.canvas.parentElement.style.height = `${field.displayHeight}px`;
@@ -668,7 +671,7 @@ export class Game {
       this.dismissHint();
     }
     try {
-      globalThis.localStorage?.setItem(HINTS_STORAGE_KEY, this.hintsEnabled ? 'on' : 'off');
+      storage.setItem(HINTS_STORAGE_KEY, this.hintsEnabled ? 'on' : 'off');
     } catch {}
     return this.hintsEnabled;
   }
