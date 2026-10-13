@@ -64,6 +64,7 @@ const RULES = [
   [/cicadas?/gi, keepCase('kuliglig')],
   [/Night Jasmine/g, 'Dama de Noche'],
   [/(?:night )?jasmine/gi, keepCase('dama de noche')],
+  [/popp(?:y|ies)/gi, keepCase('ylang-ylang')],
   [/Flax Flower/g, 'Abaca Flower'],
   [/flax/gi, keepCase('abaca')],
   [/dandelion seed/gi, keepCase('cogon plume')],

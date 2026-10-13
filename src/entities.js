@@ -1049,6 +1049,68 @@ export class FlaxFlower {
 }
 
 /**
+ * The slowing flower: a poppy, or ylang-ylang in the local edition. A held cord
+ * drawn over it picks it, and the field moves slowly for a while
+ * (Game.checkCordBeans). It shares the flax flower's 'bean' type, so it is never
+ * pocket content, never threaded, and never a tap target. Its kind tells the
+ * two apart.
+ */
+export class SlowFlower {
+  constructor(x, y) {
+    this.type = 'bean'; this.kind = 'poppy';
+    this.x = x; this.y = y; this.radius = 15;
+    this.state = 'roaming'; this.swayPhase = Math.random() * Math.PI * 2;
+  }
+  update(dt) { this.swayPhase += dt * 0.9; }
+  draw(ctx) {
+    ctx.save(); ctx.translate(this.x, this.y);
+    ctx.rotate(Math.sin(this.swayPhase) * 0.08);
+    drawSlowFlower(ctx); ctx.restore();
+  }
+}
+
+export function drawSlowFlower(ctx) {
+  if (isLocal()) drawYlangYlang(ctx); else drawPoppy(ctx);
+}
+
+/** Four broad red petals round a dark centre with a yellow ring, on a thin stem. */
+function drawPoppy(ctx) {
+  ctx.save();
+  ctx.strokeStyle = themeColor('outline', '#6f8b52'); ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(0, 6); ctx.quadraticCurveTo(4, 15, -1, 25); ctx.stroke();
+  for (const [angle, fill] of [[0.8, '#d9462f'], [-2.35, '#d9462f'], [-0.78, '#ea6040'], [2.36, '#ea6040']]) {
+    ctx.save(); ctx.rotate(angle);
+    ctx.fillStyle = fill; ctx.strokeStyle = '#a3311f'; ctx.lineWidth = 0.9;
+    ctx.beginPath(); ctx.moveTo(0, 1);
+    ctx.bezierCurveTo(-15, -3, -13, -18, -3, -17);
+    ctx.bezierCurveTo(0, -19, 4, -15, 6, -17);
+    ctx.bezierCurveTo(14, -15, 14, -3, 0, 1); paperShape(ctx, 'petal');
+    ctx.restore();
+  }
+  ctx.fillStyle = '#e9c74f'; ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#2e2a2a'; ctx.beginPath(); ctx.arc(0, 0, 3.2, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+/** Six long, narrow, yellow-green petals hanging and curling from a short stalk. */
+function drawYlangYlang(ctx) {
+  ctx.save();
+  ctx.strokeStyle = themeColor('outline', '#6f8b52'); ctx.lineWidth = 1.8; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(4, -23); ctx.quadraticCurveTo(-3, -17, 0, -10); ctx.stroke();
+  const petals = [[-1.25, 21, 5], [1.2, 22, -5], [-0.75, 26, -4], [0.7, 25, 5], [-0.22, 28, 3], [0.2, 27, -4]];
+  for (const [angle, length, curl] of petals) {
+    ctx.save(); ctx.translate(0, -10); ctx.rotate(angle);
+    ctx.fillStyle = '#d6d24a'; ctx.strokeStyle = '#8e9a2c'; ctx.lineWidth = 0.9;
+    ctx.beginPath(); ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(-4, length * 0.3, curl - 3, length * 0.7, curl, length);
+    ctx.bezierCurveTo(curl + 3, length * 0.7, 4, length * 0.3, 0, 0); paperShape(ctx, 'petal');
+    ctx.restore();
+  }
+  ctx.fillStyle = '#8a3b2a'; ctx.beginPath(); ctx.arc(0, -10, 2.6, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+/**
  * Local edition's drifting seed: a cogon plume, a silky spindle on a thin stalk.
  * It keeps the dandelion seed's footprint, and its hairs are pencil-grey over a
  * pale body for the same reason the pappus is.

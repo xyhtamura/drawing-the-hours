@@ -219,7 +219,7 @@ try {
     pointer('pointermove', [480, 320]);
     assert.equal(game.stringGesture.maxCordLength, MAX_CORD_LENGTH,
       'The cord that picks the bean is not itself lengthened');
-    assert.equal(game.entities.some(e => e.type === 'bean'), false, 'The bean leaves the field');
+    assert.equal(game.entities.some(e => e.kind === 'bean'), false, 'The bean leaves the field');
     assert.ok(game.respawnQueue.some(i => i.kind === 'bean' && i.delay > 1),
       'Another bean grows after a delay, so the length is a resource');
     pointer('pointerup', [520, 320]);
@@ -301,7 +301,7 @@ try {
   for (const id of ['dusk-04', 'midnight-06']) {
     game.initLevel(id);
     assert.equal(game.currentLevel.population.bean, 1);
-    assert.equal(game.entities.filter(e => e.type === 'bean').length + game.respawnQueue.filter(e => e.kind === 'bean').length, 1, `${id}: one flower, live or queued`);
+    assert.equal(game.entities.filter(e => e.kind === 'bean').length + game.respawnQueue.filter(e => e.kind === 'bean').length, 1, `${id}: one flower, live or queued`);
     setup(id, [new FlaxFlower(480, 320)]);
     pointer('pointerdown', [300, 320]); pointer('pointermove', [480, 320]);
     assert.equal(game.stringGesture.maxCordLength, MAX_CORD_LENGTH);
@@ -311,10 +311,10 @@ try {
     game.entities = [];
     game.respawnQueue = [{kind: 'bean', delay: 24}];
     game.maintainPopulation(23);
-    assert.equal(game.entities.filter(e => e.type === 'bean').length, 0);
+    assert.equal(game.entities.filter(e => e.kind === 'bean').length, 0);
     game.entities = []; // Keep spawn clearance deterministic for this assertion.
     game.maintainPopulation(1);
-    assert.equal(game.entities.filter(e => e.type === 'bean').length, 1);
+    assert.equal(game.entities.filter(e => e.kind === 'bean').length, 1);
   }
   console.log('PASS: flax returns in Dusk VIII and Midnight XII, with 24-second regrowth.');
 } finally {

@@ -337,15 +337,16 @@
         "lacewing": 0,
         "firefly": 0,
         "hornet": 1,
-        "bean": 1
+        "bean": 1,
+        "poppy": 1
       },
       "motionScale": 0.85,
       "objectives": {
         "any": 6,
         "seedTrio": 1
       },
-      "instruction": "Make six combinations, including one loop with a seed and three different insects. Pick a flax flower first: the loop is a long one.",
-      "designNote": "Introduce Seed & Trio, once, with the hornet and the gusts already familiar and no web. The bean is what makes the four-target loop reachable.",
+      "instruction": "Make six combinations, including one loop with a seed and three different insects. Pick a flax flower first: the loop is a long one. Draw over a poppy to slow the field for eight seconds.",
+      "designNote": "Introduce Seed & Trio, once, with the hornet and the gusts already familiar and no web. The bean is what makes the four-target loop reachable. The poppy is introduced here too: slowing the field is what lets four targets be gathered at once.",
       "gestures": [
         "string"
       ],
@@ -381,7 +382,8 @@
         "firefly": 0,
         "hornet": 1,
         "web": 1,
-        "bean": 1
+        "bean": 1,
+        "poppy": 1
       },
       "motionScale": 0.85,
       "objectives": {
@@ -432,7 +434,8 @@
         "firefly": 0,
         "hornet": 1,
         "web": 1,
-        "bean": 1
+        "bean": 1,
+        "poppy": 1
       },
       "motionScale": 0.85,
       "objectives": {
@@ -644,7 +647,8 @@
         "seed": 2,
         "snail": 1,
         "lacewing": 2,
-        "firefly": 0
+        "firefly": 0,
+        "poppy": 1
       },
       "motionScale": 1,
       "objectives": {
@@ -748,7 +752,8 @@
         "seed": 2,
         "snail": 0,
         "lacewing": 2,
-        "firefly": 3
+        "firefly": 3,
+        "poppy": 1
       },
       "motionScale": 0.95,
       "objectives": {
@@ -886,7 +891,8 @@
         "snail": 1,
         "lacewing": 2,
         "firefly": 3,
-        "jasmine": 1
+        "jasmine": 1,
+        "poppy": 1
       },
       "beanRegrowSeconds": 24,
       "motionScale": 1,

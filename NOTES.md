@@ -14,6 +14,28 @@ Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet be
 
 ## Activity
 
+2026-10-14 — Claude Code — Added a flower that slows the field, on Xyh's direction: a poppy in the main game and ylang-ylang in the SOMEWAREZ edition. The freezing plant discussed alongside it (makahiya, the sensitive plant) is not built.
+
+- **What it does.** Drawing the held cord over the flower picks it. Creatures, seeds, and hazards then run on 0.4 of the time for 8 seconds (`SLOW_FACTOR`, `SLOW_SECONDS` in `src/game.js`); the visit clock does not slow. A badge under the cord meter counts the seconds down. Another flower grows 20 seconds after the field is back to speed (`SLOW_REGROW_SECONDS`).
+- **How it is built.** `SlowFlower` in `src/entities.js` shares the flax flower's `type: 'bean'` and has `kind: 'poppy'`, so every filter that keeps the flax flower out of pockets, beads, and tap targets already covers it, and `Game.checkCordBeans` tells the two apart by kind. The slowing is one scaled time step passed to each entity's `update`. The population key is `poppy` in both builds.
+- **Where it grows** (agent default, on Xyh's "sometime in Noon, then again on more hectic levels"): introduced at Noon X, beside Seed & Trio, where one loop has to hold four targets; then Noon XI and XII, Dusk XVIII, Midnight XXI and XXIV. Noon XI carries it because a test holds XII to XI's cast. X now adds two things, as VII does with the hoverfly and the flax flower. Its instruction, card caption, and card picture name the flower; the other five visits say nothing about it.
+- **Drawings**, both in code: the poppy is four red petals round a dark centre with a yellow ring; ylang-ylang is six narrow yellow-green petals hanging from a short stalk. `localize()` turns "poppy" into "ylang-ylang".
+- Field Book entry "Poppy", shown from Noon.
+
+Verification:
+
+- New `test/test_slow.js`: the six visits and no others, with `campaign-plan.json` agreeing; a pick sets eight seconds, removes the flower, and queues the next at 28 s; for 7.9 s every creature step is 0.4 of the time while the clock loses 7.9 s, and full time returns after eight; a flax flower slows nothing and a poppy lengthens nothing; the local name. `test/test_noon.js` now counts flax flowers by kind. All thirteen suites pass.
+- In the main page at 1024x768 emulation: Noon X's card shows the poppy beside the loop and its caption; a stroke sent through real pointer events across the poppy removed it mid-stroke, set the banner, and the screenshot a second later shows "Field slowed: 7 s" with the next poppy queued 26.8 s out. In the kiosk page the card reads "Draw over a ylang-ylang", the banner reads "Ylang-ylang picked", the Field Book heading is Ylang-ylang, and the flower is drawn on the field. No console errors.
+
+Not done, and open:
+
+- **Not played.** 0.4, 8 s, and 20 s are first guesses, and so are the six visits. Whether slowing makes Seed & Trio reachable, and whether three plants on Midnight XXIV is one too many, are for play to say.
+- The ylang-ylang is small and yellow, near the paruparo's yellow. It has a stalk and does not move, but it has only been read in a screenshot.
+- Wind streaks, the gust timing, and the sheet clock keep full speed while the field is slowed; only the seeds' drift slows with them.
+- The scripted demonstration treats the flower as an obstacle and never picks it.
+- The Field Book prose says poppy "returns in the busiest visits of each hour", which is loose: it is in three Noon visits, one Dusk, two Midnight.
+- `CAMPAIGN.md` has no section for the flower yet.
+
 2026-10-13 — Claude Code — Two changes to the main game, on Xyh's direction: the stalled-play hint is removed and its lines moved onto the visit card, and the paper-sheet clock built for the kiosk is now the clock of every build.
 
 - **No hint during play.** The card that appeared after twelve seconds without progress is gone, with its timer, its dismissal, the Hints setting in Settings, and the `drawing-the-hours-hints` storage key. `updateHint`, `drawHint`, `dismissHint`, `setHintsEnabled`, `toggleHints`, and `drawHintGlyph` are deleted. This reverses the hint built on 2026-09-16 and the setting added on 2026-09-18.

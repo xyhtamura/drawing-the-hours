@@ -17,7 +17,7 @@ import {
   polylineTouchesDisk,
   extractClosedPockets,
 } from './geometry.js';
-import { Butterfly, DandelionSeed, Snail, Hornet, WebPatch, FlaxFlower, drawFlaxFlower, NightJasmine, SPECIES_CONFIG, drawFirefly } from './entities.js';
+import { Butterfly, DandelionSeed, Snail, Hornet, WebPatch, FlaxFlower, drawFlaxFlower, SlowFlower, drawSlowFlower, NightJasmine, SPECIES_CONFIG, drawFirefly } from './entities.js';
 import { evaluateDrawing } from './recipes.js';
 import { COMBO_DIAGRAMS, drawComboDiagram } from './combo-diagrams.js';
 import { VisitClock } from './clock.js';
@@ -36,6 +36,13 @@ const CORD_WIDTH = 4.5;
 const BEAN_BONUS = 400;
 const BEAN_KEEPS_SECONDS = 12;
 const BEAN_REGROW_SECONDS = 8;
+
+// A picked poppy slows everything on the field to this share of its speed for
+// this many seconds. The clock does not slow. Another poppy grows this long
+// after the field is back to speed.
+const SLOW_FACTOR = 0.4;
+const SLOW_SECONDS = 8;
+const SLOW_REGROW_SECONDS = 20;
 
 // An insect taken by the night jasmine settles on it for this long; the spent
 // bloom then closes and another opens after the regrow delay (Midnight XI-XII).
@@ -144,6 +151,9 @@ export class Game {
     // A picked flax flower, kept for the next cord
     this.beanBonus = 0;
     this.beanTimer = 0;
+
+    // Seconds left of a picked poppy's slowing
+    this.slowTimer = 0;
 
     // The jasmine a held cord started inside, if any
     this.jasmineStart = null;
@@ -294,6 +304,7 @@ export class Game {
     this.gameOverOptions = [];
     this.beanBonus = 0;
     this.beanTimer = 0;
+    this.slowTimer = 0;
     this.jasmineStart = null;
     this.clock.reset(this.currentLevel.durationSeconds || 60);
 
@@ -460,6 +471,7 @@ export class Game {
       }
     }
     for (let i = 0; i < (pop.bean || 0); i++) this.spawnAtriumFixture('bean', i);
+    for (let i = 0; i < (pop.poppy || 0); i++) this.spawnAtriumFixture('poppy', i);
     for (let i = 0; i < (pop.jasmine || 0); i++) this.spawnAtriumFixture('jasmine', i);
 
     this.initDecorations();
@@ -498,17 +510,17 @@ export class Game {
       this.entities.push(web);
       return true;
     }
-    if (kind === 'bean') {
+    if (kind === 'bean' || kind === 'poppy') {
       for (let attempt = 0; attempt < 25; attempt++) {
         const sx = this.width * (0.15 + Math.random() * 0.7);
         const sy = this.height * (0.2 + Math.random() * 0.6);
         const clear = this.entities.every(e => Math.hypot(e.x - sx, e.y - sy) >= e.radius + 34);
         if (clear) {
-          this.entities.push(new FlaxFlower(sx, sy));
+          this.entities.push(kind === 'poppy' ? new SlowFlower(sx, sy) : new FlaxFlower(sx, sy));
           return true;
         }
       }
-      this.respawnQueue.push({ kind: 'bean', delay: 0.4 });
+      this.respawnQueue.push({ kind, delay: 0.4 });
       return false;
     }
     return false;
@@ -578,7 +590,7 @@ export class Game {
           const snail = new Snail(this.width * 0.5, this.height - 35, this.currentLevel.snailRoute);
           snail.update(0, { width: this.width, height: this.height });
           this.entities.push(snail);
-        } else if (['hornet', 'web', 'bean', 'jasmine'].includes(item.kind)) {
+        } else if (['hornet', 'web', 'bean', 'poppy', 'jasmine'].includes(item.kind)) {
           this.spawnAtriumFixture(item.kind, this.entities.filter(e => e.kind === item.kind).length);
         } else {
           const edge = Math.random();
@@ -1002,6 +1014,15 @@ export class Game {
       if (bean.type !== 'bean' || bean.state === 'departing') continue;
       if (!polylineTouchesDisk(points, bean.x, bean.y, bean.radius + 3)) continue;
       this.entities.splice(i, 1);
+      if (bean.kind === 'poppy') {
+        // The field slows at once; the next poppy waits until the slowing is over.
+        this.respawnQueue.push({ kind: 'poppy', delay: SLOW_SECONDS + SLOW_REGROW_SECONDS });
+        this.slowTimer = SLOW_SECONDS;
+        audio.playCordPluck(330);
+        this.showFeedback(`Poppy picked: the field slows for ${SLOW_SECONDS} seconds.`, 'success');
+        picked = true;
+        continue;
+      }
       this.respawnQueue.push({ kind: 'bean', delay: this.currentLevel.beanRegrowSeconds ?? BEAN_REGROW_SECONDS });
       this.beanBonus = BEAN_BONUS;
       this.beanTimer = BEAN_KEEPS_SECONDS;
@@ -1405,11 +1426,15 @@ export class Game {
         ? this.stringGesture.wallSegments
         : [];
 
+      // A picked poppy: creatures, seeds, and hazards run on slowed time. The clock does not.
+      const boardDt = this.slowTimer > 0 ? dt * SLOW_FACTOR : dt;
+      this.slowTimer = Math.max(0, this.slowTimer - dt);
+
       for (let i = this.entities.length - 1; i >= 0; i--) {
         const ent = this.entities[i];
         const from = walls.length ? { x: ent.x, y: ent.y } : null;
-        ent.update(dt, bounds, ent.type === 'seed' ? windVx : 0);
-        if (from) constrainToWalls(ent, from, walls, bounds, dt);
+        ent.update(boardDt, bounds, ent.type === 'seed' ? windVx : 0);
+        if (from) constrainToWalls(ent, from, walls, bounds, boardDt);
         if (['passage', 'window'].includes(this.currentLevel.scene) && ent.type === 'butterfly' && ent.state === 'roaming') {
           const r = duskSafeArea(bounds);
           if (ent.kind !== 'lacewing') {
@@ -1911,6 +1936,11 @@ export class Game {
     drawFlaxFlower(ctx); ctx.restore();
   }
 
+  drawSlowGlyph(ctx, x, y) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(0.8, 0.8);
+    drawSlowFlower(ctx); ctx.restore();
+  }
+
   drawStamps(ctx) {
     for (const s of this.stamps) {
       ctx.save();
@@ -2311,6 +2341,29 @@ export class Game {
       ctx.fillStyle = textCol;
       ctx.textAlign = 'center';
       ctx.fillText(badgeText, cx, by + (isNarrow ? 13 : 15));
+      ctx.restore();
+    }
+
+    // --- Slowed-field badge, under the cord meter and any wind badge ---
+    if (this.slowTimer > 0) {
+      const isNarrow = width < 560;
+      const windShown = this.currentLevel?.wind && (this.windPhase === 'warning' || this.windPhase === 'gust');
+      const text = `Field slowed: ${Math.ceil(this.slowTimer)} s`;
+      ctx.save();
+      ctx.font = isNarrow ? '600 10.5px system-ui, sans-serif' : '600 11.5px system-ui, sans-serif';
+      const bw = ctx.measureText(text).width + 20;
+      const bh = isNarrow ? 19 : 22;
+      const by = (isNarrow ? 71 : 48) + (windShown ? bh + 4 : 0);
+      ctx.fillStyle = 'rgba(250, 236, 232, 0.94)';
+      ctx.strokeStyle = '#c98a7c';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      drawRoundedRect(ctx, width / 2 - bw / 2, by, bw, bh, 6);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#6b2f24';
+      ctx.textAlign = 'center';
+      ctx.fillText(text, width / 2, by + (isNarrow ? 13 : 15));
       ctx.restore();
     }
 
@@ -2778,11 +2831,12 @@ export class Game {
 
         ctx.fillStyle = themeColor('ink', '#5c4538'); ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
         this.drawBeanGlyph(ctx, 62, -26);
+        if (lvl.population.poppy) this.drawSlowGlyph(ctx, -64, -26);
         ctx.fillText('Seed & Trio: 1 seed and 3 different insects in one loop.', 0, 39);
         ctx.fillStyle = themeColor('muted', '#6e5a47'); ctx.font = 'italic 11px Mali, sans-serif';
         ctx.fillText(lvl.population.web
-          ? 'Avoid the web and the hornet. Flax gives extra length to the next cord.'
-          : 'Pick a flax flower first: the next cord is longer. Watch the hornet.', 0, 54);
+          ? 'Avoid the web and the hornet. Flax lengthens the next cord; a poppy slows the field.'
+          : 'Flax first: the next cord is longer. A poppy slows the field for 8 seconds.', 0, 54);
         ctx.restore();
       } else if (teachMidnight02) {
         ctx.save(); ctx.translate(0, boxH / 2 - 96);

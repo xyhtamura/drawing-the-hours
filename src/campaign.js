@@ -316,14 +316,15 @@ export const CAMPAIGN_LEVELS = [
       firefly: 0,
       hornet: 1,
       bean: 1,
+      poppy: 1,
     },
     motionScale: 0.85,
     objectives: {
       any: 6,
       seedTrio: 1,
     },
-    instruction: 'Make six combinations, including one loop with a seed and three different insects. Pick a flax flower first: the loop is a long one.',
-    designNote: 'Introduce Seed & Trio, once, with the hornet and the gusts already familiar and no web. The bean is what makes the four-target loop reachable.',
+    instruction: 'Make six combinations, including one loop with a seed and three different insects. Pick a flax flower first: the loop is a long one. Draw over a poppy to slow the field for eight seconds.',
+    designNote: 'Introduce Seed & Trio, once, with the hornet and the gusts already familiar and no web. The bean is what makes the four-target loop reachable. The poppy is introduced here too: slowing the field is what lets four targets be gathered at once.',
     gestures: ['string'],
     stringRules: true,
     wind: { ...NOON_WIND },
@@ -349,6 +350,7 @@ export const CAMPAIGN_LEVELS = [
       hornet: 1,
       web: 1,
       bean: 1,
+      poppy: 1,
     },
     motionScale: 0.85,
     objectives: {
@@ -384,6 +386,7 @@ export const CAMPAIGN_LEVELS = [
       hornet: 1,
       web: 1,
       bean: 1,
+      poppy: 1,
     },
     motionScale: 0.85,
     objectives: {
@@ -572,6 +575,7 @@ export const CAMPAIGN_LEVELS = [
       snail: 1,
       lacewing: 2,
       firefly: 0,
+      poppy: 1,
     },
     motionScale: 1.0,
     objectives: {
@@ -664,6 +668,7 @@ export const CAMPAIGN_LEVELS = [
       snail: 0,
       lacewing: 2,
       firefly: 3,
+      poppy: 1,
     },
     motionScale: 0.95,
     objectives: {
@@ -768,6 +773,7 @@ export const CAMPAIGN_LEVELS = [
       lacewing: 2,
       firefly: 3,
       jasmine: 1,
+      poppy: 1,
     },
     beanRegrowSeconds: 24,
     motionScale: 1.0,

@@ -38,7 +38,8 @@ Locally, with the root server running:
   press anything under it.
 - **A local cast.** Creatures and plants carry Philippine names (paruparo, tutubi,
   alitaptap, putakti, dama de noche, abaca, cogon), the hawkmoth is an oleander
-  hawkmoth in green and pink, and dandelion seeds are cogon plumes. Mechanics and
+  hawkmoth in green and pink, dandelion seeds are cogon plumes, and the poppy
+  that slows the field is ylang-ylang. Mechanics and
   recipes are the same. The table is in [src/edition.js](../src/edition.js).
 - The link to Between Banks is hidden, because that page has no controls and no reset.
 

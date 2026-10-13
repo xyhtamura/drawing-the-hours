@@ -56,6 +56,9 @@ The QR code, `somewarez/multicart-qr.svg`, is drawn by `scripts/make_qr.py`.
 
 ## Local edition drawings
 
+The poppy of the main build and the ylang-ylang of the kiosk build are drawn in
+code in `src/entities.js`, with no reference image.
+
 The kiosk build's oleander hawkmoth colours, cogon plume, and abaca flower are
 drawn in code in `src/entities.js` and `src/edition.js`. Xyh supplied two
 reference images in conversation on 2026-10-13, a plate of an oleander hawkmoth
