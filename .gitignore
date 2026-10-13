@@ -12,3 +12,6 @@ Thumbs.db
 /handwritten/*.psd
 /handwritten/foil.png
 /handwritten/foil.jpg
+
+# Exported builds; scripts/export_somewarez.py rewrites them.
+/dist/

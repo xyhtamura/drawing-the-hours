@@ -60,6 +60,22 @@ The script reads the code back with OpenCV before writing it and refuses to writ
 one that does not decode to the URL. `node test/test_somewarez.js` fails while the
 drawing and `config.js` disagree.
 
+## Offline copy
+
+```bash
+python scripts/export_somewarez.py
+```
+
+This writes `dist/somewarez/` and a zip of it beside it: every file the kiosk
+build loads and nothing else, with the build flag set so its `index.html` is the
+kiosk. `BUILD.txt` records the source commit and a hash of each file. The folder
+is a product of this repository, so rerun the script after a change instead of
+editing the copy.
+
+The folder has to be served over HTTP. Opened by double-click it shows the title
+and a Begin button that does nothing, because a browser does not load the
+scripts from a `file://` address. `README.txt` in the export says how to serve it.
+
 ## Checks
 
 ```bash

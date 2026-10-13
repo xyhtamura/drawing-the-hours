@@ -14,6 +14,18 @@ Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet be
 
 ## Activity
 
+2026-10-13 — Claude Code — Added the offline export of the kiosk build, since Xyh will hand Somewarez static files.
+
+- `python scripts/export_somewarez.py` writes `dist/somewarez/` and `dist/drawing-the-hours-somewarez-<commit>.zip`: `index.html`, the two stylesheets, the favicon, `src/`, `assets/`, and `somewarez/`, 66 files and 2.1 MB. It sets `KIOSK = true` in the exported `src/build.js`, so the folder's `index.html` is the kiosk with no query flag. `BUILD.txt` records the source commit and a SHA-256 for every file; `README.txt` tells the venue how to run it.
+- The export is a product of the repository, not a second source. `dist/` is ignored; rerun the script after any change.
+- The script writes nothing when the tree is dirty (unless `--allow-dirty`), when a copied file names an http(s) address other than the multicart URL, or when a file refers to one that is not in the export.
+
+Verification: loaded `http://localhost:8000/drawing-the-hours/dist/somewarez/`, ran the idle loop through a demonstration and the QR card, started a visit in each of the other three hours, and read `performance.getEntriesByType('resource')`: 51 requests, every one under `dist/somewarez/`, none failed, no console errors. Opened the same `index.html` from `file://` in headless Edge and read the screenshot: the title text and Begin button from the static HTML, with no game, no title art, and no bar.
+
+Known limit: **the export has to be served over HTTP.** A browser does not load ES modules from `file://`, so a double-click on `index.html` gives a dead page. Whether that matters depends on how Somewarez runs the tablet, which is not known yet. If they need a double-click file, the fix is a single-file build: the modules bundled into one classic script and the images inlined as data URIs (the title lettering reads pixels back from its images, which `file://` also blocks). Not built; it needs a bundler, and none is installed.
+
+Not done: the export was not served by `python -m http.server` from its own folder, only through the root server; and the zip was not unpacked and run.
+
 2026-10-13 — Claude Code — Built the SOMEWAREZ kiosk build on Xyh's plan: Drawing the Hours is the one work on the tablet at TOUCH-SCREEN, and the multicart is reached from a QR code. Setup and behaviour are in [somewarez/README.md](somewarez/README.md).
 
 - **One page, one flag.** The build is `index.html?somewarez`; `somewarez/index.html` forwards to it. `src/build.js` reads the flag. No copy of the game was made, so tuning reaches the kiosk.
