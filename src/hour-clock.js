@@ -1,5 +1,5 @@
-// The local edition's visit clock. Time is not a dandelion shedding in the corner
-// but a sheet of coloured paper laid across the field: light at Dawn, blue sky at
+// The visit clock as the player sees it: a sheet of coloured paper laid across
+// the field: light at Dawn, blue sky at
 // Noon, shadow at Dusk, and at Midnight a dark saturated colour whose hue shifts
 // from visit to visit. When the sheet covers the field, the visit is over.
 //
@@ -174,7 +174,7 @@ export function drawHourWash(ctx, game, now = performance.now()) {
   ctx.restore();
 }
 
-/** The same reading as a small disc beside the time, where the dandelion head is in the main build. */
+/** The same reading as a small disc beside the time. */
 export function drawHourGauge(ctx, game, x, y, radius) {
   const wash = washFor(game.currentLevel);
   const [r, g, b] = wash.color(game.currentLevel);

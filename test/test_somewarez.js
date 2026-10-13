@@ -83,7 +83,6 @@ function playDemo(visitId, seed, seconds = TIMING.demo) {
   const game = new Game(canvas);
   game.startLevel(visitId);
   game.state = 'PLAYING';
-  game.hintsEnabled = false;
   const player = createAutoplay(game, send);
   let t = 0;
   while (t < seconds && game.state === 'PLAYING') {
@@ -102,7 +101,6 @@ console.log('--- Running SOMEWAREZ kiosk tests ---');
   const game = new Game(canvas);
   game.startLevel('dawn-02');
   game.campaign.recordVictory(500);
-  game.setHintsEnabled(false);
   setColorMode('light');
   assert.equal(stored.size, 0, 'the kiosk build writes nothing to localStorage');
   assert.deepEqual(game.campaign.saveState.completedLevelIds, ['dawn-02'], 'progress is still held for the session');
@@ -113,7 +111,6 @@ console.log('--- Running SOMEWAREZ kiosk tests ---');
   assert.equal(fresh.currentLevel.id, CAMPAIGN_LEVELS[0].id, 'after a clear the game opens at the first visit');
   assert.equal(fresh.campaign.resumedFromSave, false);
   assert.deepEqual(fresh.campaign.saveState.completedLevelIds, []);
-  assert.equal(fresh.hintsEnabled, true, 'hints return to on');
   assert.equal(getColorMode(), 'default');
   console.log('✔ Memory storage holds a session and leaves localStorage untouched.');
 }
@@ -181,8 +178,6 @@ console.log('--- Running SOMEWAREZ kiosk tests ---');
     ['The hornet cut the cord.', 'The putakti cut the cord.'],
     ['Begin a thread inside the jasmine.', 'Begin a thread inside the dama de noche.'],
     ['an airborne dandelion seed', 'an airborne cogon plume'],
-    ['The dandelion seeds slipped away into the dark.', 'The night has filled the window.'],
-    ['Dandelion Clock: 75 seconds', 'Time: 75 seconds'],
     ['Seed & Wing', 'Seed & Wing'],
   ];
   for (const [source, expected] of cases) assert.equal(localize(source), expected);

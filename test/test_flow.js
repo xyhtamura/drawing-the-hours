@@ -1,11 +1,11 @@
 /**
- * Tests for the failure flow, the stalled-play hint, save resume, and the
+ * Tests for the failure flow, the visit card's hints, save resume, and the
  * progress gates on the visit list and the Field Book (CAMPAIGN.md).
  *
  * 1. isHourReached gates by unlocked index and completed IDs
  * 2. A save resumes its recorded visit; an unknown or unplayable ID falls back
  * 3. Untimed practice of a visit runs without the clock and writes no progress
- * 4. The hint appears after twelve seconds without objective progress
+ * 4. Nothing prompts during play; the visit card shows its hints when asked
  * 5. The failure card offers Retry, Practice this visit, and Level select
  * 6. The failure line follows the hour
  * 7. index.html hides the save controls and the unreached Field Book entries
@@ -53,10 +53,10 @@ function installStorage(initial) {
 
 const SAVE_KEY = 'dth_campaign_save_v2';
 
-console.log('--- Running Flow Test Suite (failure, hint, resume, gates) ---');
+console.log('--- Running Flow Test Suite (failure, card hints, resume, gates) ---');
 
 const { CAMPAIGN_LEVELS, CampaignManager, isHourReached } = await import('../src/campaign.js');
-const { Game, HINTS_STORAGE_KEY } = await import('../src/game.js');
+const { Game } = await import('../src/game.js');
 
 // 1. Hour gates
 {
@@ -131,39 +131,48 @@ const { Game, HINTS_STORAGE_KEY } = await import('../src/game.js');
   console.log('✔ Untimed practice of a visit runs without a clock and writes no progress.');
 }
 
-// 4. The stalled-play hint
+// 4. No hint during play; hints on the visit card
 {
   installStorage({});
   const canvas = makeCanvas();
   const game = new Game(canvas);
   game.initLevel('dawn-01');
   game.state = 'PLAYING';
+  for (let i = 0; i < 300; i++) game.update(0.1); // thirty stalled seconds
+  assert.equal(game.hint, undefined, 'Nothing is offered during play');
+  assert.equal(typeof game.updateHint, 'undefined', 'The stalled-play hint is gone');
 
-  for (let i = 0; i < 110; i++) game.update(0.1); // 11 seconds
-  assert.equal(game.hint, null, 'No hint before twelve seconds');
+  const drawn = () => { canvas.ctx.calls.length = 0; game.drawReadyModal(game.ctx); return canvas.ctx.calls.join('\n'); };
+  game.initLevel('dawn-01');
+  game.state = 'READY';
+  let text = drawn();
+  assert.match(text, /Show hints/, 'The card offers its hints');
+  assert.doesNotMatch(text, /Close one loop around two insects of the same kind/, 'and keeps them closed until asked');
 
-  for (let i = 0; i < 20; i++) game.update(0.1); // past twelve seconds
-  assert.ok(game.hint, 'A hint appears after twelve seconds without progress');
-  assert.equal(game.hint.key, 'single', "Dawn I's unfinished requirement is its single loops");
-  assert.equal(game.hint.remaining, 4, 'The hint counts what is left');
-  assert.match(game.hint.text, /loop/i, 'The hint names the figure to draw');
+  const r = game.cardHintsButton;
+  assert.ok(r && r.w > 0 && r.h >= 24, 'The button records a rectangle to press');
+  assert.equal(game.handleOverlayClick(r.x + r.w / 2, r.y + r.h / 2), true, 'A press on it is used, so the visit does not begin');
+  assert.equal(game.state, 'READY');
+  text = drawn();
+  assert.match(text, /Hide hints/);
+  assert.match(text, /Close one loop around two/, 'Open, each requirement carries its line');
 
-  game.drawHint(game.ctx);
-  assert.ok(game.hintRect && game.hintRect.w > 0, 'The hint card records a rectangle to dismiss');
-  const r = game.hintRect;
-  assert.equal(game.handleOverlayClick(r.x + r.w / 2, r.y + r.h / 2), true, 'A click on the card is used');
-  assert.equal(game.hint, null, 'The hint dismisses');
-  assert.equal(game.hintTimer, 0, 'Dismissing starts the twelve seconds again');
+  assert.equal(game.handleOverlayClick(5, 5), false, 'A press elsewhere is left to begin the visit');
+  game.handleOverlayClick(r.x + r.w / 2, r.y + r.h / 2);
+  assert.doesNotMatch(drawn(), /Close one loop around two/, 'A second press closes them');
 
-  // Objective progress clears a pending hint as well.
-  for (let i = 0; i < 130; i++) game.update(0.1);
-  assert.ok(game.hint, 'The hint returns after another stalled twelve seconds');
-  game.campaign.objectiveProgress.single.current = 1;
-  game.dismissHint();
-  for (let i = 0; i < 130; i++) game.update(0.1);
-  assert.equal(game.hint.remaining, 3, 'The hint counts progress already made');
+  // The same card reopened during play, and closed again on the next visit.
+  game.state = 'PLAYING';
+  game.toggleVisitCard();
+  drawn();
+  const c = game.cardHintsButton;
+  assert.equal(game.handleOverlayClick(c.x + c.w / 2, c.y + c.h / 2), true);
+  assert.equal(game.cardHintsOpen, true);
+  assert.equal(game.state, 'CARD', 'Opening hints does not resume play');
+  game.initLevel('dawn-02');
+  assert.equal(game.cardHintsOpen, false, 'A new visit starts with hints closed');
 
-  console.log('✔ Hint timing, contents, dismissal, and re-arming verified.');
+  console.log('✔ No hint during play; the visit card opens and closes its hints.');
 }
 
 // 5. Failure-screen options
@@ -223,10 +232,10 @@ const { Game, HINTS_STORAGE_KEY } = await import('../src/game.js');
   const canvas = makeCanvas();
   const game = new Game(canvas);
   const expected = {
-    'dawn-01': /morning breeze/,
-    'noon-01': /midday atrium/,
-    'dusk-01': /evening air/,
-    'midnight-01': /into the dark/,
+    'dawn-01': /light has crossed/,
+    'noon-01': /sky has covered/,
+    'dusk-01': /shadow has crossed/,
+    'midnight-01': /night has filled/,
   };
   for (const [id, pattern] of Object.entries(expected)) {
     game.initLevel(id);
@@ -236,7 +245,7 @@ const { Game, HINTS_STORAGE_KEY } = await import('../src/game.js');
     const text = canvas.ctx.calls.join(' | ');
     assert.match(text, pattern, `${id} uses its own failure line`);
     if (id !== 'dawn-01') {
-      assert.equal(/morning breeze/.test(text), false, `${id} does not say morning breeze`);
+      assert.equal(/light has crossed/.test(text), false, `${id} does not use Dawn's line`);
     }
   }
 
@@ -290,46 +299,11 @@ const { Game, HINTS_STORAGE_KEY } = await import('../src/game.js');
   console.log('✔ Visit complete Continue button and click swallowing verified.');
 }
 
-// 9. Hints setting toggle and popup close buttons
+// 9. Popup close buttons, and no hints setting
 {
-  // 9a. Hints toggle and persistence in Game
-  installStorage({});
-  const canvas = makeCanvas();
-  const game = new Game(canvas);
-  assert.equal(game.hintsEnabled, true, 'Hints are enabled by default');
-
-  game.setHintsEnabled(false);
-  assert.equal(game.hintsEnabled, false, 'Hints can be disabled');
-  assert.equal(globalThis.localStorage.getItem(HINTS_STORAGE_KEY), 'off', 'Disabled hints persist to storage as "off"');
-
-  // New Game instance loads disabled hints from storage
-  const gameOff = new Game(canvas);
-  assert.equal(gameOff.hintsEnabled, false, 'Game constructor reads disabled hints from storage');
-
-  // Disabled hints never show hint card even after stalling
-  gameOff.initLevel('dawn-01');
-  gameOff.state = 'PLAYING';
-  for (let i = 0; i < 150; i++) gameOff.update(0.1);
-  assert.equal(gameOff.hint, null, 'No hint appears when hints are disabled');
-  assert.equal(gameOff.hintTimer, 0, 'Hint timer does not tick when hints are disabled');
-
-  // Toggle hints back on
-  assert.equal(gameOff.toggleHints(), true, 'toggleHints toggles to true');
-  assert.equal(gameOff.hintsEnabled, true, 'hintsEnabled is now true');
-  assert.equal(globalThis.localStorage.getItem(HINTS_STORAGE_KEY), 'on', 'Enabled hints persist to storage as "on"');
-
-  // With hints re-enabled, hint appears after twelve seconds of stalled play
-  for (let i = 0; i < 130; i++) gameOff.update(0.1);
-  assert.ok(gameOff.hint, 'Hint appears when hints are re-enabled');
-
-  // Disabling hints while a hint is on-screen immediately dismisses it
-  gameOff.setHintsEnabled(false);
-  assert.equal(gameOff.hint, null, 'Disabling hints dismisses active hint');
-  assert.equal(gameOff.hintRect, null, 'Disabling hints clears hintRect');
-
-  // 9b. Markup and CSS assertions for close X buttons and hints toggle
+  // Markup and CSS assertions for the close X buttons
   const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-  assert.match(html, /id="btn-hints"[^>]*>Hints: On<\/button>/, 'index.html has btn-hints toggle button');
+  assert.doesNotMatch(html, /btn-hints/, 'index.html has no hints setting');
   assert.match(html, /id="btn-close-settings-x"/, 'Settings menu has close X button');
   assert.match(html, /id="btn-close-fieldbook-x"/, 'Field book modal has close X button');
   assert.match(html, /id="btn-close-visit-modal-x"/, 'Visit modal has close X button');
@@ -344,7 +318,7 @@ const { Game, HINTS_STORAGE_KEY } = await import('../src/game.js');
   assert.match(css, /\.modal-close-btn\s*\{[^}]*position:\s*sticky/, 'CSS gives modal close button sticky positioning');
   assert.match(css, /\.shell-card \.modal-close-btn\s*\{[^}]*position:\s*absolute/, 'CSS pins close button absolutely in shell cards');
 
-  console.log('✔ Hints setting toggle, storage persistence, active dismissal, and popup close X buttons verified.');
+  console.log('✔ Popup close X buttons verified; the hints setting is gone.');
 }
 
 console.log('--- All flow tests passed! ---');

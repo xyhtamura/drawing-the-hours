@@ -23,7 +23,7 @@ Locally, with the root server running:
   - **Level card** shows the current visit's requirements. During play the clock
     stops while the card is open.
   - **Reset** returns to the title screen and drops the session: progress, scores,
-    sound, hints, and colors go back to their starting values.
+    sound and colors go back to their starting values.
 - **The page resets itself** after 90 seconds without a touch during play or in a
   menu.
 - **An idle loop** starts after 20 seconds on an untouched title screen and repeats
@@ -40,11 +40,6 @@ Locally, with the root server running:
   alitaptap, putakti, dama de noche, abaca, cogon), the hawkmoth is an oleander
   hawkmoth in green and pink, and dandelion seeds are cogon plumes. Mechanics and
   recipes are the same. The table is in [src/edition.js](../src/edition.js).
-- **The clock crosses the field** in place of the dandelion head, as a sheet of
-  the hour's paper with a torn edge: light at Dawn, blue sky at Noon, shadow at
-  Dusk, and a dark colour at Midnight whose hue changes with each visit
-  ([src/hour-clock.js](../src/hour-clock.js)). It holds still and is moved on every
-  ten seconds in a few jerky poses. A visit ends when it has covered the field.
 - The link to Between Banks is hidden, because that page has no controls and no reset.
 
 ## Settings

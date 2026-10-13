@@ -14,6 +14,25 @@ Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet be
 
 ## Activity
 
+2026-10-13 — Claude Code — Two changes to the main game, on Xyh's direction: the stalled-play hint is removed and its lines moved onto the visit card, and the paper-sheet clock built for the kiosk is now the clock of every build.
+
+- **No hint during play.** The card that appeared after twelve seconds without progress is gone, with its timer, its dismissal, the Hints setting in Settings, and the `drawing-the-hours-hints` storage key. `updateHint`, `drawHint`, `dismissHint`, `setHintsEnabled`, `toggleHints`, and `drawHintGlyph` are deleted. This reverses the hint built on 2026-09-16 and the setting added on 2026-09-18.
+- **Hints on the visit card.** The card has a **Show hints** button beside "VISIT REQUIREMENTS:". Pressed, the card grows by 28 px a requirement and each row carries its line from `HINT_TEXT` under its label; pressed again, it closes. It works on the card before a visit and on the card reopened during play, and a new visit starts with hints closed. `handleOverlayClick` takes the press, so it does not begin or resume the visit. Each row already had its figure diagram, so the hint's own small glyph was dropped.
+- **The clock.** `src/hour-clock.js` draws the visit clock in every build: a sheet of the hour's paper with a torn edge, moved every ten seconds in stop motion, and the disc beside the time. The HUD label is Light, Sky, Shadow, or Night; the card says "Time: N seconds"; the failure lines name the sheet ("The light has crossed the field."). `src/clock.js` keeps only the arithmetic and its class is `VisitClock`; the dandelion head and its shed seeds are no longer drawn. Dandelion seeds are still the main build's drifting seeds. The kiosk's local edition now differs in names, the hawkmoth's colours, the cogon plume, and the abaca flower only.
+
+Verification:
+
+- `test/test_flow.js` section 4 rewritten: thirty stalled seconds offer nothing; the card shows "Show hints" and no hint line; a press on the button's rectangle is used, leaves the state at READY, and the card then carries "Hide hints" and the line; a press elsewhere is not used; a second press closes them; the same on the card reopened in play, which stays in CARD; a new visit starts closed. Section 6 checks the four new failure lines. All twelve suites pass.
+- In the main page at 1024x768 emulation: the Settings menu has no Hints button; Noon X's card opened its hints by a dispatched click at the button's centre and showed both lines; in play at 43 s the blue sheet covered the upper field with a torn edge, the cast was the main build's (Brimstone, Roseate Hawkmoth, flax flower, dandelion seeds), and no hint appeared after twenty stalled seconds. In the kiosk page, Midnight XXIV's card with five requirements opened its hints, each line localized ("Thread an alitaptap, then a lacewing..."), and the card stayed inside the field. No console errors.
+
+Not done, and open:
+
+- Not played, in either build. The clock's open questions in the entries below now apply to the main game too, and the press of the sheet now costs the main game a few hundred milliseconds once per hour.
+- On the kiosk, a five-requirement card with hints open reaches the three controls at the field's lower right; they overlap the card's corner beside the Begin prompt. Seen at 1024x768.
+- A hint line is cut at two rows of text. The longest lines fit in two at the card's full width; a narrow card was not checked.
+- `CAMPAIGN.md`, `STRING.md`, `DAY-1-PACING.md`, and earlier entries here still describe the stalled-play hint and the dandelion clock. Left as dated record.
+- The Field Book has no entry for the clock.
+
 2026-10-13 — Claude Code — Remade the kiosk clock's wash as a sheet of paper, on Xyh's direction. It replaces the soft-edged translucent wash of the entry below; `src/hour-clock.js` is rewritten and nothing else about the clock changed.
 
 - **Paper, with the colour under the texture.** The sheet is the hour's wash with the clock's colour laid over it, then the hour's own paper pressed on top with `paperBackdrop`, the same press the floor gets. The baked floor files hold the floor's colours, so the sheet is pressed at run time, once per hour and hue, and kept. `Game.render` asks for it while a visit's card is up (`prepareHourSheet`), so the press does not land in play.

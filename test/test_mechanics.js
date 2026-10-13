@@ -24,7 +24,7 @@ import {
   CAMPAIGN_LEVELS,
   PRACTICE_LEVELS,
 } from '../src/campaign.js';
-import { DandelionClock } from '../src/clock.js';
+import { VisitClock } from '../src/clock.js';
 
 console.log('--- Running Drawing the Hours Test Suite ---');
 
@@ -456,7 +456,7 @@ console.log('--- Running Drawing the Hours Test Suite ---');
   assert.strictEqual(lvl1.id, 'dawn-01');
   assert.strictEqual(lvl1.durationSeconds, 75);
 
-  const clock = new DandelionClock(lvl1.durationSeconds, 12);
+  const clock = new VisitClock(lvl1.durationSeconds, 12);
   const initialTime = clock.remainingSeconds;
 
   // Mock drawing result

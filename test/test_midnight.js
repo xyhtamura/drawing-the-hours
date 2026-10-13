@@ -5,7 +5,7 @@ import { Insect, Butterfly, DandelionSeed, Snail } from '../src/entities.js';
 import { placeLacewing, leafAnchors } from '../src/lacewing.js';
 import { evaluateDrawing } from '../src/recipes.js';
 import { CampaignManager, CAMPAIGN_LEVELS, PLAYABLE_LEVEL_IDS, deriveObjectiveTags } from '../src/campaign.js';
-import { DandelionClock } from '../src/clock.js';
+import { VisitClock } from '../src/clock.js';
 
 const target = (kind, x, y = 0, type = 'butterfly') => ({kind, x, y, radius: 10, type, state: 'roaming'});
 const cast = () => [target('firefly', 100), target('lacewing', 200), target('firefly', 300)];
@@ -115,7 +115,7 @@ for (const bad of [
   assert.equal(PLAYABLE_LEVEL_IDS.size, 24, 'All 24 campaign levels are in PLAYABLE_LEVEL_IDS');
   assert.ok(CAMPAIGN_LEVELS.every(l => PLAYABLE_LEVEL_IDS.has(l.id)), 'Every authored visit is playable');
 
-  const clock10 = new DandelionClock(95);
+  const clock10 = new VisitClock(95);
   manager.processDrawing({valid:true}, [{entities:cast()}], clock10);
   assert.equal(clock10.remainingSeconds, 95, 'Enclosures cannot advance a trace-only visit');
   const result10 = complete(cast()).finish(400);
@@ -136,7 +136,7 @@ for (const bad of [
   assert.equal(level11.durationSeconds, 110);
   assert.equal(level11.motionScale, 0.95);
 
-  const clock11 = new DandelionClock(110);
+  const clock11 = new VisitClock(110);
   // Kindred pair: 2 hoverflies
   const pairDrawing = { valid: true, recipeType: 'PAIR', finalScore: 160 };
   const pairPockets = [{ entities: [target('hoverfly', 50), target('hoverfly', 60)] }];
@@ -189,7 +189,7 @@ for (const bad of [
     const lacewingFirst = { valid: true, mode: 'trace', recipeType: 'ORDERED_TRACE', traceSequence: level22.traceSequence };
     assert.deepEqual(deriveObjectiveTags(lacewingFirst, []), ['any', 'trace', 'lacewingTrace']);
     assert.deepEqual(deriveObjectiveTags(traceDrawing, []), ['any', 'trace'], 'A firefly-first trace is not a lacewing-first one');
-    const clock22 = new DandelionClock(110);
+    const clock22 = new VisitClock(110);
     manager.processDrawing(traceDrawing, [], clock22);
     assert.equal(manager.objectiveProgress.lacewingTrace.current, 0);
     for (let i = 0; i < 3; i++) manager.processDrawing(lacewingFirst, [], clock22);
@@ -217,7 +217,7 @@ for (const bad of [
   assert.equal(level12.durationSeconds, 110);
   assert.equal(level12.motionScale, 1.0);
 
-  const clock12 = new DandelionClock(110);
+  const clock12 = new VisitClock(110);
   // Nursery Polarity: 1 flier in A, 1 seed in B -> advances any, figure8, AND nursery!
   const nurseryDrawing = { valid: true, recipeType: 'NURSERY', finalScore: 240 };
   const nurseryPockets = [

@@ -1,6 +1,6 @@
 // The local edition: the cast of the SOMEWAREZ kiosk build, named and coloured
 // for a Philippine garden. Mechanics, kinds, ids, and recipes are unchanged; only
-// what a creature is called, a few colours, three drawings, and the clock differ.
+// what a creature is called, a few colours, and three drawings differ.
 //
 // Names use the Tagalog word where it is the everyday one (paruparo, tutubi,
 // alitaptap) and English otherwise (lacewing, cogon, abaca).
@@ -45,13 +45,8 @@ const INVARIANT = 'paruparo|tutubi|gamugamo|bubuyog|alitaptap|putakti|kuliglig';
 const sentenceStart = (text, index) => index === 0 || /[.!?:]\s+$/.test(text.slice(0, index));
 const keepCase = word => match => (match[0] === match[0].toUpperCase() ? word[0].toUpperCase() + word.slice(1) : word);
 
-// Ordered: whole lines, then full names, then the short words they contain.
+// Ordered: full names, then the short words they contain.
 const RULES = [
-  ['The dandelion seeds took flight into the morning breeze.', 'The light has crossed the field.'],
-  ['The dandelion seeds scattered across the midday atrium.', 'The sky has covered the atrium.'],
-  ['The dandelion seeds drifted off into the evening air.', 'The shadow has crossed the field.'],
-  ['The dandelion seeds slipped away into the dark.', 'The night has filled the window.'],
-  [/Dandelion Clock/g, 'Time'],
   [/Brimstone Butterfly/g, 'Lemon Emigrant'],
   // "Brimstone" is always capitalised in the source; paruparo is a common noun.
   [/Brimstone butterflies|Brimstones?/g, (match, index, text) => (sentenceStart(text, index) ? 'Paruparo' : 'paruparo')],

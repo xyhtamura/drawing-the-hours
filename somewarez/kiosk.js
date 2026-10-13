@@ -106,7 +106,6 @@ export function startKiosk({ game, canvas, showPanel, openMenu, showVisitCard, g
     storage.clearMemory();
     game.campaign.reset();
     game.campaign.practiceVisit = null;
-    game.setHintsEnabled(true);
     setColorMode('default');
     audio.isMuted = false;
     game.startLevel(CAMPAIGN_LEVELS[0].id);
@@ -126,9 +125,8 @@ export function startKiosk({ game, canvas, showPanel, openMenu, showVisitCard, g
     caption.hidden = scene !== 'demo';
     statement.hidden = true;
     if (scene === 'demo') {
-      // Silent and without hints: nobody is playing.
+      // Silent: nobody is playing.
       audio.isMuted = true;
-      game.setHintsEnabled(false);
       game.startLevel(DEMO_VISITS[state.demoCount++ % DEMO_VISITS.length]);
       game.state = 'PLAYING';
       showPanel(null);

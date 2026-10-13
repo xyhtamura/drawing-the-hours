@@ -47,7 +47,6 @@
         <div class="menu-buttons">
           <button id="btn-color-mode" aria-label="Pure light colors" aria-pressed="false">Colors: Default</button>
           <button id="btn-audio">Sound: On</button>
-          <button id="btn-hints" aria-label="Toggle hints" aria-pressed="true">Hints: On</button>
           <button id="btn-settings-back">Back to menu</button>
         </div>
         <p>The field keeps its proportions and scales to fit your screen.</p>
@@ -508,20 +507,6 @@
     btnAudio.onclick = () => {
       btnAudio.textContent = audio.toggleMute() ? 'Sound: Off' : 'Sound: On';
     };
-    const btnHints = document.getElementById('btn-hints');
-    const updateHintsUI = () => {
-      if (!btnHints) return;
-      const on = game.hintsEnabled;
-      btnHints.textContent = on ? 'Hints: On' : 'Hints: Off';
-      btnHints.setAttribute('aria-pressed', String(on));
-    };
-    updateHintsUI();
-    if (btnHints) {
-      btnHints.onclick = () => {
-        game.toggleHints();
-        updateHintsUI();
-      };
-    }
     const btnClosePauseX = document.getElementById('btn-close-pause-x');
     const btnCloseSettingsX = document.getElementById('btn-close-settings-x');
     const btnCloseFieldbookX = document.getElementById('btn-close-fieldbook-x');
@@ -600,10 +585,7 @@
       kiosk.startKiosk({
         game, canvas, showPanel, openMenu, showVisitCard,
         getActivePanel: () => activePanel,
-        syncSettings: () => {
-          updateHintsUI();
-          btnAudio.textContent = audio.isMuted ? 'Sound: Off' : 'Sound: On';
-        },
+        syncSettings: () => { btnAudio.textContent = audio.isMuted ? 'Sound: Off' : 'Sound: On'; },
       });
     }
   </script>

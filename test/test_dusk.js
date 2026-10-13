@@ -4,7 +4,7 @@ import { Insect } from '../src/entities.js';
 import { leafAnchors, duskSafeArea, placeLacewing } from '../src/lacewing.js';
 import { CampaignManager, CAMPAIGN_LEVELS, PLAYABLE_LEVEL_IDS } from '../src/campaign.js';
 import { evaluateDrawing } from '../src/recipes.js';
-import { DandelionClock } from '../src/clock.js';
+import { VisitClock } from '../src/clock.js';
 
 const wide = { width: 960, height: 640 }, narrow = { width: 340, height: 620 };
 const a = new Insect(0, 0, 'lacewing');
@@ -49,7 +49,7 @@ const pockets = [new Insect(0, 0, 'lacewing'), new Insect(0, 0, 'hoverfly')]
   .map(entity => ({ entities: [entity], area: 4000, centroid: {x:0,y:0} }));
 const result = evaluateDrawing(pockets, 600);
 assert.ok(result.valid, 'Resting species participates in generic counterpart recipe');
-const clock = new DandelionClock(100);
+const clock = new VisitClock(100);
 for (let i = 0; i < 5; i++) campaign.processDrawing(result, pockets, clock);
 assert.equal(campaign.objectiveProgress.lacewingCounterpart.current, 2);
 assert.ok(campaign.isComplete());
@@ -69,7 +69,7 @@ const nurseryPockets = [
 ];
 const nurseryEval = evaluateDrawing(nurseryPockets, 800);
 assert.ok(nurseryEval.valid, 'Nursery with lacewing and 1 seed is valid');
-const nurseryClock = new DandelionClock(95);
+const nurseryClock = new VisitClock(95);
 campaign.processDrawing(nurseryEval, nurseryPockets, nurseryClock);
 assert.equal(campaign.objectiveProgress.nursery.current, 1);
 assert.equal(campaign.objectiveProgress.any.current, 1);
@@ -109,7 +109,7 @@ assert.equal(campaign.getNextLevel().id, 'midnight-01');
 const singlePairPocket = [{ entities: [new Insect(0, 0, 'brimstone'), new Insect(10, 0, 'brimstone')], area: 4000, centroid: {x:5, y:0} }];
 const singlePairEval = evaluateDrawing(singlePairPocket, 600);
 assert.ok(singlePairEval.valid);
-const dusk3Clock = new DandelionClock(100);
+const dusk3Clock = new VisitClock(100);
 for (let i = 0; i < 3; i++) campaign.processDrawing(singlePairEval, singlePairPocket, dusk3Clock);
 assert.equal(campaign.objectiveProgress.single.current, 3);
 assert.equal(campaign.objectiveProgress.any.current, 3);
