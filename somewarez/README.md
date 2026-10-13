@@ -16,7 +16,8 @@ Locally, with the root server running:
 - **Nothing is saved to the device.** Progress, best scores, and settings are held
   in memory for the session ([src/storage.js](../src/storage.js)). Every visit is
   open from the Visits list.
-- **A bar below the field** replaces the Pause button:
+- **Three controls at the foot of the field** replace the Pause button. Nothing
+  is drawn outside the field:
   - **Main menu** opens the menu: Resume, Visit Card, Visits, Field Book, Settings,
     Restart visit.
   - **Level card** shows the current visit's requirements. During play the clock
@@ -29,17 +30,19 @@ Locally, with the root server running:
   until someone touches the screen:
   1. The game playing itself for up to 45 seconds, without sound. It rotates through
      one visit from each hour.
-  2. A card with a QR code for the multicart, 18 seconds.
+  2. A card with a QR code for the multicart, 18 seconds. It is set like the
+     multicart's own page and lists its five works.
   3. The title screen, 20 seconds.
 
   A touch during the first two returns to the title screen. That touch does not
   press anything under it.
-- The link to Between Banks is hidden, because that page has no bar and no reset.
+- The link to Between Banks is hidden, because that page has no controls and no reset.
 
 ## Settings
 
-[config.js](config.js) holds the multicart URL, the timings, the visits the
-demonstration plays, and `STATEMENT`.
+[config.js](config.js) holds the multicart URL, the five titles on the card, the
+timings, the visits the demonstration plays, and `STATEMENT`. The titles repeat
+the multicart menu's; change them here when that menu changes.
 
 `STATEMENT` is empty. Put a narration or artist statement there as one string per
 line, and each line shows over the demonstration for seven seconds. The

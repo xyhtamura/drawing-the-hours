@@ -35,7 +35,7 @@ ROOT = Path(__file__).resolve().parent.parent
 INCLUDE = ['index.html', 'style.css', 'ui.css', 'favicon.svg', 'src', 'assets', 'somewarez']
 # In somewarez/: the forwarding page and the repository README have no use in the export.
 SKIP = {'somewarez/index.html', 'somewarez/README.md'}
-TEXT = {'.html', '.css', '.js', '.svg'}
+TEXT = {'.html', '.css', '.js', '.svg'}  # licence texts name their own addresses and are not scanned
 
 README = """Drawing the Hours, SOMEWAREZ kiosk build
 Xyh Tamura. Exported {today} from commit {commit}{dirty}.
@@ -58,8 +58,8 @@ so does copying the folder to a web host.
 
 WHAT IT DOES
 
-Nothing is saved to the device. A bar below the field has Main menu, Level card,
-and Reset. Reset returns to the title screen and clears progress, scores, and
+Nothing is saved to the device. Three controls at the foot of the field are Main
+menu, Level card, and Reset. Nothing is drawn outside the field. Reset returns to the title screen and clears progress, scores, and
 settings. Left alone for 90 seconds, the page resets itself. Left alone on the
 title screen for 20 seconds, it runs a loop until someone touches the screen:
 the game playing itself, a card with a QR code for the multicart, the title.

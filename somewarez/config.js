@@ -3,6 +3,15 @@
 /** Where the QR card sends a phone. scripts/make_qr.py draws multicart-qr.svg from this. */
 export const MULTICART_URL = 'https://xyhtamura.github.io/somewarez-multicart/';
 
+/** The five works on the multicart, as its menu lists them: title and one line each. */
+export const MULTICART_GAMES = [
+  ['Cornice', 'Glyph terrarium'],
+  ['Ombak Lock', 'Tune by ear'],
+  ['Foam Green City', 'Domestic walkthrough'],
+  ['Drawing the Hours', 'Draw among insects'],
+  ['Sulat', 'Type a landscape'],
+];
+
 /** Seconds. `?idle=`, `?title=`, `?demo=`, and `?ad=` on the page URL override them. */
 export const TIMING = {
   idle: 90,   // no touch during play or in a menu: back to the title screen

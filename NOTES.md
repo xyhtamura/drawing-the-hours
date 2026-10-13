@@ -14,6 +14,20 @@ Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet be
 
 ## Activity
 
+2026-10-13 — Claude Code — Revised the kiosk build on Xyh's review: nothing is drawn outside the field, and the multicart card follows the multicart page.
+
+- **Controls inside the field.** Main menu, Level card, and Reset sit at the foot of the field on the right, where the Pause button is in the main build, and stay above the menus so Reset is always in reach. The idle layer, its caption, and the card are children of `.stage-wrapper` too; `document.body` holds only `main` and the script. The space reserved below the field (`Game` `reservedBottom`, `KIOSK_BAR`) is removed, so the field is the size it is in the main build. Menus other than the title end 68 px above the foot so their last button clears the controls.
+- **Card after the multicart page**: coral ground, cream sheet with a hard shadow, the `5 IN 1` masthead in Bungee Shade, Pixelify Sans elsewhere, the QR code in an amber tile, and the five titles as numbered rows in the menu's five colours, with Drawing the Hours marked "On this screen". Sizes are in container units, so the card scales with the field, and the code sits above the list on a portrait field. The titles and their lines are `MULTICART_GAMES` in `somewarez/config.js`, repeated from the multicart's `prototypes/designs.js`.
+- Two fonts copied from the multicart folder with their OFL texts into `somewarez/fonts/` and recorded in [ASSETS.md](ASSETS.md). The QR code is redrawn in the multicart's ink on a pale cream.
+
+Verification, in the page at 1024x768 and 768x1024 emulation by DOM and game state, stepped by hand: the controls' box lies inside the stage's box; no element of the card extends past the stage and the sheet does not overflow at either size; both fonts report loaded and the screenshots show them; the controls are hidden while the idle layer is up and visible 500 ms after a touch ends it; Level card, Main menu, Reset, the idle loop, and the wake behave as in the entry below; no console errors. The QR code was decoded with OpenCV from the pane's own screenshot of the landscape card. All twelve suites pass. The export was rerun and loaded: every request under `dist/somewarez/`, fonts included.
+
+Not done, and open:
+- Still not run on a tablet or by touch, and still not pushed.
+- The controls cover about 300 by 44 px of the field's lower right corner during play. A creature or a cord end there is under them. Not measured in play.
+- **Gameplay videos of the other four works on the card** (Xyh's question) are not built. See the reply in conversation: recommended as short silent loops recorded from real play, one per row; each needs a capture nobody has made yet, and they add weight to the offline export.
+- The portrait card was read by screenshot but its QR code was decoded only from the landscape card.
+
 2026-10-13 — Claude Code — Added the offline export of the kiosk build, since Xyh will hand Somewarez static files.
 
 - `python scripts/export_somewarez.py` writes `dist/somewarez/` and `dist/drawing-the-hours-somewarez-<commit>.zip`: `index.html`, the two stylesheets, the favicon, `src/`, `assets/`, and `somewarez/`, 66 files and 2.1 MB. It sets `KIOSK = true` in the exported `src/build.js`, so the folder's `index.html` is the kiosk with no query flag. `BUILD.txt` records the source commit and a SHA-256 for every file; `README.txt` tells the venue how to run it.

@@ -292,7 +292,7 @@
   </main>
 
   <script type="module">
-    import { KIOSK, KIOSK_BAR } from './src/build.js';
+    import { KIOSK } from './src/build.js';
     import { getColorMode, setColorMode } from './src/theme.js';
     import { Game } from './src/game.js';
     import { renderComboCanvases } from './src/combo-diagrams.js';
@@ -304,7 +304,7 @@
     const canvas = document.getElementById('game-canvas');
     // Finish local font loading before measuring canvas text. Failure uses fallbacks.
     await Promise.allSettled([document.fonts.load('400 18px Mali'), document.fonts.load('600 22px Mali')]);
-    const game = new Game(canvas, { reservedBottom: KIOSK_BAR });
+    const game = new Game(canvas);
     document.getElementById('btn-color-mode').addEventListener('click', () => {
       setColorMode(getColorMode() === 'default' ? 'light' : 'default');
       game.render();

@@ -37,6 +37,23 @@ the full license is included in [OFL-Mali.txt](assets/fonts/OFL-Mali.txt).
 No Google Fonts request is made while playing. Font loading failures fall
 back to installed fonts. The game does not redistribute fallback system fonts.
 
+## SOMEWAREZ kiosk card fonts
+
+The multicart card in the kiosk build (`somewarez/`) is set in the two display
+fonts of the multicart page: Bungee Shade for the `5 IN 1` masthead and Pixelify
+Sans for everything else. Both are unmodified copies of the files in
+`xyhtamura.github.io/somewarez-multicart/assets/fonts/`, which were downloaded
+from the Google Fonts repository on 2026-10-04, copied here on 2026-10-13.
+`PixelifySans[wght].ttf` is stored as `PixelifySans-wght.ttf`; the bytes are the
+same. Each is under SIL Open Font License 1.1, and the licences are beside them:
+[Bungee Shade](somewarez/fonts/bungeeshade-OFL.txt)
+([source](https://github.com/google/fonts/tree/main/ofl/bungeeshade)) and
+[Pixelify Sans](somewarez/fonts/pixelifysans-OFL.txt)
+([source](https://github.com/google/fonts/tree/main/ofl/pixelifysans)).
+Only the kiosk build loads them.
+
+The QR code, `somewarez/multicart-qr.svg`, is drawn by `scripts/make_qr.py`.
+
 ## Procedural graphics
 
 The cached Dawn paper texture, pavement, grasses, and flowers in

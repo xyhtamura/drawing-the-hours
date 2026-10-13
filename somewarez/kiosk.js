@@ -1,7 +1,8 @@
 /**
  * SOMEWAREZ kiosk build: a tablet in a venue, played by one visitor after another.
  *
- * - A bar below the field: Main menu, Level card, Reset.
+ * - Three controls at the foot of the field: Main menu, Level card, Reset.
+ *   Nothing is drawn outside the field.
  * - Reset returns to the title screen and drops the session: progress, scores,
  *   settings. Nothing is written to the device (src/storage.js).
  * - Left alone, the page resets itself, then runs an idle loop: the game playing
@@ -16,9 +17,8 @@ import { audio } from '../src/audio.js';
 import { storage } from '../src/storage.js';
 import { setColorMode } from '../src/theme.js';
 import { CAMPAIGN_LEVELS } from '../src/campaign.js';
-import { KIOSK_BAR } from '../src/build.js';
 import { createAutoplay } from './autoplay.js';
-import { MULTICART_URL, TIMING, DEMO_VISITS, STATEMENT } from './config.js';
+import { MULTICART_URL, MULTICART_GAMES, TIMING, DEMO_VISITS, STATEMENT } from './config.js';
 
 const SCENES = ['demo', 'ad', 'title'];
 
@@ -37,7 +37,6 @@ export function startKiosk({ game, canvas, showPanel, openMenu, showVisitCard, g
   }
 
   document.head.append(element('link', { rel: 'stylesheet', href: new URL('./kiosk.css', import.meta.url).href }));
-  document.documentElement.style.setProperty('--kiosk-bar', `${KIOSK_BAR}px`);
   document.body.classList.add('kiosk');
   // Between Banks is another page, without this bar or the idle reset.
   const elsewhere = document.querySelector('#pause-menu a[href*="between-banks"]');
@@ -54,16 +53,35 @@ export function startKiosk({ game, canvas, showPanel, openMenu, showVisitCard, g
   const statement = element('p', { className: 'kiosk-statement', hidden: true });
   const caption = element('p', { className: 'kiosk-caption', textContent: 'The game is playing itself. Touch the screen to play.' });
   const address = MULTICART_URL.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  // The card follows the multicart page: coral ground, cream sheet, the 5 IN 1 masthead.
   const ad = element('section', { className: 'kiosk-ad', hidden: true }, [
-    element('p', { className: 'kiosk-ad-kicker', textContent: 'XYH 5 IN 1 MULTICART' }),
-    element('h2', { textContent: 'Drawing the Hours is one of five works on the multicart.' }),
-    element('img', { src: new URL('./multicart-qr.svg', import.meta.url).href, alt: `QR code for ${address}` }),
-    element('p', { textContent: 'Scan the code to open the multicart on your phone.' }),
-    element('p', { className: 'kiosk-ad-url', textContent: address }),
-    element('p', { className: 'kiosk-ad-touch', textContent: 'Touch the screen to play Drawing the Hours.' }),
+    element('div', { className: 'kiosk-ad-sheet' }, [
+      element('p', { className: 'kiosk-ad-issue' }, [
+        element('span', { textContent: 'SCAN TO PLAY ON YOUR PHONE' }),
+        element('span', { textContent: 'EDITION 2026-11' }),
+      ]),
+      element('header', { className: 'kiosk-ad-heading' }, [
+        element('h2', {}, ['5 ', element('small', { textContent: 'IN' }), ' 1']),
+        element('p', { className: 'kiosk-ad-maker' }, ['XYH MULTICART', element('span', { textContent: 'TOUCH-SCREEN / 2026' })]),
+      ]),
+      element('div', { className: 'kiosk-ad-body' }, [
+        element('figure', { className: 'kiosk-ad-code' }, [
+          element('img', { src: new URL('./multicart-qr.svg', import.meta.url).href, alt: `QR code for ${address}` }),
+          // Host and path each stay whole, so a narrow caption breaks at the slash.
+          element('figcaption', {}, address.split(/(?<=\/)/).map(part => element('span', { textContent: part }))),
+        ]),
+        element('ol', { className: 'kiosk-ad-games' }, MULTICART_GAMES.map(([title, line], index) => element('li', {}, [
+          element('span', { className: 'kiosk-ad-number', textContent: String(index + 1).padStart(2, '0') }),
+          element('strong', { textContent: title }),
+          element('span', { textContent: title === 'Drawing the Hours' ? 'On this screen' : line }),
+        ]))),
+      ]),
+      element('p', { className: 'kiosk-ad-touch', textContent: 'TOUCH THE SCREEN TO PLAY DRAWING THE HOURS' }),
+    ]),
   ]);
   const layer = element('div', { id: 'kiosk-attract', hidden: true }, [statement, caption, ad]);
-  document.body.append(bar, layer);
+  // Both sit inside the field's own box, so nothing is drawn outside it.
+  canvas.parentElement.append(layer, bar);
 
   // --- The demonstration draws through the game's own pointer handlers ---
   const demoEvents = new WeakSet();

@@ -1,46 +1,89 @@
-/* SOMEWAREZ kiosk build: control bar below the field, and the idle loop layer. */
+/* SOMEWAREZ kiosk build. Everything here sits inside .stage-wrapper, the field's own box. */
 
-/* The field is fitted to the height above the bar (Game reservedBottom). */
-body.kiosk .stage-wrapper { top: calc((100dvh - var(--kiosk-bar)) / 2); }
+@font-face { font-family: 'Kiosk Pixel'; src: url('fonts/PixelifySans-wght.ttf'); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: 'Kiosk Bungee'; src: url('fonts/BungeeShade-Regular.ttf'); font-display: swap; }
+
+/* The three controls take the Pause button's place at the foot of the field. */
 body.kiosk .stage-pause { display: none; }
-
 #kiosk-bar {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
-  height: var(--kiosk-bar);
-  display: flex; align-items: center; justify-content: center; gap: 12px;
-  padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+  position: absolute; z-index: 150; /* above the menus, so Reset is always in reach */
+  right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom));
+  display: flex; gap: 8px;
 }
-#kiosk-bar button { justify-content: center; min-width: 124px; min-height: 46px; font-size: 0.95rem; }
+/* The idle layer is clear over the demonstration; the controls do not show through it. */
+#kiosk-attract:not([hidden]) + #kiosk-bar { visibility: hidden; }
+#kiosk-bar button { justify-content: center; min-height: 44px; padding: 8px 16px; opacity: 0.92; }
+/* Menus end above the controls. The title screen keeps the whole field. */
+body.kiosk .stage-wrapper > .recipe-modal:not(#title-screen) { padding-bottom: 68px; }
 
-#kiosk-attract { position: fixed; inset: 0; z-index: 300; touch-action: none; }
+/* Idle loop layer: takes the touch that ends the loop. */
+#kiosk-attract { position: absolute; inset: 0; z-index: 300; touch-action: none; container-type: size; }
 
 .kiosk-caption {
-  position: absolute; left: 0; right: 0; bottom: 0; height: var(--kiosk-bar);
-  display: flex; align-items: center; justify-content: center; padding: 0 16px;
-  background: var(--bg-cream); color: var(--text-dark);
-  font: 600 clamp(15px, 2.4vmin, 20px) Mali, sans-serif; text-align: center;
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+  width: max-content; max-width: 92%; padding: 10px 22px; border-radius: 999px;
+  background: #f4efdcf2; color: #34574f; box-shadow: 0 2px 8px rgba(30, 24, 20, 0.3);
+  font: 600 clamp(14px, 2.6cqmin, 20px) Mali, sans-serif; text-align: center;
 }
 
 .kiosk-statement {
   position: absolute; left: 50%; top: 10%; transform: translateX(-50%);
-  width: max-content; max-width: min(84vw, 620px); padding: 14px 20px;
+  width: max-content; max-width: 84%; padding: 14px 20px;
   background: #f4efdcee; color: #34574f; border-radius: 4px 7px 5px 8px;
   box-shadow: 0 1px 1px rgba(30, 24, 20, 0.25), 0 8px 20px rgba(30, 24, 20, 0.25);
-  font: 600 clamp(17px, 3vmin, 26px)/1.4 Mali, sans-serif; text-align: center;
+  font: 600 clamp(16px, 3.4cqmin, 26px)/1.4 Mali, sans-serif; text-align: center;
 }
 
+/* Multicart card, after the multicart's catalogue page. Sizes follow the field (cqmin). */
 .kiosk-ad {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: clamp(8px, 2vmin, 18px); padding: 24px; text-align: center;
-  background: #f4efdc; color: #34574f; font-family: Mali, sans-serif;
+  --ink: #17363b; --green: #a4c7a5; --cream: #e8e0c1; --coral: #ed7963; --amber: #ecba65;
+  position: absolute; inset: 0; display: flex; padding: 3.5cqmin;
+  background: var(--coral); color: var(--ink); font-family: 'Kiosk Pixel', monospace;
 }
-.kiosk-ad-kicker { color: #b7603c; font-size: clamp(14px, 2.4vmin, 22px); font-weight: 600; letter-spacing: 0.12em; }
-.kiosk-ad h2 { max-width: 20em; font-size: clamp(20px, 4vmin, 38px); font-weight: 600; line-height: 1.25; }
-.kiosk-ad img {
-  width: min(44vmin, 340px); height: auto; border-radius: 6px;
-  box-shadow: 0 1px 1px rgba(30, 24, 20, 0.25), 0 10px 26px rgba(30, 24, 20, 0.22);
+.kiosk-ad-sheet {
+  flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 3cqmin 3.5cqmin;
+  background: var(--cream); border: 3px solid; box-shadow: 1.4cqmin 1.4cqmin 0 var(--ink);
 }
-.kiosk-ad p { font-size: clamp(15px, 2.6vmin, 22px); }
-.kiosk-ad-url { color: #795373; font-weight: 600; overflow-wrap: anywhere; }
-.kiosk-ad-touch { margin-top: clamp(6px, 2vmin, 20px); color: #6d7f77; font-size: clamp(14px, 2.2vmin, 18px); }
+.kiosk-ad-issue { display: flex; justify-content: space-between; gap: 2cqmin; font-size: 2.5cqmin; letter-spacing: 0.04em; }
+.kiosk-ad-heading {
+  display: flex; align-items: center; justify-content: space-between; gap: 3cqmin;
+  margin: 2cqmin 0 2.6cqmin; padding: 1.6cqmin 0; border-top: 5px solid; border-bottom: 5px solid;
+}
+.kiosk-ad-heading h2 {
+  font: 15cqmin/1 'Kiosk Bungee', sans-serif; letter-spacing: -0.07em; white-space: nowrap;
+  color: var(--coral); -webkit-text-stroke: 1px var(--ink);
+}
+.kiosk-ad-heading h2 small { font: 4.4cqmin 'Kiosk Pixel', monospace; letter-spacing: 0; color: var(--ink); -webkit-text-stroke: 0; }
+.kiosk-ad-maker { font-size: 6cqmin; font-weight: 700; line-height: 1; text-align: right; }
+.kiosk-ad-maker span { display: block; margin-top: 1.2cqmin; font-size: 2.3cqmin; font-weight: 400; letter-spacing: 0.12em; }
+
+.kiosk-ad-body { flex: 1; min-height: 0; display: flex; gap: 3.5cqmin; align-items: stretch; }
+.kiosk-ad-code {
+  flex: none; display: flex; flex-direction: column; align-self: center;
+  background: var(--amber); border: 2px solid; box-shadow: 0.8cqmin 0.8cqmin 0 var(--ink);
+}
+.kiosk-ad-code img { display: block; width: 38cqmin; height: 38cqmin; border-bottom: 2px solid; }
+.kiosk-ad-code figcaption { max-width: 38cqmin; padding: 1.2cqmin 0.8cqmin; font-size: 1.75cqmin; text-align: center; }
+.kiosk-ad-code figcaption span { display: inline-block; }
+
+.kiosk-ad-games { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1.3cqmin; list-style: none; }
+.kiosk-ad-games li {
+  flex: 1; min-height: 0; display: flex; align-items: center; gap: 1.6cqmin; padding: 0 1.6cqmin;
+  background: var(--amber); border: 2px solid; box-shadow: 0.6cqmin 0.6cqmin 0 var(--ink); font-size: 2.3cqmin;
+}
+.kiosk-ad-games li:nth-child(2) { background: var(--coral); }
+.kiosk-ad-games li:nth-child(3) { background: var(--green); }
+.kiosk-ad-games li:nth-child(4) { background: var(--cream); }
+.kiosk-ad-games li:nth-child(5) { background: #87c6d1; }
+.kiosk-ad-games strong { flex: 1; min-width: 0; font-size: 3.9cqmin; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+.kiosk-ad-number { padding: 0.5cqmin 0.9cqmin; background: var(--cream); border: 1px solid; }
+.kiosk-ad-touch { margin-top: 2.6cqmin; padding-top: 1.6cqmin; border-top: 2px solid; font-size: 2.4cqmin; letter-spacing: 0.04em; text-align: center; }
+
+/* Portrait field: the code above the list. */
+@container (aspect-ratio < 1) {
+  .kiosk-ad-body { flex-direction: column; }
+  .kiosk-ad-code { flex-direction: row; align-items: center; align-self: stretch; }
+  .kiosk-ad-code img { border-bottom: 0; border-right: 2px solid; }
+  .kiosk-ad-code figcaption { max-width: none; flex: 1; font-size: 2.6cqmin; }
+  .kiosk-ad-heading h2 { font-size: 17cqmin; }
+}

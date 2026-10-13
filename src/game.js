@@ -109,10 +109,8 @@ function drawRoundedRect(ctx, x, y, w, h, r) {
 }
 
 export class Game {
-  constructor(canvas, options = {}) {
+  constructor(canvas) {
     this.canvas = canvas;
-    // CSS pixels kept clear below the field, for a control bar outside it.
-    this.reservedBottom = options.reservedBottom || 0;
     this.ctx = canvas.getContext('2d');
 
     this.width = 960;
@@ -207,7 +205,7 @@ export class Game {
 
   layoutCanvas() {
     const viewport = this.canvas.parentElement?.getBoundingClientRect() || {width: 960, height: 640};
-    const field = fitField(globalThis.window?.innerWidth || viewport.width || 960, (globalThis.window?.innerHeight || viewport.height || 640) - this.reservedBottom);
+    const field = fitField(globalThis.window?.innerWidth || viewport.width || 960, globalThis.window?.innerHeight || viewport.height || 640);
     if (this.canvas.parentElement?.style) {
       this.canvas.parentElement.style.width = `${field.displayWidth}px`;
       this.canvas.parentElement.style.height = `${field.displayHeight}px`;
