@@ -14,6 +14,25 @@ Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet be
 
 ## Activity
 
+2026-10-13 — Claude Code — Remade the kiosk clock's wash as a sheet of paper, on Xyh's direction. It replaces the soft-edged translucent wash of the entry below; `src/hour-clock.js` is rewritten and nothing else about the clock changed.
+
+- **Paper, with the colour under the texture.** The sheet is the hour's wash with the clock's colour laid over it, then the hour's own paper pressed on top with `paperBackdrop`, the same press the floor gets. The baked floor files hold the floor's colours, so the sheet is pressed at run time, once per hour and hue, and kept. `Game.render` asks for it while a visit's card is up (`prepareHourSheet`), so the press does not land in play.
+- **Torn edge.** The leading edge is a jagged line of 30 segments with a shadow ahead of it, after the sheets on the title screen. Each visit has its own tear.
+- **Stop motion.** The sheet holds still and moves once every ten seconds (`STEP_SECONDS`). A move is five held poses at eight a second: 28%, 60%, 86%, 105%, then 100% of the way, each pose with the edge sitting a little differently. The disc beside the time steps with it. Time won back by a combination can take the sheet back a step. The field is covered only when time is up.
+- The sheet is opaque. The tints laid under the paper are 0.5 (Dawn), 0.62 (Noon), 0.55 (Dusk), and 0.8 (Midnight).
+
+Verification:
+
+- `test/test_somewarez.js`: nothing shows before ten seconds; the sheet holds between steps (the same share at 10 s and 19.9 s); it is short of the whole field half a second before the end and covers it at the end. All twelve suites pass.
+- In the page at 1024x768 emulation, by screenshot: Noon IV at 42 s, Dawn V at 31 s, Dusk III and Midnight I at 45 s. Each shows a textured sheet in the hour's colour with a torn, shadowed edge, and creatures drawn over it. A move from 20 s to 30 s of a 90 s visit, sampled at 0, 60, 130, 260, 380, 500, and 700 ms, read 0.253, 0.253, 0.289, 0.318, 0.339, 0.333, 0.333 of the field: four held poses, an overshoot, and the rest position. No console errors.
+- Cost on this desktop: the first press, measured before the sheet was reduced to one pixel per field unit, took about 440 ms; drawing the sheet takes about 1 ms a frame. With the press moved to the card, the first frame of play took 1 ms.
+
+Not done, and open:
+
+- **Not played, and not timed on a tablet.** The press is the one heavy step; it runs once per hour, or once per visit at Midnight, where each visit has its own hue. The demonstration starts in play with no card, so its press lands on its first frame.
+- **The sheet hides the floor under it.** At Dusk that includes the resting leaves once the shadow has passed over them; the lacewings themselves are drawn above it.
+- Whether a sheet that jumps every ten seconds helps or startles while drawing is for Xyh to judge in play. So are the tints, the jag size (18 px), and the pose timing.
+
 2026-10-13 — Claude Code — Gave the SOMEWAREZ kiosk build a local cast and a new visit clock, on Xyh's direction. The main build is unchanged: everything here is behind `isLocal()` in `src/edition.js`, which follows the kiosk flag.
 
 - **Names**, Tagalog where it is the everyday word and English otherwise: Brimstone → Lemon Emigrant / paruparo; Azure Damselfly → Tutubing Karayom / tutubi; Roseate Hawkmoth → Oleander Hawkmoth / gamugamo; Amber Hoverfly → Amber Bubuyog / bubuyog; Paper Lacewing → Green Lacewing; Window Firefly → alitaptap; Atrium Hornet → putakti; cicadas → kuliglig; night jasmine → dama de noche; flax flower → abaca flower; dandelion seed → cogon plume; the snail's Field Book entry → Giant African Snail. Recipe names (Seed & Wing, and the rest) are kept.

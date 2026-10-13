@@ -24,7 +24,7 @@ import { DandelionClock } from './clock.js';
 import { audio } from './audio.js';
 import { storage } from './storage.js';
 import { isLocal } from './edition.js';
-import { drawHourWash, drawHourGauge, washFor } from './hour-clock.js';
+import { drawHourWash, drawHourGauge, washFor, prepareHourSheet } from './hour-clock.js';
 import { createDawnArt, wrapText } from './dawn-art.js';
 import { createNoonArt } from './noon-art.js';
 import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } from './campaign.js';
@@ -1684,7 +1684,10 @@ export class Game {
     this.drawSaltGrains(ctx);
 
     // 4c. Local edition: the visit clock crosses the field under the creatures.
-    if (isLocal() && this.state === 'PLAYING') drawHourWash(ctx, this);
+    if (isLocal()) {
+      if (this.state === 'PLAYING') drawHourWash(ctx, this);
+      else prepareHourSheet(this);
+    }
 
     // 5. Inhabitants (Folded Butterflies, Seeds, Snail)
     for (const ent of this.entities) {

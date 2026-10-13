@@ -216,6 +216,19 @@ console.log('--- Running SOMEWAREZ kiosk tests ---');
   game.clock.remainingSeconds = game.clock.totalSeconds / 4;
   assert.equal(game.isClockHeld() ? 0 : clockProgress(game), game.isClockHeld() ? 0 : 0.75);
   const { drawHourWash, drawHourGauge } = await import('../src/hour-clock.js');
+  // The sheet moves in whole ten-second steps and covers the field only at the end.
+  const { steppedProgress } = await import('../src/hour-clock.js');
+  game.startLevel('noon-02'); game.state = 'PLAYING';
+  const total = game.clock.totalSeconds;
+  const shownAt = elapsed => { game.clock.remainingSeconds = total - elapsed; return steppedProgress(game); };
+  if (!game.isClockHeld()) {
+    assert.equal(shownAt(9.9), 0, 'nothing before the first ten seconds');
+    assert.equal(shownAt(10), 10 / total);
+    assert.equal(shownAt(19.9), 10 / total, 'it holds still between steps');
+    assert.equal(shownAt(27), 20 / total);
+    assert.ok(shownAt(total - 0.5) < 1, 'not covered while time remains');
+    assert.equal(shownAt(total), 1, 'covered when time is up');
+  }
   for (const id of ['dawn-02', 'noon-02', 'dusk-02', 'midnight-02']) {
     game.startLevel(id); game.state = 'PLAYING'; game.clock.remainingSeconds = 1;
     drawHourWash(ctx, game); drawHourGauge(ctx, game, 40, 40, 20); // neither throws
