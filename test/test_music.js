@@ -32,8 +32,8 @@ function fakeContext() {
     createGain: () => ({ gain: param(1), connect() {}, disconnect() {} }),
     createBiquadFilter: () => ({ type: '', frequency: param(0), Q: param(1), connect() {}, disconnect() {} }),
     createDelay: () => ({ delayTime: param(0), connect() {}, disconnect() {} }),
-    createBuffer: (channels, length) => ({ getChannelData: () => new Float32Array(length) }),
-    createBufferSource: () => ({ buffer: null, connect() {}, start() {}, onended: null }),
+    createBuffer: (channels, length) => { const data = new Float32Array(length); return { length, getChannelData: () => data }; },
+    createBufferSource: () => ({ buffer: null, playbackRate: param(1), connect() {}, start() {}, onended: null }),
     createOscillator() {
       const osc = {
         type: 'sine', frequency: param(0), connect() {}, disconnect() {},

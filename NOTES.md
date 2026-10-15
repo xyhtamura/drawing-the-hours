@@ -14,6 +14,18 @@ Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet be
 
 ## Activity
 
+2026-10-15 — Claude Code — Replaced Dawn's music box with a damped string, on Xyh's brief: toytronic, like a guitar with no body, that does not ring well and is a little imperfect. The music box voice is kept in `VOICES` and unused.
+
+- `dampedString` in `src/music.js`: Karplus-Strong. A soft, low-passed noise pluck runs round a delay line one period long, losing enough each pass to fall 60 dB in 0.35–0.75 s, with a two-point average for the damping. No body, no reverb of its own; the song's shared delay still applies.
+- Imperfect on purpose: each pitch has three variants with different decay and brightness, one of which is sometimes choked to 0.12 s; each note picks a variant, a detune within 7 cents, and a level within about 3 dB.
+- Cost: each variant is rendered once into a buffer at 22,050 Hz and replayed. The song's 36 buffers (12 pitches, three variants, plus the poppy's slowed pitches) render in about 10 ms when the song starts, during the visit card, and every note after that is one buffer source. Dawn now has at most two oscillators sounding, from the bass.
+- Tuning: a loop of whole samples cannot hit an arbitrary pitch, so playback rate corrects it, including the half-sample shortening from the damping average.
+
+Verification: plucks at 392, 441, 539, 686, and 735 Hz rendered offline with detune off measured within 0.5 cents of target by autocorrelation (the first draft, without the damping correction, ran 8–10 cents sharp). The Dawn song rendered for 32 s peaks at -16 dBFS with RMS -43 dB, lower than the other songs' -36 to -38 because the notes are short. `test/test_music.js` passes with the fake clock now providing buffer sources; all fourteen suites pass.
+
+Not done: nobody has heard it. Decay range, brightness, choke rate, and detune are the four numbers on the voice line to change by ear. Dawn's song is now quieter on average than the others; its `gain` in `src/songs.js` sets that.
+
+
 2026-10-15 — Claude Code — Gave each hour a song and tuned the chimes to it, on Xyh's brief: a Lullatone feel, sparse and toy-like, one song per hour, one microtonal tuning per hour, and little added compute.
 
 - **Tunings** (`src/tunings.js`), each copied from `tabota/scala/`: Dawn, harmonics 8–16 (just, with the 11th and 13th harmonics); Noon, 19-EDO; Dusk, 5-EDO (slendro-like); Midnight, Bohlen-Pierce (13 steps to the 3/1 tritave). The copies are recorded in the root DEPENDENCIES.md, and `test/test_music.js` compares them with the `.scl` files.

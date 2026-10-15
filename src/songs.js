@@ -21,7 +21,7 @@ export const SONGS = {
     root: 196,            // G3
     bpm: 72,
     steps: 32,
-    voice: 'musicBox',
+    voice: 'dampedString',   // was 'musicBox', kept in src/music.js
     gain: 0.9,
     skip: 0.15,
     // Harmonics 8-16 has eight degrees an octave: 8 means the root an octave up.
