@@ -1,8 +1,9 @@
 /**
  * Drawing the Hours — the hour's song, and chimes tuned to it.
  *
- * Lullaby-weight on purpose. There are no samples, no reverb convolution, and
- * no audio worklet: each note is two or three oscillators that stop themselves
+ * Lullaby-weight on purpose. An optional local sample bank substitutes recorded
+ * instruments; the synthesized voices remain available when it cannot load.
+ * Each synthesized note is a few oscillators that stop themselves
  * within a few seconds, or one short buffer for the damped string, scheduled a quarter second ahead from the game's own
  * frame (Game.update calls music.update). One shared delay gives the room.
  * At the densest song that is about three notes a second, roughly a dozen
@@ -19,6 +20,7 @@ import { audio } from './audio.js';
 import { storage } from './storage.js';
 import { TUNINGS, degreeHz } from './tunings.js';
 import { SONGS } from './songs.js';
+import { samples } from './samples.js';
 
 export const MUSIC_STORAGE_KEY = 'drawing-the-hours-music';
 const LOOKAHEAD = 0.25;   // seconds of notes scheduled ahead of the audio clock
@@ -39,15 +41,16 @@ export const VOICES = {
   // octave: a second string an octave down, at this level, ringing this multiple of
   // the decay. body: one wooden resonance mixed under it.
   dampedString: {
+    sample: { bank: 'dawn', envelope: [0.008, 0.12, 0.5], level: 0.27 }, fallbackGain: 0.7,
     kind: 'string', decay: [0.35, 0.75], dead: 0.12, brightness: [0.25, 0.5], detune: 7,
     octave: { level: 0.45, decay: 1.3 }, body: { hz: 210, q: 3, mix: 0.6 },
   },
   // The music box with its tines damped: shorter, and the high partials nearly gone.
   musicBoxDamped: { type: 'sine', partials: [[1, 1, 0.55], [2.01, 0.14, 0.25], [5.4, 0.025, 0.06]] },
   // Kept from the first Dawn draft; no song uses it now.
-  musicBox: { type: 'sine', partials: [[1, 1, 1.6], [2.01, 0.25, 0.7], [5.4, 0.08, 0.18]] },
-  toyPiano: { type: 'sine', partials: [[1, 1, 0.9], [3.02, 0.18, 0.25], [6.8, 0.06, 0.08]] },
-  bonang: { type: 'sine', partials: [[1, 1, 2.2], [2.42, 0.3, 0.9], [4.1, 0.08, 0.3]] },
+  musicBox: { sample: { bank: 'title', envelope: [0.008, 0.35, 2.3], level: 0.8 }, type: 'sine', partials: [[1, 1, 1.6], [2.01, 0.25, 0.7], [5.4, 0.08, 0.18]] },
+  toyPiano: { sample: { bank: 'noon', envelope: [0.005, 0.18, 0.75], level: 2.84 }, type: 'sine', partials: [[1, 1, 0.9], [3.02, 0.18, 0.25], [6.8, 0.06, 0.08]] },
+  bonang: { sample: { bank: 'dusk', envelope: [0.35, 0.65, 1.8], level: 1.087 }, type: 'sine', partials: [[1, 1, 2.2], [2.42, 0.3, 0.9], [4.1, 0.08, 0.3]] },
   // Dusk's bowed bass: a sawtooth under a low low-pass, a slow bow-in and a long
   // fade, with a slight vibrato that starts once the note has settled.
   bowedBass: { kind: 'bow', type: 'sawtooth', attack: 1.4, hold: 4.2, release: 2.2, cutoff: 380, vibrato: { hz: 4.6, cents: 7, delay: 1.2 } },
@@ -58,8 +61,8 @@ export const VOICES = {
   // Single oscillators keep these narrower than the pad. The reed's square wave
   // has odd harmonics; the brass's saw adds even harmonics. Cutoff ratios follow
   // the note, opening with the swell, then closing through its release.
-  midnightReed: { kind: 'wind', type: 'square', attack: 0.35, hold: 0.8, release: 1.8, level: 0.48, cutoff: [2.2, 5, 2.5], vibrato: { hz: 4.3, cents: 4, delay: 0.7 } },
-  midnightBrass: { kind: 'wind', type: 'sawtooth', attack: 0.65, hold: 0.8, release: 2.2, level: 0.85, cutoff: [1.2, 4.2, 1.5], vibrato: { hz: 4.8, cents: 3, delay: 0.9 } },
+  midnightReed: { sample: { bank: 'reed', envelope: [1.1, 0.5, 2.2], level: 0.45, cutoff: 1400 }, kind: 'wind', type: 'square', attack: 1.1, hold: 0.5, release: 2.2, level: 0.2, cutoff: [1.1, 1.8, 1.05], vibrato: { hz: 4.3, cents: 3, delay: 1 } },
+  midnightBrass: { sample: { bank: 'brass', envelope: [0.85, 0.6, 2.2], level: 0.72, cutoff: 1500 }, kind: 'wind', type: 'sawtooth', attack: 0.85, hold: 0.6, release: 2.2, level: 0.5, cutoff: [1, 2.2, 1.2], vibrato: { hz: 4.8, cents: 3, delay: 1 } },
   // The reed swelled in: the same odd partials, a slower attack, a little detune.
   reedSlow: { kind: 'pad', type: 'triangle', partials: [[1, 1], [3, 0.12]], attack: 0.6, hold: 0.3, release: 1.8, spread: 3, cutoff: 2600 },
   // Odd harmonics only, from the triangle wave. Midnight's first melody voice, now its reed layer.
@@ -101,6 +104,7 @@ class Music {
     this.leadNote = 0;     // sounded lead notes; omissions do not advance the timbre cycle
     this.nextTime = 0;     // audio-clock time of that eighth note
     this.voiceCount = 0;   // notes started, for checks
+    this.samplesEnabled = true; // false keeps the original voices for comparison
   }
 
   setEnabled(on) {
@@ -115,8 +119,8 @@ class Music {
   /** Called every frame by the game. Starts, follows, and stops the song. */
   update(game) {
     const ctx = audio.ctx;
-    const hour = game.currentLevel?.hour;
-    const showing = !game.uiSuspended && game.state !== 'PAUSED' && SONGS[hour];
+    const hour = game.musicTitle ? 'title' : game.currentLevel?.hour;
+    const showing = !game.musicIdle && SONGS[hour] && (game.musicTitle || (!game.uiSuspended && game.state !== 'PAUSED'));
     const wanted = this.enabled && !audio.isMuted && showing && ctx && !(typeof document !== 'undefined' && document.hidden);
     if (!wanted) { if (this.hour) this.stop(); return; }
     if (ctx.state !== 'running') return;
@@ -138,6 +142,7 @@ class Music {
     this.stop();
     const ctx = audio.ctx;
     const song = SONGS[hour];
+    if (this.samplesEnabled) samples.load(ctx);
     this.hour = hour;
     this.bus = ctx.createGain();
     this.bus.gain.setValueAtTime(0, ctx.currentTime);
@@ -213,7 +218,7 @@ class Music {
       if (at !== step) continue;
       if (pass > 0 && rand() < song.skip) continue;
       const voice = song.leadCycle?.[this.leadNote % song.leadCycle.length] ?? song.voice;
-      this.note(VOICES[voice], degreeHz(tuning, song.root, degree) * pitch, time + rand() * 0.012, 0.5);
+      this.note(VOICES[voice], degreeHz(tuning, song.root, degree) * pitch, time + rand() * 0.012, 0.5 * (song.voiceLevels?.[voice] ?? 1));
       this.leadNote += 1;
     }
     for (const [at, degree] of song.bass) {
@@ -238,6 +243,11 @@ class Music {
   }
 
   note(voice, hz, time, level) {
+    if (this.samplesEnabled && voice.sample && samples.play(voice.sample, audio.ctx, this.bus, hz, time, level)) {
+      this.voiceCount += 1;
+      return;
+    }
+    level *= voice.fallbackGain ?? 1;
     if (voice.kind === 'string') { this.pluck(voice, hz, time, level); return; }
     if (voice.kind === 'pad') { this.pad(voice, hz, time, level); return; }
     if (voice.kind === 'bow') { this.bow(voice, hz, time, level); return; }

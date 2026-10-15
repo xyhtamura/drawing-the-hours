@@ -95,6 +95,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     parser.add_argument('--out', default='dist/somewarez', help='folder to write, relative to the project')
     parser.add_argument('--allow-dirty', action='store_true', help='export with uncommitted changes')
+    parser.add_argument('--include-local-audio', action='store_true', help='include the gitignored audition bank for local use')
     args = parser.parse_args()
     try:
         sys.stdout.reconfigure(encoding='utf-8')
@@ -113,6 +114,8 @@ def main():
         source = ROOT / entry
         for path in ([source] if source.is_file() else sorted(p for p in source.rglob('*') if p.is_file())):
             rel = path.relative_to(ROOT).as_posix()
+            if rel.startswith('assets/audio-local/') and not args.include_local_audio:
+                continue
             if rel in SKIP or path.name in ('Thumbs.db', '.DS_Store'):
                 continue
             files[rel] = path.read_bytes()
@@ -146,7 +149,9 @@ def main():
                 elif part != '.':
                     parts.append(part)
             resolved = '/'.join(parts) if parts is not None else None
-            if resolved is None or (resolved not in files and resolved != 'between-banks/index.html'):
+            # The locally supplied audition bank is optional; absent banks use synths.
+            optional = resolved in ('between-banks/index.html', 'assets/audio-local/bank.json')
+            if resolved is None or (resolved not in files and not optional):
                 problems.append(f'{rel} refers to {ref}, which is not in the export')
     if problems:
         raise SystemExit('Nothing written:\n  ' + '\n  '.join(problems))
@@ -157,7 +162,7 @@ def main():
     inventory = '\n'.join(f'{hashlib.sha256(data).hexdigest()}  {rel}' for rel, data in sorted(files.items()))
     files['BUILD.txt'] = (
         f'Drawing the Hours, SOMEWAREZ kiosk build\nsource commit: {commit}{note}\nexported: {today}\n'
-        f'multicart URL: {multicart}\nfiles: {len(files)}\n\n{inventory}\n'
+        f'multicart URL: {multicart}\nlocal audition audio: {args.include_local_audio}\nfiles: {len(files)}\n\n{inventory}\n'
     ).encode('utf-8')
 
     out = (ROOT / args.out).resolve()
@@ -169,7 +174,7 @@ def main():
         target = out / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
-    archive = out.parent / f'drawing-the-hours-somewarez-{commit}{"-dirty" if dirty else ""}.zip'
+    archive = out.parent / f'drawing-the-hours-somewarez-{commit}{"-dirty" if dirty else ""}{"-local-audio" if args.include_local_audio else ""}.zip'
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as bundle:
         for rel, data in sorted(files.items()):
             bundle.writestr(f'drawing-the-hours-somewarez/{rel}', data)

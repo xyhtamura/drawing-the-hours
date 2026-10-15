@@ -22,6 +22,18 @@
 // Agent drafts, 2026-10-15: for Xyh to rewrite by ear.
 
 export const SONGS = {
+  title: {
+    title: 'Drawing the hours', root: 196, bpm: 88, steps: 32,
+    voice: 'musicBox', gain: 1.2, skip: 0.12,
+    // A shared Dawn tuning lets the different hour colors answer one another.
+    leadCycle: ['musicBox', 'toyPiano', 'dampedString', 'musicBox', 'bonang', 'toyPiano'],
+    voiceLevels: { toyPiano: 0.55, bonang: 0.4 },
+    bell: [[0, 16], [3, 18], [6, 17], [8, 20], [11, 18], [14, 16], [18, 17], [21, 18], [24, 20], [28, 16]],
+    bass: [[0, 0], [16, 4]],
+    layers: [{ voice: 'midnightBrass', level: 0.1, skip: 0.4, passChance: 0.35, notes: [[16, 4]] }],
+    percLevel: 0.35, perc: [[4, 'knock', 0.7], [20, 'knock', 0.5], [10, 'tick', 0.5], [26, 'tick', 0.5]],
+    chords: [[0, 2, 4], [0, 2, 4], [1, 4, 6], [0, 2, 4]],
+  },
   dawn: {
     title: 'Before the bus',
     root: 196,            // G3
@@ -111,10 +123,11 @@ export const SONGS = {
     drone: [0, 6],
     // Two quiet answers in the gaps; later loops leave half of them out.
     layers: [
-      { voice: ['reed', 'reedSlow'], level: 0.18, skip: 0.5, notes: [[10, 23], [24, 20]] },
+      { voice: 'reedSlow', level: 0.11, skip: 0.5, notes: [[10, 23], [24, 20]] },
     ],
     // Now and then, something falling a long way off: a tom with its echoes.
     // About once every thirty-five seconds on average.
+    percLevel: 0.6,
     perc: [[0, 'tom', 0.3], [20, 'tom', 0.15]],
     chords: [[0, 6, 10], [0, 6, 10], [-3, 3, 7], [-3, 3, 7]],
   },

@@ -1,0 +1,43 @@
+<!doctype html><meta charset="utf-8"><title>Sample soundtrack checks</title>
+<h1>Sample soundtrack checks</h1><button id="run">Run audio checks</button><pre id="result">Ready.</pre>
+<script type="module">
+import {audio} from '../src/audio.js';
+import {music,VOICES} from '../src/music.js';
+import {samples} from '../src/samples.js';
+import {SONGS} from '../src/songs.js';
+import {KIOSK} from '../src/build.js';
+const rate=24000, result=document.querySelector('#result');
+function stats(data){let peak=0,sum=0;for(const value of data){if(!Number.isFinite(value))throw Error('Non-finite sample');peak=Math.max(peak,Math.abs(value));sum+=value*value;}return{peakDb:20*Math.log10(peak||1e-12),rmsDb:10*Math.log10(sum/data.length||1e-24)};}
+async function render(hour,synth=false){
+  const score=SONGS[hour],ctx=new OfflineAudioContext(1,Math.ceil((score.steps*30/score.bpm*2+5)*rate),rate);
+  audio.ctx=ctx;music.samplesEnabled=!synth;music.start(hour);
+  for(let i=0;i<score.steps*2;i++)music.playStep(score,i,.1+i*30/score.bpm,1);
+  return (await ctx.startRendering()).getChannelData(0);
+}
+async function solo(profile,hz){
+  const ctx=new OfflineAudioContext(1,rate*6,rate), bus=ctx.createGain();bus.gain.value=.096;bus.connect(ctx.destination);
+  if(!samples.play(profile,ctx,bus,hz,.1,.5))throw Error('Missing solo sample');
+  return stats((await ctx.startRendering()).getChannelData(0));
+}
+document.querySelector('#run').onclick=async()=>{
+  result.textContent='Rendering...';document.querySelector('#run').disabled=true;
+  try{
+    await samples.load(new OfflineAudioContext(1,rate,rate));
+    const count=[...samples.ready.values()].reduce((n,records)=>n+records.length,0);
+    if(count!==17)throw Error('Expected 17 decoded recordings, got '+count);
+    const rows=[];
+    for(const hour of ['dawn','noon','dusk','midnight','title']){
+      const sampled=stats(await render(hour)),fallback=stats(await render(hour,true));
+      if(sampled.peakDb>-6||fallback.peakDb>-6)throw Error(hour+' peak too high');
+      rows.push({hour,sampled,fallback});
+    }
+    const reed=VOICES.midnightReed.sample;
+    const before=await solo({...reed,envelope:[.35,.8,1.8],level:1.442,cutoff:null},869.8),after=await solo(reed,869.8);
+    if(after.peakDb>before.peakDb-8)throw Error('High reed was not sufficiently reduced');
+    const dawnBefore=await solo({...VOICES.dampedString.sample,level:.482},523.1),dawnAfter=await solo(VOICES.dampedString.sample,523.1);
+    if(dawnAfter.rmsDb>dawnBefore.rmsDb-4.8)throw Error('Dawn pluck was not reduced');
+    result.textContent='PASS '+(KIOSK?'SOMEWAREZ':'main')+'; '+count+' recordings decoded\n'+JSON.stringify({rows,highReed:{before,after},dawnReductionDb:dawnAfter.rmsDb-dawnBefore.rmsDb},null,2);
+  }catch(error){result.textContent='FAIL '+error.stack;}
+  finally{music.samplesEnabled=true;document.querySelector('#run').disabled=false;}
+};
+</script>

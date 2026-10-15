@@ -39,6 +39,9 @@ export const TUNINGS = {
   },
 };
 
+// The title shares Dawn's pitch collection while mixing the hours' instruments.
+TUNINGS.title = TUNINGS.dawn;
+
 /** Frequency of a degree counted across periods: degree 0 is the root, `cents.length` the root a period up. */
 export function degreeHz(tuning, root, degree) {
   const n = tuning.cents.length;

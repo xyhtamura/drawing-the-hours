@@ -1,5 +1,20 @@
 # Assets
 
+## Local soundtrack audition bank
+
+2026-10-15 — Codex — `assets/audio-local/` is a gitignored, optional audition bank supplied from Xyh's local libraries. No recorded instrument sample is committed or included in the default SOMEWAREZ export. `src/samples.js` uses the existing synthesized voices whenever the manifest or a voice cannot load. A local offline export can include the bank explicitly with `--include-local-audio`.
+
+| Local files | What they contain and source | Terms checked on 2026-10-15 |
+| --- | --- | --- |
+| `dawn-pluck-01.mp3`, `dawn-pluck-02.mp3`, `dawn-pluck-03.mp3` | Shortened stereo-staccato recordings from `E:/Library/PSI Palm Mute Piano/Instruments/Samples/Stereo/Staccato/` | The EULA in `PaperStone - Palm Mute Piano - Manual.pdf` grants finished musical works and performances and restricts distribution of samples outside that context. Standalone game-sampler redistribution is not established. |
+| `noon-key-01.mp3`, `noon-key-02.mp3` | Decoded TP1 recordings from Rattly and Raw Toy Piano 1 | The indexed source folder had no usable included redistribution terms. Keep local. |
+| `dusk-bow-01.mp3`, `dusk-bow-02.mp3` | SCBU recordings from `E:/Library/Bowed Gamelan/Samples/` | The EULA in `Bowed Gamelan User Guide.pdf` grants musical works/performances and forbids making sample libraries without written agreement. Keep the audition notes local. |
+| `midnight-reed-01.mp3` through `midnight-reed-04.mp3` | Bassoon 073 recordings from `E:/Library/Crocus Soundware - LIMINAL Bundle/Reeds/LIMINAL_Reeds Samples/` | No included redistribution terms located in the indexed bundle. Keep local. |
+| `midnight-brass-01.mp3` through `midnight-brass-03.mp3` | Saxhorn recordings from `E:/Library/Indiginus Blue Street Brass KONTAKT/Blue Street Brass Samples/` | The included Blue Street Brass guide did not establish standalone sample redistribution terms. Keep local. |
+| `title-tine-01.mp3` through `title-tine-03.mp3` | MB1 recordings from `E:/Library/SC Music Box/Samples/` | The EULA in `SC Music Boxes User Guide.pdf` grants musical works/performances and restricts sample-library creation. Keep the audition notes local. |
+
+All seventeen local filenames are project-specific. They are mono 24 kHz MP3 encodings of the audition recordings, without original file metadata. `bank.json` holds only their names and measured source pitches. The private per-file source paths and processing record are retained in `.browser-check/soundtrack-audition/preparation/runtime-bank-provenance.json` and `SAMPLE-CANDIDATES.local.md`; neither is versioned. Renaming is organization, not a licence change. A published sampled soundtrack needs musical recordings or independently cleared assets rather than this standalone audition bank.
+
 ## Handwritten title
 
 Xyh supplied `handwritten/drawinghand01.png`, `drawinghand02.png`, and

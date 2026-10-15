@@ -1357,7 +1357,7 @@ export class Game {
   }
 
   update(dt) {
-    // The hour's song follows the visit, and stops under a menu or the title.
+    // The soundtrack follows the active visit or title; other menus stop it.
     music.update(this);
     if (this.uiSuspended) return;
     if (this.state === 'PLAYING') {

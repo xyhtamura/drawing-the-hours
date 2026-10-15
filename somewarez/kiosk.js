@@ -102,6 +102,7 @@ export function startKiosk({ game, canvas, showPanel, openMenu, showVisitCard, g
 
   /** Back to the title screen with nothing kept from the session. */
   function reset() {
+    game.musicIdle = state.mode === 'attract';
     player.stop();
     game.cancelStroke();
     storage.clearMemory();

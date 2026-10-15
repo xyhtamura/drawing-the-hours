@@ -219,7 +219,7 @@ const run = seconds => { for (let t = 0; t < seconds; t += 1 / 60) { ctx.current
     melody.forEach((note, i) => assert.equal(note.voice, VOICES[song.leadCycle[i % 3]], `sounded lead note ${i}: pad/reed/brass`));
     const firstLoop = cycled.notes.filter(n => n.time < song.steps * 30 / song.bpm);
     assert.equal(firstLoop.filter(n => n.level === 0.5).length, 4, 'four lead notes instead of eight');
-    assert.equal(firstLoop.filter(n => n.level === 0.18).length, 2, 'two answering notes instead of five');
+    assert.equal(firstLoop.filter(n => n.level === song.layers[0].level).length, 2, 'two quieter, swelled answering notes instead of five');
     assert.equal(firstLoop.length, 8, 'eight pitched attacks including bass, previously fifteen');
   } finally {
     music.note = originalNote; music.hit = originalHit; music.hour = null;
@@ -232,6 +232,24 @@ const run = seconds => { for (let t = 0; t < seconds; t += 1 / 60) { ctx.current
   const { KIOSK } = await import('../src/build.js');
   assert.equal(KIOSK, process.argv.includes('--somewarez'));
   console.log(`✔ Midnight alternates pad/reed/brass on sounded lead notes with fewer attacks (${KIOSK ? 'SOMEWAREZ' : 'main'} build).`);
+}
+
+// 8. Title music follows the same master controls; attract scenes stay silent.
+{
+  game.musicTitle = true; game.uiSuspended = true;
+  run(1); assert.equal(music.hour, 'title');
+  const count = music.voiceCount; run(12);
+  assert.ok(music.voiceCount - count >= 8, 'the title is livelier than the five-note sketch');
+  assert.equal(TUNINGS.title, TUNINGS.dawn, 'the title colors share a tuning');
+  game.musicIdle = true; run(0.1); assert.equal(music.hour, null, 'attract title is silent');
+  game.musicIdle = false; run(0.1); assert.equal(music.hour, 'title');
+  music.setEnabled(false); run(0.1); assert.equal(music.hour, null);
+  music.setEnabled(true); audio.isMuted = true; run(0.1); assert.equal(music.hour, null);
+  audio.isMuted = false; game.musicTitle = false; game.uiSuspended = false;
+  game.currentLevel = { hour: 'midnight' }; run(0.1);
+  assert.equal(music.hour, 'midnight', 'Begin replaces title music with the visit');
+  music.stop();
+  console.log('✔ The lively mixed-instrument title obeys Music, Sound, Begin, and silent attract mode.');
 }
 
 console.log('--- All music tests passed! ---');

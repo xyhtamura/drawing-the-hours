@@ -20,6 +20,7 @@
       <div class="title-cover">
         <h1 id="title-heading"><span class="title-fallback"><span class="title-word">Drawing</span> <span class="title-line"><span class="title-the">the</span> <span class="title-hours-word">Hours</span></span></span><canvas id="title-lettering" aria-hidden="true"></canvas></h1>
         <button id="btn-begin">Begin</button>
+        <button id="btn-title-music" class="title-music">Play music</button>
       </div>
     </section>
     <section id="pause-menu" class="recipe-modal" role="dialog" aria-modal="true" aria-labelledby="menu-heading" hidden>
@@ -457,6 +458,7 @@
       if (id) { game.cancelStroke(); audio.stopCicadas(); }
       activePanel = id;
       game.uiSuspended = Boolean(id);
+      game.musicTitle = id === 'title-screen';
       for (const panel of panels) {
         const open = panel.id === id;
         panel.hidden = !open;
@@ -522,6 +524,10 @@
     const btnMusic = document.getElementById('btn-music');
     const updateMusicUI = () => { btnMusic.textContent = music.enabled ? 'Music: On' : 'Music: Off'; };
     updateMusicUI();
+    document.getElementById('btn-title-music').onclick = () => {
+      audio.ensureContext(); audio.isMuted = false; music.setEnabled(true);
+      btnAudio.textContent = 'Sound: On'; updateMusicUI();
+    };
     btnMusic.onclick = () => { music.toggle(); updateMusicUI(); };
     const btnClosePauseX = document.getElementById('btn-close-pause-x');
     const btnCloseSettingsX = document.getElementById('btn-close-settings-x');
