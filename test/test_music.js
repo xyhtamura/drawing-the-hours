@@ -236,6 +236,20 @@ const run = seconds => { for (let t = 0; t < seconds; t += 1 / 60) { ctx.current
 
 // 8. Title music follows the same master controls; attract scenes stay silent.
 {
+  const originalNote = music.note, originalHit = music.hit;
+  try {
+    const notes = [], song = SONGS.title;
+    music.note = (voice, hz, time, level) => notes.push({voice, time, level});
+    music.hit = () => {};
+    music.hour = 'title'; music.leadNote = 0;
+    for (let index = 0; index < song.steps * 8; index++) music.playStep(song, index, index * 30 / song.bpm, 1);
+    const lead = notes.filter(n => n.level === .5), answers = notes.filter(n => n.level === .08);
+    assert.ok(lead.length > song.bell.length);
+    assert.ok(lead.every(n => n.voice === VOICES.xylophone), 'title lead stays xylophone across loops');
+    assert.ok(answers.length > 0 && answers.length < 16, 'only occasional hour flourishes');
+    assert.ok(answers.every(n => ['dampedString', 'toyPiano', 'bonang', 'midnightBrass'].some(name => VOICES[name] === n.voice)));
+    for (const n of answers) assert.ok(!lead.some(l => Math.abs(l.time-n.time)<.1), 'answers fit between lead attacks');
+  } finally { music.note = originalNote; music.hit = originalHit; music.hour = null; }
   game.musicTitle = true; game.uiSuspended = true;
   run(1); assert.equal(music.hour, 'title');
   const count = music.voiceCount; run(12);
@@ -249,7 +263,7 @@ const run = seconds => { for (let t = 0; t < seconds; t += 1 / 60) { ctx.current
   game.currentLevel = { hour: 'midnight' }; run(0.1);
   assert.equal(music.hour, 'midnight', 'Begin replaces title music with the visit');
   music.stop();
-  console.log('✔ The lively mixed-instrument title obeys Music, Sound, Begin, and silent attract mode.');
+  console.log('✔ The xylophone title and quiet hour flourishes obey Music, Sound, Begin, and silent attract mode.');
 }
 
 console.log('--- All music tests passed! ---');

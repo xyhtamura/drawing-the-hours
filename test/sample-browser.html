@@ -31,12 +31,21 @@ document.querySelector('#run').onclick=async()=>{
       if(sampled.peakDb>-6||fallback.peakDb>-6)throw Error(hour+' peak too high');
       rows.push({hour,sampled,fallback});
     }
+    const duskProfile=VOICES.bonang.sample;
+    if(duskProfile.envelope[0]>.01)throw Error('Dusk strike is being faded in');
+    const ctx=new OfflineAudioContext(1,rate*4,rate);
+    samples.play(duskProfile,ctx,ctx.destination,600,.1,.5);
+    const strike=(await ctx.startRendering()).getChannelData(0);
+    let firstPeak=0,latePeak=0;
+    for(let i=Math.ceil(.1*rate);i<Math.floor(.18*rate);i++)firstPeak=Math.max(firstPeak,Math.abs(strike[i]));
+    for(let i=Math.ceil(.18*rate);i<strike.length;i++)latePeak=Math.max(latePeak,Math.abs(strike[i]));
+    if(firstPeak<latePeak*.5)throw Error('Dusk onset has no clear attack');
     const reed=VOICES.midnightReed.sample;
     const before=await solo({...reed,envelope:[.35,.8,1.8],level:1.442,cutoff:null},869.8),after=await solo(reed,869.8);
     if(after.peakDb>before.peakDb-8)throw Error('High reed was not sufficiently reduced');
     const dawnBefore=await solo({...VOICES.dampedString.sample,level:.482},523.1),dawnAfter=await solo(VOICES.dampedString.sample,523.1);
     if(dawnAfter.rmsDb>dawnBefore.rmsDb-4.8)throw Error('Dawn pluck was not reduced');
-    result.textContent='PASS '+(KIOSK?'SOMEWAREZ':'main')+'; '+count+' recordings decoded\n'+JSON.stringify({rows,highReed:{before,after},dawnReductionDb:dawnAfter.rmsDb-dawnBefore.rmsDb},null,2);
+    result.textContent='PASS '+(KIOSK?'SOMEWAREZ':'main')+'; '+count+' recordings decoded\n'+JSON.stringify({rows,duskAttack:{firstPeak,latePeak},highReed:{before,after},dawnReductionDb:dawnAfter.rmsDb-dawnBefore.rmsDb},null,2);
   }catch(error){result.textContent='FAIL '+error.stack;}
   finally{music.samplesEnabled=true;document.querySelector('#run').disabled=false;}
 };

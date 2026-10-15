@@ -24,13 +24,11 @@
 export const SONGS = {
   title: {
     title: 'Drawing the hours', root: 196, bpm: 88, steps: 32,
-    voice: 'musicBox', gain: 1.2, skip: 0.12,
-    // A shared Dawn tuning lets the different hour colors answer one another.
-    leadCycle: ['musicBox', 'toyPiano', 'dampedString', 'musicBox', 'bonang', 'toyPiano'],
-    voiceLevels: { toyPiano: 0.55, bonang: 0.4 },
+    voice: 'xylophone', gain: 1.2, skip: 0.12,
+    // One wooden lead; the hours answer quietly in the gaps, in Dawn's tuning.
     bell: [[0, 16], [3, 18], [6, 17], [8, 20], [11, 18], [14, 16], [18, 17], [21, 18], [24, 20], [28, 16]],
     bass: [[0, 0], [16, 4]],
-    layers: [{ voice: 'midnightBrass', level: 0.1, skip: 0.4, passChance: 0.35, notes: [[16, 4]] }],
+    layers: [{ voice: ['dampedString', 'toyPiano', 'bonang', 'midnightBrass'], level: 0.08, skip: 0.55, notes: [[5, 12], [22, 10]] }],
     percLevel: 0.35, perc: [[4, 'knock', 0.7], [20, 'knock', 0.5], [10, 'tick', 0.5], [26, 'tick', 0.5]],
     chords: [[0, 2, 4], [0, 2, 4], [1, 4, 6], [0, 2, 4]],
   },

@@ -11,7 +11,7 @@
  *
  * Songs and their notes are data in src/songs.js; tunings are in
  * src/tunings.js. The music follows the visit's hour, plays only while a visit
- * is on screen (not on the title or under a menu), honours Sound: Off, and has
+ * is on screen or the interactive title is showing, honours Sound: Off, and has
  * its own Music setting. A picked poppy slows it and drops it a semitone, the
  * way the field slows.
  */
@@ -47,10 +47,12 @@ export const VOICES = {
   },
   // The music box with its tines damped: shorter, and the high partials nearly gone.
   musicBoxDamped: { type: 'sine', partials: [[1, 1, 0.55], [2.01, 0.14, 0.25], [5.4, 0.025, 0.06]] },
+  // The title's wooden strike has its own sampled voice and additive fallback.
+  xylophone: { sample: { bank: 'xylophone', envelope: [0.003, 0.12, 0.9], level: 0.9 }, type: 'sine', partials: [[1, 1, 0.65], [3.95, 0.2, 0.14], [7.8, 0.035, 0.055]] },
   // Kept from the first Dawn draft; no song uses it now.
-  musicBox: { sample: { bank: 'title', envelope: [0.008, 0.35, 2.3], level: 0.8 }, type: 'sine', partials: [[1, 1, 1.6], [2.01, 0.25, 0.7], [5.4, 0.08, 0.18]] },
+  musicBox: { type: 'sine', partials: [[1, 1, 1.6], [2.01, 0.25, 0.7], [5.4, 0.08, 0.18]] },
   toyPiano: { sample: { bank: 'noon', envelope: [0.005, 0.18, 0.75], level: 2.84 }, type: 'sine', partials: [[1, 1, 0.9], [3.02, 0.18, 0.25], [6.8, 0.06, 0.08]] },
-  bonang: { sample: { bank: 'dusk', envelope: [0.35, 0.65, 1.8], level: 1.087 }, type: 'sine', partials: [[1, 1, 2.2], [2.42, 0.3, 0.9], [4.1, 0.08, 0.3]] },
+  bonang: { sample: { bank: 'dusk', envelope: [0.003, 0.2, 1.8], level: 0.8 }, type: 'sine', partials: [[1, 1, 2.2], [2.42, 0.3, 0.9], [4.1, 0.08, 0.3]] },
   // Dusk's bowed bass: a sawtooth under a low low-pass, a slow bow-in and a long
   // fade, with a slight vibrato that starts once the note has settled.
   bowedBass: { kind: 'bow', type: 'sawtooth', attack: 1.4, hold: 4.2, release: 2.2, cutoff: 380, vibrato: { hz: 4.6, cents: 7, delay: 1.2 } },
