@@ -98,6 +98,7 @@ class Music {
     this.noise = null;
     this.drones = [];
     this.nextStep = 0;     // index of the next eighth note to schedule, counted from the song's start
+    this.leadNote = 0;     // sounded lead notes; omissions do not advance the timbre cycle
     this.nextTime = 0;     // audio-clock time of that eighth note
     this.voiceCount = 0;   // notes started, for checks
   }
@@ -183,6 +184,7 @@ class Music {
       }
     }
     this.nextStep = 0;
+    this.leadNote = 0;
     this.nextTime = ctx.currentTime + 0.1;
   }
 
@@ -205,13 +207,14 @@ class Music {
   playStep(song, index, time, pitch) {
     const step = index % song.steps;
     const pass = Math.floor(index / song.steps);
-    const lead = song.leadCycle?.[pass % song.leadCycle.length];
     const tuning = TUNINGS[this.hour];
     const rand = seeded(index * 7919 + 13);
     for (const [at, degree] of song.bell) {
       if (at !== step) continue;
       if (pass > 0 && rand() < song.skip) continue;
-      this.note(VOICES[lead?.voice ?? song.voice], degreeHz(tuning, song.root, degree) * pitch, time + rand() * 0.012, 0.5);
+      const voice = song.leadCycle?.[this.leadNote % song.leadCycle.length] ?? song.voice;
+      this.note(VOICES[voice], degreeHz(tuning, song.root, degree) * pitch, time + rand() * 0.012, 0.5);
+      this.leadNote += 1;
     }
     for (const [at, degree] of song.bass) {
       if (at === step) this.note(VOICES.pluck, degreeHz(tuning, song.root, degree) / 2 * pitch, time, 0.55);
@@ -226,7 +229,7 @@ class Music {
         if (at !== step || (pass > 0 && rand() < layer.skip)) continue;
         // A layer may name several voices; each note picks one.
         const name = Array.isArray(layer.voice) ? layer.voice[Math.floor(rand() * layer.voice.length)] : layer.voice;
-        this.note(VOICES[name], degreeHz(tuning, song.root, degree) * pitch, time + 0.01 + rand() * 0.015, layer.level * (lead?.layerGain ?? 1));
+        this.note(VOICES[name], degreeHz(tuning, song.root, degree) * pitch, time + 0.01 + rand() * 0.015, layer.level);
       }
     }
     for (const [at, kind, chance = 1] of song.perc || []) {

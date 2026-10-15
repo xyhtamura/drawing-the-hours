@@ -195,7 +195,7 @@ const run = seconds => { for (let t = 0; t < seconds; t += 1 / 60) { ctx.current
   console.log('✔ Chimes are drawn from the hour\'s tuning, ascending, from 380 Hz.');
 }
 
-// 7. Whole-loop timbres preserve the score, timing, omissions, and percussion.
+// 7. Sounded lead notes alternate timbres across loops, including after omissions.
 {
   const song = SONGS.midnight;
   const originalNote = music.note, originalHit = music.hit;
@@ -204,6 +204,7 @@ const run = seconds => { for (let t = 0; t < seconds; t += 1 / 60) { ctx.current
     music.note = (voice, hz, time, level) => notes.push({ voice, hz, time, level });
     music.hit = (...args) => hits.push(args);
     music.hour = 'midnight';
+    music.leadNote = 0;
     for (let index = 0; index < song.steps * 8; index++) music.playStep(score, index, index * 30 / song.bpm, 1);
     return { notes, hits };
   };
@@ -212,27 +213,25 @@ const run = seconds => { for (let t = 0; t < seconds; t += 1 / 60) { ctx.current
     const baseline = capture({ ...song, leadCycle: undefined });
     assert.deepEqual(cycled.notes.map(n => [n.hz, n.time]), baseline.notes.map(n => [n.hz, n.time]));
     assert.deepEqual(cycled.hits, baseline.hits, 'the sparse percussion is unchanged');
-    for (let pass = 0; pass < 8; pass++) {
-      const start = pass * song.steps * 30 / song.bpm, end = (pass + 1) * song.steps * 30 / song.bpm;
-      const lead = song.leadCycle[pass % 4];
-      const notes = cycled.notes.filter(n => n.time >= start && n.time < end);
-      const melody = notes.filter(n => n.level === 0.5);
-      assert.ok(melody.length > 0);
-      assert.ok(melody.every(n => n.voice === VOICES[lead.voice]), `pass ${pass}: one lead color throughout`);
-      const reeds = notes.filter(n => n.voice === VOICES.reed || n.voice === VOICES.reedSlow);
-      assert.ok(reeds.length > 0);
-      assert.ok(reeds.every(n => n.level === song.layers[0].level * (lead.layerGain ?? 1)));
-    }
+    const melody = cycled.notes.filter(n => n.level === 0.5);
+    assert.ok(melody.length > song.bell.length, 'the check crosses loop boundaries');
+    assert.ok(melody.length < song.bell.length * 8, 'the check includes omitted notes');
+    melody.forEach((note, i) => assert.equal(note.voice, VOICES[song.leadCycle[i % 3]], `sounded lead note ${i}: pad/reed/brass`));
+    const firstLoop = cycled.notes.filter(n => n.time < song.steps * 30 / song.bpm);
+    assert.equal(firstLoop.filter(n => n.level === 0.5).length, 4, 'four lead notes instead of eight');
+    assert.equal(firstLoop.filter(n => n.level === 0.18).length, 2, 'two answering notes instead of five');
+    assert.equal(firstLoop.length, 8, 'eight pitched attacks including bass, previously fifteen');
   } finally {
     music.note = originalNote; music.hit = originalHit; music.hour = null;
   }
   game.currentLevel = { hour: 'midnight' }; game.uiSuspended = false;
   music.start('midnight');
-  assert.equal(music.nextStep, 0, 'a new visit or a resumed song starts on the pad loop');
+  assert.equal(music.nextStep, 0);
+  assert.equal(music.leadNote, 0, 'a new visit or resumed song starts with a pad note');
   music.stop();
   const { KIOSK } = await import('../src/build.js');
   assert.equal(KIOSK, process.argv.includes('--somewarez'));
-  console.log(`✔ Midnight cycles pad/reed/pad/brass with the same score (${KIOSK ? 'SOMEWAREZ' : 'main'} build).`);
+  console.log(`✔ Midnight alternates pad/reed/brass on sounded lead notes with fewer attacks (${KIOSK ? 'SOMEWAREZ' : 'main'} build).`);
 }
 
 console.log('--- All music tests passed! ---');

@@ -34,11 +34,11 @@ button.onclick = async () => {
       }
       return { peak: 20 * Math.log10(peak || 1e-12), rms: 10 * Math.log10(sum / (last - first) || 1e-24) };
     };
-    const rows = song.leadCycle.map((lead, pass) => {
+    const rows = Array.from({ length: 4 }, (_, pass) => {
       const old = stats(baseline, pass * loop, (pass + 1) * loop);
       const current = stats(cycled, pass * loop, (pass + 1) * loop);
-      if (current.peak >= -6 || Math.abs(current.rms - old.rms) > 6) throw new Error(`Level mismatch on ${lead.voice}: ${JSON.stringify({old,current})}`);
-      return { pass: pass + 1, voice: lead.voice, peakDb: +current.peak.toFixed(1), rmsDb: +current.rms.toFixed(1), changeDb: +(current.rms - old.rms).toFixed(1) };
+      if (current.peak >= -6 || Math.abs(current.rms - old.rms) > 6) throw new Error(`Level mismatch on loop ${pass + 1}: ${JSON.stringify({old,current})}`);
+      return { pass: pass + 1, voices: song.leadCycle.join('/'), peakDb: +current.peak.toFixed(1), rmsDb: +current.rms.toFixed(1), changeDb: +(current.rms - old.rms).toFixed(1) };
     });
     // Exercise the new oscillators at the slowed pitch, too.
     for (const name of ['midnightReed', 'midnightBrass']) {

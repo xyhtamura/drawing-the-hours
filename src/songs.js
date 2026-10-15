@@ -13,8 +13,8 @@
 //   perc    percussion, [step, kind, chance]: kind from PERCUSSION in src/music.js,
 //           chance (default 1) that the hit sounds on a given pass; percLevel scales them all
 //   drone   degrees held under the whole song; Midnight only
-//   leadCycle  optional per-loop { voice, layerGain? } choices; tails carry over,
-//              and layerGain scales accompaniment without adding notes
+//   leadCycle  optional voice names, advancing on each sounded melody note;
+//              omissions do not advance it, and the cycle continues across loops
 //   chords  one chord per bar, the degrees the chimes are drawn from
 //
 // `skip` is the chance a melody note is left out on any pass after the first,
@@ -101,24 +101,17 @@ export const SONGS = {
     bpm: 56,
     steps: 32,
     voice: 'pad',            // was 'reed', kept in src/music.js
-    // One color per whole loop. Leave room for the lead reed by lowering its
-    // answering layer on that pass; all note positions and omissions stay put.
-    leadCycle: [
-      { voice: 'pad' },
-      { voice: 'midnightReed', layerGain: 0.4 },
-      { voice: 'pad' },
-      { voice: 'midnightBrass' },
-    ],
+    // Alternate colors note by note, with room for each long tail.
+    leadCycle: ['pad', 'midnightReed', 'midnightBrass'],
     gain: 0.6,               // held notes: lowered to sit level with the other hours
     skip: 0.25,
     // Bohlen-Pierce: 13 steps to the tritave. 0, 6, 10 is its 3:5:7 triad.
-    bell: [[0, 13], [4, 16], [8, 19], [14, 17], [16, 13], [22, 10], [26, 12], [28, 13]],
+    bell: [[0, 13], [8, 19], [16, 13], [26, 12]],
     bass: [[0, 0], [16, -3]],
     drone: [0, 6],
-    // The reeds, back: a line between the pad's notes from each bar's chord, each
-    // note either struck as before or swelled in.
+    // Two quiet answers in the gaps; later loops leave half of them out.
     layers: [
-      { voice: ['reed', 'reedSlow'], level: 0.3, skip: 0.3, notes: [[2, 19], [10, 23], [18, 16], [24, 20], [30, 16]] },
+      { voice: ['reed', 'reedSlow'], level: 0.18, skip: 0.5, notes: [[10, 23], [24, 20]] },
     ],
     // Now and then, something falling a long way off: a tom with its echoes.
     // About once every thirty-five seconds on average.
