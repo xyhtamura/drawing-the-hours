@@ -15,3 +15,6 @@ Thumbs.db
 
 # Exported builds; scripts/export_somewarez.py rewrites them.
 /dist/
+
+# Local sample audition map and source paths.
+/SAMPLE-CANDIDATES.local.md
