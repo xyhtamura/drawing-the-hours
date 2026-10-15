@@ -22,6 +22,7 @@ import { evaluateDrawing } from './recipes.js';
 import { COMBO_DIAGRAMS, drawComboDiagram } from './combo-diagrams.js';
 import { VisitClock } from './clock.js';
 import { audio } from './audio.js';
+import { music } from './music.js';
 import { drawHourWash, drawHourGauge, washFor, prepareHourSheet } from './hour-clock.js';
 import { createDawnArt, wrapText } from './dawn-art.js';
 import { createNoonArt } from './noon-art.js';
@@ -1356,6 +1357,8 @@ export class Game {
   }
 
   update(dt) {
+    // The hour's song follows the visit, and stops under a menu or the title.
+    music.update(this);
     if (this.uiSuspended) return;
     if (this.state === 'PLAYING') {
       if (this.victoryDelay > 0) {

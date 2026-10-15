@@ -47,6 +47,7 @@
         <div class="menu-buttons">
           <button id="btn-color-mode" aria-label="Pure light colors" aria-pressed="false">Colors: Default</button>
           <button id="btn-audio">Sound: On</button>
+          <button id="btn-music">Music: On</button>
           <button id="btn-settings-back">Back to menu</button>
         </div>
         <p>The field keeps its proportions and scales to fit your screen.</p>
@@ -304,6 +305,7 @@
     import { Game } from './src/game.js';
     import { renderComboCanvases } from './src/combo-diagrams.js';
     import { audio } from './src/audio.js';
+    import { music } from './src/music.js';
     import { createTitleArt, dressMenus } from './src/shell-art.js';
     import { createHandwrittenTitle } from './src/title-lettering.js';
     import { CAMPAIGN_LEVELS, PRACTICE_LEVELS, PLAYABLE_LEVEL_IDS, CampaignSaveManager, isHourReached } from './src/campaign.js';
@@ -514,6 +516,13 @@
     btnAudio.onclick = () => {
       btnAudio.textContent = audio.toggleMute() ? 'Sound: Off' : 'Sound: On';
     };
+    // Browsers start audio only from a gesture: any press on the page opens or resumes it,
+    // so the hour's song can begin at the visit card rather than at the first cord.
+    document.addEventListener('pointerdown', () => audio.ensureContext(), { capture: true });
+    const btnMusic = document.getElementById('btn-music');
+    const updateMusicUI = () => { btnMusic.textContent = music.enabled ? 'Music: On' : 'Music: Off'; };
+    updateMusicUI();
+    btnMusic.onclick = () => { music.toggle(); updateMusicUI(); };
     const btnClosePauseX = document.getElementById('btn-close-pause-x');
     const btnCloseSettingsX = document.getElementById('btn-close-settings-x');
     const btnCloseFieldbookX = document.getElementById('btn-close-fieldbook-x');
@@ -592,7 +601,7 @@
       kiosk.startKiosk({
         game, canvas, showPanel, openMenu, showVisitCard,
         getActivePanel: () => activePanel,
-        syncSettings: () => { btnAudio.textContent = audio.isMuted ? 'Sound: Off' : 'Sound: On'; },
+        syncSettings: () => { btnAudio.textContent = audio.isMuted ? 'Sound: Off' : 'Sound: On'; updateMusicUI(); },
       });
     }
   </script>

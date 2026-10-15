@@ -1,7 +1,7 @@
 /**
  * Drawing the Hours — Procedural Web Audio Engine
  * Pure synthesized soundscapes: paper friction, cotton cord twangs,
- * pentatonic harmony chimes, and dandelion seed puffs.
+ * harmony chimes tuned to the hour's song (src/music.js), and dandelion seed puffs.
  */
 
 export class AudioManager {
@@ -14,6 +14,8 @@ export class AudioManager {
     this.cicadaTimer = 0;
     this.cicadaGain = null;
     this.cicadaNodes = null;
+    // Set by src/music.js: count => chime frequencies in the hour's tuning, or null.
+    this.chimeTuner = null;
   }
 
   ensureContext() {
@@ -130,20 +132,22 @@ export class AudioManager {
     osc.stop(t + 0.4);
   }
 
-  // --- Pentatonic Harmony Chimes ---
+  // --- Harmony Chimes, in the hour's tuning ---
   playHarmonyChord(recipeType, bandName) {
     if (this.isMuted) return;
     this.ensureContext();
     if (!this.ctx) return;
 
-    // Pentatonic frequencies (G major / E minor)
-    const basePitches = [392.00, 440.00, 523.25, 587.33, 659.25, 783.99]; // G4, A4, C5, D5, E5, G5
+    // Seven ascending pitches from the hour's song: its current chord first. Without
+    // a song (no visit on screen) the chimes keep their old G pentatonic.
+    const tuned = this.chimeTuner?.(7);
+    const basePitches = tuned || [392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 979.99]; // G4 A4 C5 D5 E5 G5 B5
     let selectedChords = [basePitches[0], basePitches[2], basePitches[4]];
 
     if (recipeType === 'TRIO_OF_FLIGHT') {
       selectedChords = [basePitches[0], basePitches[2], basePitches[3], basePitches[5]];
     } else if (recipeType === 'CROSS_MEADOW_CORRESPONDENCE' || recipeType === 'SYMMETRIC_CORRESPONDENCE' || recipeType === 'NURSERY_POLARITY') {
-      selectedChords = [basePitches[1], basePitches[3], basePitches[4], basePitches[5] * 1.25];
+      selectedChords = [basePitches[1], basePitches[3], basePitches[4], basePitches[6]];
     } else if (recipeType === 'COUNTERPART_PAIR') {
       selectedChords = [basePitches[1], basePitches[2], basePitches[4], basePitches[5]];
     } else if (recipeType === 'SEED_AND_WING') {

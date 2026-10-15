@@ -23,7 +23,7 @@ Locally, with the root server running:
   - **Level card** shows the current visit's requirements. During play the clock
     stops while the card is open.
   - **Reset** returns to the title screen and drops the session: progress, scores,
-    sound and colors go back to their starting values.
+    sound, music, and colors go back to their starting values.
 - **The page resets itself** after 90 seconds without a touch during play or in a
   menu.
 - **An idle loop** starts after 20 seconds on an untouched title screen and repeats

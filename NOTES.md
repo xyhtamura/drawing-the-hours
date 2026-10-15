@@ -14,6 +14,27 @@ Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet be
 
 ## Activity
 
+2026-10-15 — Claude Code — Gave each hour a song and tuned the chimes to it, on Xyh's brief: a Lullatone feel, sparse and toy-like, one song per hour, one microtonal tuning per hour, and little added compute.
+
+- **Tunings** (`src/tunings.js`), each copied from `tabota/scala/`: Dawn, harmonics 8–16 (just, with the 11th and 13th harmonics); Noon, 19-EDO; Dusk, 5-EDO (slendro-like); Midnight, Bohlen-Pierce (13 steps to the 3/1 tritave). The copies are recorded in the root DEPENDENCIES.md, and `test/test_music.js` compares them with the `.scl` files.
+- **Songs** (`src/songs.js`) are data: a 32-step loop of eighth notes per hour, with melody, bass plucks, ticks, Dusk's gong, Midnight's two-note drone, and one chord per bar. Dawn is a music box at 72 bpm; Noon a toy piano with arpeggios at 96; Dusk a bonang at 64; Midnight an odd-harmonic reed at 56, since Bohlen-Pierce is built on odd ratios. After the first pass each melody note has a 15–25% chance of being left out, so the loop does not repeat exactly. All of it is an agent draft for Xyh to rewrite by ear.
+- **Engine** (`src/music.js`): each note is two or three oscillators that stop themselves, scheduled a quarter second ahead from `Game.update`; one feedback delay for the room; no samples, reverb convolution, or worklet. The song follows the visit's hour, plays only while a visit is on screen (not on the title or under a menu), honours Sound: Off, and slows by 0.55 and drops a semitone while a poppy is picked. A **Music** setting in Settings turns it off, stored as `drawing-the-hours-music`; the kiosk's Reset turns it back on.
+- **Chimes** (`audio.playHarmonyChord`) now take seven ascending pitches from the current song's chord in the hour's tuning, from about 380 Hz up. With no song playing they keep the old G pentatonic.
+- The page opens the audio context on any press (`index.html`), so the song can start at the visit card instead of waiting for the first cord.
+- The workspace's code-based sound engines are now listed in `musicprod/CODE-ENGINES.md`. None was reused: each is built for its own piece, and the songs needed only a few sine and triangle partials.
+
+Verification:
+
+- New `test/test_music.js`: the four tunings against their `.scl` files; every melody note between 250 Hz and 1.5 kHz and every bass note between 50 and 260 Hz; the song starts with a visit, changes with the hour, and stops under a menu, with Sound: Off, and with Music: Off; on a fake audio clock over 60 s, Dawn 1.00, Noon 1.57, Dusk 0.75, Midnight 0.50 notes a second, with at most 6, 6, 9, and 5 oscillators sounding at once; a poppy cuts the notes in 30 s by more than a quarter; chimes ascend, start at or above 380 Hz, and every one is a degree of the hour's tuning. All fourteen suites pass.
+- In the page: each song rendered for 32 s in an `OfflineAudioContext` peaked at -16 (Dawn), -18 (Noon), -14 (Dusk), and -17 dBFS (Midnight), with RMS between -36 and -38 dB. After a real click on Begin the context was running and the Dawn song scheduled notes; one `music.update` call took about 2.5 µs. Dawn's chimes read 392, 490, 588, 784, 980, 1176, 1568 Hz, the 8:10:12 chord on G. No console errors.
+
+Not done, and open:
+
+- **No agent has heard any of it.** The melodies, voices, tempos, levels, and the delay are first drafts. At peak the music sits about 10 dB under a five-note chime.
+- The browser pane was hidden, so the animation loop did not run; the song was not heard changing hour in the page, only in the test.
+- Wind, cicadas, and the cord sounds keep their own pitches; only the chimes follow the hour's tuning.
+- Xyh's note to "tune the levels to the vibe" (game levels, read here as pacing and population) is not acted on.
+
 2026-10-14 — Claude Code — Added a flower that slows the field, on Xyh's direction: a poppy in the main game and ylang-ylang in the SOMEWAREZ edition. The freezing plant discussed alongside it (makahiya, the sensitive plant) is not built.
 
 - **What it does.** Drawing the held cord over the flower picks it. Creatures, seeds, and hazards then run on 0.4 of the time for 8 seconds (`SLOW_FACTOR`, `SLOW_SECONDS` in `src/game.js`); the visit clock does not slow. A badge under the cord meter counts the seconds down. Another flower grows 20 seconds after the field is back to speed (`SLOW_REGROW_SECONDS`).

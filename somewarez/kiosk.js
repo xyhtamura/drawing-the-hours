@@ -14,6 +14,7 @@
  */
 
 import { audio } from '../src/audio.js';
+import { music } from '../src/music.js';
 import { storage } from '../src/storage.js';
 import { setColorMode } from '../src/theme.js';
 import { CAMPAIGN_LEVELS } from '../src/campaign.js';
@@ -108,6 +109,7 @@ export function startKiosk({ game, canvas, showPanel, openMenu, showVisitCard, g
     game.campaign.practiceVisit = null;
     setColorMode('default');
     audio.isMuted = false;
+    music.setEnabled(true);
     game.startLevel(CAMPAIGN_LEVELS[0].id);
     for (const card of document.querySelectorAll('.recipe-card')) card.scrollTop = 0;
     syncSettings();
