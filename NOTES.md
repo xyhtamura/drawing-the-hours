@@ -14,6 +14,17 @@ Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet be
 
 ## Activity
 
+2026-10-15 — Claude Code — Gave Midnight a slow pad and gave Dawn's damped string some body, on Xyh's direction. The reed voice is kept in `VOICES`, unused.
+
+- **Midnight pad** (`pad` in `src/music.js`): each note is a detuned pair (6 cents either side) of triangle waves at the fundamental with a faint third partial, under a 1.3 kHz low-pass, swelling in over 1.1 s, holding 0.8 s, and fading over 2.6 s. Odd harmonics only, as Bohlen-Pierce wants. The song's notes and drone are unchanged.
+- **String body**: each pluck now carries a second string an octave down at 0.45 of the level, ringing 1.3 times as long, and one band-pass resonance near 210 Hz (varied by up to 6% per pitch) mixed back in, for a hint of a wooden box. The octave string uses twice the loop and twice the damping lean, so it stays exactly an octave under after the rate correction. Both are rendered into the same buffer, so they cost nothing while playing.
+- **Levels**: Dawn's song gain went from 0.9 to 1.5 because its notes are short, and Midnight's from 0.8 to 0.6 because its notes are held, so all four hours average within 3 dB.
+
+Verification: in the page, offline renders of each song for 32 s: Dawn peak -12.0 dBFS, RMS -38.5 dB; Noon -18.0, -38.1; Dusk -13.9, -36.4; Midnight -21.7, -35.5. Plucks at 392, 441, 539, 686, and 735 Hz, detune off, repeat at the octave-down period within 2.5 cents, so the two strings agree. Rendering Dawn's 36 string buffers now takes about 25 ms when the song starts, up from 10, during the visit card. On the fake clock Midnight peaks at 14 oscillators sounding, up from 5; still under the test's limit of 24. All fourteen suites pass.
+
+Not done: nobody has heard it. The pad's attack, hold, release, spread, and cutoff, and the string's octave level and body frequency, are single numbers on the two voice lines.
+
+
 2026-10-15 — Claude Code — Replaced Dawn's music box with a damped string, on Xyh's brief: toytronic, like a guitar with no body, that does not ring well and is a little imperfect. The music box voice is kept in `VOICES` and unused.
 
 - `dampedString` in `src/music.js`: Karplus-Strong. A soft, low-passed noise pluck runs round a delay line one period long, losing enough each pass to fall 60 dB in 0.35–0.75 s, with a two-point average for the damping. No body, no reverb of its own; the song's shared delay still applies.

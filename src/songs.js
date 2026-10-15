@@ -22,7 +22,7 @@ export const SONGS = {
     bpm: 72,
     steps: 32,
     voice: 'dampedString',   // was 'musicBox', kept in src/music.js
-    gain: 0.9,
+    gain: 1.5,               // short notes: raised to sit level with the other hours
     skip: 0.15,
     // Harmonics 8-16 has eight degrees an octave: 8 means the root an octave up.
     bell: [[0, 12], [3, 10], [6, 9], [8, 10], [12, 8], [16, 12], [18, 14], [20, 12], [24, 10], [27, 11], [28, 9]],
@@ -64,8 +64,8 @@ export const SONGS = {
     root: 174.61,         // F3
     bpm: 56,
     steps: 32,
-    voice: 'reed',
-    gain: 0.8,
+    voice: 'pad',            // was 'reed', kept in src/music.js
+    gain: 0.6,               // held notes: lowered to sit level with the other hours
     skip: 0.25,
     // Bohlen-Pierce: 13 steps to the tritave. 0, 6, 10 is its 3:5:7 triad.
     bell: [[0, 13], [4, 16], [8, 19], [14, 17], [16, 13], [22, 10], [26, 12], [28, 13]],

@@ -36,12 +36,21 @@ export const VOICES = {
   // damped, rendered once per pitch and variant into a short buffer (see dampedString).
   // decay: seconds to fall 60 dB, as [shortest, longest]; dead: chance of a choked note;
   // brightness: 0 dull to 1 bright; detune: cents either way.
-  dampedString: { kind: 'string', decay: [0.35, 0.75], dead: 0.12, brightness: [0.25, 0.5], detune: 7 },
+  // octave: a second string an octave down, at this level, ringing this multiple of
+  // the decay. body: one wooden resonance mixed under it.
+  dampedString: {
+    kind: 'string', decay: [0.35, 0.75], dead: 0.12, brightness: [0.25, 0.5], detune: 7,
+    octave: { level: 0.45, decay: 1.3 }, body: { hz: 210, q: 3, mix: 0.6 },
+  },
   // Kept from the first Dawn draft; no song uses it now.
   musicBox: { type: 'sine', partials: [[1, 1, 1.6], [2.01, 0.25, 0.7], [5.4, 0.08, 0.18]] },
   toyPiano: { type: 'sine', partials: [[1, 1, 0.9], [3.02, 0.18, 0.25], [6.8, 0.06, 0.08]] },
   bonang: { type: 'sine', partials: [[1, 1, 2.2], [2.42, 0.3, 0.9], [4.1, 0.08, 0.3]] },
-  // Odd harmonics only, from the triangle wave: Bohlen-Pierce is built on odd ratios.
+  // Midnight's pad: slow swell, long fade, detuned pairs of triangle waves (odd
+  // harmonics only, which Bohlen-Pierce is built on), the third partial faint.
+  // attack, hold, release in seconds; spread in cents either side; cutoff in Hz.
+  pad: { kind: 'pad', type: 'triangle', partials: [[1, 1], [3, 0.08]], attack: 1.1, hold: 0.8, release: 2.6, spread: 6, cutoff: 1300 },
+  // Odd harmonics only, from the triangle wave. Kept from Midnight's first draft; unused.
   reed: { type: 'triangle', partials: [[1, 1, 2.4], [3, 0.12, 0.8]] },
   pluck: { type: 'sine', partials: [[1, 1, 0.7], [2, 0.2, 0.2]] },
   gong: { type: 'sine', partials: [[1, 1, 5], [1.48, 0.35, 3.5], [2.13, 0.15, 1.5]] },
@@ -188,6 +197,7 @@ class Music {
 
   note(voice, hz, time, level) {
     if (voice.kind === 'string') { this.pluck(voice, hz, time, level); return; }
+    if (voice.kind === 'pad') { this.pad(voice, hz, time, level); return; }
     const ctx = audio.ctx;
     const out = ctx.createGain();
     out.gain.value = level;
@@ -247,33 +257,60 @@ class Music {
     const brightness = dull + (bright - dull) * rand();
     const exact = STRING_RATE / hz;
     const period = Math.max(2, Math.round(exact));
-    const length = Math.ceil(STRING_RATE * (decay + 0.05));
+    const lean = brightness * 0.5; // weight on the next sample: shortens the loop by this much
+    const length = Math.ceil(STRING_RATE * (Math.max(decay, decay * (voice.octave?.decay ?? 0)) + 0.05));
     const buffer = ctx.createBuffer(1, length, STRING_RATE);
     const out = buffer.getChannelData(0);
-    // The pluck: soft noise, low-passed, so the attack is a thumb rather than a pick.
-    const line = new Float32Array(period);
-    let smooth = 0;
-    for (let i = 0; i < period; i++) { smooth += (rand() * 2 - 1 - smooth) * (0.35 + brightness * 0.5); line[i] = smooth; }
-    // Loss per period so the note falls 60 dB in `decay` seconds.
-    const loss = 0.001 ** (1 / (decay * hz));
-    let index = 0, peak = 0;
-    const lean = brightness * 0.5; // weight on the next sample: shortens the loop by this much
-    for (let i = 0; i < length; i++) {
-      const next = index + 1 === period ? 0 : index + 1;
-      const value = line[index];
-      out[i] = value;
-      line[index] = loss * ((1 - lean) * value + lean * line[next]);
-      index = next;
-      if (value > peak) peak = value; else if (-value > peak) peak = -value;
-    }
+    karplusStrong(out, period, lean, decay, hz, brightness, 1, rand);
+    // A string an octave down, plucked with the same thumb: twice the loop and twice
+    // the lean, so it stays exactly an octave under after the rate correction.
+    if (voice.octave) karplusStrong(out, period * 2, Math.min(1, lean * 2), decay * voice.octave.decay, hz / 2, brightness * 0.6, voice.octave.level, rand);
+    // A hint of a wooden box: one resonance, mixed under the string.
+    if (voice.body) resonate(out, STRING_RATE, voice.body.hz * (0.94 + rand() * 0.12), voice.body.q, voice.body.mix);
+    let peak = 0;
+    for (let k = 0; k < length; k++) { const v = out[k] < 0 ? -out[k] : out[k]; if (v > peak) peak = v; }
     const fade = Math.floor(STRING_RATE * 0.04);
-    for (let i = 0; i < length; i++) {
-      out[i] /= peak || 1;
-      if (i > length - fade) out[i] *= (length - i) / fade;
+    for (let k = 0; k < length; k++) {
+      out[k] /= peak || 1;
+      if (k > length - fade) out[k] *= (length - k) / fade;
     }
     buffer.rateFix = (period - lean) / exact;
     this.strings.set(key, buffer);
     return buffer;
+  }
+
+  /**
+   * A slow pad note: detuned pairs of oscillators that swell in over `attack`,
+   * hold, and fade over `release`, under one low-pass filter.
+   */
+  pad(voice, hz, time, level) {
+    const ctx = audio.ctx;
+    const env = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = voice.cutoff;
+    filter.Q.value = 0.4;
+    const top = time + voice.attack, fall = top + voice.hold, end = fall + voice.release;
+    env.gain.setValueAtTime(0.0001, time);
+    env.gain.linearRampToValueAtTime(level, top);
+    env.gain.setValueAtTime(level, fall);
+    env.gain.exponentialRampToValueAtTime(0.0001, end);
+    env.connect(filter); filter.connect(this.bus);
+    for (const [ratio, amp] of voice.partials) {
+      for (const side of [-1, 1]) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = voice.type;
+        osc.frequency.value = hz * ratio * 2 ** (side * voice.spread / 1200);
+        gain.gain.value = amp / 2;
+        osc.connect(gain); gain.connect(env);
+        osc.start(time);
+        osc.stop(end + 0.05);
+        osc.onended = () => { try { gain.disconnect(); } catch {} };
+      }
+    }
+    setTimeout(() => { try { env.disconnect(); filter.disconnect(); } catch {} }, (end - ctx.currentTime) * 1000 + 300);
+    this.voiceCount += 1;
   }
 
   tick(time, level) {
@@ -307,6 +344,39 @@ class Music {
     const up = 2 ** (tuning.period / 1200);
     for (let i = 0; tones.length < count; i++) tones.push(tones[i] * up);
     return tones.slice(0, count);
+  }
+}
+
+/**
+ * Adds a damped Karplus-Strong string into `out`: a soft, low-passed noise pluck
+ * going round a loop `period` samples long, losing enough each pass to fall 60 dB
+ * in `decay` seconds.
+ */
+function karplusStrong(out, period, lean, decay, hz, brightness, level, rand) {
+  const line = new Float32Array(period);
+  let smooth = 0;
+  for (let i = 0; i < period; i++) { smooth += (rand() * 2 - 1 - smooth) * (0.35 + brightness * 0.5); line[i] = smooth; }
+  const loss = 0.001 ** (1 / (decay * hz));
+  let index = 0;
+  for (let i = 0; i < out.length; i++) {
+    const next = index + 1 === period ? 0 : index + 1;
+    const value = line[index];
+    out[i] += value * level;
+    line[index] = loss * ((1 - lean) * value + lean * line[next]);
+    index = next;
+  }
+}
+
+/** Mixes one band-pass resonance of the signal back into it, in place. */
+function resonate(out, rate, hz, q, mix) {
+  const w = 2 * Math.PI * hz / rate, alpha = Math.sin(w) / (2 * q), a0 = 1 + alpha;
+  const b0 = alpha / a0, b2 = -alpha / a0, a1 = -2 * Math.cos(w) / a0, a2 = (1 - alpha) / a0;
+  let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+  for (let i = 0; i < out.length; i++) {
+    const x = out[i];
+    const y = b0 * x + b2 * x2 - a1 * y1 - a2 * y2;
+    x2 = x1; x1 = x; y2 = y1; y1 = y;
+    out[i] = x + mix * y;
   }
 }
 
