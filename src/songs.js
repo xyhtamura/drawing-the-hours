@@ -7,7 +7,8 @@
 //
 //   bell    the melody, on the song's `voice`
 //   bass    low plucks
-//   layers  more melodic parts, each { voice, level, skip, notes: [[step, degree], ...] }
+//   layers  more melodic parts, each { voice, level, skip, notes: [[step, degree], ...] };
+//           with `passChance`, the whole layer sounds on that share of passes and never the first
 //   perc    percussion, [step, kind, chance]: kind from PERCUSSION in src/music.js,
 //           chance (default 1) that the hit sounds on a given pass; percLevel scales them all
 //   drone   degrees held under the whole song; Midnight only
@@ -76,7 +77,19 @@ export const SONGS = {
     bell: [[0, 7], [4, 8], [6, 7], [8, 5], [14, 6], [16, 9], [20, 8], [22, 7], [26, 6], [28, 5]],
     bass: [[0, 0], [16, -2]],
     gong: [[0, 0]],
-    perc: [[12, 'tick'], [28, 'tick']],
+    // A deep bowed bass under the two halves of the loop, two octaves under the
+    // chord root, on about half the passes and never the first.
+    layers: [
+      { voice: 'bowedBass', level: 0.2, skip: 0, passChance: 0.5, notes: [[0, -10], [16, -7]] },
+    ],
+    // Quiet and slow: a soft thump at the top, a knock answering it, the two old
+    // ticks, a shaker now and then.
+    percLevel: 0.8,
+    perc: [
+      [0, 'thump', 0.7], [20, 'knock', 0.6],
+      [12, 'tick'], [28, 'tick'],
+      [6, 'shaker', 0.35], [24, 'shaker', 0.35],
+    ],
     chords: [[0, 2, 4], [0, 2, 4], [-2, 1, 3], [-2, 1, 3]],
   },
   midnight: {

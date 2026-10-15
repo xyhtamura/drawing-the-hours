@@ -47,7 +47,7 @@ function fakeContext() {
 }
 
 const { audio } = await import('../src/audio.js');
-const { music, PERCUSSION } = await import('../src/music.js');
+const { music, PERCUSSION, VOICES } = await import('../src/music.js');
 const { SONGS } = await import('../src/songs.js');
 const { TUNINGS, degreeHz } = await import('../src/tunings.js');
 
@@ -95,7 +95,8 @@ console.log('--- Running music tests ---');
     for (const layer of song.layers || []) {
       for (const [, degree] of layer.notes) {
         const hz = degreeHz(tuning, song.root, degree);
-        assert.ok(hz > 250 && hz < 1500, `${hour} ${layer.voice} degree ${degree} is ${hz.toFixed(1)} Hz`);
+        const [low, high] = VOICES[layer.voice].kind === 'bow' ? [40, 260] : [250, 1500];
+        assert.ok(hz > low && hz < high, `${hour} ${layer.voice} degree ${degree} is ${hz.toFixed(1)} Hz`);
       }
     }
     for (const [, kind] of song.perc) assert.ok(PERCUSSION[kind], `${hour}: percussion kind ${kind} exists`);

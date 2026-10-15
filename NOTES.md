@@ -14,6 +14,17 @@ Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet be
 
 ## Activity
 
+2026-10-15 — Claude Code — Gave the Dusk song quiet percussion and a deep bowed bass that comes and goes, on Xyh's direction.
+
+- **Percussion**: a soft thump at the top of the loop (70% of passes), a knock answering it at step 20 (60%), the two old ticks, and a shaker at steps 6 and 24 (35% each); `percLevel` 0.8.
+- **Bowed bass** (`bowedBass` in `src/music.js`, kind `bow`): one sawtooth under a 380 Hz low-pass, bowing in over 1.4 s, holding 4.2 s, fading over 2.2 s, with a 7-cent vibrato at 4.6 Hz that starts after 1.2 s. Two notes per loop, two octaves under each half's chord root: 55 Hz under the first half and 83 Hz under the second.
+- **Not always present**: layers can now carry `passChance`. The bass is in or out for a whole 15-second pass, never on the first, then on about half: over the first twelve passes it plays on passes 3, 4, 6, 8, and 11.
+
+Verification: 64 s offline renders of the Dusk song in the page. All parts: peak -13.4 dBFS, RMS -35.4 dB; without the bass: -13.3, -36.2. During a pass that carries it, the bass alone measures peak -29.9, RMS -39.5, against RMS -37.5 for the rest of that pass; most of its energy is below 200 Hz, so it will sound quieter than that figure, and on a tablet's speakers mainly its upper harmonics will be heard. The first draft, at level 0.42, was as loud by RMS as the whole rest of the song and was lowered to 0.2. Percussion alone: peak -20.0, RMS -54.4. On the fake clock Dusk peaks at 11 oscillators. `test/test_music.js` accepts 40–260 Hz for bowed layers; all fourteen suites pass.
+
+Not done: nobody has heard it. Whether 55 Hz reads as a bass at all on the exhibition tablet is a listening question; raising both notes an octave (degrees -5 and -2) is the fallback.
+
+
 2026-10-15 — Claude Code — Added quiet percussion to the Dawn and Noon songs and brought the music box back to Dawn, damped, on Xyh's direction.
 
 - **Percussion** (`PERCUSSION` in `src/music.js`): four short sounds built from oscillators and the one shared noise burst. `thump` is a sine falling from 95 to 48 Hz; `knock` a short 1,150 Hz sine with a click of filtered noise, like a small woodblock; `shaker` noise through a high-pass at 6.5 kHz; `tick` the old band-passed click. Songs list hits as `perc: [[step, kind, chance]]`, where chance is how often the hit sounds on a pass, and `percLevel` scales a song's hits. The old `tick` part is gone; Dusk keeps its two ticks as `perc`.

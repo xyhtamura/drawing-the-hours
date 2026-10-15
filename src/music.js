@@ -48,6 +48,9 @@ export const VOICES = {
   musicBox: { type: 'sine', partials: [[1, 1, 1.6], [2.01, 0.25, 0.7], [5.4, 0.08, 0.18]] },
   toyPiano: { type: 'sine', partials: [[1, 1, 0.9], [3.02, 0.18, 0.25], [6.8, 0.06, 0.08]] },
   bonang: { type: 'sine', partials: [[1, 1, 2.2], [2.42, 0.3, 0.9], [4.1, 0.08, 0.3]] },
+  // Dusk's bowed bass: a sawtooth under a low low-pass, a slow bow-in and a long
+  // fade, with a slight vibrato that starts once the note has settled.
+  bowedBass: { kind: 'bow', type: 'sawtooth', attack: 1.4, hold: 4.2, release: 2.2, cutoff: 380, vibrato: { hz: 4.6, cents: 7, delay: 1.2 } },
   // Midnight's pad: slow swell, long fade, detuned pairs of triangle waves (odd
   // harmonics only, which Bohlen-Pierce is built on), the third partial faint.
   // attack, hold, release in seconds; spread in cents either side; cutoff in Hz.
@@ -206,6 +209,8 @@ class Music {
       if (at === step && pass % 2 === 0) this.note(VOICES.gong, degreeHz(tuning, song.root, degree) / 2 * pitch, time, 0.35);
     }
     for (const layer of song.layers || []) {
+      // A layer with `passChance` is in or out for a whole pass, and out on the first.
+      if (layer.passChance !== undefined && (pass === 0 || seeded(pass * 104729 + 3)() >= layer.passChance)) continue;
       for (const [at, degree] of layer.notes) {
         if (at !== step || (pass > 0 && rand() < layer.skip)) continue;
         this.note(VOICES[layer.voice], degreeHz(tuning, song.root, degree) * pitch, time + 0.01 + rand() * 0.015, layer.level);
@@ -219,6 +224,7 @@ class Music {
   note(voice, hz, time, level) {
     if (voice.kind === 'string') { this.pluck(voice, hz, time, level); return; }
     if (voice.kind === 'pad') { this.pad(voice, hz, time, level); return; }
+    if (voice.kind === 'bow') { this.bow(voice, hz, time, level); return; }
     const ctx = audio.ctx;
     const out = ctx.createGain();
     out.gain.value = level;
@@ -331,6 +337,34 @@ class Music {
       }
     }
     setTimeout(() => { try { env.disconnect(); filter.disconnect(); } catch {} }, (end - ctx.currentTime) * 1000 + 300);
+    this.voiceCount += 1;
+  }
+
+  /** A bowed note: one sawtooth, a delayed vibrato, a low-pass, a slow envelope. */
+  bow(voice, hz, time, level) {
+    const ctx = audio.ctx;
+    const osc = ctx.createOscillator();
+    const lfo = ctx.createOscillator();
+    const depth = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    const env = ctx.createGain();
+    const top = time + voice.attack, fall = top + voice.hold, end = fall + voice.release;
+    osc.type = voice.type;
+    osc.frequency.value = hz;
+    lfo.frequency.value = voice.vibrato.hz;
+    depth.gain.setValueAtTime(0, time);
+    depth.gain.linearRampToValueAtTime(hz * (2 ** (voice.vibrato.cents / 1200) - 1), time + voice.vibrato.delay + 0.8);
+    filter.type = 'lowpass';
+    filter.frequency.value = voice.cutoff;
+    filter.Q.value = 0.6;
+    env.gain.setValueAtTime(0.0001, time);
+    env.gain.linearRampToValueAtTime(level, top);
+    env.gain.setValueAtTime(level, fall);
+    env.gain.exponentialRampToValueAtTime(0.0001, end);
+    lfo.connect(depth); depth.connect(osc.frequency);
+    osc.connect(filter); filter.connect(env); env.connect(this.bus);
+    for (const node of [osc, lfo]) { node.start(time); node.stop(end + 0.05); }
+    setTimeout(() => { try { env.disconnect(); filter.disconnect(); depth.disconnect(); } catch {} }, (end - ctx.currentTime) * 1000 + 300);
     this.voiceCount += 1;
   }
 
