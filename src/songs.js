@@ -25,6 +25,7 @@ export const SONGS = {
   title: {
     title: 'Drawing the hours', root: 196, bpm: 88, steps: 128,
     voice: 'xylophone', gain: 1.2, skip: 0,
+    rhythm: { pattern: 'titleIntro', gain: 0.65, seed: 101, delay: 1.2 },
     // Sixteen bars: opening, varied answer, lower bridge, opening/cadence.
     // Keep the hook intact on every pass; the hours color its rests.
     bell: [

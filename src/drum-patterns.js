@@ -1,5 +1,5 @@
 // Copied from dthdrums/src/patterns.js, 2026-10-16. Source unversioned.
-// Source SHA-256: 21633f109f7ab6b53fa963e5e32b2d1c1c570c61b229f52c8bfda85610987881
+// Source SHA-256: a71e620e703f60d70ffbaf5a680b0fdc5da143d06ae2c626e5060869c8dfa8b2
 /**
  * Rhythmic patterns for Drawing the Hours found-object percussion.
  *
@@ -28,6 +28,35 @@ export const EUCLIDEAN = (steps, pulses, rotate = 0) => {
 };
 
 export const PATTERNS = {
+  titleIntro: {
+    id: 'titleIntro',
+    name: 'Title Intro (5/8 Pocket Watch & Pencil Lilt)',
+    kit: 'study_desk',
+    meter: { beats: 5, division: 8 },
+    steps: 5,
+    baseBpm: 76,
+    tempoDrift: {
+      enabled: true,
+      depth: 0.05,       // +/- 5% tempo fluctuation
+      cycleSeconds: 28   // gentle 28-second breathing wave
+    },
+    humanizeMs: 8,        // +/- 8ms microtiming jitter
+    subtletyGain: 0.18,   // quiet and delicate under xylophone
+    layers: [
+      // 3 + 2 lilt:
+      // Steps 0, 1, 2 = 3 eighths; Steps 3, 4 = 2 eighths
+      [0, 'pencil_wood', 0.75, 1.0],
+      [0, 'tick_high', 0.55, 1.0],
+      [1, 'tick_low', 0.40, 0.85],
+      [2, 'nail_tap', 0.45, 0.90],
+      [3, 'pencil_tip', 0.65, 0.95],
+      [3, 'tick_high', 0.50, 0.85],
+      [4, 'tick_low', 0.45, 0.85],
+      [4, 'paper_snip', 0.30, 0.35],
+      [4, 'match_slide', 0.25, 0.25]
+    ]
+  },
+
   studyDesk58: {
     id: 'studyDesk58',
     name: 'Study Desk 5/8 (3+2 Lilt)',

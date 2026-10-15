@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { RhythmClock } from '../src/rhythm.js';
 import { DRUM_VOICES } from '../src/drum-voices.js';
 import { STAGE_SONGS } from '../src/song-variations.js';
+import { SONGS } from '../src/songs.js';
 
 const selected = Object.entries(STAGE_SONGS).flatMap(([hour, scores]) => scores.flatMap((score, i) => score.rhythm ? [`${hour}-0${i + 1}`] : []));
 assert.deepEqual(selected, ['dawn-02', 'dawn-05', 'noon-02', 'noon-04', 'noon-06', 'dusk-03', 'dusk-05', 'midnight-05']);
@@ -52,4 +53,10 @@ assert.ok(late.length <= 3 && late.every(h => h.time >= 120), 'a stalled frame s
 const burstHits=[], burst=new RhythmClock({...STAGE_SONGS.midnight[4].rhythm,burstCount:[2,2]}, .1, hit=>burstHits.push(hit));
 burst.tick(14);assert.equal(burstHits.length,1);
 burst.tick(18);assert.equal(burstHits.length,1,'a missed second fidget is skipped after a stalled frame');
-console.log('Rhythms: eight selected stages, independent odd meters, poppy slowdown, sparse Midnight and no catch-up bursts.');
+assert.ok(SONGS.title.rhythm, 'title has independent rhythm configured');
+const titleHits = render(SONGS.title.rhythm, 60);
+assert.ok(titleHits.length > 0, 'title produces rhythm hits');
+assert.ok(titleHits.every(h => DRUM_VOICES[`${h.kit}:${h.voice}`]), 'title hits name valid voices');
+assert.ok(titleHits.every(h => h.velocity > 0 && h.velocity < 0.20), 'title rhythm stays subtle below the xylophone');
+
+console.log('Rhythms: title and eight selected stages, independent odd meters, poppy slowdown, sparse Midnight and no catch-up bursts.');
