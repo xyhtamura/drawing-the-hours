@@ -22,6 +22,8 @@ import { TUNINGS, degreeHz } from './tunings.js';
 import { SONGS } from './songs.js';
 import { songForLevel } from './song-variations.js';
 import { samples } from './samples.js';
+import { RhythmClock } from './rhythm.js';
+import { DRUM_VOICES } from './drum-voices.js';
 
 export const MUSIC_STORAGE_KEY = 'drawing-the-hours-music';
 const LOOKAHEAD = 0.25;   // seconds of notes scheduled ahead of the audio clock
@@ -108,6 +110,8 @@ class Music {
     this.leadNote = 0;     // sounded lead notes; omissions do not advance the timbre cycle
     this.nextTime = 0;     // audio-clock time of that eighth note
     this.voiceCount = 0;   // notes started, for checks
+    this.rhythm = null;
+    this.rhythmBus = null;
     this.samplesEnabled = true; // false keeps the original voices for comparison
   }
 
@@ -139,6 +143,7 @@ class Music {
       this.nextStep += 1;
       this.nextTime += stepSeconds;
     }
+    this.rhythm?.tick(ctx.currentTime, slow ? SLOW_TEMPO : 1, pitch);
   }
 
   start(hour, song = SONGS[hour]) {
@@ -194,6 +199,14 @@ class Music {
     this.nextStep = 0;
     this.leadNote = 0;
     this.nextTime = ctx.currentTime + 0.1;
+    if (song.rhythm) {
+      const high = ctx.createBiquadFilter(), low = ctx.createBiquadFilter();
+      high.type = 'highpass'; high.frequency.value = 65; high.Q.value = .5;
+      low.type = 'lowpass'; low.frequency.value = hour === 'midnight' ? 1800 : 3400; low.Q.value = .5;
+      high.connect(low); low.connect(this.bus);
+      this.rhythmBus = high; this.room.push(high, low);
+      this.rhythm = new RhythmClock(song.rhythm, this.nextTime, event => this.rhythmHit(event));
+    }
   }
 
   stop() {
@@ -209,6 +222,7 @@ class Music {
         for (const node of room) { try { node.disconnect(); } catch {} }
       }, 1500);
     }
+    this.rhythm = null; this.rhythmBus = null;
     this.bus = null; this.room = []; this.drones = []; this.hour = null; this.song = null;
   }
 
@@ -240,9 +254,35 @@ class Music {
         this.note(VOICES[name], degreeHz(tuning, song.root, degree) * pitch, time + 0.01 + rand() * 0.015, layer.level);
       }
     }
-    for (const [at, kind, chance = 1] of song.perc || []) {
+    for (const [at, kind, chance = 1] of (song.rhythm ? [] : song.perc || [])) {
       if (at === step && rand() < chance) this.hit(PERCUSSION[kind], time + rand() * 0.008, pitch, (song.percLevel ?? 1) * (0.8 + rand() * 0.3));
     }
+  }
+
+  /** The lab's kit gains sit below the melody, through the same fade and mute bus. */
+  rhythmHit(event) {
+    const meta = DRUM_VOICES[`${event.kit}:${event.voice}`];
+    if (!meta || !this.rhythmBus) return;
+    // Preserve the lab's .25 master level across the different hour bus gains.
+    const level = event.velocity * meta.gain * .25 / (BUS_GAIN * this.song.gain);
+    const buffer = this.samplesEnabled && samples.drums.get(`${event.kit}:${event.voice}`);
+    if (!buffer) {
+      this.hit(PERCUSSION[meta.fallback], event.time, event.pitch, level, this.rhythmBus);
+      return;
+    }
+    const ctx = audio.ctx, source = ctx.createBufferSource(), gain = ctx.createGain();
+    source.buffer = buffer;
+    source.playbackRate.value = event.pitch * 2 ** (event.detune / 1200);
+    gain.gain.setValueAtTime(level, event.time);
+    source.connect(gain);
+    let pan;
+    if (ctx.createStereoPanner) {
+      pan = ctx.createStereoPanner(); pan.pan.value = Math.max(-1, Math.min(1, meta.pan + event.pan));
+      gain.connect(pan); pan.connect(this.rhythmBus);
+    } else gain.connect(this.rhythmBus);
+    source.onended = () => { for (const node of [source, gain, pan]) { try { node?.disconnect(); } catch {} } };
+    source.start(event.time);
+    this.voiceCount++;
   }
 
   note(voice, hz, time, level) {
@@ -467,11 +507,11 @@ class Music {
   }
 
   /** One percussion hit from PERCUSSION, at `time`, scaled by `velocity`. */
-  hit(drum, time, pitch, velocity) {
+  hit(drum, time, pitch, velocity, bus = this.bus) {
     if (drum.kind === 'tom') { this.tom(drum, time, pitch, velocity); return; }
     const ctx = audio.ctx;
     const gain = ctx.createGain();
-    gain.connect(this.bus);
+    gain.connect(bus);
     const level = drum.level * velocity;
     let end = time + 0.1;
     if (drum.kind === 'noise' || drum.kind === 'knock') {

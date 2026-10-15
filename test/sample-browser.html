@@ -14,6 +14,7 @@ async function render(hour,synth=false,score=SONGS[hour],slow=false){
   const ctx=new OfflineAudioContext(1,Math.ceil((score.steps*seconds*2+5)*rate),rate);
   audio.ctx=ctx;music.samplesEnabled=!synth;music.start(hour,score);
   for(let i=0;i<score.steps*2;i++)music.playStep(score,i,.1+i*seconds,pitch);
+  music.rhythm?.tick(0,slow ? .55 : 1,pitch,score.steps*seconds*2);
   return (await ctx.startRendering()).getChannelData(0);
 }
 async function solo(profile,hz){
@@ -27,6 +28,7 @@ document.querySelector('#run').onclick=async()=>{
     await samples.load(new OfflineAudioContext(1,rate,rate));
     const count=[...samples.ready.values()].reduce((n,records)=>n+records.length,0);
     if(count!==17)throw Error('Expected 17 decoded recordings, got '+count);
+    if(samples.drums.size!==19)throw Error('Expected 19 decoded drum samples, got '+samples.drums.size);
     const rows=[];
     for(const hour of ['dawn','noon','dusk','midnight','title']){
       const sampled=stats(await render(hour)),fallback=stats(await render(hour,true));
@@ -60,7 +62,7 @@ document.querySelector('#run').onclick=async()=>{
     if(after.peakDb>before.peakDb-8)throw Error('High reed was not sufficiently reduced');
     const dawnBefore=await solo({...VOICES.dampedString.sample,level:.482},523.1),dawnAfter=await solo(VOICES.dampedString.sample,523.1);
     if(dawnAfter.rmsDb>dawnBefore.rmsDb-4.8)throw Error('Dawn pluck was not reduced');
-    result.textContent='PASS '+(KIOSK?'SOMEWAREZ':'main')+'; '+count+' recordings decoded\n'+JSON.stringify({rows,stages,slowMidnight,duskAttack:{firstPeak,latePeak},highReed:{before,after},dawnReductionDb:dawnAfter.rmsDb-dawnBefore.rmsDb},null,2);
+    result.textContent='PASS '+(KIOSK?'SOMEWAREZ':'main')+'; '+count+' recordings decoded\n'+JSON.stringify({drumSamples:samples.drums.size,rows,stages,slowMidnight,duskAttack:{firstPeak,latePeak},highReed:{before,after},dawnReductionDb:dawnAfter.rmsDb-dawnBefore.rmsDb},null,2);
   }catch(error){result.textContent='FAIL '+error.stack;}
   finally{music.samplesEnabled=true;document.querySelector('#run').disabled=false;}
 };

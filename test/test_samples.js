@@ -25,4 +25,11 @@ const absent = new SampleBank(async () => ({ ok: false })); await absent.load(ct
 assert.equal(absent.ready.size, 0, 'a missing local bank is valid');
 const corrupt = new SampleBank(async url => url.pathname.endsWith('bank.json') ? { ok: true, json: async () => ({ version: 1, voices: { reed: [{ file: 'bad.mp3', hz: 440 }] } }) } : { ok: true, arrayBuffer: async () => null });
 await corrupt.load(ctx); assert.equal(corrupt.ready.size, 0, 'decode failures keep synthesis available');
+const mixed = new SampleBank(async url => url.pathname.endsWith('bank.json')
+  ? {ok:true,json:async()=>({version:1,voices:{reed:[{file:'reed.mp3',hz:440}]},drums:{good:{file:'wood.mp3'},missing:{file:'missing.mp3'},invalid:{file:'../escape.mp3'},corrupt:{file:'corrupt.mp3'}}})}
+  : {ok:!url.pathname.endsWith('missing.mp3'),arrayBuffer:async()=>url.pathname.endsWith('corrupt.mp3')?null:new ArrayBuffer(8)});
+await mixed.load(ctx);
+assert.equal(mixed.ready.size,1,'drum failures do not affect melody voices');
+assert.deepEqual([...mixed.drums.keys()],['good'],'bad or missing drum assets stay available for synth fallback');
+assert.equal(absent.drums.size,0);
 console.log('Samples: missing/partial/corrupt banks fall back; available notes retain pitch, envelope, and level.');

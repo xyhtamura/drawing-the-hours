@@ -15,6 +15,12 @@
 
 All seventeen local filenames are project-specific. They are mono 24 kHz MP3 encodings of the audition recordings, without original file metadata. `bank.json` holds only their names and measured source pitches. The private per-file source paths and processing record are retained in `.browser-check/soundtrack-audition/preparation/runtime-bank-provenance.json`, its `title-dusk-provenance.json` update, and `SAMPLE-CANDIDATES.local.md`; neither is versioned. Renaming is organization, not a licence change. A published sampled soundtrack needs musical recordings or independently cleared assets rather than this standalone audition bank.
 
+## Local found-object percussion
+
+2026-10-16 — Codex — Nineteen `rhythm-*` recordings in the same ignored bank are copied from the local `dthdrums/assets/samples/` audition set. That lab's `kits.json` identifies 8DIO Mini Click Core as the source: pocket watch, pencil, paper, matches, fingernails, counting rack, marbles, cups, bowl, bubbles, buttons and clicky toy. The project encodes these as mono 24 kHz MP3s, strips file metadata, trims leading silence, fades the final 5 ms, limits gain boosts to 6 dB and peaks to 0.7. The kit's relative gain/pan settings remain in `src/drum-voices.js`.
+
+`bank.json` stores these under `drums` without pitched-note metadata. There are seventeen melodic and nineteen percussion recordings. Exact source paths, source hashes and conditioning factors are retained in the ignored `.browser-check/soundtrack-audition/preparation/drum-provenance.json`. No standalone sample redistribution clearance was established; these recordings remain local and are excluded from the default export. Missing drum recordings use the existing synthesized percussion on the same rhythms.
+
 ## Handwritten title
 
 Xyh supplied `handwritten/drawinghand01.png`, `drawinghand02.png`, and

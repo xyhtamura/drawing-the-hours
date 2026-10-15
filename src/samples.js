@@ -3,6 +3,7 @@ export class SampleBank {
   constructor(fetcher = (...args) => fetch(...args)) {
     this.fetcher = fetcher;
     this.ready = new Map();
+    this.drums = new Map();
     this.loading = null;
     this.url = new URL('../assets/audio-local/bank.json', import.meta.url);
   }
@@ -15,19 +16,27 @@ export class SampleBank {
       if (!response.ok) return;
       const bank = await response.json();
       if (bank.version !== 1 || !bank.voices) return;
-      await Promise.allSettled(Object.entries(bank.voices).map(async ([name, records]) => {
+      const decode = async record => {
+        if (!/^[a-z0-9-]+\.mp3$/.test(record?.file)) return null;
+        try {
+          const response = await this.fetcher(new URL(record.file, this.url));
+          return response.ok ? await ctx.decodeAudioData(await response.arrayBuffer()) : null;
+        } catch { return null; }
+      };
+      const voices = Object.entries(bank.voices).map(async ([name, records]) => {
         const loaded = await Promise.all(records.map(async record => {
-          if (!/^[a-z0-9-]+\.mp3$/.test(record.file) || !(record.hz > 20)) return null;
-          try {
-            const response = await this.fetcher(new URL(record.file, this.url));
-            if (!response.ok) return null;
-            const buffer = await ctx.decodeAudioData(await response.arrayBuffer());
-            return { hz: record.hz, buffer };
-          } catch { return null; }
+          if (!(record.hz > 20)) return null;
+          const buffer = await decode(record);
+          return buffer ? { hz: record.hz, buffer } : null;
         }));
         const available = loaded.filter(Boolean);
         if (available.length) this.ready.set(name, available);
-      }));
+      });
+      const drums = Object.entries(bank.drums || {}).map(async ([name, record]) => {
+        const buffer = await decode(record);
+        if (buffer) this.drums.set(name, buffer);
+      });
+      await Promise.allSettled([...voices, ...drums]);
     })().catch(() => {});
     return this.loading;
   }

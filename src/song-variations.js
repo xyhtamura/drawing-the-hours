@@ -139,9 +139,19 @@ const VARIATIONS = {
   ],
 };
 
+// Selected visits get the lab's independent rhythm; all others keep their old percussion.
+const RHYTHMS = {
+  dawn: { 2: { pattern: 'studyDesk58', gain: .7, seed: 12 }, 5: { pattern: 'studyDesk58', gain: .7, seed: 15 } },
+  noon: { 2: { pattern: 'abacusMarble78', gain: .8, seed: 22 }, 4: { pattern: 'abacusMarble78', gain: .7, seed: 24 }, 6: { pattern: 'abacusMarble78', gain: .8, seed: 26 } },
+  dusk: { 3: { pattern: 'duskDroplets1116', gain: .8, tempo: .5, seed: 33 }, 5: { pattern: 'duskDroplets1116', gain: .7, tempo: .5, seed: 35 } },
+  midnight: { 5: { pattern: 'aleatoricFidgets', gain: .3, seed: 45, delay: 14,
+    minInterval: 24, maxInterval: 38, burstCount: [1, 2], burstSpan: [.6, 1.4],
+    voices: ['pencil_wood', 'paper_snip', 'match_slide'] } },
+};
+
 // Cache score objects: checking the current stage each frame must not restart it.
 export const STAGE_SONGS = Object.fromEntries(Object.entries(VARIATIONS).map(([hour, variants]) => [
-  hour, [SONGS[hour], ...variants.map(variation => ({ ...SONGS[hour], ...variation }))],
+  hour, [SONGS[hour], ...variants.map((variation, index) => ({ ...SONGS[hour], ...variation, rhythm: RHYTHMS[hour]?.[index + 2] }))],
 ]));
 
 /** Authored stage IDs stay stable in both builds; practice copies use practiceOf.

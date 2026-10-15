@@ -350,5 +350,35 @@ const run = seconds => { for (let t = 0; t < seconds; t += 1 / 60) { ctx.current
   console.log('✔ Every Midnight visit keeps three/four calm swells, two quiet answers at most, and the sounded-note cycle.');
 }
 
+
+// 11. The independent rhythm shares the music lifecycle and replaces the old beat.
+{
+  const score = STAGE_SONGS.dawn[1];
+  game.currentLevel = {hour:'dawn',id:'dawn-02'};
+  const oldNote = music.note, oldHit = music.hit;
+  try {
+    const notes=[],hits=[];
+    music.note=(voice,hz,time,level)=>notes.push([voice,hz,time,level]);
+    music.hit=(...args)=>hits.push(args);
+    music.hour='dawn';music.leadNote=0;
+    for(let i=0;i<32;i++)music.playStep(score,i,i*.4,1);
+    assert.equal(hits.length,0,'the old beat is not stacked under the new rhythm');
+    const melody=notes.slice();notes.length=0;music.leadNote=0;
+    for(let i=0;i<32;i++)music.playStep({...score,rhythm:undefined},i,i*.4,1);
+    assert.deepEqual(notes,melody,'all pitched notes stay unchanged');
+    assert.ok(hits.length>0,'the original beat remains for stages without the new rhythm');
+  } finally {music.note=oldNote;music.hit=oldHit;music.hour=null;}
+  run(4);assert.ok(music.rhythm.step>0,'the game frame advances the independent clock');
+  game.state='PAUSED';run(.1);assert.equal(music.rhythm,null);
+  game.state='PLAYING';run(.2);assert.ok(music.rhythm);
+  game.uiSuspended=true;run(.1);assert.equal(music.rhythm,null);
+  game.uiSuspended=false;run(.2);audio.isMuted=true;run(.1);assert.equal(music.rhythm,null);
+  audio.isMuted=false;run(.2);music.setEnabled(false);assert.equal(music.rhythm,null);
+  music.setEnabled(true);run(.2);game.musicIdle=true;run(.1);assert.equal(music.rhythm,null,'attract mode remains silent');
+  game.musicIdle=false;run(.2);globalThis.document={hidden:true};run(.1);assert.equal(music.rhythm,null,'hidden pages stop drums');
+  delete globalThis.document;music.stop();
+  console.log('✔ Odd-meter rhythms replace selected beats and obey Pause, menu, Sound, Music, attract mode and visibility.');
+}
+
 console.log('--- All music tests passed! ---');
 process.exit(0); // the stop() timers would otherwise hold the process open
