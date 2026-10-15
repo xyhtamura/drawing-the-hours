@@ -8,6 +8,7 @@
 //   bell    the melody, on the song's `voice`
 //   bass    low plucks
 //   layers  more melodic parts, each { voice, level, skip, notes: [[step, degree], ...] };
+//           `voice` may be a list, and each note then picks one of them;
 //           with `passChance`, the whole layer sounds on that share of passes and never the first
 //   perc    percussion, [step, kind, chance]: kind from PERCUSSION in src/music.js,
 //           chance (default 1) that the hit sounds on a given pass; percLevel scales them all
@@ -104,6 +105,11 @@ export const SONGS = {
     bell: [[0, 13], [4, 16], [8, 19], [14, 17], [16, 13], [22, 10], [26, 12], [28, 13]],
     bass: [[0, 0], [16, -3]],
     drone: [0, 6],
+    // The reeds, back: a line between the pad's notes from each bar's chord, each
+    // note either struck as before or swelled in.
+    layers: [
+      { voice: ['reed', 'reedSlow'], level: 0.3, skip: 0.3, notes: [[2, 19], [10, 23], [18, 16], [24, 20], [30, 16]] },
+    ],
     perc: [],
     chords: [[0, 6, 10], [0, 6, 10], [-3, 3, 7], [-3, 3, 7]],
   },

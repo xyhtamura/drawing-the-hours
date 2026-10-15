@@ -14,6 +14,16 @@ Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet be
 
 ## Activity
 
+2026-10-15 — Claude Code — Brought the reeds back to the Midnight song beside the pad, on Xyh's direction: sometimes struck as before, sometimes swelled in.
+
+- A reed layer of five notes per loop sits between the pad's notes, each from its bar's chord in Bohlen-Pierce (degrees 16 to 23, about 675 to 1,220 Hz), left out 30% of the time after the first pass.
+- Layers may now name several voices; each note picks one. The reed layer picks between `reed` (the first Midnight voice: odd partials, instant attack, a 2.4 s fall) and the new `reedSlow` (the same partials swelling in over 0.6 s, holding 0.3 s, fading over 1.8 s, 3 cents of detune, brighter cutoff than the pad).
+
+Verification: a 64 s offline render in the page: all parts peak -20.6 dBFS, RMS -35.5 dB; without the reeds -21.6, -35.7; the reeds alone -27.2, -40.1, about 4.5 dB under the song. On the fake clock Midnight now plays 0.73 notes a second with at most 16 oscillators sounding. `test/test_music.js` checks every named voice exists; all fourteen suites pass.
+
+Not done: nobody has heard it. Which reed a note gets is random per note, so there is no control over the mix of struck and swelled; a weighted list (`['reed', 'reedSlow', 'reedSlow']`) would favour one.
+
+
 2026-10-15 — Claude Code — Gave the Dusk song quiet percussion and a deep bowed bass that comes and goes, on Xyh's direction.
 
 - **Percussion**: a soft thump at the top of the loop (70% of passes), a knock answering it at step 20 (60%), the two old ticks, and a shaker at steps 6 and 24 (35% each); `percLevel` 0.8.

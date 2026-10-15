@@ -95,7 +95,9 @@ console.log('--- Running music tests ---');
     for (const layer of song.layers || []) {
       for (const [, degree] of layer.notes) {
         const hz = degreeHz(tuning, song.root, degree);
-        const [low, high] = VOICES[layer.voice].kind === 'bow' ? [40, 260] : [250, 1500];
+        const voices = [layer.voice].flat();
+        for (const name of voices) assert.ok(VOICES[name], `${hour}: voice ${name} exists`);
+        const [low, high] = voices.every(name => VOICES[name].kind === 'bow') ? [40, 260] : [250, 1500];
         assert.ok(hz > low && hz < high, `${hour} ${layer.voice} degree ${degree} is ${hz.toFixed(1)} Hz`);
       }
     }

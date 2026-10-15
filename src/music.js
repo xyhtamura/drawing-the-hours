@@ -55,7 +55,9 @@ export const VOICES = {
   // harmonics only, which Bohlen-Pierce is built on), the third partial faint.
   // attack, hold, release in seconds; spread in cents either side; cutoff in Hz.
   pad: { kind: 'pad', type: 'triangle', partials: [[1, 1], [3, 0.08]], attack: 1.1, hold: 0.8, release: 2.6, spread: 6, cutoff: 1300 },
-  // Odd harmonics only, from the triangle wave. Kept from Midnight's first draft; unused.
+  // The reed swelled in: the same odd partials, a slower attack, a little detune.
+  reedSlow: { kind: 'pad', type: 'triangle', partials: [[1, 1], [3, 0.12]], attack: 0.6, hold: 0.3, release: 1.8, spread: 3, cutoff: 2600 },
+  // Odd harmonics only, from the triangle wave. Midnight's first melody voice, now its reed layer.
   reed: { type: 'triangle', partials: [[1, 1, 2.4], [3, 0.12, 0.8]] },
   pluck: { type: 'sine', partials: [[1, 1, 0.7], [2, 0.2, 0.2]] },
   gong: { type: 'sine', partials: [[1, 1, 5], [1.48, 0.35, 3.5], [2.13, 0.15, 1.5]] },
@@ -213,7 +215,9 @@ class Music {
       if (layer.passChance !== undefined && (pass === 0 || seeded(pass * 104729 + 3)() >= layer.passChance)) continue;
       for (const [at, degree] of layer.notes) {
         if (at !== step || (pass > 0 && rand() < layer.skip)) continue;
-        this.note(VOICES[layer.voice], degreeHz(tuning, song.root, degree) * pitch, time + 0.01 + rand() * 0.015, layer.level);
+        // A layer may name several voices; each note picks one.
+        const name = Array.isArray(layer.voice) ? layer.voice[Math.floor(rand() * layer.voice.length)] : layer.voice;
+        this.note(VOICES[name], degreeHz(tuning, song.root, degree) * pitch, time + 0.01 + rand() * 0.015, layer.level);
       }
     }
     for (const [at, kind, chance = 1] of song.perc || []) {
