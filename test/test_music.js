@@ -47,7 +47,7 @@ function fakeContext() {
 }
 
 const { audio } = await import('../src/audio.js');
-const { music } = await import('../src/music.js');
+const { music, PERCUSSION } = await import('../src/music.js');
 const { SONGS } = await import('../src/songs.js');
 const { TUNINGS, degreeHz } = await import('../src/tunings.js');
 
@@ -92,7 +92,15 @@ console.log('--- Running music tests ---');
       const hz = degreeHz(tuning, song.root, degree) / 2;
       assert.ok(hz > 50 && hz < 260, `${hour} bass degree ${degree} is ${hz.toFixed(1)} Hz`);
     }
-    for (const [step] of [...song.bell, ...song.bass, ...song.tick]) assert.ok(step >= 0 && step < song.steps);
+    for (const layer of song.layers || []) {
+      for (const [, degree] of layer.notes) {
+        const hz = degreeHz(tuning, song.root, degree);
+        assert.ok(hz > 250 && hz < 1500, `${hour} ${layer.voice} degree ${degree} is ${hz.toFixed(1)} Hz`);
+      }
+    }
+    for (const [, kind] of song.perc) assert.ok(PERCUSSION[kind], `${hour}: percussion kind ${kind} exists`);
+    const layerSteps = (song.layers || []).flatMap(layer => layer.notes);
+    for (const [step] of [...song.bell, ...song.bass, ...song.perc, ...layerSteps]) assert.ok(step >= 0 && step < song.steps);
     assert.equal(song.chords.length * 8, song.steps, `${hour}: one chord per bar of eight`);
   }
   console.log('✔ Every note lands between 50 Hz and 1.5 kHz.');

@@ -14,6 +14,18 @@ Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet be
 
 ## Activity
 
+2026-10-15 — Claude Code — Added quiet percussion to the Dawn and Noon songs and brought the music box back to Dawn, damped, on Xyh's direction.
+
+- **Percussion** (`PERCUSSION` in `src/music.js`): four short sounds built from oscillators and the one shared noise burst. `thump` is a sine falling from 95 to 48 Hz; `knock` a short 1,150 Hz sine with a click of filtered noise, like a small woodblock; `shaker` noise through a high-pass at 6.5 kHz; `tick` the old band-passed click. Songs list hits as `perc: [[step, kind, chance]]`, where chance is how often the hit sounds on a pass, and `percLevel` scales a song's hits. The old `tick` part is gone; Dusk keeps its two ticks as `perc`.
+- **Dawn**: a thump on the bar (the second one 80% of the time), a knock late in each half, shakers on the off-beats half the time; `percLevel` 0.55, because Dawn's song gain is raised for its short notes.
+- **Noon**: a turned-down toy drum machine: thump on each bar, knock on the backbeat, ticks on the off-beats, shakers in the gaps, some of them only some of the time.
+- **Music box, damped** (`musicBoxDamped`): the music box with shorter decays and its high partials nearly gone, an octave above the string, six chord tones per loop answering it, each left out 30% of the time after the first pass. Songs can now carry extra melodic `layers`, each with its own voice, level, and skip.
+
+Verification: offline renders of 32 s in the page. Dawn, all parts: peak -10.3 dBFS, RMS -37.2 dB; its percussion alone: peak -18.8, RMS -48.5, about 11 dB under the song; its music box alone: peak -21.6, RMS -44.3. Noon, all parts: peak -14.0, RMS -37.4; percussion alone: peak -19.3, RMS -46.0, about 8 dB under. `test/test_music.js` now checks that every percussion kind exists and that layer notes land in range; all fourteen suites pass.
+
+Not done: nobody has heard it. The pattern of each kit is in `src/songs.js`; the sound of each drum is one line in `PERCUSSION`.
+
+
 2026-10-15 — Claude Code — Gave Midnight a slow pad and gave Dawn's damped string some body, on Xyh's direction. The reed voice is kept in `VOICES`, unused.
 
 - **Midnight pad** (`pad` in `src/music.js`): each note is a detuned pair (6 cents either side) of triangle waves at the fundamental with a faint third partial, under a 1.3 kHz low-pass, swelling in over 1.1 s, holding 0.8 s, and fading over 2.6 s. Odd harmonics only, as Bohlen-Pierce wants. The song's notes and drone are unchanged.

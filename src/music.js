@@ -42,6 +42,8 @@ export const VOICES = {
     kind: 'string', decay: [0.35, 0.75], dead: 0.12, brightness: [0.25, 0.5], detune: 7,
     octave: { level: 0.45, decay: 1.3 }, body: { hz: 210, q: 3, mix: 0.6 },
   },
+  // The music box with its tines damped: shorter, and the high partials nearly gone.
+  musicBoxDamped: { type: 'sine', partials: [[1, 1, 0.55], [2.01, 0.14, 0.25], [5.4, 0.025, 0.06]] },
   // Kept from the first Dawn draft; no song uses it now.
   musicBox: { type: 'sine', partials: [[1, 1, 1.6], [2.01, 0.25, 0.7], [5.4, 0.08, 0.18]] },
   toyPiano: { type: 'sine', partials: [[1, 1, 0.9], [3.02, 0.18, 0.25], [6.8, 0.06, 0.08]] },
@@ -54,6 +56,19 @@ export const VOICES = {
   reed: { type: 'triangle', partials: [[1, 1, 2.4], [3, 0.12, 0.8]] },
   pluck: { type: 'sine', partials: [[1, 1, 0.7], [2, 0.2, 0.2]] },
   gong: { type: 'sine', partials: [[1, 1, 5], [1.48, 0.35, 3.5], [2.13, 0.15, 1.5]] },
+};
+
+// Quiet percussion, all short. Each is built from oscillators or the one shared
+// noise burst, so a hit costs two or three nodes for a fraction of a second.
+//   thump   a soft low drum: a sine falling from `from` to `to` Hz
+//   knock   a small woodblock: a short sine with a click of filtered noise
+//   shaker  noise through a high-pass, very short
+//   tick    noise through a narrow band-pass
+export const PERCUSSION = {
+  thump: { kind: 'drop', from: 95, to: 48, decay: 0.22, level: 0.9 },
+  knock: { kind: 'knock', hz: 1150, decay: 0.05, noise: 0.25, level: 0.35 },
+  shaker: { kind: 'noise', filter: 'highpass', hz: 6500, q: 0.7, rate: 1.3, level: 0.22 },
+  tick: { kind: 'noise', filter: 'bandpass', hz: 3200, q: 4, rate: 1, level: 0.22 },
 };
 
 function seeded(seed) {
@@ -190,8 +205,14 @@ class Music {
     for (const [at, degree] of song.gong || []) {
       if (at === step && pass % 2 === 0) this.note(VOICES.gong, degreeHz(tuning, song.root, degree) / 2 * pitch, time, 0.35);
     }
-    for (const [at] of song.tick) {
-      if (at === step) this.tick(time, 0.18 + rand() * 0.08);
+    for (const layer of song.layers || []) {
+      for (const [at, degree] of layer.notes) {
+        if (at !== step || (pass > 0 && rand() < layer.skip)) continue;
+        this.note(VOICES[layer.voice], degreeHz(tuning, song.root, degree) * pitch, time + 0.01 + rand() * 0.015, layer.level);
+      }
+    }
+    for (const [at, kind, chance = 1] of song.perc || []) {
+      if (at === step && rand() < chance) this.hit(PERCUSSION[kind], time + rand() * 0.008, pitch, (song.percLevel ?? 1) * (0.8 + rand() * 0.3));
     }
   }
 
@@ -313,17 +334,45 @@ class Music {
     this.voiceCount += 1;
   }
 
-  tick(time, level) {
+  /** One percussion hit from PERCUSSION, at `time`, scaled by `velocity`. */
+  hit(drum, time, pitch, velocity) {
     const ctx = audio.ctx;
-    const source = ctx.createBufferSource();
-    const band = ctx.createBiquadFilter();
     const gain = ctx.createGain();
-    source.buffer = this.noise;
-    band.type = 'bandpass'; band.frequency.value = 3200; band.Q.value = 4;
-    gain.gain.value = level;
-    source.connect(band); band.connect(gain); gain.connect(this.bus);
-    source.start(time);
-    source.onended = () => { try { gain.disconnect(); } catch {} };
+    gain.connect(this.bus);
+    const level = drum.level * velocity;
+    let end = time + 0.1;
+    if (drum.kind === 'noise' || drum.kind === 'knock') {
+      const source = ctx.createBufferSource();
+      const filter = ctx.createBiquadFilter();
+      source.buffer = this.noise;
+      source.playbackRate.value = drum.rate ?? 1;
+      filter.type = drum.filter ?? 'bandpass';
+      filter.frequency.value = drum.kind === 'knock' ? drum.hz * 2 : drum.hz;
+      filter.Q.value = drum.q ?? 2;
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.value = drum.kind === 'knock' ? level * drum.noise : level;
+      source.connect(filter); filter.connect(noiseGain); noiseGain.connect(gain);
+      source.start(time);
+    }
+    if (drum.kind === 'knock' || drum.kind === 'drop') {
+      const osc = ctx.createOscillator();
+      const env = ctx.createGain();
+      osc.type = 'sine';
+      if (drum.kind === 'drop') {
+        osc.frequency.setValueAtTime(drum.from * pitch, time);
+        osc.frequency.exponentialRampToValueAtTime(drum.to * pitch, time + drum.decay * 0.6);
+      } else {
+        osc.frequency.value = drum.hz * pitch;
+      }
+      env.gain.setValueAtTime(0.0001, time);
+      env.gain.linearRampToValueAtTime(level, time + 0.004);
+      env.gain.exponentialRampToValueAtTime(0.0001, time + drum.decay);
+      osc.connect(env); env.connect(gain);
+      osc.start(time);
+      osc.stop(time + drum.decay + 0.03);
+      end = time + drum.decay + 0.03;
+    }
+    setTimeout(() => { try { gain.disconnect(); } catch {} }, (end - ctx.currentTime) * 1000 + 250);
   }
 
   /**
