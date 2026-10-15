@@ -159,6 +159,13 @@ def main():
     today = date.today().isoformat()
     note = ' with uncommitted changes' if dirty else ''
     files['README.txt'] = README.format(today=today, commit=commit, dirty=note).encode('utf-8')
+    if args.include_local_audio:
+        files['README.txt'] += (
+            '\nLOCAL AUDIO AUDITION\n'
+            'This copy includes the local recorded-instrument audition bank. '
+            'Standalone sample redistribution is not cleared. Keep this copy local; '
+            'the default export excludes the bank and uses synthesized instruments.\n'
+        ).encode('utf-8')
     inventory = '\n'.join(f'{hashlib.sha256(data).hexdigest()}  {rel}' for rel, data in sorted(files.items()))
     files['BUILD.txt'] = (
         f'Drawing the Hours, SOMEWAREZ kiosk build\nsource commit: {commit}{note}\nexported: {today}\n'

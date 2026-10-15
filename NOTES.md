@@ -2766,3 +2766,5 @@ Next is the existing touch playtest, now also tuning water strength and cue
 visibility alongside shoal separation, beetle pacing, and bubble strength.
 ROADMAP.md and the chapter README agree. Sound balance and meadow pacing remain
 pending.
+
+2026-10-15 — Codex — Rebuilt both offline packages from the local-audio integration. The default package contains no audition bank; the explicitly enabled local package contains all seventeen renamed recordings. BUILD file hashes and zip CRC checks passed; the local package's title, Begin, and menu opened over HTTP without warning/error logs. The local package README identifies the audio's local-only status.
