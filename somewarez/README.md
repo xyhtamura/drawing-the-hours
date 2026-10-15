@@ -70,7 +70,7 @@ drawing and `config.js` disagree.
 
 ## Offline copy
 
-The title has a **Play music** button to unlock browser audio before Begin. Its cue mixes the hours' instruments. The unattended attract loop remains silent, including its title and QR card. Main and SOMEWAREZ share the same sample loader and synth fallback.
+The title has a **Play music** button to unlock browser audio before Begin. Its sixteen-bar xylophone theme has an opening, varied answer, lower bridge and closing return, with quiet accents from the hour instruments. The unattended attract loop remains silent, including its title and QR card. Main and SOMEWAREZ share the same sample loader and synth fallback.
 
 The optional local audition bank in `assets/audio-local/` is gitignored and excluded from exports by default. For a local copy with that bank, use `python scripts/export_somewarez.py --include-local-audio`; the zip has a `-local-audio` suffix. This includes the local instrument recordings whose standalone redistribution is not cleared in [ASSETS.md](../ASSETS.md). The default export works with synthesized instruments and requires no bank.
 

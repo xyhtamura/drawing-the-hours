@@ -23,14 +23,54 @@
 
 export const SONGS = {
   title: {
-    title: 'Drawing the hours', root: 196, bpm: 88, steps: 32,
-    voice: 'xylophone', gain: 1.2, skip: 0.12,
-    // One wooden lead; the hours answer quietly in the gaps, in Dawn's tuning.
-    bell: [[0, 16], [3, 18], [6, 17], [8, 20], [11, 18], [14, 16], [18, 17], [21, 18], [24, 20], [28, 16]],
-    bass: [[0, 0], [16, 4]],
-    layers: [{ voice: ['dampedString', 'toyPiano', 'bonang', 'midnightBrass'], level: 0.08, skip: 0.55, notes: [[5, 12], [22, 10]] }],
-    percLevel: 0.35, perc: [[4, 'knock', 0.7], [20, 'knock', 0.5], [10, 'tick', 0.5], [26, 'tick', 0.5]],
-    chords: [[0, 2, 4], [0, 2, 4], [1, 4, 6], [0, 2, 4]],
+    title: 'Drawing the hours', root: 196, bpm: 88, steps: 128,
+    voice: 'xylophone', gain: 1.2, skip: 0,
+    // Sixteen bars: opening, varied answer, lower bridge, opening/cadence.
+    // Keep the hook intact on every pass; the hours color its rests.
+    bell: [
+      // A: two calls, the second reaching higher before turning back.
+      [0, 16], [2, 18], [3, 20], [6, 18],
+      [8, 17], [10, 18], [12, 16],
+      [16, 16], [18, 18], [19, 20], [22, 22],
+      [24, 21], [26, 20], [28, 18], [30, 17],
+      // A': the hook returns, then settles on the root.
+      [32, 16], [34, 18], [35, 20], [38, 18],
+      [40, 17], [42, 18], [44, 16],
+      [48, 18], [50, 20], [52, 21], [54, 20],
+      [56, 18], [58, 17], [60, 16],
+      // B: a lower, longer-breathed answer, climbing into the return.
+      [64, 12], [67, 14], [68, 16], [70, 17],
+      [72, 18], [74, 17], [76, 16],
+      [80, 14], [83, 16], [84, 18], [86, 20],
+      [88, 21], [90, 20], [92, 18], [94, 17],
+      // A return: recognizable opening, descending cadence, a bar to breathe.
+      [96, 16], [98, 18], [99, 20], [102, 18],
+      [104, 17], [106, 18], [108, 16],
+      [112, 18], [114, 20], [116, 18], [118, 17], [120, 16],
+    ],
+    bass: [
+      [0, 0], [4, 4], [8, 0], [16, 4], [20, 1], [24, 4],
+      [32, 0], [36, 4], [40, -2], [48, 4], [52, 1], [56, 0],
+      [64, -3], [68, 2], [72, -2], [80, 1], [84, 6], [88, 4],
+      [96, 0], [100, 4], [104, -2], [112, 4], [116, 1], [120, 0],
+    ],
+    layers: [
+      { voice: 'dampedString', level: 0.08, skip: 0, notes: [[14, 12], [46, 10], [110, 12]] },
+      { voice: 'toyPiano', level: 0.08, skip: 0, notes: [[5, 12], [37, 12], [101, 12]] },
+      { voice: 'bonang', level: 0.07, skip: 0, notes: [[29, 10], [61, 12]] },
+      { voice: 'midnightBrass', level: 0.06, skip: 0, notes: [[78, 10], [124, 8]] },
+    ],
+    percLevel: 0.35,
+    perc: [
+      [12, 'knock', 0.7], [44, 'knock', 0.7], [76, 'knock', 0.5], [108, 'knock', 0.7],
+      [20, 'tick', 0.5], [52, 'tick', 0.5], [84, 'tick', 0.4], [116, 'tick', 0.5],
+    ],
+    chords: [
+      [0, 2, 4], [0, 2, 4], [4, 6, 9], [4, 6, 9],
+      [0, 2, 4], [-2, 1, 4], [4, 6, 9], [0, 2, 4],
+      [-3, 0, 2], [-2, 1, 4], [1, 4, 6], [4, 6, 9],
+      [0, 2, 4], [-2, 1, 4], [4, 6, 9], [0, 2, 4],
+    ],
   },
   dawn: {
     title: 'Before the bus',

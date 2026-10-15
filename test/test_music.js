@@ -241,21 +241,40 @@ const run = seconds => { for (let t = 0; t < seconds; t += 1 / 60) { ctx.current
   const originalNote = music.note, originalHit = music.hit;
   try {
     const notes = [], song = SONGS.title;
-    music.note = (voice, hz, time, level) => notes.push({voice, time, level});
+    music.note = (voice, hz, time, level) => notes.push({voice, hz, time, level});
     music.hit = () => {};
     music.hour = 'title'; music.leadNote = 0;
     for (let index = 0; index < song.steps * 8; index++) music.playStep(song, index, index * 30 / song.bpm, 1);
-    const lead = notes.filter(n => n.level === .5), answers = notes.filter(n => n.level === .08);
-    assert.ok(lead.length > song.bell.length);
-    assert.ok(lead.every(n => n.voice === VOICES.xylophone), 'title lead stays xylophone across loops');
-    assert.ok(answers.length > 0 && answers.length < 16, 'only occasional hour flourishes');
-    assert.ok(answers.every(n => ['dampedString', 'toyPiano', 'bonang', 'midnightBrass'].some(name => VOICES[name] === n.voice)));
+    const lead = notes.filter(n => n.voice === VOICES.xylophone);
+    const answers = notes.filter(n => ![VOICES.xylophone, VOICES.pluck].includes(n.voice));
+    assert.equal(song.steps, 16 * 8, 'title has sixteen bars for call, answer, bridge and return');
+    assert.equal(song.chords.length, song.steps / 8, 'harmony covers the whole form');
+    assert.equal(lead.length, song.bell.length * 8, 'the theme is never randomly thinned');
+    for (let pass = 1; pass < 8; pass++) {
+      assert.deepEqual(lead.slice(pass * song.bell.length, (pass + 1) * song.bell.length).map(n => n.hz),
+        lead.slice(0, song.bell.length).map(n => n.hz), 'the complete melody recurs intact');
+    }
+    const phrase = (start, end) => song.bell.filter(([step]) => step >= start && step < end).map(([step, degree]) => [step - start, degree]);
+    assert.deepEqual(phrase(0, 16), phrase(32, 48), 'the answer recalls the hook');
+    assert.deepEqual(phrase(0, 16), phrase(96, 112), 'the closing section returns to the hook');
+    assert.notDeepEqual(phrase(0, 32), phrase(64, 96), 'the bridge is a contrasting phrase');
+    assert.ok(Math.min(...phrase(64, 96).map(n => n[1])) < Math.min(...phrase(0, 32).map(n => n[1])), 'the bridge opens the lower register');
+    assert.equal(song.bell.at(-1)[1] % TUNINGS.title.cents.length, 0, 'the melody resolves to the root');
+    assert.ok(song.steps - song.bell.at(-1)[0] >= 8, 'the cadence leaves a breath before restarting');
+    assert.ok(new Set(song.bass.map(n => n[1])).size >= 4, 'bass supports harmonic movement');
+    for (const [step, degree] of [...song.bell, ...song.bass, ...song.layers.flatMap(l => l.notes)]) {
+      assert.ok(Number.isInteger(step) && step >= 0 && step < song.steps);
+      assert.ok(Number.isFinite(degreeHz(TUNINGS.title, song.root, degree)));
+    }
+    assert.ok(lead.every(n => n.hz > 500 && n.hz < 1500), 'the wooden lead avoids an extreme register');
+    assert.equal(answers.length, 10 * 8, 'ten quiet hour accents per full theme');
+    assert.ok(answers.every(n => n.level <= .08 && ['dampedString', 'toyPiano', 'bonang', 'midnightBrass'].some(name => VOICES[name] === n.voice)));
     for (const n of answers) assert.ok(!lead.some(l => Math.abs(l.time-n.time)<.1), 'answers fit between lead attacks');
   } finally { music.note = originalNote; music.hit = originalHit; music.hour = null; }
   game.musicTitle = true; game.uiSuspended = true;
   run(1); assert.equal(music.hour, 'title');
   const count = music.voiceCount; run(12);
-  assert.ok(music.voiceCount - count >= 8, 'the title is livelier than the five-note sketch');
+  assert.ok(music.voiceCount - count >= 8, 'the theme begins promptly after the title gesture');
   assert.equal(TUNINGS.title, TUNINGS.dawn, 'the title colors share a tuning');
   game.musicIdle = true; run(0.1); assert.equal(music.hour, null, 'attract title is silent');
   game.musicIdle = false; run(0.1); assert.equal(music.hour, 'title');
