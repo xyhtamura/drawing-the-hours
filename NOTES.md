@@ -18,7 +18,9 @@ Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet be
 
 Verification: all fourteen `test/test_*.js` suites passed. `node test/test_music.js --somewarez` also passed; the regression compares eight loops with and without the cycle and finds identical pitches, event times, omissions, and percussion. The fake-clock peak remains 16 simultaneous oscillators. `test/music-browser.html`, run in the browser in main and SOMEWAREZ modes, rendered four loops at 24 kHz through real Web Audio: loop peaks -20.8, -20.5, -21.8, -20.5 dBFS; RMS -34.6, -35.7, -35.3, -34.6 dBFS. Relative to the same old-pad loops, the reed is -0.3 dB and the brass +0.5 dB. Both wind voices also render finite samples at the poppy's slowed pitch.
 
-Not done: the timbres have not been judged by ear or on the exhibition tablet. No samples or title music were added. The offline kiosk export needs regeneration after this commit; no site was pushed.
+The offline kiosk export was regenerated from commit `e6b040b`. Its `src/music.js` and `src/songs.js` match the source and zipped copies byte for byte; zip CRC checks pass. The exported page started a visit in the browser without warning or error logs.
+
+Not done: the timbres have not been judged by ear or on the exhibition tablet. No samples or title music were added, and no site was pushed.
 
 Audition candidates from the local `musicprod` index, not a scheduled implementation plan:
 
