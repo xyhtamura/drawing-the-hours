@@ -34,6 +34,7 @@
           <button id="btn-visit-card"><canvas class="menu-icon" width="72" height="72" data-creature="lacewing" aria-hidden="true"></canvas>Visit Card</button>
           <button id="btn-visit"><canvas class="menu-icon" width="72" height="72" data-creature="damselfly" aria-hidden="true"></canvas>Visits</button>
           <button id="btn-fieldbook"><canvas class="menu-icon" width="72" height="72" data-creature="hoverfly" aria-hidden="true"></canvas>Field Book</button>
+          <button id="btn-encyclopedia" hidden><canvas class="menu-icon" width="72" height="72" data-creature="hornet" aria-hidden="true"></canvas>Encyclopedia</button>
           <button id="btn-settings"><canvas class="menu-icon" width="72" height="72" data-creature="firefly" aria-hidden="true"></canvas>Settings</button>
           <button id="btn-restart"><canvas class="menu-icon" width="72" height="72" data-creature="hawkmoth" aria-hidden="true"></canvas>Restart visit</button>
         </nav>
@@ -297,6 +298,159 @@
     </div>
   </div>
 
+  <!-- Encyclopedia Modal (SOMEWAREZ Kiosk Edition) -->
+  <div id="encyclopedia-modal" class="recipe-modal" role="dialog" aria-modal="true" hidden inert>
+    <div class="recipe-card encyclopedia-card">
+      <button class="modal-close-btn close-btn" id="btn-close-encyclopedia-x" aria-label="Back to menu" title="Back to menu">✕</button>
+      <h2>Field Encyclopedia</h2>
+      <div class="field-intro">
+        Inhabitants and botanical wonders of the Philippine meadow in the SOMEWAREZ kiosk edition. Natural history, behavior, and field lore.
+      </div>
+
+      <div class="field-section-title" style="font-family:Georgia,serif; font-size:1.05rem; font-weight:600; margin:14px 0 10px; color:var(--text-dark);">
+        Meadow Inhabitants (Fauna)
+      </div>
+
+      <div class="recipe-entry encyclopedia-entry">
+        <img class="encyclopedia-thumb" src="assets/encyclopedia/lemon-emigrant.webp" alt="Lemon Emigrant" width="110" height="85" loading="lazy">
+        <div class="recipe-info">
+          <div class="encyclopedia-header">
+            <span class="entry-badge badge-fauna">Fauna</span>
+            <h3>Lemon Emigrant <span class="scientific-name">Catopsilia pomona · Pieridae · Paruparo</span></h3>
+          </div>
+          <p>Common across Philippine gardens and sunny forest edges, known locally as paruparo. Famous for large, coordinated migratory flights that follow seasonal monsoons. The caterpillars feed on cassia and golden shower trees (<em>Cassia fistula</em>). In the meadow, it wanders leisurely on gentle glides, folded sulphur wings catching the morning light.</p>
+        </div>
+      </div>
+
+      <div class="recipe-entry encyclopedia-entry">
+        <img class="encyclopedia-thumb" src="assets/encyclopedia/damselfly.webp" alt="Tutubing Karayom" width="110" height="85" loading="lazy">
+        <div class="recipe-info">
+          <div class="encyclopedia-header">
+            <span class="entry-badge badge-fauna">Fauna</span>
+            <h3>Tutubing Karayom <span class="scientific-name">Agriocnemis femina · Coenagrionidae · Tutubi</span></h3>
+          </div>
+          <p>One of the smallest damselflies in the world, thriving in rice fields, irrigation ditches, and garden ponds throughout the archipelago. Females display striking color polymorphism, shifting from young brick-orange to brilliant apple-green. In the field, it hovers motionless in mid-air before darting away in sudden straight dashes.</p>
+        </div>
+      </div>
+
+      <div class="recipe-entry encyclopedia-entry">
+        <img class="encyclopedia-thumb" src="assets/encyclopedia/oleander-hawkmoth.webp" alt="Oleander Hawkmoth" width="110" height="85" loading="lazy">
+        <div class="recipe-info">
+          <div class="encyclopedia-header">
+            <span class="entry-badge badge-fauna">Fauna</span>
+            <h3>Oleander Hawkmoth <span class="scientific-name">Daphnis nerii · Sphingidae · Gamugamo</span></h3>
+          </div>
+          <p>A large, aerodynamic sphinx moth patterned in geometric swathes of army green, rose-mauve, and cream. Highly capable nocturnal flyer that can hover while sipping nectar from deep blossoms with its long proboscis. In <em>Drawing the Hours</em>, its velvety body sweeps through wide, deliberate arcs across the lawn.</p>
+        </div>
+      </div>
+
+      <div class="recipe-entry encyclopedia-entry">
+        <img class="encyclopedia-thumb" src="assets/encyclopedia/hoverfly.webp" alt="Amber Bubuyog" width="110" height="85" loading="lazy">
+        <div class="recipe-info">
+          <div class="encyclopedia-header">
+            <span class="entry-badge badge-fauna">Fauna</span>
+            <h3>Amber Bubuyog <span class="scientific-name">Episyrphus balteatus · Syrphidae</span></h3>
+          </div>
+          <p>Though marked with yellow-and-black abdominal bands like a stinging wasp or honeybee, this hoverfly is completely harmless. It is an indispensable pollinator whose larvae eat aphids. In the meadow, it holds perfectly still on vibrating invisible wings, pivots in place, and shifts in crisp lateral steps.</p>
+        </div>
+      </div>
+
+      <div class="recipe-entry encyclopedia-entry">
+        <img class="encyclopedia-thumb" src="assets/encyclopedia/green-lacewing.webp" alt="Green Lacewing" width="110" height="85" loading="lazy">
+        <div class="recipe-info">
+          <div class="encyclopedia-header">
+            <span class="entry-badge badge-fauna">Fauna</span>
+            <h3>Green Lacewing <span class="scientific-name">Chrysopa perla · Chrysopidae</span></h3>
+          </div>
+          <p>Characterized by delicate jade-tinted veined wings and metallic copper-gold eyes, often called golden-eyes. Females lay eggs perched at the tips of hair-like silken stalks on leaf undersides. In the Dusk hour, it flutters softly between planters and rests on leaves for brief moments of quiet.</p>
+        </div>
+      </div>
+
+      <div class="recipe-entry encyclopedia-entry">
+        <img class="encyclopedia-thumb" src="assets/encyclopedia/firefly.webp" alt="Alitaptap" width="110" height="85" loading="lazy">
+        <div class="recipe-info">
+          <div class="encyclopedia-header">
+            <span class="entry-badge badge-fauna">Fauna</span>
+            <h3>Alitaptap <span class="scientific-name">Luciola cruciata · Lampyridae</span></h3>
+          </div>
+          <p>Famous in Philippine folklore and riverbanks, where entire mangrove trees blink in synchronous unison. Their bioluminescent glow is produced through cold enzymatic oxidation with almost zero heat loss. In the Midnight visits, its pale lantern stays faintly visible even between its gentle pulses.</p>
+        </div>
+      </div>
+
+      <div class="recipe-entry encyclopedia-entry">
+        <img class="encyclopedia-thumb" src="assets/encyclopedia/paper-wasp.webp" alt="Putakti" width="110" height="85" loading="lazy">
+        <div class="recipe-info">
+          <div class="encyclopedia-header">
+            <span class="entry-badge badge-hazard">Hazard</span>
+            <h3>Putakti <span class="scientific-name">Ropalidia marginata · Vespidae</span></h3>
+          </div>
+          <p>Social paper wasps native to the islands, renowned for crafting hexagonal umbrella-shaped nests from chewed plant fibers mixed with saliva. Vigilant guardians of their territory. In the atrium at Noon, it patrols on sharp wings, cutting any held cord that crosses its flight path.</p>
+        </div>
+      </div>
+
+      <div class="recipe-entry encyclopedia-entry">
+        <img class="encyclopedia-thumb" src="assets/encyclopedia/giant-snail.webp" alt="Giant African Snail" width="110" height="85" loading="lazy">
+        <div class="recipe-info">
+          <div class="encyclopedia-header">
+            <span class="entry-badge badge-hazard">Hazard</span>
+            <h3>Giant African Snail <span class="scientific-name">Lissachatina fulica · Achatinidae</span></h3>
+          </div>
+          <p>A large tropical land snail introduced throughout Southeast Asia, common in damp verges and garden edges. It moves at unhurried leisure on its muscular foot, leaving a fine track across stone pavers. Drawn cords cross it safely, but any loop that encloses one gathers nothing.</p>
+        </div>
+      </div>
+
+      <div class="field-section-title" style="font-family:Georgia,serif; font-size:1.05rem; font-weight:600; margin:18px 0 10px; color:var(--text-dark);">
+        Botanical Cast (Flora)
+      </div>
+
+      <div class="recipe-entry encyclopedia-entry">
+        <img class="encyclopedia-thumb" src="assets/encyclopedia/dama-de-noche.webp" alt="Dama de Noche" width="110" height="85" loading="lazy">
+        <div class="recipe-info">
+          <div class="encyclopedia-header">
+            <span class="entry-badge badge-flora">Flora</span>
+            <h3>Dama de Noche <span class="scientific-name">Cestrum nocturnum · Solanaceae</span></h3>
+          </div>
+          <p>Lady of the Night, famously documented in Blanco's 1837 <em>Flora de Filipinas</em>. Its greenish-white tubular blossoms remain unassuming by day, but release an intoxicatingly sweet fragrance after sunset to draw nocturnal moths. Threading a cord into the bloom invites a passing flyer to settle there in stillness.</p>
+        </div>
+      </div>
+
+      <div class="recipe-entry encyclopedia-entry">
+        <img class="encyclopedia-thumb" src="assets/encyclopedia/ylang-ylang.webp" alt="Ylang-Ylang" width="110" height="85" loading="lazy">
+        <div class="recipe-info">
+          <div class="encyclopedia-header">
+            <span class="entry-badge badge-flora">Flora</span>
+            <h3>Ylang-Ylang <span class="scientific-name">Cananga odorata · Annonaceae</span></h3>
+          </div>
+          <p>Indigenous to the Philippines (<em>ilang-ilang</em> meaning wilderness or rare), renowned for drooping star-shaped blossoms whose essential oils form the heart of fine perfumes. Its aroma has documented calming and sedative properties. Drawing cord over the blossom slows the rush of meadow visitors to half speed.</p>
+        </div>
+      </div>
+
+      <div class="recipe-entry encyclopedia-entry">
+        <img class="encyclopedia-thumb" src="assets/encyclopedia/abaca.webp" alt="Abaca Flower" width="110" height="85" loading="lazy">
+        <div class="recipe-info">
+          <div class="encyclopedia-header">
+            <span class="entry-badge badge-flora">Flora</span>
+            <h3>Abaca Flower <span class="scientific-name">Musa textilis · Musaceae</span></h3>
+          </div>
+          <p>A wild relative of the banana native to the Philippines, prized worldwide as Manila hemp for the incredible tensile strength and saltwater resilience of its fiber. Historically used for maritime cordage and fine woven sinamay. Gathering the blossom rewards you with 400 pixels of additional cord on your next stroke.</p>
+        </div>
+      </div>
+
+      <div class="recipe-entry encyclopedia-entry">
+        <img class="encyclopedia-thumb" src="assets/encyclopedia/cogon-grass.webp" alt="Cogon Plume" width="110" height="85" loading="lazy">
+        <div class="recipe-info">
+          <div class="encyclopedia-header">
+            <span class="entry-badge badge-flora">Flora</span>
+            <h3>Cogon Plume <span class="scientific-name">Imperata cylindrica · Poaceae</span></h3>
+          </div>
+          <p>A resilient perennial grass blanketing Philippine plains and open verges. During the dry season, its flowering spikes erupt into dense, silvery-white silky plumes. Detached by the wind, individual seed plumes drift lazily on rising air currents across the field like feathered parachutes.</p>
+        </div>
+      </div>
+
+      <button id="btn-close-encyclopedia" class="close-btn">Back to menu</button>
+    </div>
+  </div>
+
   </main>
 
   <script type="module">
@@ -325,6 +479,7 @@
 
     const btnVisit = document.getElementById('btn-visit');
     const btnFieldbook = document.getElementById('btn-fieldbook');
+    const btnEncyclopedia = document.getElementById('btn-encyclopedia');
     const btnVisitCard = document.getElementById('btn-visit-card');
     const btnAudio = document.getElementById('btn-audio');
     const btnPause = document.getElementById('btn-pause');
@@ -511,6 +666,11 @@
     btnPause.onclick = openMenu;
     btnFieldbook.onclick = () => toggleFieldbook(true);
     btnCloseModal.onclick = openMenu;
+    if (btnEncyclopedia) btnEncyclopedia.onclick = () => showPanel('encyclopedia-modal');
+    const btnCloseEncyclopedia = document.getElementById('btn-close-encyclopedia');
+    const btnCloseEncyclopediaX = document.getElementById('btn-close-encyclopedia-x');
+    if (btnCloseEncyclopedia) btnCloseEncyclopedia.onclick = openMenu;
+    if (btnCloseEncyclopediaX) btnCloseEncyclopediaX.onclick = openMenu;
     btnVisit.onclick = () => toggleVisitModal(true);
     btnCloseVisitModal.onclick = openMenu;
     btnVisitCard.onclick = showVisitCard;
@@ -570,6 +730,7 @@
         if (game.state === 'PLAYING') openMenu(); else advanceOrRestart();
       } else if (e.key.toLowerCase() === 'w') toggleVisitModal(true);
       else if (e.key.toLowerCase() === 'h') toggleFieldbook(true);
+      else if (e.key.toLowerCase() === 'e' && KIOSK) showPanel('encyclopedia-modal');
       else if (e.key.toLowerCase() === 'c') showVisitCard();
       else if (e.key.toLowerCase() === 'm') btnAudio.click();
       else if (e.key.toLowerCase() === 'r') restart();
@@ -603,6 +764,7 @@
 
     // SOMEWAREZ kiosk build: control bar, reset to the title screen, and idle loop.
     if (KIOSK) {
+      if (btnEncyclopedia) btnEncyclopedia.hidden = false;
       const kiosk = await import('./somewarez/kiosk.js');
       kiosk.startKiosk({
         game, canvas, showPanel, openMenu, showVisitCard,

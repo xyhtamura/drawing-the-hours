@@ -87,6 +87,27 @@ and a photograph of a banana-family inflorescence; their sources were not
 recorded. They were looked at for colour and form only. Neither file is in the
 repository and no pixels from them are used.
 
+## Local edition encyclopedia images
+
+Twelve web-optimized WebP photographs and historical botanical plates in `assets/encyclopedia/` illustrate the Philippine flora and fauna of the SOMEWAREZ kiosk edition. Sourced from Wikimedia Commons under public domain and Creative Commons licences:
+
+| Local file | Subject & Scientific name | Source / Commons File | Licence | Artist / Contributor |
+| --- | --- | --- | --- | --- |
+| `lemon-emigrant.webp` | Lemon Emigrant (*Catopsilia pomona*) | `File:Catopsilia pomona 3 by kadavoor.jpg` | CC0 1.0 | Jeevan Jose |
+| `damselfly.webp` | Tutubing Karayom (*Agriocnemis femina*) | `File:Variable wisp (Agriocnemis femina).jpg` | CC BY-SA 4.0 | Charles J. Sharp |
+| `oleander-hawkmoth.webp` | Oleander Hawkmoth (*Daphnis nerii*) | `File:Oleander Hawk-moth Daphnis nerii.jpg` | CC BY-SA 3.0 | Shantanu Kuveskar |
+| `hoverfly.webp` | Amber Bubuyog (*Episyrphus balteatus*) | `File:Episyrphus balteatus on flower 2.jpg` | CC BY-SA 2.5 | AngMoKio |
+| `green-lacewing.webp` | Green Lacewing (*Chrysopa perla*) | `File:Chrysopa perla 02.jpg` | CC BY-SA 3.0 | James K. Lindsey |
+| `firefly.webp` | Alitaptap (*Luciola cruciata*) | `File:Luciola cruciata.jpg` | CC BY-SA 4.0 | Alpsdake |
+| `paper-wasp.webp` | Putakti (*Ropalidia marginata*) | `File:Ropalidia marginata.jpg` | CC BY 2.5 | School of Ecology and Conservation |
+| `giant-snail.webp` | Giant African Snail (*Lissachatina fulica*) | `File:Giant African snail (Achatina fulica) climbing gate.jpg` | CC0 1.0 | Scot Nelson |
+| `dama-de-noche.webp` | Dama de Noche (*Cestrum nocturnum*) | `File:Cestrum nocturnum Blanco1.151-cropped.jpg` | Public domain | Francisco Manuel Blanco (*Flora de Filipinas*, 1837) |
+| `ylang-ylang.webp` | Ylang-Ylang (*Cananga odorata*) | `File:Cananga odorata 01.JPG` | CC BY-SA 3.0 | Vinayaraj |
+| `abaca.webp` | Manila Hemp (*Musa textilis*) | `File:Musa textilis 11zz.jpg` | CC BY-SA 4.0 | David J. Stang |
+| `cogon-grass.webp` | Cogon Grass (*Imperata cylindrica*) | `File:Imperata cylindrica spikes.jpg` | CC BY-SA 3.0 | Sphl |
+
+The images are scaled and converted to WebP (maximum dimensions 420 × 320 px, quality 84, metadata stripped) using Pillow. The download script is preserved at `scripts/download_encyclopedia_images.py` and the raw API metadata is recorded in `assets/encyclopedia/provenance.json`. The kiosk bundle is self-contained: all files load offline through relative paths.
+
 ## Procedural graphics
 
 The cached Dawn paper texture, pavement, grasses, and flowers in

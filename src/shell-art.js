@@ -1,6 +1,6 @@
 import { CHAPTER_PALETTES } from './palettes.js';
 import { paperBackdrop, onPapersArrived, paperTile, PAPER_USE } from './paper.js';
-import { Insect } from './entities.js';
+import { Insect, Hornet } from './entities.js';
 
 /**
  * Art for the title screen and the menu cards, made from the game's own
@@ -193,7 +193,10 @@ export function dressMenus(root = document) {
       ctx.translate(icon.width / 2, icon.height / 2);
       const k = icon.width / 62;
       ctx.scale(k, k);
-      const flier = Object.assign(new Insect(0, 0, icon.dataset.creature), { heading: -Math.PI / 2 + 0.35, lacePhase: 'travel', flapPhase: 0.5 });
+      const flier = Object.assign(
+        icon.dataset.creature === 'hornet' ? new Hornet(0, 0) : new Insect(0, 0, icon.dataset.creature),
+        { heading: -Math.PI / 2 + 0.35, lacePhase: 'travel', flapPhase: 0.5 }
+      );
       flier.draw(ctx);
     }
   };
