@@ -20,6 +20,7 @@ import { audio } from './audio.js';
 import { storage } from './storage.js';
 import { TUNINGS, degreeHz } from './tunings.js';
 import { SONGS } from './songs.js';
+import { songForLevel } from './song-variations.js';
 import { samples } from './samples.js';
 
 export const MUSIC_STORAGE_KEY = 'drawing-the-hours-music';
@@ -99,6 +100,7 @@ class Music {
     try { if (storage.getItem(MUSIC_STORAGE_KEY) === 'off') enabled = false; } catch {}
     this.enabled = enabled;
     this.hour = null;      // the hour whose song is scheduled
+    this.song = null;      // the current stage's cached arrangement
     this.bus = null;
     this.noise = null;
     this.drones = [];
@@ -126,9 +128,8 @@ class Music {
     const wanted = this.enabled && !audio.isMuted && showing && ctx && !(typeof document !== 'undefined' && document.hidden);
     if (!wanted) { if (this.hour) this.stop(); return; }
     if (ctx.state !== 'running') return;
-    if (hour !== this.hour) this.start(hour);
-
-    const song = SONGS[this.hour];
+    const song = songForLevel(hour, game.musicTitle ? null : game.currentLevel);
+    if (hour !== this.hour || song !== this.song) this.start(hour, song);
     const slow = game.slowTimer > 0;
     const stepSeconds = 30 / song.bpm / (slow ? SLOW_TEMPO : 1);
     const pitch = slow ? SLOW_PITCH : 1;
@@ -140,12 +141,12 @@ class Music {
     }
   }
 
-  start(hour) {
+  start(hour, song = SONGS[hour]) {
     this.stop();
     const ctx = audio.ctx;
-    const song = SONGS[hour];
     if (this.samplesEnabled) samples.load(ctx);
     this.hour = hour;
+    this.song = song;
     this.bus = ctx.createGain();
     this.bus.gain.setValueAtTime(0, ctx.currentTime);
     this.bus.gain.linearRampToValueAtTime(BUS_GAIN * song.gain, ctx.currentTime + 1.5);
@@ -208,7 +209,7 @@ class Music {
         for (const node of room) { try { node.disconnect(); } catch {} }
       }, 1500);
     }
-    this.bus = null; this.room = []; this.drones = []; this.hour = null;
+    this.bus = null; this.room = []; this.drones = []; this.hour = null; this.song = null;
   }
 
   playStep(song, index, time, pitch) {
@@ -513,7 +514,7 @@ class Music {
    * (no visit on screen) this returns null and the chimes keep their pentatonic.
    */
   chimeTones(count) {
-    const song = SONGS[this.hour];
+    const song = this.song;
     if (!song) return null;
     const tuning = TUNINGS[this.hour];
     const bar = Math.floor((this.nextStep % song.steps) / 8) % song.chords.length;

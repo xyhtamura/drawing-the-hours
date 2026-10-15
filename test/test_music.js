@@ -50,6 +50,8 @@ function fakeContext() {
 const { audio } = await import('../src/audio.js');
 const { music, PERCUSSION, VOICES } = await import('../src/music.js');
 const { SONGS } = await import('../src/songs.js');
+const { STAGE_SONGS, songForLevel } = await import('../src/song-variations.js');
+const { CAMPAIGN_LEVELS } = await import('../src/campaign.js');
 const { TUNINGS, degreeHz } = await import('../src/tunings.js');
 
 const HOURS = ['dawn', 'noon', 'dusk', 'midnight'];
@@ -264,6 +266,88 @@ const run = seconds => { for (let t = 0; t < seconds; t += 1 / 60) { ctx.current
   assert.equal(music.hour, 'midnight', 'Begin replaces title music with the visit');
   music.stop();
   console.log('✔ The xylophone title and quiet hour flourishes obey Music, Sound, Begin, and silent attract mode.');
+}
+
+
+// 9. Every authored visit selects its own stable score, including practice copies.
+{
+  for (const hour of HOURS) {
+    const scores = STAGE_SONGS[hour], original = SONGS[hour];
+    assert.equal(scores.length, 6);
+    assert.equal(scores[0], original, `${hour}: visit I retains the original`);
+    assert.equal(new Set(scores.map(score => JSON.stringify(score.bell))).size, 6, `${hour}: six different lead phrases`);
+    for (const score of scores) {
+      for (const key of ['voice', 'root', 'bpm', 'gain', 'steps', 'leadCycle', 'skip', 'drone']) {
+        assert.deepEqual(score[key], original[key], `${hour}: ${key} retains the hour's identity`);
+      }
+      assert.ok(score.bell.length <= original.bell.length, `${hour}: no extra lead density`);
+      const pitched = [...score.bell, ...score.bass, ...(score.gong || []), ...(score.layers || []).flatMap(l => l.notes)];
+      for (const [step] of [...pitched, ...score.perc]) assert.ok(Number.isInteger(step) && step >= 0 && step < score.steps);
+      for (const [, degree] of score.bell) {
+        const hz = degreeHz(TUNINGS[hour], score.root, degree);
+        assert.ok(hz > 250 && hz < 1500, `${hour}: lead stays in register`);
+      }
+      for (const [, degree] of score.bass) {
+        const hz = degreeHz(TUNINGS[hour], score.root, degree) / 2;
+        assert.ok(hz > 50 && hz < 260);
+      }
+      for (const layer of score.layers || []) {
+        assert.ok(original.layers.some(l => l.voice === layer.voice), `${hour}: accompaniment keeps its instrument`);
+        assert.ok(layer.level <= Math.max(...original.layers.map(l => l.level)));
+        for (const [, degree] of layer.notes) {
+          const hz = degreeHz(TUNINGS[hour], score.root, degree);
+          assert.ok(hz > (VOICES[layer.voice].kind === 'bow' ? 40 : 250) && hz < 1500);
+        }
+      }
+    }
+    assert.equal(songForLevel(hour, {id: 'sandbox'}), original);
+    assert.equal(songForLevel(hour, {id: `${hour}-07`}), original);
+  }
+  for (const level of CAMPAIGN_LEVELS) {
+    const score = STAGE_SONGS[level.hour][Number(level.id.slice(-2)) - 1];
+    assert.equal(songForLevel(level.hour, level), score);
+    assert.equal(songForLevel(level.hour, {id: 'practice-visit', practiceOf: level.id}), score);
+    game.currentLevel = level;
+    const previous = music.bus;
+    run(.35);
+    assert.equal(music.song, score, level.id);
+    assert.notEqual(music.bus, previous, `${level.id}: stage change starts its own arrangement`);
+    const bus = music.bus; run(.5);
+    assert.equal(music.bus, bus, `${level.id}: ordinary frames do not restart music`);
+    game.currentLevel = {...level, id: 'practice-visit', practiceOf: level.id}; run(.1);
+    assert.equal(music.bus, bus, `${level.id}: the untimed practice uses the same arrangement`);
+  }
+  game.musicTitle = true; game.uiSuspended = true; run(.2);
+  assert.equal(music.song, SONGS.title, 'title keeps its unique xylophone score');
+  game.musicTitle = false; game.uiSuspended = false;
+  music.stop();
+  console.log('✔ All 24 visits select distinct phrases without changing hour identity or restarting every frame.');
+}
+
+// 10. Midnight's stage variations stay sparse, low, and soft across skipped notes.
+{
+  const originalNote = music.note, originalHit = music.hit;
+  try {
+    for (const [stage, score] of STAGE_SONGS.midnight.entries()) {
+      const notes = [], hits = [];
+      music.note = (voice, hz, time, level) => notes.push({voice, hz, time, level});
+      music.hit = (voice, time, pitch, level) => hits.push({voice, time, level});
+      music.hour = 'midnight'; music.leadNote = 0;
+      for (let i = 0; i < score.steps * 8; i++) music.playStep(score, i, i * 30 / score.bpm, 1);
+      const lead = notes.filter(n => n.level === .5);
+      assert.ok(score.bell.length >= 3 && score.bell.length <= 4);
+      assert.ok(score.layers.reduce((n, layer) => n + layer.notes.length, 0) <= 2);
+      assert.ok(lead.length < score.bell.length * 8, 'later loops omit notes');
+      for (const [i, note] of lead.entries()) {
+        assert.equal(note.voice, VOICES[score.leadCycle[i % 3]], `stage ${stage + 1}, sounded note ${i}`);
+        assert.ok(note.hz <= degreeHz(TUNINGS.midnight, score.root, 19) + .01, 'no higher lead register');
+        if (i) assert.ok(note.time - lead[i - 1].time >= 6 * 30 / score.bpm - .02, 'space between swells, including loop boundaries');
+      }
+      assert.ok(notes.filter(n => n.level !== .5 && n.voice !== VOICES.pluck).every(n => n.level <= .11));
+      assert.ok(hits.every(hit => hit.voice === PERCUSSION.tom && hit.level <= .66));
+    }
+  } finally { music.note = originalNote; music.hit = originalHit; music.hour = null; }
+  console.log('✔ Every Midnight visit keeps three/four calm swells, two quiet answers at most, and the sounded-note cycle.');
 }
 
 console.log('--- All music tests passed! ---');

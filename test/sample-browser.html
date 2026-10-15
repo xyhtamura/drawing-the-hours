@@ -5,13 +5,15 @@ import {audio} from '../src/audio.js';
 import {music,VOICES} from '../src/music.js';
 import {samples} from '../src/samples.js';
 import {SONGS} from '../src/songs.js';
+import {STAGE_SONGS} from '../src/song-variations.js';
 import {KIOSK} from '../src/build.js';
 const rate=24000, result=document.querySelector('#result');
 function stats(data){let peak=0,sum=0;for(const value of data){if(!Number.isFinite(value))throw Error('Non-finite sample');peak=Math.max(peak,Math.abs(value));sum+=value*value;}return{peakDb:20*Math.log10(peak||1e-12),rmsDb:10*Math.log10(sum/data.length||1e-24)};}
-async function render(hour,synth=false){
-  const score=SONGS[hour],ctx=new OfflineAudioContext(1,Math.ceil((score.steps*30/score.bpm*2+5)*rate),rate);
-  audio.ctx=ctx;music.samplesEnabled=!synth;music.start(hour);
-  for(let i=0;i<score.steps*2;i++)music.playStep(score,i,.1+i*30/score.bpm,1);
+async function render(hour,synth=false,score=SONGS[hour],slow=false){
+  const seconds=30/score.bpm/(slow ? .55 : 1),pitch=slow?2**(-100/1200):1;
+  const ctx=new OfflineAudioContext(1,Math.ceil((score.steps*seconds*2+5)*rate),rate);
+  audio.ctx=ctx;music.samplesEnabled=!synth;music.start(hour,score);
+  for(let i=0;i<score.steps*2;i++)music.playStep(score,i,.1+i*seconds,pitch);
   return (await ctx.startRendering()).getChannelData(0);
 }
 async function solo(profile,hz){
@@ -31,6 +33,19 @@ document.querySelector('#run').onclick=async()=>{
       if(sampled.peakDb>-6||fallback.peakDb>-6)throw Error(hour+' peak too high');
       rows.push({hour,sampled,fallback});
     }
+    const stages=[];
+    for(const [hour,scores] of Object.entries(STAGE_SONGS))for(const [stage,score] of scores.entries()){
+      const sampled=stats(await render(hour,false,score)),fallback=stats(await render(hour,true,score));
+      if(sampled.peakDb>-6||fallback.peakDb>-6)throw Error(hour+' stage '+(stage+1)+' peak too high');
+      if(hour==='midnight'&&(sampled.peakDb>rows[3].sampled.peakDb+.75||sampled.rmsDb>rows[3].sampled.rmsDb+.75||fallback.peakDb>rows[3].fallback.peakDb+.75||fallback.rmsDb>rows[3].fallback.rmsDb+.75))throw Error('Midnight stage '+(stage+1)+' is louder');
+      stages.push({hour,stage:stage+1,sampled,fallback});
+    }
+    const slowMidnight=[];
+    for(const [stage,score] of STAGE_SONGS.midnight.entries()){
+      const sampled=stats(await render('midnight',false,score,true)),fallback=stats(await render('midnight',true,score,true));
+      if(sampled.peakDb>-20||fallback.peakDb>-20)throw Error('Slowed Midnight peak too high');
+      slowMidnight.push({stage:stage+1,sampled,fallback});
+    }
     const duskProfile=VOICES.bonang.sample;
     if(duskProfile.envelope[0]>.01)throw Error('Dusk strike is being faded in');
     const ctx=new OfflineAudioContext(1,rate*4,rate);
@@ -45,7 +60,7 @@ document.querySelector('#run').onclick=async()=>{
     if(after.peakDb>before.peakDb-8)throw Error('High reed was not sufficiently reduced');
     const dawnBefore=await solo({...VOICES.dampedString.sample,level:.482},523.1),dawnAfter=await solo(VOICES.dampedString.sample,523.1);
     if(dawnAfter.rmsDb>dawnBefore.rmsDb-4.8)throw Error('Dawn pluck was not reduced');
-    result.textContent='PASS '+(KIOSK?'SOMEWAREZ':'main')+'; '+count+' recordings decoded\n'+JSON.stringify({rows,duskAttack:{firstPeak,latePeak},highReed:{before,after},dawnReductionDb:dawnAfter.rmsDb-dawnBefore.rmsDb},null,2);
+    result.textContent='PASS '+(KIOSK?'SOMEWAREZ':'main')+'; '+count+' recordings decoded\n'+JSON.stringify({rows,stages,slowMidnight,duskAttack:{firstPeak,latePeak},highReed:{before,after},dawnReductionDb:dawnAfter.rmsDb-dawnBefore.rmsDb},null,2);
   }catch(error){result.textContent='FAIL '+error.stack;}
   finally{music.samplesEnabled=true;document.querySelector('#run').disabled=false;}
 };
