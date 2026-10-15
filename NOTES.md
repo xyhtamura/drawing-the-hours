@@ -14,6 +14,17 @@ Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet be
 
 ## Activity
 
+2026-10-15 — Claude Code — Gave the Midnight song a distant tom, on Xyh's direction: very sparse, echoing, like something falling a long way off. Also confirmed the songs play in the main game, not only the kiosk.
+
+- **Tom** (`tom` in `PERCUSSION`, `src/music.js`): a sine falling from 118 to 74 Hz over 0.75 s with a thud of half-speed noise, under a 900 Hz low-pass for distance, then heard three more times at 0.41, 0.88, and 1.42 s at 42%, 18%, and 7%, each echo darker. Each echo is scheduled as its own short sound, so there is no delay line running between hits.
+- **How often**: two chances per 17-second loop (30% at the top, 15% at step 20). Scheduled over ten minutes: 16 strikes, about one every 37 s, with gaps from 6 to 79 s.
+- **Main game**: Xyh asked for the music to be wired back to the main game. It already was: `Game.update` calls `music.update` in every build, and the Music setting is in the main page's Settings. Checked in the main page (no `?somewarez`): after a real click on Continue, the context was running, the Midnight XXI visit's song was scheduled, Music read On. The live site does not have any of the music until `drawing-the-hours` is pushed.
+
+Verification: a strike alone, rendered offline, peaked at -22.4 dBFS at level 0.75 against the song's -20.6, too close for something far off, so the level went to 0.45, about 4.4 dB lower. All fourteen suites pass.
+
+Not done: nobody has heard it.
+
+
 2026-10-15 — Claude Code — Brought the reeds back to the Midnight song beside the pad, on Xyh's direction: sometimes struck as before, sometimes swelled in.
 
 - A reed layer of five notes per loop sits between the pad's notes, each from its bar's chord in Bohlen-Pierce (degrees 16 to 23, about 675 to 1,220 Hz), left out 30% of the time after the first pass.

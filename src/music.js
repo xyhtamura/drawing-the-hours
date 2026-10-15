@@ -69,7 +69,10 @@ export const VOICES = {
 //   knock   a small woodblock: a short sine with a click of filtered noise
 //   shaker  noise through a high-pass, very short
 //   tick    noise through a narrow band-pass
+//   tom     a low drum far off: a falling sine and a thud of noise, darkened, then
+//           heard again in `echoes` [seconds after, level], each one darker
 export const PERCUSSION = {
+  tom: { kind: 'tom', from: 118, to: 74, decay: 0.75, noise: 0.35, cutoff: 900, level: 0.45, echoes: [[0.41, 0.42], [0.88, 0.18], [1.42, 0.07]] },
   thump: { kind: 'drop', from: 95, to: 48, decay: 0.22, level: 0.9 },
   knock: { kind: 'knock', hz: 1150, decay: 0.05, noise: 0.25, level: 0.35 },
   shaker: { kind: 'noise', filter: 'highpass', hz: 6500, q: 0.7, rate: 1.3, level: 0.22 },
@@ -372,8 +375,46 @@ class Music {
     this.voiceCount += 1;
   }
 
+  /**
+   * The distant tom: one strike and its echoes, each scheduled as its own short
+   * sound through a darker low-pass, so the echo costs nothing between hits and
+   * needs no delay line.
+   */
+  tom(drum, time, pitch, velocity) {
+    const ctx = audio.ctx;
+    for (const [after, share] of [[0, 1], ...drum.echoes]) {
+      const at = time + after;
+      const darker = drum.cutoff * (1 - after * 0.4);
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      filter.type = 'lowpass';
+      filter.frequency.value = Math.max(220, darker);
+      gain.gain.value = drum.level * velocity * share;
+      filter.connect(gain); gain.connect(this.bus);
+      const osc = ctx.createOscillator();
+      const env = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(drum.from * pitch, at);
+      osc.frequency.exponentialRampToValueAtTime(drum.to * pitch, at + drum.decay * 0.5);
+      env.gain.setValueAtTime(0.0001, at);
+      env.gain.linearRampToValueAtTime(1, at + 0.012);
+      env.gain.exponentialRampToValueAtTime(0.0001, at + drum.decay);
+      osc.connect(env); env.connect(filter);
+      osc.start(at); osc.stop(at + drum.decay + 0.03);
+      const source = ctx.createBufferSource();
+      const thud = ctx.createGain();
+      source.buffer = this.noise;
+      source.playbackRate.value = 0.5;
+      thud.gain.value = drum.noise;
+      source.connect(thud); thud.connect(filter);
+      source.start(at);
+      setTimeout(() => { try { gain.disconnect(); filter.disconnect(); } catch {} }, (at + drum.decay - ctx.currentTime) * 1000 + 300);
+    }
+  }
+
   /** One percussion hit from PERCUSSION, at `time`, scaled by `velocity`. */
   hit(drum, time, pitch, velocity) {
+    if (drum.kind === 'tom') { this.tom(drum, time, pitch, velocity); return; }
     const ctx = audio.ctx;
     const gain = ctx.createGain();
     gain.connect(this.bus);

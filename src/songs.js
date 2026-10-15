@@ -110,7 +110,9 @@ export const SONGS = {
     layers: [
       { voice: ['reed', 'reedSlow'], level: 0.3, skip: 0.3, notes: [[2, 19], [10, 23], [18, 16], [24, 20], [30, 16]] },
     ],
-    perc: [],
+    // Now and then, something falling a long way off: a tom with its echoes.
+    // About once every thirty-five seconds on average.
+    perc: [[0, 'tom', 0.3], [20, 'tom', 0.15]],
     chords: [[0, 6, 10], [0, 6, 10], [-3, 3, 7], [-3, 3, 7]],
   },
 };
