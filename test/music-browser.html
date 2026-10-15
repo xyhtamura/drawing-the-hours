@@ -1,0 +1,54 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Midnight audio checks</title>
+<h1>Midnight audio checks</h1>
+<p>Renders four loops on a real Web Audio context, without playing them aloud.</p>
+<button id="run">Run audio checks</button>
+<pre id="result">Ready.</pre>
+<script type="module">
+import { audio } from '../src/audio.js';
+import { music, VOICES } from '../src/music.js';
+import { SONGS } from '../src/songs.js';
+import { KIOSK } from '../src/build.js';
+
+const button = document.querySelector('#run'), result = document.querySelector('#result');
+button.onclick = async () => {
+  button.disabled = true;
+  result.textContent = 'Rendering...';
+  try {
+    const rate = 24000, song = SONGS.midnight, loop = song.steps * 30 / song.bpm;
+    const render = async score => {
+      const ctx = new OfflineAudioContext(1, Math.ceil((loop * 4 + 6) * rate), rate);
+      audio.ctx = ctx; music.start('midnight');
+      for (let index = 0; index < song.steps * 4; index++) music.playStep(score, index, 0.1 + index * 30 / song.bpm, 1);
+      return (await ctx.startRendering()).getChannelData(0);
+    };
+    const baseline = await render({ ...song, leadCycle: undefined });
+    const cycled = await render(song);
+    const stats = (data, from, to) => {
+      let peak = 0, sum = 0;
+      const first = Math.floor(from * rate), last = Math.min(data.length, Math.floor(to * rate));
+      for (let i = first; i < last; i++) {
+        if (!Number.isFinite(data[i])) throw new Error('Non-finite sample');
+        peak = Math.max(peak, Math.abs(data[i])); sum += data[i] ** 2;
+      }
+      return { peak: 20 * Math.log10(peak || 1e-12), rms: 10 * Math.log10(sum / (last - first) || 1e-24) };
+    };
+    const rows = song.leadCycle.map((lead, pass) => {
+      const old = stats(baseline, pass * loop, (pass + 1) * loop);
+      const current = stats(cycled, pass * loop, (pass + 1) * loop);
+      if (current.peak >= -6 || Math.abs(current.rms - old.rms) > 6) throw new Error(`Level mismatch on ${lead.voice}: ${JSON.stringify({old,current})}`);
+      return { pass: pass + 1, voice: lead.voice, peakDb: +current.peak.toFixed(1), rmsDb: +current.rms.toFixed(1), changeDb: +(current.rms - old.rms).toFixed(1) };
+    });
+    // Exercise the new oscillators at the slowed pitch, too.
+    for (const name of ['midnightReed', 'midnightBrass']) {
+      const ctx = new OfflineAudioContext(1, rate * 6, rate);
+      audio.ctx = ctx; music.bus = ctx.createGain(); music.bus.gain.value = 0.096; music.bus.connect(ctx.destination);
+      music.note(VOICES[name], 523.83 * 2 ** (-100 / 1200), 0.1, 0.5);
+      stats((await ctx.startRendering()).getChannelData(0), 0, 6);
+    }
+    result.textContent = 'PASS (' + (KIOSK ? 'SOMEWAREZ' : 'main') + ')\n' + JSON.stringify(rows, null, 2) + '\nSlowed reed and brass renders: finite samples.';
+  } catch (error) { result.textContent = 'FAIL: ' + error.stack; }
+  finally { button.disabled = false; }
+};
+</script>

@@ -13,6 +13,8 @@
 //   perc    percussion, [step, kind, chance]: kind from PERCUSSION in src/music.js,
 //           chance (default 1) that the hit sounds on a given pass; percLevel scales them all
 //   drone   degrees held under the whole song; Midnight only
+//   leadCycle  optional per-loop { voice, layerGain? } choices; tails carry over,
+//              and layerGain scales accompaniment without adding notes
 //   chords  one chord per bar, the degrees the chimes are drawn from
 //
 // `skip` is the chance a melody note is left out on any pass after the first,
@@ -99,6 +101,14 @@ export const SONGS = {
     bpm: 56,
     steps: 32,
     voice: 'pad',            // was 'reed', kept in src/music.js
+    // One color per whole loop. Leave room for the lead reed by lowering its
+    // answering layer on that pass; all note positions and omissions stay put.
+    leadCycle: [
+      { voice: 'pad' },
+      { voice: 'midnightReed', layerGain: 0.4 },
+      { voice: 'pad' },
+      { voice: 'midnightBrass' },
+    ],
     gain: 0.6,               // held notes: lowered to sit level with the other hours
     skip: 0.25,
     // Bohlen-Pierce: 13 steps to the tritave. 0, 6, 10 is its 3:5:7 triad.

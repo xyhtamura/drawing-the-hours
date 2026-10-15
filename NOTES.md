@@ -14,6 +14,22 @@ Run the [SOMEWAREZ kiosk build](somewarez/README.md) on the exhibition tablet be
 
 ## Activity
 
+2026-10-15 — Codex — Midnight alternates its lead by whole 32-step loops: pad, hollow reed, pad, soft brass. `leadCycle` in `src/songs.js` selects the voice and an optional accompaniment gain. The new `wind` voice in `src/music.js` uses a single square wave for the reed or sawtooth for brass, a pitch-relative filter that opens during the swell and closes during the fade, and delayed subtle vibrato. The existing reed accompaniment drops to 40% of its level on reed-led loops. Old tails finish across loop boundaries. Each song start, including a restart after a menu, begins on the pad loop.
+
+Verification: all fourteen `test/test_*.js` suites passed. `node test/test_music.js --somewarez` also passed; the regression compares eight loops with and without the cycle and finds identical pitches, event times, omissions, and percussion. The fake-clock peak remains 16 simultaneous oscillators. `test/music-browser.html`, run in the browser in main and SOMEWAREZ modes, rendered four loops at 24 kHz through real Web Audio: loop peaks -20.8, -20.5, -21.8, -20.5 dBFS; RMS -34.6, -35.7, -35.3, -34.6 dBFS. Relative to the same old-pad loops, the reed is -0.3 dB and the brass +0.5 dB. Both wind voices also render finite samples at the poppy's slowed pitch.
+
+Not done: the timbres have not been judged by ear or on the exhibition tablet. No samples or title music were added. The offline kiosk export needs regeneration after this commit; no site was pushed.
+
+Audition candidates from the local `musicprod` index, not a scheduled implementation plan:
+
+- Dawn: PSI Palm Mute Piano, Ilya Efimov Nylon Guitar, or Enchanted Kalimba for short, imperfect attacks. Keep the damped synthesized string as the reference.
+- Noon: Rattly and Raw toy pianos, Cinematique Instruments Deconstructed Piano, or Wrongtools Bell Tone Piano for variation around the toy-piano role.
+- Dusk: Balinese Gamelan and Bowed Gamelan for struck and sustained alternatives to the bonang and low bow. Preserve 5-EDO by retuning the source pitches.
+- Midnight: LIMINAL Reeds, Analog Brass and Winds, and Intimate Studio Brass; soundfont alternatives include Casio SA-10 SYNTH-BRASS, F-Zero Slow Horn, and Arachno/FluidR3 clarinet. These are indexed candidates, not auditioned patches.
+- Title: RR Music Box, SC Music Box, Wrongtools Celesta Duet, or Strezov The Felt Seiler Pro. Try a short motif related to the hours, with any playback starting after interaction. Title playback is still absent.
+
+For possible stage variations, keep one score and tuning per hour and vary the initial cycle offset, voice, and accompaniment level by authored visit data. That would distinguish stages without new melodies; it is not implemented here. If Kontakt-derived audio is used, ship project-specific names such as `midnight-reed-01.ogg`, while retaining the original library, patch, processing, and relevant game-use terms in the asset record. Renaming does not establish permission to redistribute a sample. Do not ship raw libraries or snapshot previews as game instruments.
+
 2026-10-15 — Claude Code — Gave the Midnight song a distant tom, on Xyh's direction: very sparse, echoing, like something falling a long way off. Also confirmed the songs play in the main game, not only the kiosk.
 
 - **Tom** (`tom` in `PERCUSSION`, `src/music.js`): a sine falling from 118 to 74 Hz over 0.75 s with a thud of half-speed noise, under a 900 Hz low-pass for distance, then heard three more times at 0.41, 0.88, and 1.42 s at 42%, 18%, and 7%, each echo darker. Each echo is scheduled as its own short sound, so there is no delay line running between hits.

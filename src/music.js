@@ -55,6 +55,11 @@ export const VOICES = {
   // harmonics only, which Bohlen-Pierce is built on), the third partial faint.
   // attack, hold, release in seconds; spread in cents either side; cutoff in Hz.
   pad: { kind: 'pad', type: 'triangle', partials: [[1, 1], [3, 0.08]], attack: 1.1, hold: 0.8, release: 2.6, spread: 6, cutoff: 1300 },
+  // Single oscillators keep these narrower than the pad. The reed's square wave
+  // has odd harmonics; the brass's saw adds even harmonics. Cutoff ratios follow
+  // the note, opening with the swell, then closing through its release.
+  midnightReed: { kind: 'wind', type: 'square', attack: 0.35, hold: 0.8, release: 1.8, level: 0.48, cutoff: [2.2, 5, 2.5], vibrato: { hz: 4.3, cents: 4, delay: 0.7 } },
+  midnightBrass: { kind: 'wind', type: 'sawtooth', attack: 0.65, hold: 0.8, release: 2.2, level: 0.85, cutoff: [1.2, 4.2, 1.5], vibrato: { hz: 4.8, cents: 3, delay: 0.9 } },
   // The reed swelled in: the same odd partials, a slower attack, a little detune.
   reedSlow: { kind: 'pad', type: 'triangle', partials: [[1, 1], [3, 0.12]], attack: 0.6, hold: 0.3, release: 1.8, spread: 3, cutoff: 2600 },
   // Odd harmonics only, from the triangle wave. Midnight's first melody voice, now its reed layer.
@@ -200,12 +205,13 @@ class Music {
   playStep(song, index, time, pitch) {
     const step = index % song.steps;
     const pass = Math.floor(index / song.steps);
+    const lead = song.leadCycle?.[pass % song.leadCycle.length];
     const tuning = TUNINGS[this.hour];
     const rand = seeded(index * 7919 + 13);
     for (const [at, degree] of song.bell) {
       if (at !== step) continue;
       if (pass > 0 && rand() < song.skip) continue;
-      this.note(VOICES[song.voice], degreeHz(tuning, song.root, degree) * pitch, time + rand() * 0.012, 0.5);
+      this.note(VOICES[lead?.voice ?? song.voice], degreeHz(tuning, song.root, degree) * pitch, time + rand() * 0.012, 0.5);
     }
     for (const [at, degree] of song.bass) {
       if (at === step) this.note(VOICES.pluck, degreeHz(tuning, song.root, degree) / 2 * pitch, time, 0.55);
@@ -220,7 +226,7 @@ class Music {
         if (at !== step || (pass > 0 && rand() < layer.skip)) continue;
         // A layer may name several voices; each note picks one.
         const name = Array.isArray(layer.voice) ? layer.voice[Math.floor(rand() * layer.voice.length)] : layer.voice;
-        this.note(VOICES[name], degreeHz(tuning, song.root, degree) * pitch, time + 0.01 + rand() * 0.015, layer.level);
+        this.note(VOICES[name], degreeHz(tuning, song.root, degree) * pitch, time + 0.01 + rand() * 0.015, layer.level * (lead?.layerGain ?? 1));
       }
     }
     for (const [at, kind, chance = 1] of song.perc || []) {
@@ -232,6 +238,7 @@ class Music {
     if (voice.kind === 'string') { this.pluck(voice, hz, time, level); return; }
     if (voice.kind === 'pad') { this.pad(voice, hz, time, level); return; }
     if (voice.kind === 'bow') { this.bow(voice, hz, time, level); return; }
+    if (voice.kind === 'wind') { this.wind(voice, hz, time, level); return; }
     const ctx = audio.ctx;
     const out = ctx.createGain();
     out.gain.value = level;
@@ -344,6 +351,37 @@ class Music {
       }
     }
     setTimeout(() => { try { env.disconnect(); filter.disconnect(); } catch {} }, (end - ctx.currentTime) * 1000 + 300);
+    this.voiceCount += 1;
+  }
+
+  /** A narrow reed or soft brass swell with a moving filter and delayed vibrato. */
+  wind(voice, hz, time, level) {
+    const ctx = audio.ctx;
+    const osc = ctx.createOscillator(), lfo = ctx.createOscillator();
+    const depth = ctx.createGain(), filter = ctx.createBiquadFilter(), env = ctx.createGain();
+    const top = time + voice.attack, fall = top + voice.hold, end = fall + voice.release;
+    const peak = level * voice.level;
+    osc.type = voice.type;
+    osc.frequency.value = hz;
+    lfo.frequency.value = voice.vibrato.hz;
+    depth.gain.setValueAtTime(0, time);
+    depth.gain.setValueAtTime(0, time + voice.vibrato.delay);
+    depth.gain.linearRampToValueAtTime(hz * (2 ** (voice.vibrato.cents / 1200) - 1), time + voice.vibrato.delay + 0.6);
+    filter.type = 'lowpass'; filter.Q.value = 0.45;
+    const cutoff = ratio => Math.min(ctx.sampleRate * 0.45, hz * ratio);
+    filter.frequency.setValueAtTime(cutoff(voice.cutoff[0]), time);
+    filter.frequency.exponentialRampToValueAtTime(cutoff(voice.cutoff[1]), top);
+    filter.frequency.exponentialRampToValueAtTime(cutoff(voice.cutoff[2]), end);
+    env.gain.setValueAtTime(0.0001, time);
+    env.gain.linearRampToValueAtTime(peak, top);
+    env.gain.setValueAtTime(peak, fall);
+    env.gain.exponentialRampToValueAtTime(0.0001, end);
+    lfo.connect(depth); depth.connect(osc.frequency);
+    osc.connect(filter); filter.connect(env); env.connect(this.bus);
+    for (const node of [osc, lfo]) { node.start(time); node.stop(end + 0.05); }
+    osc.onended = () => {
+      for (const node of [osc, lfo, depth, filter, env]) { try { node.disconnect(); } catch {} }
+    };
     this.voiceCount += 1;
   }
 

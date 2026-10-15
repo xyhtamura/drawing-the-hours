@@ -18,6 +18,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 globalThis.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+globalThis.location = { search: process.argv.includes('--somewarez') ? '?somewarez' : '' };
 
 // A fake audio clock: nodes record when oscillators start and stop.
 function fakeContext() {
@@ -192,6 +193,46 @@ const run = seconds => { for (let t = 0; t < seconds; t += 1 / 60) { ctx.current
   game.uiSuspended = true; run(0.5);
   assert.equal(music.chimeTones(7), null, 'with no song, the chimes keep their own pitches');
   console.log('✔ Chimes are drawn from the hour\'s tuning, ascending, from 380 Hz.');
+}
+
+// 7. Whole-loop timbres preserve the score, timing, omissions, and percussion.
+{
+  const song = SONGS.midnight;
+  const originalNote = music.note, originalHit = music.hit;
+  const capture = score => {
+    const notes = [], hits = [];
+    music.note = (voice, hz, time, level) => notes.push({ voice, hz, time, level });
+    music.hit = (...args) => hits.push(args);
+    music.hour = 'midnight';
+    for (let index = 0; index < song.steps * 8; index++) music.playStep(score, index, index * 30 / song.bpm, 1);
+    return { notes, hits };
+  };
+  try {
+    const cycled = capture(song);
+    const baseline = capture({ ...song, leadCycle: undefined });
+    assert.deepEqual(cycled.notes.map(n => [n.hz, n.time]), baseline.notes.map(n => [n.hz, n.time]));
+    assert.deepEqual(cycled.hits, baseline.hits, 'the sparse percussion is unchanged');
+    for (let pass = 0; pass < 8; pass++) {
+      const start = pass * song.steps * 30 / song.bpm, end = (pass + 1) * song.steps * 30 / song.bpm;
+      const lead = song.leadCycle[pass % 4];
+      const notes = cycled.notes.filter(n => n.time >= start && n.time < end);
+      const melody = notes.filter(n => n.level === 0.5);
+      assert.ok(melody.length > 0);
+      assert.ok(melody.every(n => n.voice === VOICES[lead.voice]), `pass ${pass}: one lead color throughout`);
+      const reeds = notes.filter(n => n.voice === VOICES.reed || n.voice === VOICES.reedSlow);
+      assert.ok(reeds.length > 0);
+      assert.ok(reeds.every(n => n.level === song.layers[0].level * (lead.layerGain ?? 1)));
+    }
+  } finally {
+    music.note = originalNote; music.hit = originalHit; music.hour = null;
+  }
+  game.currentLevel = { hour: 'midnight' }; game.uiSuspended = false;
+  music.start('midnight');
+  assert.equal(music.nextStep, 0, 'a new visit or a resumed song starts on the pad loop');
+  music.stop();
+  const { KIOSK } = await import('../src/build.js');
+  assert.equal(KIOSK, process.argv.includes('--somewarez'));
+  console.log(`✔ Midnight cycles pad/reed/pad/brass with the same score (${KIOSK ? 'SOMEWAREZ' : 'main'} build).`);
 }
 
 console.log('--- All music tests passed! ---');
