@@ -21,3 +21,6 @@ Thumbs.db
 
 # Local library recordings; standalone sample redistribution is not cleared.
 /assets/audio-local/
+
+# Rendered soundtrack releases (Bandcamp OST)
+/ost/

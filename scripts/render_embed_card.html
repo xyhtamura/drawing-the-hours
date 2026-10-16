@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Drawing the Hours Embed Card Generator</title>
+  <link rel="stylesheet" href="../assets/fonts/fonts.css">
+  <style>
+    body { background: #1a1a1a; color: #eee; font-family: sans-serif; padding: 24px; }
+    #log { font-family: monospace; white-space: pre-wrap; font-size: 13px; line-height: 1.5; }
+    canvas { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Rendering Drawing the Hours Embed Card (1200 x 630)...</h1>
+  <pre id="log">Initializing...</pre>
+
+  <script type="module">
+    import { CHAPTER_PALETTES } from '../src/palettes.js';
+    import { paperBackdrop, loadAllPapers } from '../src/paper.js';
+    import { Insect } from '../src/entities.js';
+
+    const logEl = document.getElementById('log');
+    function log(msg) {
+      logEl.textContent += msg + '\n';
+      console.log(msg);
+      fetch('/api/progress', { method: 'POST', body: msg }).catch(() => {});
+    }
+
+    const HOURS = ['dawn', 'noon', 'dusk', 'midnight'];
+    const FLIERS = ['brimstone', 'damselfly', 'hawkmoth', 'hoverfly', 'lacewing', 'firefly'];
+    const CORD_COLORS = [[190, 86, 68], [204, 147, 63], [95, 143, 91], [57, 133, 143], [111, 93, 151], [180, 99, 136]];
+
+    function lcg(seed) {
+      return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+    }
+
+    function loadImg(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Failed to load ' + src));
+        img.src = src;
+      });
+    }
+
+    /** Chamfer distance cord shading */
+    function cordPixels(mask) {
+      const { width, height, data } = mask;
+      const distance = new Float32Array(width * height);
+      for (let i = 0; i < distance.length; i++) distance[i] = data[i * 4 + 3] > 100 ? 1000 : 0;
+      for (let y = 1; y < height; y++) for (let x = 1; x < width; x++) {
+        const i = y * width + x;
+        distance[i] = Math.min(distance[i], distance[i - 1] + 1, distance[i - width] + 1, distance[i - width - 1] + Math.SQRT2);
+      }
+      for (let y = height - 2; y >= 0; y--) for (let x = width - 2; x >= 0; x--) {
+        const i = y * width + x;
+        distance[i] = Math.min(distance[i], distance[i + 1] + 1, distance[i + width] + 1, distance[i + width + 1] + Math.SQRT2);
+      }
+      for (let y = 1; y < height - 1; y++) for (let x = 1; x < width - 1; x++) {
+        const i = y * width + x, p = i * 4;
+        if (!data[p + 3]) continue;
+        const phase = (x + y * .42) / 115;
+        const step = Math.floor(phase), blend = phase - step;
+        const a = CORD_COLORS[step % CORD_COLORS.length], b = CORD_COLORS[(step + 1) % CORD_COLORS.length];
+        const nx = (distance[i - 1] - distance[i + 1]) / 2;
+        const ny = (distance[i - width] - distance[i + width]) / 2;
+        const edge = Math.max(0, 1 - distance[i] / 5);
+        const light = .93 + (-nx * .5 - ny * .7) * edge * .3;
+        const twist = Math.sin(x * 1.15 + y * .9) * .075;
+        const fibre = Math.sin(x * 12.9898 + y * 78.233) * .025;
+        for (let c = 0; c < 3; c++) {
+          const color = a[c] + (b[c] - a[c]) * blend;
+          data[p + c] = Math.max(0, Math.min(255, color * (light + twist + fibre) + (1 - edge) * 15));
+        }
+      }
+      return mask;
+    }
+
+    function hourSheet(hour, width, height) {
+      const canvas = Object.assign(document.createElement('canvas'), { width, height });
+      const ctx = canvas.getContext('2d');
+      const p = CHAPTER_PALETTES[hour];
+      const wash = ctx.createLinearGradient(0, 0, width, height);
+      wash.addColorStop(0, p.top); wash.addColorStop(0.5, p.middle); wash.addColorStop(1, p.bottom);
+      ctx.fillStyle = wash; ctx.fillRect(0, 0, width, height);
+      paperBackdrop(canvas, hour, undefined, 'landscape');
+      return canvas;
+    }
+
+    function loopPath(ctx, cx, cy, rx, ry, rand) {
+      const n = 12, wobble = Array.from({ length: n }, () => 0.93 + rand() * 0.14);
+      const point = (i) => {
+        const a = -2.4 + (i / n) * Math.PI * 2, k = wobble[i % n] * (1 + i / n * 0.05);
+        return [cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k];
+      };
+      ctx.beginPath();
+      let [px, py] = point(0);
+      ctx.moveTo(px, py);
+      for (let i = 1; i <= n + 2; i++) {
+        const [x, y] = point(i);
+        ctx.quadraticCurveTo(px, py, (px + x) / 2, (py + y) / 2);
+        px = x; py = y;
+      }
+    }
+
+    function drawLetterspacedText(ctx, text, x, y, letterSpacing) {
+      const chars = text.split('');
+      let totalWidth = 0;
+      for (let i = 0; i < chars.length; i++) {
+        totalWidth += ctx.measureText(chars[i]).width + (i < chars.length - 1 ? letterSpacing : 0);
+      }
+      let currentX = x - totalWidth / 2;
+      for (let i = 0; i < chars.length; i++) {
+        const char = chars[i];
+        ctx.fillText(char, currentX + ctx.measureText(char).width / 2, y);
+        currentX += ctx.measureText(char).width + letterSpacing;
+      }
+    }
+
+    async function generate() {
+      log('Loading fonts and paper textures...');
+      await Promise.allSettled([
+        document.fonts.load('400 24px Mali'),
+        document.fonts.load('500 28px Mali'),
+        document.fonts.load('600 32px Mali')
+      ]);
+      await document.fonts.ready;
+      await loadAllPapers();
+
+      const W = 1200;
+      const H = 630;
+
+      log('Preloading backdrop assets and handwritten frames...');
+      const frameImg = await loadImg('../assets/title/drawinghand01.webp');
+      const foilImg = await loadImg('../assets/title/foil.webp');
+
+      log('Baking cord lettering...');
+      const layer = Object.assign(document.createElement('canvas'), { width: 800, height: 760 });
+      const ink = layer.getContext('2d');
+      ink.drawImage(frameImg, 0, 0);
+      ink.putImageData(cordPixels(ink.getImageData(0, 0, 800, 760)), 0, 0);
+
+      const letteringCanvas = Object.assign(document.createElement('canvas'), { width: 800, height: 760 });
+      const cordCtx = letteringCanvas.getContext('2d');
+      cordCtx.shadowColor = '#3a27194d';
+      cordCtx.shadowBlur = 3;
+      cordCtx.shadowOffsetX = 1;
+      cordCtx.shadowOffsetY = 2;
+      cordCtx.drawImage(layer, 0, 0);
+
+      log('Baking pastelized foil card plate...');
+      const cardW = 620;
+      const cardH = 430;
+      const cardCanvas = Object.assign(document.createElement('canvas'), { width: cardW, height: cardH });
+      const cctx = cardCanvas.getContext('2d');
+
+      // 1. Draw foil mask silhouette
+      cctx.drawImage(foilImg, 0, 0, cardW, cardH);
+
+      // 2. Composite radiant pastel wash
+      cctx.globalCompositeOperation = 'source-in';
+      const pastelGrad = cctx.createLinearGradient(0, 0, cardW, cardH);
+      pastelGrad.addColorStop(0, '#fdf7f2');     // soft morning rose / ivory
+      pastelGrad.addColorStop(0.35, '#fafbf5');  // creamy sunlit linen
+      pastelGrad.addColorStop(0.70, '#f4f8f4');  // pale meadow sage
+      pastelGrad.addColorStop(1, '#f3effa');     // gentle dusk lavender
+      cctx.fillStyle = pastelGrad;
+      cctx.fillRect(0, 0, cardW, cardH);
+
+      // 3. Very gentle foil shimmer & crease relief
+      cctx.globalCompositeOperation = 'soft-light';
+      cctx.globalAlpha = 0.22;
+      cctx.drawImage(foilImg, 0, 0, cardW, cardH);
+
+      // 4. Subtle paper texture
+      cctx.globalCompositeOperation = 'overlay';
+      cctx.globalAlpha = 0.08;
+      cctx.drawImage(foilImg, 0, 0, cardW, cardH);
+
+      cctx.globalAlpha = 1.0;
+      cctx.globalCompositeOperation = 'source-over';
+
+      log('Rendering 1200x630 four-hour torn paper backdrop...');
+      const bgCanvas = Object.assign(document.createElement('canvas'), { width: W, height: H });
+      const sctx = bgCanvas.getContext('2d');
+
+      const flat = sctx.createLinearGradient(0, 0, W, 0);
+      HOURS.forEach((hour, i) => flat.addColorStop((i + 0.5) / 4, CHAPTER_PALETTES[hour].middle));
+      sctx.fillStyle = flat;
+      sctx.fillRect(0, 0, W, H);
+
+      const slant = H * 0.16; // ~100px
+      const band = W / 4;     // 300px
+      const rand = lcg(31);
+      const scale = 1;
+
+      for (let i = 0; i < HOURS.length; i++) {
+        const x0 = Math.floor(i * band - slant - 14 * scale);
+        const bw = Math.ceil(band + 2 * slant + 28 * scale);
+        const paper = hourSheet(HOURS[i], bw, H);
+        sctx.save();
+        sctx.beginPath();
+        const steps = 30;
+        for (let s = 0; s <= steps; s++) {
+          const y = (s / steps) * H;
+          const x = i === 0 ? -20 : i * band + slant * (1 - 2 * s / steps) + (rand() - 0.5) * 8 * scale;
+          if (s === 0) sctx.moveTo(x, y); else sctx.lineTo(x, y);
+        }
+        sctx.lineTo(W + 20, H); sctx.lineTo(W + 20, 0); sctx.closePath();
+        if (i > 0) {
+          sctx.shadowColor = 'rgba(30, 24, 20, 0.35)';
+          sctx.shadowBlur = 10 * scale;
+          sctx.shadowOffsetX = -3 * scale;
+          sctx.fillStyle = CHAPTER_PALETTES[HOURS[i]].middle;
+          sctx.fill();
+          sctx.shadowColor = 'transparent';
+        }
+        sctx.clip();
+        sctx.drawImage(paper, x0, 0);
+        if (i === HOURS.length - 1) sctx.drawImage(paper, x0 + bw - 2, 0);
+        sctx.restore();
+      }
+
+      // Enclosing cord loop
+      log('Drawing enclosing cord loop...');
+      sctx.save();
+      sctx.lineCap = 'round'; sctx.lineJoin = 'round';
+      sctx.shadowColor = 'rgba(30, 24, 20, 0.38)';
+      sctx.shadowBlur = 6;
+      sctx.shadowOffsetY = 3;
+      sctx.strokeStyle = CHAPTER_PALETTES.dawn.balanced;
+      sctx.lineWidth = 9;
+      loopPath(sctx, 600, 315, 525, 268, lcg(7));
+      sctx.stroke();
+      sctx.restore();
+
+      // Composite final Embed Card (1200 x 630)
+      log('Compositing Center Plate & Lettering...');
+      const finalCanvas = Object.assign(document.createElement('canvas'), { width: W, height: H });
+      const fctx = finalCanvas.getContext('2d');
+      fctx.drawImage(bgCanvas, 0, 0);
+
+      fctx.save();
+      fctx.translate(600, 315);
+      fctx.rotate(-0.6 * Math.PI / 180);
+      fctx.shadowColor = 'rgba(32, 26, 20, 0.24)';
+      fctx.shadowBlur = 36;
+      fctx.shadowOffsetX = 0;
+      fctx.shadowOffsetY = 16;
+      fctx.drawImage(cardCanvas, -cardW / 2, -cardH / 2, cardW, cardH);
+
+      // Handwritten Title (placed elegantly in top 2/3 of plate)
+      const titleW = 340;
+      const titleH = titleW * (760 / 800); // 323
+      const titleX = -titleW / 2;
+      const titleY = -cardH / 2 + 18;
+      fctx.shadowColor = 'transparent';
+      fctx.drawImage(letteringCanvas, titleX, titleY, titleW, titleH);
+
+      // Subtitles below title (in bottom portion of plate)
+      fctx.textAlign = 'center';
+      fctx.textBaseline = 'middle';
+
+      // 1. Primary descriptive kicker
+      fctx.font = '600 15px Mali, sans-serif';
+      fctx.fillStyle = '#22483f'; // Deep botanical evergreen
+      drawLetterspacedText(fctx, 'A CONTEMPLATIVE MEADOW GESTURE GAME', 0, titleY + titleH + 16, 4);
+
+      // 2. Author and hours subtitle
+      fctx.font = '500 12.5px Mali, sans-serif';
+      fctx.fillStyle = '#5c385b'; // Deep dusk plum
+      drawLetterspacedText(fctx, 'DAWN · NOON · DUSK · MIDNIGHT · XYH TAMURA', 0, titleY + titleH + 46, 4);
+      fctx.restore();
+
+      // Draw the 6 fliers orbiting gracefully in the spacious verges
+      log('Drawing six meadow inhabitants in flight (bilateral wing spread)...');
+      const fliers = [
+        { kind: 'brimstone', angle: -2.62, rx: 515, ry: 250, flap: 0 },
+        { kind: 'damselfly', angle: -1.98, rx: 505, ry: 268, flap: 0 },
+        { kind: 'lacewing',  angle: 2.85,  rx: 515, ry: 250, flap: 0 },
+        { kind: 'hoverfly',  angle: -1.16, rx: 505, ry: 268, flap: Math.PI / 2 },
+        { kind: 'hawkmoth',  angle: -0.15, rx: 515, ry: 250, flap: Math.PI / 2 },
+        { kind: 'firefly',   angle: 0.85,  rx: 505, ry: 245, flap: 0, glow: 0.4 }
+      ];
+
+      const insectScale = 3.6;
+
+      for (const info of fliers) {
+        const insect = new Insect(0, 0, info.kind);
+        insect.lacePhase = 'travel';
+        insect.flapPhase = info.flap;
+        if (info.glow) {
+          insect.stateTime = info.glow;
+          insect.glowOffset = 0;
+        }
+
+        const a = info.angle;
+        const x = 600 + Math.cos(a) * info.rx;
+        const y = 315 + Math.sin(a) * info.ry;
+        const nextA = a + 0.05;
+        const nx = 600 + Math.cos(nextA) * info.rx;
+        const ny = 315 + Math.sin(nextA) * info.ry;
+        insect.heading = Math.atan2(ny - y, nx - x);
+
+        fctx.save();
+        fctx.translate(x, y);
+        fctx.scale(insectScale, insectScale);
+        insect.x = 0; insect.y = 0;
+        insect.draw(fctx);
+        fctx.restore();
+      }
+
+      // Elegant registration marks in four corners
+      fctx.save();
+      fctx.strokeStyle = 'rgba(60, 48, 38, 0.22)';
+      fctx.lineWidth = 1;
+      const m = 20, len = 14;
+      // top-left
+      fctx.beginPath(); fctx.moveTo(m, m + len); fctx.lineTo(m, m); fctx.lineTo(m + len, m); fctx.stroke();
+      // top-right
+      fctx.beginPath(); fctx.moveTo(W - m - len, m); fctx.lineTo(W - m, m); fctx.lineTo(W - m, m + len); fctx.stroke();
+      // bottom-left
+      fctx.beginPath(); fctx.moveTo(m, H - m - len); fctx.lineTo(m, H - m); fctx.lineTo(m + len, H - m); fctx.stroke();
+      // bottom-right
+      fctx.beginPath(); fctx.moveTo(W - m - len, H - m); fctx.lineTo(W - m, H - m); fctx.lineTo(W - m, H - m - len); fctx.stroke();
+      fctx.restore();
+
+      log('Exporting embed card PNG and sending to server...');
+      const blob = await new Promise(r => finalCanvas.toBlob(r, 'image/png'));
+      await fetch('/api/save_card?name=drawing-the-hours-embed.png', { method: 'POST', body: blob });
+
+      log('[OK] Embed card rendered successfully!');
+      await fetch('/api/done', { method: 'POST' });
+    }
+
+    generate().catch(err => {
+      log('\nERROR: ' + err.stack);
+      fetch('/api/error', { method: 'POST', body: err.stack }).catch(() => {});
+    });
+  </script>
+</body>
+</html>

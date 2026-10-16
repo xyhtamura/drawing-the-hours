@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drawing the Hours — Embed Card</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="assets/fonts/fonts.css">
+
+  <!-- Open Graph / Social Embeds -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Drawing the Hours">
+  <meta property="og:title" content="Drawing the Hours">
+  <meta property="og:description" content="A tablet and browser meadow gesture game where the player draws with continuous cord loops and strokes among moving garden inhabitants across four quiet hours.">
+  <meta property="og:url" content="https://xyhtamura.github.io/drawing-the-hours/">
+  <meta property="og:image" content="drawing-the-hours-embed.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Drawing the Hours — a contemplative meadow gesture game across four quiet hours by Xyh Tamura.">
+
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Drawing the Hours">
+  <meta name="twitter:description" content="A tablet and browser meadow gesture game where the player draws with continuous cord loops and strokes among moving garden inhabitants across four quiet hours.">
+  <meta name="twitter:image" content="drawing-the-hours-embed.png">
+  <meta name="twitter:image:alt" content="Drawing the Hours — a contemplative meadow gesture game across four quiet hours by Xyh Tamura.">
+
+  <style>
+    :root {
+      --w: 1200px;
+      --h: 630px;
+      --bg: #1c1815;
+      --card-bg: #f5eedc;
+      --ink: #2d2620;
+      --accent: #34574f;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      font-family: Mali, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .embed-stage {
+      position: relative;
+      width: var(--w);
+      height: var(--h);
+      transform-origin: center center;
+    }
+
+    .poster {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+      background: #f4efdc;
+    }
+
+    .poster-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .overlay-actions {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 22px;
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      z-index: 10;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      pointer-events: none;
+    }
+
+    .embed-stage:hover .overlay-actions,
+    .embed-stage:focus-within .overlay-actions {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      font-family: Mali, sans-serif;
+      font-size: 13.5px;
+      font-weight: 600;
+      text-decoration: none;
+      color: #fdfaf4;
+      background: rgba(34, 72, 63, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+      transition: all 0.16s ease;
+      cursor: pointer;
+    }
+
+    .btn-action.secondary {
+      background: rgba(92, 56, 91, 0.90);
+    }
+
+    .btn-action:hover {
+      transform: translateY(-2px);
+      background: rgba(45, 95, 83, 0.98);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    }
+
+    .btn-action.secondary:hover {
+      background: rgba(115, 70, 114, 0.98);
+    }
+
+    .btn-action:active {
+      transform: translateY(1px);
+    }
+
+    @media (max-width: 1220px), (max-height: 650px) {
+      .embed-stage {
+        transform: scale(min(calc(100vw / 1220), calc(100vh / 650)));
+      }
+      .overlay-actions {
+        opacity: 0.95;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="embed-stage" role="region" aria-label="Drawing the Hours interactive embed card">
+    <main class="poster">
+      <img class="poster-img" src="drawing-the-hours-embed.jpg" alt="Drawing the Hours — a contemplative meadow gesture game across four quiet hours by Xyh Tamura.">
+      <nav class="overlay-actions" aria-label="Quick links">
+        <a class="btn-action" href="./" target="_top" rel="noopener">&#9655; Play Game</a>
+        <a class="btn-action secondary" href="https://xyhtamura.bandcamp.com/album/drawing-the-hours" target="_blank" rel="noopener">&#9655; OST on Bandcamp</a>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

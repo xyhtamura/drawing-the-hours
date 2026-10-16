@@ -530,19 +530,14 @@ export class Insect {
   }
 
   drawDamselflyWingPair(ctx, length, angle, isForewing) {
-    ctx.save();
-    // Left wing
-    ctx.save();
-    ctx.rotate(-Math.PI / 2 + 0.35 + angle);
-    this.drawSingleDamselflyWing(ctx, length, isForewing);
-    ctx.restore();
-
-    // Right wing
-    ctx.save();
-    ctx.rotate(Math.PI / 2 - 0.35 - angle);
-    this.drawSingleDamselflyWing(ctx, length, isForewing);
-    ctx.restore();
-    ctx.restore();
+    const baseAngle = isForewing ? -0.22 : 0.08;
+    for (const side of [-1, 1]) {
+      ctx.save();
+      ctx.scale(side, 1);
+      ctx.rotate(baseAngle + angle);
+      this.drawSingleDamselflyWing(ctx, length, isForewing);
+      ctx.restore();
+    }
   }
 
   drawSingleDamselflyWing(ctx, length, isForewing) {

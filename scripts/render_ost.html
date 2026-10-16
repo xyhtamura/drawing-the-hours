@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Drawing the Hours OST Renderer</title>
+</head>
+<body>
+  <h1>Rendering Drawing the Hours OST...</h1>
+  <pre id="log">Initializing...</pre>
+
+  <script type="module">
+    import { audio } from '../src/audio.js';
+    import { music, VOICES, PERCUSSION } from '../src/music.js';
+    import { samples } from '../src/samples.js';
+    import { SONGS } from '../src/songs.js';
+    import { STAGE_SONGS } from '../src/song-variations.js';
+    import { TUNINGS, degreeHz } from '../src/tunings.js';
+    import { RhythmClock } from '../src/rhythm.js';
+    import { DRUM_VOICES } from '../src/drum-voices.js';
+
+    const logEl = document.getElementById('log');
+    function log(msg) {
+      logEl.textContent += msg + '\n';
+      console.log(msg);
+      fetch('/api/progress', { method: 'POST', body: msg }).catch(() => {});
+    }
+
+    const SAMPLE_RATE = 48000;
+
+    function writeString(view, offset, string) {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    }
+
+    function audioBufferToWav24(buffer) {
+      const numChannels = buffer.numberOfChannels;
+      const sampleRate = buffer.sampleRate;
+      const numSamples = buffer.length;
+      const bytesPerSample = 3;
+      const blockAlign = numChannels * bytesPerSample;
+      const byteRate = sampleRate * blockAlign;
+      const dataSize = numSamples * blockAlign;
+      const wavBuffer = new ArrayBuffer(44 + dataSize);
+      const view = new DataView(wavBuffer);
+
+      writeString(view, 0, 'RIFF');
+      view.setUint32(4, 36 + dataSize, true);
+      writeString(view, 8, 'WAVE');
+
+      writeString(view, 12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true); // PCM
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, byteRate, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, 24, true); // 24-bit
+
+      writeString(view, 36, 'data');
+      view.setUint32(40, dataSize, true);
+
+      let offset = 44;
+      const u8 = new Uint8Array(wavBuffer);
+      const l = buffer.getChannelData(0);
+      const r = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : l;
+
+      for (let i = 0; i < numSamples; i++) {
+        let sL = l[i];
+        if (sL > 1) sL = 1; else if (sL < -1) sL = -1;
+        let vL = Math.floor(sL < 0 ? sL * 8388608 : sL * 8388607);
+        if (vL < 0) vL += 16777216;
+        u8[offset++] = vL & 0xff;
+        u8[offset++] = (vL >> 8) & 0xff;
+        u8[offset++] = (vL >> 16) & 0xff;
+
+        let sR = r[i];
+        if (sR > 1) sR = 1; else if (sR < -1) sR = -1;
+        let vR = Math.floor(sR < 0 ? sR * 8388608 : sR * 8388607);
+        if (vR < 0) vR += 16777216;
+        u8[offset++] = vR & 0xff;
+        u8[offset++] = (vR >> 8) & 0xff;
+        u8[offset++] = (vR >> 16) & 0xff;
+      }
+
+      return wavBuffer;
+    }
+
+    function applyMastering(buffer) {
+      const numChannels = buffer.numberOfChannels;
+      const length = buffer.length;
+      let peak = 0;
+      for (let ch = 0; ch < numChannels; ch++) {
+        const data = buffer.getChannelData(ch);
+        for (let i = 0; i < length; i++) {
+          const a = Math.abs(data[i]);
+          if (a > peak) peak = a;
+        }
+      }
+
+      // Target peak: -1.0 dBFS = 0.891
+      const targetPeak = 0.891;
+      const gain = peak > 0 ? targetPeak / peak : 1.0;
+
+      // Gentle fade-in (0.05s) and fade-out (3.5s tail)
+      const fadeInSamples = Math.floor(0.05 * SAMPLE_RATE);
+      const fadeOutSamples = Math.floor(3.5 * SAMPLE_RATE);
+      const fadeOutStart = Math.max(0, length - fadeOutSamples);
+
+      for (let ch = 0; ch < numChannels; ch++) {
+        const data = buffer.getChannelData(ch);
+        for (let i = 0; i < length; i++) {
+          let env = 1.0;
+          if (i < fadeInSamples) {
+            env = (i / fadeInSamples);
+          } else if (i >= fadeOutStart) {
+            const rel = (i - fadeOutStart) / fadeOutSamples;
+            env = 0.5 * (1 + Math.cos(Math.PI * rel)); // raised cosine fade
+          }
+          data[i] = data[i] * gain * env;
+        }
+      }
+
+      return { peakDb: 20 * Math.log10(peak || 1e-12), normalizedPeakDb: 20 * Math.log10(peak * gain || 1e-12) };
+    }
+
+    async function renderSequence(stagesConfig, totalDurationSec, options = {}) {
+      const totalSamples = Math.ceil((totalDurationSec + 6.0) * SAMPLE_RATE);
+      const ctx = new OfflineAudioContext(2, totalSamples, SAMPLE_RATE);
+      audio.ctx = ctx;
+      music.samplesEnabled = true;
+
+      // Set up main hour context from the first stage
+      const firstHour = stagesConfig[0].hour;
+      const firstScore = stagesConfig[0].score;
+      music.start(firstHour, firstScore);
+
+      // Stop permanent drones from music.start so we schedule drones per stage cleanly
+      for (const d of (music.drones || [])) {
+        try { d.osc.stop(0); } catch {}
+      }
+      music.drones = [];
+
+      // Ensure rhythm bus exists
+      if (!music.rhythmBus) {
+        const high = ctx.createBiquadFilter(), low = ctx.createBiquadFilter();
+        high.type = 'highpass'; high.frequency.value = 65; high.Q.value = .5;
+        low.type = 'lowpass'; low.frequency.value = 3400; low.Q.value = .5;
+        high.connect(low); low.connect(music.bus);
+        music.rhythmBus = high;
+      }
+
+      // Track timeline
+      let currentTime = 0.2; // slight start offset
+      for (const item of stagesConfig) {
+        const { hour, score, passes = 2, slow = false, pitchMult = 1 } = item;
+        const bpm = score.bpm;
+        const speed = slow ? 0.55 : 1.0;
+        const stepSec = (30 / bpm) / speed;
+        const pitch = (slow ? (2 ** (-100 / 1200)) : 1) * pitchMult;
+        const passSteps = score.steps;
+        const stageDuration = passSteps * stepSec * passes;
+        const stageEnd = currentTime + stageDuration;
+
+        // Set active hour and song for microtonal scale lookups and volume balance
+        music.hour = hour;
+        music.song = score;
+
+        // Schedule stage drones with smooth 1s fade-in and 1s fade-out
+        const tuning = TUNINGS[hour];
+        for (const degree of (score.drone || [])) {
+          const hz = degreeHz(tuning, score.root, degree) / 2;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(hz * pitch, currentTime);
+          gain.gain.setValueAtTime(0.0001, currentTime);
+          gain.gain.linearRampToValueAtTime(0.12, currentTime + 1.0);
+          gain.gain.setValueAtTime(0.12, Math.max(currentTime + 1.0, stageEnd - 1.0));
+          gain.gain.linearRampToValueAtTime(0.0001, stageEnd);
+          osc.connect(gain);
+          gain.connect(music.bus);
+          osc.start(currentTime);
+          osc.stop(stageEnd);
+        }
+
+        // Start rhythm clock for this section if specified
+        if (score.rhythm) {
+          const sectionRhythm = new RhythmClock(score.rhythm, currentTime, event => music.rhythmHit(event));
+          sectionRhythm.tick(currentTime, speed, pitch, stageDuration);
+        }
+
+        // Schedule melody and accompaniment steps
+        for (let p = 0; p < passes; p++) {
+          for (let step = 0; step < passSteps; step++) {
+            const at = currentTime + (p * passSteps + step) * stepSec;
+            music.playStep(score, step, at, pitch);
+          }
+        }
+
+        currentTime = stageEnd;
+      }
+
+      log(`Rendering audio graph (${(totalSamples / SAMPLE_RATE).toFixed(1)}s)...`);
+      const renderedBuffer = await ctx.startRendering();
+      const stats = applyMastering(renderedBuffer);
+      log(`Mastered: peak ${stats.normalizedPeakDb.toFixed(2)} dBFS`);
+
+      return audioBufferToWav24(renderedBuffer);
+    }
+
+    // --- TRACK SPECIFICATIONS ---
+    const TRACKS = [
+      {
+        id: '01',
+        filename: '01-drawing-the-hours-title-theme.wav',
+        title: 'Drawing the Hours (Title Theme)',
+        hour: 'title',
+        buildStages: () => [
+          { hour: 'title', score: SONGS.title, passes: 3 }
+        ],
+        approxDuration: 136,
+      },
+      {
+        id: '02',
+        filename: '02-hour-i-dawn-morning-verge.wav',
+        title: 'Hour I: Dawn (Morning Verge)',
+        hour: 'dawn',
+        buildStages: () => STAGE_SONGS.dawn.map((score, i) => ({
+          hour: 'dawn', score, passes: 2
+        })),
+        approxDuration: 165,
+      },
+      {
+        id: '03',
+        filename: '03-hour-ii-noon-atrium-sun.wav',
+        title: 'Hour II: Noon (Atrium Sun)',
+        hour: 'noon',
+        buildStages: () => STAGE_SONGS.noon.map((score, i) => ({
+          hour: 'noon', score, passes: 2
+        })),
+        approxDuration: 125,
+      },
+      {
+        id: '04',
+        filename: '04-hour-iii-dusk-the-garden-cloister.wav',
+        title: 'Hour III: Dusk (The Garden Cloister)',
+        hour: 'dusk',
+        buildStages: () => STAGE_SONGS.dusk.map((score, i) => ({
+          hour: 'dusk', score, passes: 2
+        })),
+        approxDuration: 186,
+      },
+      {
+        id: '05',
+        filename: '05-hour-iv-midnight-window-planter.wav',
+        title: 'Hour IV: Midnight (Window Planter)',
+        hour: 'midnight',
+        buildStages: () => STAGE_SONGS.midnight.map((score, i) => ({
+          hour: 'midnight', score, passes: 2
+        })),
+        approxDuration: 212,
+      },
+      {
+        id: '06',
+        filename: '06-the-slowing-bloom-poppy-and-ylang-ylang.wav',
+        title: 'The Slowing Bloom (Poppy & Ylang-Ylang)',
+        hour: 'noon',
+        buildStages: () => [
+          { hour: 'noon', score: STAGE_SONGS.noon[0], passes: 2, slow: true },
+          { hour: 'noon', score: STAGE_SONGS.noon[3], passes: 2, slow: true },
+          { hour: 'midnight', score: STAGE_SONGS.midnight[0], passes: 1, slow: true },
+          { hour: 'midnight', score: STAGE_SONGS.midnight[5], passes: 1, slow: true }
+        ],
+        approxDuration: 135,
+      },
+      {
+        id: '07',
+        filename: '07-meadow-cycle-daylight-to-midnight-suite.wav',
+        title: 'Meadow Cycle (Daylight to Midnight Suite)',
+        hour: 'dawn',
+        buildStages: () => [
+          // Dawn
+          { hour: 'dawn', score: STAGE_SONGS.dawn[0], passes: 2 },
+          { hour: 'dawn', score: STAGE_SONGS.dawn[4], passes: 2 },
+          // Noon
+          { hour: 'noon', score: STAGE_SONGS.noon[0], passes: 2 },
+          { hour: 'noon', score: STAGE_SONGS.noon[3], passes: 2 },
+          // Slow bloom transition
+          { hour: 'noon', score: STAGE_SONGS.noon[5], passes: 1, slow: true },
+          // Dusk
+          { hour: 'dusk', score: STAGE_SONGS.dusk[0], passes: 2 },
+          { hour: 'dusk', score: STAGE_SONGS.dusk[4], passes: 2 },
+          // Midnight
+          { hour: 'midnight', score: STAGE_SONGS.midnight[0], passes: 2 },
+          { hour: 'midnight', score: STAGE_SONGS.midnight[5], passes: 2 },
+          // Title coda
+          { hour: 'title', score: SONGS.title, passes: 1 }
+        ],
+        approxDuration: 440,
+      }
+    ];
+
+    async function main() {
+      log('Starting Drawing the Hours OST audio render...');
+      // Pre-load all audition sample recordings into memory
+      const preCtx = new OfflineAudioContext(2, SAMPLE_RATE, SAMPLE_RATE);
+      await samples.load(preCtx);
+      log(`Samples loaded: ${samples.ready.size} melodic banks, ${samples.drums.size} drum voices.`);
+
+      for (let idx = 0; idx < TRACKS.length; idx++) {
+        const track = TRACKS[idx];
+        log(`\n[${idx + 1}/${TRACKS.length}] Rendering: ${track.title}...`);
+        const stages = track.buildStages();
+        const wavData = await renderSequence(stages, track.approxDuration);
+
+        log(`Saving ${track.filename} (${(wavData.byteLength / 1024 / 1024).toFixed(2)} MB)...`);
+        const resp = await fetch(`/api/save_wav?filename=${encodeURIComponent(track.filename)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: wavData
+        });
+        if (!resp.ok) throw new Error(`Failed to save ${track.filename}`);
+        log(`✓ Saved ${track.filename}`);
+      }
+
+      log('\nAll 7 tracks successfully rendered!');
+      await fetch('/api/done', { method: 'POST' });
+    }
+
+    main().catch(err => {
+      log('\nERROR: ' + err.stack);
+      fetch('/api/error', { method: 'POST', body: err.stack }).catch(() => {});
+    });
+  </script>
+</body>
+</html>
