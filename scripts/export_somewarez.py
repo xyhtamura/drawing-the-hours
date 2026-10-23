@@ -1,7 +1,9 @@
 """Export the SOMEWAREZ kiosk build as a self-contained folder and zip.
 
 Copies the files the kiosk build loads into dist/somewarez/, sets the build flag
-on so index.html is the kiosk with no ?somewarez in the address, and writes
+on so index.html is the kiosk with no ?somewarez in the address, removes the
+link-preview tags from index.html (they name the live site and do nothing
+offline), and writes
 BUILD.txt with the source commit and a hash of every file. The same folder is
 zipped beside it as dist/drawing-the-hours-somewarez-<commit>.zip.
 
@@ -62,7 +64,8 @@ Nothing is saved to the device. Three controls at the foot of the field are Main
 menu, Level card, and Reset. Nothing is drawn outside the field. Reset returns to the title screen and clears progress, scores, and
 settings. Left alone for 90 seconds, the page resets itself. Left alone on the
 title screen for 20 seconds, it runs a loop until someone touches the screen:
-the game playing itself, a card with a QR code for the multicart, the title.
+the game playing itself, clips of the other four works on the multicart, a card
+with a QR code for the multicart, the title.
 
 To try other timings, add them to the address in seconds, for example
 http://localhost:8080/?idle=60&title=10&demo=30&ad=12
@@ -126,6 +129,15 @@ def main():
     if len(flag.findall(build)) != 1:
         raise SystemExit('src/build.js no longer holds the KIOSK flag in the form this script rewrites.')
     files['src/build.js'] = flag.sub('export const KIOSK = true; // set by scripts/export_somewarez.py', build).encode('utf-8')
+
+    # Link previews (Open Graph, Twitter/X) name the live site. They only matter when
+    # a link to it is shared, so the copy drops them; any other live address still stops the export.
+    page = files['index.html'].decode('utf-8')
+    preview = re.compile(r'''^[ 	]*(?:<!--\s*(?:Open Graph|Twitter)[^>]*-->|<meta\s+(?:property="og:|name="twitter:)[^>]*>)[ 	]*?
+''', re.M)
+    page, removed = preview.subn('', page)
+    files['index.html'] = page.encode('utf-8')
+    print(f'index.html: removed {removed} link-preview lines')
 
     problems = []
     for rel, data in files.items():
