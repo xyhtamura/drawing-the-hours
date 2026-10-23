@@ -19,6 +19,9 @@ Thumbs.db
 # Local sample audition map and source paths.
 /SAMPLE-CANDIDATES.local.md
 
+# Artist statement interview material and revision notes.
+/ARTIST-STATEMENT-NOTES.local.md
+
 # Local library recordings; standalone sample redistribution is not cleared.
 /assets/audio-local/
 
