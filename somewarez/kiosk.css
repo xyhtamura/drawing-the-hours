@@ -87,3 +87,20 @@ body.kiosk .stage-wrapper > .recipe-modal:not(#title-screen) { padding-bottom: 6
   .kiosk-ad-code figcaption { max-width: none; flex: 1; font-size: 2.6cqmin; }
   .kiosk-ad-heading h2 { font-size: 17cqmin; }
 }
+
+/* Clips of the other works: the video whole on the card's ink ground, its title under it. */
+.kiosk-clips {
+  --ink: #17363b; --cream: #e8e0c1; --coral: #ed7963; --amber: #ecba65;
+  position: absolute; inset: 0; display: flex; flex-direction: column; gap: 2.4cqmin; padding: 3cqmin;
+  background: var(--ink); color: var(--ink); font-family: 'Kiosk Pixel', monospace;
+}
+.kiosk-clips-screen { flex: 1; min-height: 0; position: relative; }
+.kiosk-clips-screen video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.kiosk-clips-label {
+  flex: none; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.6cqmin 2.4cqmin;
+  padding: 1.6cqmin 2.4cqmin; background: var(--cream); border: 2px solid var(--cream);
+  box-shadow: 0.8cqmin 0.8cqmin 0 var(--coral); font-size: 2.6cqmin;
+}
+.kiosk-clips-label strong { font-size: 4.4cqmin; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+.kiosk-clips-also { flex-basis: 100%; font-size: 2cqmin; letter-spacing: 0.12em; }
+.kiosk-clips-count { margin-left: auto; padding: 0.4cqmin 0.9cqmin; background: var(--amber); border: 1px solid; }

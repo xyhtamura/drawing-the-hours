@@ -30,11 +30,14 @@ Locally, with the root server running:
   until someone touches the screen:
   1. The game playing itself for up to 45 seconds, without sound. It rotates through
      one visit from each hour.
-  2. A card with a QR code for the multicart, 18 seconds. It is set like the
+  2. Clips of the other four works on the multicart, played one after another
+     without sound, each under its title and line from the multicart list: about
+     22 seconds. The clips are in `video/`.
+  3. A card with a QR code for the multicart, 18 seconds. It is set like the
      multicart's own page and lists its five works.
-  3. The title screen, 20 seconds.
+  4. The title screen, 20 seconds.
 
-  A touch during the first two returns to the title screen. That touch does not
+  A touch during the first three returns to the title screen. That touch does not
   press anything under it.
 - **A local cast.** Creatures and plants carry Philippine names (paruparo, tutubi,
   alitaptap, putakti, dama de noche, abaca, cogon), the hawkmoth is an oleander
@@ -46,7 +49,8 @@ Locally, with the root server running:
 ## Settings
 
 [config.js](config.js) holds the multicart URL, the five titles on the card, the
-timings, the visits the demonstration plays, and `STATEMENT`. The titles repeat
+timings, the visits the demonstration plays, the clips and their order
+(`ATTRACT_CLIPS`), and `STATEMENT`. The titles repeat
 the multicart menu's; change them here when that menu changes.
 
 `STATEMENT` is empty. Put a narration or artist statement there as one string per
@@ -54,7 +58,8 @@ line, and each line shows over the demonstration for seven seconds. The
 demonstration lengthens to fit all of them.
 
 To try other timings without editing the file, add them to the address in seconds:
-`?somewarez&idle=30&title=5&demo=20&ad=8`.
+`?somewarez&idle=30&title=5&demo=20&ad=8`. `clip` is the longest one clip
+may run if its video stalls.
 
 ## Changing the multicart address
 

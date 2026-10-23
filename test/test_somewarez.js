@@ -5,6 +5,7 @@
  * 2. The scripted player gathers in every DEMO_VISITS entry, on a landscape and a portrait field
  * 3. multicart-qr.svg was drawn from the URL in somewarez/config.js
  * 4. The page wires the kiosk in only behind the build flag
+ * 6. Every attract clip names a multicart work and is an MP4 on disk
  *
  * Usage:
  *   node test/test_somewarez.js
@@ -69,7 +70,7 @@ const { CAMPAIGN_LEVELS } = await import('../src/campaign.js');
 const { useMemoryStorage, storage } = await import('../src/storage.js');
 const { setColorMode, getColorMode } = await import('../src/theme.js');
 const { createAutoplay } = await import('../somewarez/autoplay.js');
-const { DEMO_VISITS, MULTICART_URL, TIMING } = await import('../somewarez/config.js');
+const { DEMO_VISITS, MULTICART_URL, MULTICART_GAMES, TIMING, ATTRACT_CLIPS } = await import('../somewarez/config.js');
 
 const send = (type, [x, y]) => {
   const event = { pointerId: 1, isPrimary: true, button: 0, clientX: x, clientY: y, preventDefault() {} };
@@ -230,6 +231,21 @@ console.log('--- Running SOMEWAREZ kiosk tests ---');
   }
   setLocalEdition(false);
   console.log('✔ The local edition renames the whole cast and keeps the rest of the text.');
+}
+
+// 6. Attract clips
+{
+  const titles = MULTICART_GAMES.map(([title]) => title);
+  assert.ok(ATTRACT_CLIPS.length > 0, 'there are clips to play');
+  for (const [title, path] of ATTRACT_CLIPS) {
+    assert.ok(titles.includes(title), `${title} is not on the multicart list in config.js`);
+    assert.notEqual(title, 'Drawing the Hours', 'this game plays itself; its clip would repeat the demonstration');
+    const file = new URL(`../somewarez/${path}`, import.meta.url);
+    assert.ok(fs.existsSync(file), `${path} is missing`);
+    // An MP4 opens with a box whose type is 'ftyp'.
+    assert.equal(fs.readFileSync(file).subarray(4, 8).toString('latin1'), 'ftyp', `${path} is not an MP4`);
+  }
+  console.log('✔ Every attract clip names a multicart work and is an MP4 on disk.');
 }
 
 console.log('--- All SOMEWAREZ kiosk tests passed! ---');
