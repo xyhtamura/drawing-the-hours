@@ -18,7 +18,7 @@ Locally, with the root server running:
   open from the Visits list.
 - **Three controls at the foot of the field** replace the Pause button. Nothing
   is drawn outside the field:
-  - **Main menu** opens the menu: Resume, Visit Card, Visits, Field Book, Settings,
+  - **Main menu** opens the menu: Resume, Visits, Field Book, Encyclopedia, About, Settings,
     Restart visit.
   - **Level card** shows the current visit's requirements. During play the clock
     stops while the card is open.
@@ -53,7 +53,7 @@ timings, the visits the demonstration plays, the clips and their order
 (`ATTRACT_CLIPS`), and `STATEMENT`. The titles repeat
 the multicart menu's; change them here when that menu changes.
 
-`STATEMENT` is empty. Put a narration or artist statement there as one string per
+`STATEMENT` contains the opening paragraph of the artist statement, one sentence per display. About on the menu contains the full text. Put any later narration there as one string per
 line, and each line shows over the demonstration for seven seconds. The
 demonstration lengthens to fit all of them.
 

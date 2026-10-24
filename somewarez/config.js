@@ -43,6 +43,10 @@ export const DEMO_VISITS = ['dawn-06', 'noon-04', 'dusk-03', 'midnight-03'];
 
 /**
  * Xyh's narration or artist statement, one string per line shown over the
- * demonstration. Empty until written: the demonstration then runs without text.
+ * demonstration. The opening paragraph is split into readable sentences.
  */
-export const STATEMENT = [];
+export const STATEMENT = [
+  "Drawing the Hours is a drawing game set among insects and plants in the small spaces of a working day.",
+  "Its speaker waits for transport, takes a lunch break, brings home medicine, and tries to sleep.",
+  "During these intervals, the player draws cords around moving creatures, threads them in sequence, and learns combinations."
+];

@@ -674,3 +674,18 @@ body .stage-wrapper {
 body .stage-wrapper canvas#game-canvas {
   inset: auto; left: 50%; top: 50%; transform: translate(-50%, -50%);
 }
+
+/* Paper-colored scrollbars; native vertical swipes remain available in every panel. */
+.recipe-card {
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: auto;
+  scrollbar-color: var(--text-muted) var(--panel-bg);
+  scrollbar-gutter: stable;
+}
+.recipe-card::-webkit-scrollbar { width: 14px; }
+.recipe-card::-webkit-scrollbar-track { background: var(--panel-bg); border-radius: 14px; }
+.recipe-card::-webkit-scrollbar-thumb {
+  background: var(--text-muted); border: 3px solid var(--panel-bg); border-radius: 14px;
+}
+.about-card p { margin: 1em 0; line-height: 1.65; }
