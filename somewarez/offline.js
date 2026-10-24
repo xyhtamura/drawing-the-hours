@@ -2,10 +2,14 @@
 export async function setupOffline() {
   const status = document.getElementById('offline-status');
   const button = document.getElementById('btn-install');
-  const manifest = document.createElement('link');
-  manifest.rel = 'manifest';
-  manifest.href = new URL('../manifest.webmanifest', import.meta.url).href;
-  document.head.append(manifest);
+  // index.html links the manifest early for ?somewarez; the exported copy has no
+  // query, so it is linked here instead.
+  if (!document.querySelector('link[rel="manifest"]')) {
+    const manifest = document.createElement('link');
+    manifest.rel = 'manifest';
+    manifest.href = new URL('../manifest.webmanifest', import.meta.url).href;
+    document.head.append(manifest);
+  }
   let prompt;
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault(); prompt = event; button.hidden = false;
@@ -29,7 +33,7 @@ export async function setupOffline() {
       if (worker.state === 'redundant' && !registration.active) status.textContent = 'Offline download failed. Reconnect and reload to retry.';
     });
     await navigator.serviceWorker.ready;
-    status.textContent = 'Offline ready. Install from Chrome’s menu or use Install game.';
+    status.textContent = 'Offline ready. In Chrome’s ⋮ menu, choose Install app or Add to Home screen. Either icon opens the game offline.';
     if (window.matchMedia('(display-mode: standalone)').matches) status.textContent = 'Offline ready.';
   } catch {
     status.textContent = 'Offline download failed. Reconnect and reload to retry.';

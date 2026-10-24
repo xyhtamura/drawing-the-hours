@@ -8,6 +8,16 @@
   <meta name="description" content="A tablet and browser meadow gesture game where the player draws with continuous cord loops and strokes among moving garden inhabitants across four quiet hours.">
   <meta name="author" content="Xyh Tamura">
   <meta name="theme-color" content="#f4efdc">
+  <script>
+    // Kiosk build: link the install manifest while the page is still parsing, so
+    // Chrome's install check finds it without waiting for the game's modules.
+    if (new URLSearchParams(location.search).has('somewarez')) {
+      const manifest = document.createElement('link');
+      manifest.rel = 'manifest';
+      manifest.href = 'manifest.webmanifest';
+      document.head.append(manifest);
+    }
+  </script>
 
   <!-- Open Graph / Social Embeds -->
   <meta property="og:type" content="website">

@@ -14,8 +14,13 @@ Locally, with the root server running:
 ## Install on the Android exhibition tablet
 
 After this version is published, open the kiosk address above in Chrome with
-internet available. Wait for **Offline ready**, then tap **Install game** if it
-appears, or use Chrome’s **Install app** / **Add to Home screen** menu item.
+internet available. Only the kiosk address is installable: the main page
+(`/drawing-the-hours/` with no `somewarez`) has no manifest, so Chrome offers no
+**Install app** there. Wait for **Offline ready**, then tap **Install game** if it
+appears, or use Chrome’s **Install app** / **Add to Home screen** menu item. A
+plain home-screen shortcut also opens offline, because the offline worker
+answers both kiosk addresses; it shows Chrome’s address bar where the installed
+app does not.
 Open the resulting home-screen icon, enable airplane mode, close and reopen the
 app, and try a visit, About, and sound before handing the tablet to the venue.
 The installed game needs neither another computer nor a local server.

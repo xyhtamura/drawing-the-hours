@@ -18,7 +18,9 @@ def main():
     for folder in ('src', 'assets', 'somewarez'):
         paths.extend(p for p in (ROOT / folder).rglob('*') if p.is_file()
                      and p.suffix.lower() in {'.js', '.css', '.svg', '.png', '.jpg', '.webp', '.ttf', '.woff2'}
-                     and 'audio-local' not in p.parts)
+                     and 'audio-local' not in p.parts
+                     # link-preview cards; the game never loads them (1.1 MB)
+                     and not p.name.startswith('drawing-the-hours-embed.'))
     paths = sorted(set(paths))
     digest = hashlib.sha256()
     names = []

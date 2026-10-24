@@ -25,6 +25,11 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   const root = new URL(self.registration.scope);
   if (event.request.method !== 'GET' || url.origin !== root.origin || !url.pathname.startsWith(root.pathname)) return;
+  // somewarez/ is a forwarding page; answer it here so that address also opens offline.
+  if (event.request.mode === 'navigate' && url.pathname === root.pathname + 'somewarez/') {
+    event.respondWith(Response.redirect(root.href + '?somewarez' + url.search.replace(/^\?/, '&'), 302));
+    return;
+  }
   event.respondWith((async () => {
     const cache = await caches.open(OFFLINE_CACHE);
     const home = [root.pathname, root.pathname + 'index.html'].includes(url.pathname);
