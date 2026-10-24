@@ -133,8 +133,7 @@ def main():
     # Link previews (Open Graph, Twitter/X) name the live site. They only matter when
     # a link to it is shared, so the copy drops them; any other live address still stops the export.
     page = files['index.html'].decode('utf-8')
-    preview = re.compile(r'''^[ 	]*(?:<!--\s*(?:Open Graph|Twitter)[^>]*-->|<meta\s+(?:property="og:|name="twitter:)[^>]*>)[ 	]*?
-''', re.M)
+    preview = re.compile(r'^[ \t]*(?:<!--\s*(?:Open Graph|Twitter)[^>]*-->|<meta\s+(?:property="og:|name="twitter:)[^>]*>)[ \t]*\r?\n', re.M)
     page, removed = preview.subn('', page)
     files['index.html'] = page.encode('utf-8')
     print(f'index.html: removed {removed} link-preview lines')
