@@ -198,3 +198,6 @@ and prohibit redistribution of the original resources and competing texture
 products. These are game backgrounds, not a reusable texture pack. Fabric 181
 and Grunge 350 were left unused because their large stains compete with fish;
 Grunge 325 was left unused because its cracks introduce sharp background lines.
+
+
+2026-10-24 — Codex — Android home-screen icons (`assets/app-icon-192.png` and `assets/app-icon-512.png`) are raster exports of the project’s existing original `favicon.svg`, rendered with Sharp. No third-party artwork added.

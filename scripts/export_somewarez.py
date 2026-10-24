@@ -34,7 +34,7 @@ from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-INCLUDE = ['index.html', 'style.css', 'ui.css', 'favicon.svg', 'src', 'assets', 'somewarez']
+INCLUDE = ['index.html', 'style.css', 'ui.css', 'favicon.svg', 'manifest.webmanifest', 'offline-sw.js', 'src', 'assets', 'somewarez']
 # In somewarez/: the forwarding page and the repository README have no use in the export.
 SKIP = {'somewarez/index.html', 'somewarez/README.md'}
 TEXT = {'.html', '.css', '.js', '.svg'}  # licence texts name their own addresses and are not scanned
@@ -44,7 +44,17 @@ Xyh Tamura. Exported {today} from commit {commit}{dirty}.
 
 This folder is the whole work. It needs no network once it is being served.
 
-HOW TO RUN IT
+ANDROID: ONE-TIME INSTALLATION
+
+In Chrome, open the published kiosk address while connected to the internet.
+Wait for Offline ready, then tap Install game or choose Install app / Add to
+Home screen in Chrome's menu. Afterwards open the home-screen icon. Test it in
+airplane mode before the exhibition. This installs the synthesized-audio build;
+recorded local audition samples are not included in the offline cache.
+The installation files must first be hosted on HTTPS (or localhost for testing).
+A plain LAN HTTP address cannot install the offline app.
+
+HOW TO RUN THE FOLDER
 
 The folder has to be served over HTTP. Opening index.html by double-click does
 not work: browsers refuse to load its scripts from a file:// address.
@@ -105,6 +115,7 @@ def main():
     except AttributeError:
         pass
 
+    subprocess.run(['python', str(ROOT / 'scripts/build_offline.py'), '--check'], check=True)
     dirty = bool(git('status', '--porcelain'))
     if dirty and not args.allow_dirty:
         raise SystemExit('Uncommitted changes. Commit them, or pass --allow-dirty.')

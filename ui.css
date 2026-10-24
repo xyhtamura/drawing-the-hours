@@ -10,3 +10,5 @@ button {min-height: 44px; padding: 8px 14px;}
 .ui-pill {background: #eeeada8a; border: 0;}
 .shell-card .menu-buttons button:nth-child(n), #btn-begin {border-radius: 999px; margin-left: 0; margin-right: 0;}
 .title-cover .title-music { display: block; margin: 14px auto 0; padding: 7px 14px; min-height: 44px; border: 1px solid #34574f66; border-radius: 999px; background: transparent; color: #34574f; font: inherit; font-size: 0.85rem; cursor: pointer; }
+
+.offline-status { max-width: 34em; margin: 10px auto 0; color: #34574f; font-size: .75rem; line-height: 1.4; }

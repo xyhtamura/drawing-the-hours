@@ -11,9 +11,30 @@ Open either address on the tablet:
 Locally, with the root server running:
 `http://localhost:8000/drawing-the-hours/somewarez/`.
 
+## Install on the Android exhibition tablet
+
+After this version is published, open the kiosk address above in Chrome with
+internet available. Wait for **Offline ready**, then tap **Install game** if it
+appears, or use Chrome’s **Install app** / **Add to Home screen** menu item.
+Open the resulting home-screen icon, enable airplane mode, close and reopen the
+app, and try a visit, About, and sound before handing the tablet to the venue.
+The installed game needs neither another computer nor a local server.
+
+The app downloads its scripts, images, and fonts, and uses synthesized audio.
+The optional recorded audition bank is not in this offline cache. Clearing the
+app’s site data removes the download; reinstall while online if that happens.
+Sound still needs a tap after opening the app. The QR destination needs internet
+on the visitor’s phone. A plain HTTP address on a local Wi-Fi network cannot
+install the offline worker; use the published HTTPS page.
+
+For developers: run `python scripts/build_offline.py` after changing runtime
+files, and `python scripts/build_offline.py --check` before publishing. The
+export script runs the check too. New versions download in the background and
+wait until the old app closes before replacing its cache.
+
 ## What differs from the main page
 
-- **Nothing is saved to the device.** Progress, best scores, and settings are held
+- **Progress is not saved to the device.** The offline installation caches game files, while progress, best scores, and settings are held
   in memory for the session ([src/storage.js](../src/storage.js)). Every visit is
   open from the Visits list.
 - **Three controls at the foot of the field** replace the Pause button. Nothing

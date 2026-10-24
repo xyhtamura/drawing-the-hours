@@ -44,6 +44,8 @@
         <h1 id="title-heading"><span class="title-fallback"><span class="title-word">Drawing</span> <span class="title-line"><span class="title-the">the</span> <span class="title-hours-word">Hours</span></span></span><canvas id="title-lettering" aria-hidden="true"></canvas></h1>
         <button id="btn-begin">Begin</button>
         <button id="btn-title-music" class="title-music">Play music</button>
+        <button id="btn-install" class="title-music" hidden>Install game</button>
+        <p id="offline-status" class="offline-status" role="status" hidden></p>
       </div>
     </section>
     <section id="pause-menu" class="recipe-modal" role="dialog" aria-modal="true" aria-labelledby="menu-heading" hidden>
@@ -801,8 +803,10 @@
 
     // SOMEWAREZ kiosk build: control bar, reset to the title screen, and idle loop.
     if (KIOSK) {
+      document.getElementById('offline-status').hidden = false;
       if (btnEncyclopedia) btnEncyclopedia.hidden = false;
       const kiosk = await import('./somewarez/kiosk.js');
+      import('./somewarez/offline.js').then(({ setupOffline }) => setupOffline());
       kiosk.startKiosk({
         game, canvas, showPanel, openMenu, showVisitCard,
         getActivePanel: () => activePanel,
