@@ -44,7 +44,7 @@ wait until the old app closes before replacing its cache.
   - **Level card** shows the current visit's requirements. During play the clock
     stops while the card is open.
   - **Reset** returns to the title screen and drops the session: progress, scores,
-    sound, music, and colors go back to their starting values.
+    sound and colors go back to their starting values. Music and graphics choices remain for this session.
 - **The page resets itself** after 90 seconds without a touch during play or in a
   menu.
 - **An idle loop** starts after 60 seconds on an untouched title screen:
@@ -122,3 +122,18 @@ node test/test_somewarez.js
 From the browser console, `kiosk.step(seconds)` advances the idle clock and
 `kiosk.state` reports the mode and scene. Step `game.update(1/60)` beside it while
 the demonstration runs.
+
+## Performance settings
+
+Settings includes Paper textures, Paper shadows, Drawing resolution, and Frame
+rate. Reduced resolution draws at one backing pixel per logical field pixel;
+all four hour backdrops use that same resolution. The 30 fps option limits
+canvas painting while simulation and pointer input keep their usual timing.
+Music can be disabled independently of sound effects. These graphics and music
+choices survive visitor resets and idle scene changes, but graphics choices
+return to defaults when the page reloads.
+
+On the exhibition tablet, first compare full and reduced resolution, then try
+textures off, shadows off, and 30 fps as needed. No tablet speedup has been
+measured yet. The artwork, title animations, and UI still have some work to do
+with textures off; this is not a replacement for profiling the device.

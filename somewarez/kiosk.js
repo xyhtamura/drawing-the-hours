@@ -110,7 +110,7 @@ export function startKiosk({ game, canvas, showPanel, openMenu, showVisitCard, g
     game.campaign.practiceVisit = null;
     setColorMode('default');
     audio.isMuted = false;
-    music.setEnabled(true);
+    // Keep the operator’s music preference through idle transitions and visitor resets.
     game.startLevel(CAMPAIGN_LEVELS[0].id);
     for (const card of document.querySelectorAll('.recipe-card')) card.scrollTop = 0;
     syncSettings();

@@ -75,8 +75,13 @@
           <button id="btn-color-mode" aria-label="Pure light colors" aria-pressed="false">Colors: Default</button>
           <button id="btn-audio">Sound: On</button>
           <button id="btn-music">Music: On</button>
+          <button id="btn-textures" aria-pressed="true">Paper textures: On</button>
+          <button id="btn-paper-shadows" aria-pressed="true">Paper shadows: On</button>
+          <button id="btn-resolution" aria-pressed="false">Drawing resolution: Full</button>
+          <button id="btn-frame-rate" aria-pressed="false">Frame rate: Display rate</button>
           <button id="btn-settings-back">Back to menu</button>
         </div>
+        <p>For slower devices, try reduced resolution, paper textures off, or 30 fps. Music can be turned off separately. These choices last until the page reloads.</p>
         <p>The field keeps its proportions and scales to fit your screen.</p>
         <p>Space: pause or advance · C: visit card · W: visits · H: field book · M: sound · R: restart</p>
       </div>
@@ -492,6 +497,7 @@
   </main>
 
   <script type="module">
+    import { setupPerformanceSettings } from './src/performance-settings.js';
     import { KIOSK } from './src/build.js';
     import { isLocal, localizeContext, localizeDocument } from './src/edition.js';
     import { getColorMode, setColorMode } from './src/theme.js';
@@ -513,6 +519,7 @@
     });
     // Local edition: cast names are swapped where text is shown (src/edition.js).
     if (isLocal()) { localizeContext(game.ctx); localizeDocument(); }
+    setupPerformanceSettings(game);
     window.game = game; // handle for playtesting from the console
 
     const btnVisit = document.getElementById('btn-visit');

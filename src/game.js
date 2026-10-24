@@ -1351,7 +1351,12 @@ export class Game {
     this.lastFrameTime = timestamp;
 
     this.update(dt);
-    this.render();
+    const interval = this.renderInterval || 0;
+    if (!interval || this.lastRenderTime === undefined || timestamp - this.lastRenderTime >= interval - 0.5) {
+      this.render();
+      this.lastRenderTime = interval && this.lastRenderTime !== undefined
+        ? this.lastRenderTime + Math.max(1, Math.floor((timestamp - this.lastRenderTime + 0.5) / interval)) * interval : timestamp;
+    }
 
     requestAnimationFrame(this.loop.bind(this));
   }
@@ -1694,27 +1699,27 @@ export class Game {
       return;
     }
     if (this.currentLevel?.scene === 'passage') {
-      const key = `${themeKey()}:${this.width}:${this.height}:${window.devicePixelRatio || 1}`;
+      const key = `${themeKey()}:${this.width}:${this.height}:${this.dpr || 1}`;
       if (this.duskArtKey !== key) {
-        this.duskArt = createDuskArt(this.width, this.height, window.devicePixelRatio || 1);
+        this.duskArt = createDuskArt(this.width, this.height, this.dpr || 1);
         this.duskArtKey = key;
       }
       ctx.drawImage(this.duskArt, 0, 0, this.width, this.height);
       return;
     }
     if (this.currentLevel?.scene === 'atrium') {
-      const key = `${themeKey()}:${this.width}:${this.height}:${window.devicePixelRatio || 1}`;
+      const key = `${themeKey()}:${this.width}:${this.height}:${this.dpr || 1}`;
       if (this.noonArtKey !== key) {
-        this.noonArt = createNoonArt(this.width, this.height, window.devicePixelRatio || 1);
+        this.noonArt = createNoonArt(this.width, this.height, this.dpr || 1);
         this.noonArtKey = key;
       }
       ctx.drawImage(this.noonArt, 0, 0, this.width, this.height);
       return;
     }
     if (this.currentLevel?.scene === 'curb') {
-      const key = `${themeKey()}:${this.width}:${this.height}:${window.devicePixelRatio || 1}`;
+      const key = `${themeKey()}:${this.width}:${this.height}:${this.dpr || 1}`;
       if (this.dawnArtKey !== key) {
-        this.dawnArt = createDawnArt(this.width, this.height, window.devicePixelRatio || 1);
+        this.dawnArt = createDawnArt(this.width, this.height, this.dpr || 1);
         this.dawnArtKey = key;
       }
       ctx.drawImage(this.dawnArt, 0, 0, this.width, this.height);

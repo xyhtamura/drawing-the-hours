@@ -72,7 +72,8 @@ WHAT IT DOES
 
 Nothing is saved to the device. Three controls at the foot of the field are Main
 menu, Level card, and Reset. Nothing is drawn outside the field. Reset returns to the title screen and clears progress, scores, and
-settings. Left alone for 90 seconds, the page resets itself. Left alone on the
+sound and color settings. Music and graphics preferences remain for the session.
+Left alone for 90 seconds, the page resets itself. Left alone on the
 title screen for 20 seconds, it runs a loop until someone touches the screen:
 the game playing itself, clips of the other four works on the multicart, a card
 with a QR code for the multicart, the title.

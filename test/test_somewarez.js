@@ -248,6 +248,23 @@ console.log('--- Running SOMEWAREZ kiosk tests ---');
   console.log('✔ Every attract clip names a multicart work and is an MP4 on disk.');
 }
 
+// A 30-fps render cap leaves simulation updates and elapsed time unchanged.
+{
+  const game = new Game(canvas);
+  let elapsed = 0, updates = 0, renders = 0;
+  game.update = dt => { elapsed += dt; updates++; };
+  game.render = () => { renders++; };
+  game.renderInterval = 1000 / 30;
+  game.lastFrameTime = 0;
+  const previous = globalThis.requestAnimationFrame;
+  globalThis.requestAnimationFrame = () => {};
+  for (let frame = 1; frame <= 60; frame++) game.loop(frame * 1000 / 60);
+  globalThis.requestAnimationFrame = previous;
+  assert.equal(updates, 60);
+  assert.ok(Math.abs(elapsed - 1) < 1e-8);
+  assert.ok(renders >= 29 && renders <= 31, `rendered ${renders} frames`);
+}
+
 // Screensaver gestures still draw when no group can be enclosed.
 {
   const game = new Game(canvas);
