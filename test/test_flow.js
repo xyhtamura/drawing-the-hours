@@ -309,7 +309,7 @@ const { Game } = await import('../src/game.js');
   assert.match(html, /id="btn-close-visit-modal-x"/, 'Visit modal has close X button');
   assert.match(html, /id="btn-close-pause-x"/, 'Pause menu has close X button');
   assert.match(html, /btnClosePauseX\.onclick = \(\) => showPanel\(null\)/, 'Pause close X resumes game');
-  assert.match(html, /btnCloseSettingsX\.onclick = openMenu/, 'Settings close X returns to menu');
+  assert.match(html, /btnCloseSettingsX\.onclick = closeSettings/, 'Settings close X returns to its opening screen');
   assert.match(html, /btnCloseFieldbookX\.onclick = openMenu/, 'Field book close X returns to menu');
   assert.match(html, /btnCloseVisitModalX\.onclick = openMenu/, 'Visit modal close X returns to menu');
   assert.match(html, /panel\.addEventListener\('click'/, 'Panels have backdrop click handler');

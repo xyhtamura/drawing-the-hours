@@ -44,6 +44,7 @@
         <h1 id="title-heading"><span class="title-fallback"><span class="title-word">Drawing</span> <span class="title-line"><span class="title-the">the</span> <span class="title-hours-word">Hours</span></span></span><canvas id="title-lettering" aria-hidden="true"></canvas></h1>
         <button id="btn-begin">Begin</button>
         <button id="btn-title-music" class="title-music">Play music</button>
+        <button id="btn-title-settings" class="title-music">Settings</button>
         <button id="btn-install" class="title-music" hidden>Install game</button>
         <p id="offline-status" class="offline-status" role="status" hidden></p>
       </div>
@@ -651,8 +652,16 @@
 
     const panels = [...document.querySelectorAll('.recipe-modal')];
     let activePanel = null;
+    let settingsReturn = 'pause-menu';
     let changingPanel = false;
     const showPanel = (id) => {
+      if (id === 'settings-menu' && activePanel !== 'settings-menu') {
+        settingsReturn = activePanel === 'title-screen' ? 'title-screen' : 'pause-menu';
+        const label = settingsReturn === 'title-screen' ? 'Back to title' : 'Back to menu';
+        document.getElementById('btn-settings-back').textContent = label;
+        const close = document.getElementById('btn-close-settings-x');
+        close.setAttribute('aria-label', label); close.title = label;
+      }
       changingPanel = true;
       if (id) { game.cancelStroke(); audio.stopCicadas(); }
       activePanel = id;
@@ -675,6 +684,7 @@
       defaultBtn.focus({preventScroll:true});
     };
     const openMenu = () => showPanel('pause-menu');
+    const closeSettings = () => showPanel(settingsReturn);
     const toggleFieldbook = (open = activePanel !== 'fieldbook-modal') => {
       if (open) renderComboCanvases(modal);
       applyFieldBookReveal(); showPanel(open ? 'fieldbook-modal' : 'pause-menu');
@@ -706,7 +716,8 @@
     document.getElementById('btn-begin').onclick = () => showPanel(null);
     document.getElementById('btn-resume').onclick = () => showPanel(null);
     document.getElementById('btn-settings').onclick = () => showPanel('settings-menu');
-    document.getElementById('btn-settings-back').onclick = openMenu;
+    document.getElementById('btn-title-settings').onclick = () => showPanel('settings-menu');
+    document.getElementById('btn-settings-back').onclick = closeSettings;
     btnPause.onclick = openMenu;
     btnFieldbook.onclick = () => toggleFieldbook(true);
     btnCloseModal.onclick = openMenu;
@@ -740,13 +751,14 @@
     const btnCloseFieldbookX = document.getElementById('btn-close-fieldbook-x');
     const btnCloseVisitModalX = document.getElementById('btn-close-visit-modal-x');
     if (btnClosePauseX) btnClosePauseX.onclick = () => showPanel(null);
-    if (btnCloseSettingsX) btnCloseSettingsX.onclick = openMenu;
+    if (btnCloseSettingsX) btnCloseSettingsX.onclick = closeSettings;
     if (btnCloseFieldbookX) btnCloseFieldbookX.onclick = openMenu;
     if (btnCloseVisitModalX) btnCloseVisitModalX.onclick = openMenu;
     panels.forEach(panel => {
       panel.addEventListener('click', (e) => {
         if (e.target === panel) {
           if (panel.id === 'pause-menu') showPanel(null);
+          else if (panel.id === 'settings-menu') closeSettings();
           else if (panel.id !== 'title-screen') openMenu();
         }
       });
@@ -765,6 +777,7 @@
         } else if (e.key === 'Escape') {
           e.preventDefault();
           if (activePanel === 'pause-menu') showPanel(null);
+          else if (activePanel === 'settings-menu') closeSettings();
           else if (activePanel !== 'title-screen') openMenu();
         }
         return;
