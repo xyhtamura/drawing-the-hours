@@ -6,8 +6,8 @@
  * - Reset returns to the title screen and drops the session: progress, scores,
  *   settings. Nothing is written to the device (src/storage.js).
  * - Left alone, the page resets itself, then runs an idle loop: the game playing
- *   itself, clips of the other multicart works, a card with a QR code for the
- *   multicart, the title screen. A touch anywhere ends the loop at the title screen.
+ *   itself across four hours with statement captions and title interludes, then
+ *   a brief QR card for the multicart. A touch anywhere ends the loop at the title screen.
  *
  * Timings, the demonstration visits, the multicart URL, and the statement lines
  * are in config.js.
@@ -19,9 +19,9 @@ import { storage } from '../src/storage.js';
 import { setColorMode } from '../src/theme.js';
 import { CAMPAIGN_LEVELS } from '../src/campaign.js';
 import { createAutoplay } from './autoplay.js';
-import { MULTICART_URL, MULTICART_GAMES, TIMING, DEMO_VISITS, STATEMENT, ATTRACT_CLIPS } from './config.js';
+import { MULTICART_URL, MULTICART_GAMES, TIMING, DEMO_VISITS, STATEMENTS, IDLE_SCENES, captionSeconds } from './config.js';
 
-const SCENES = ['demo', 'clips', 'ad', 'title'];
+const SCENES = IDLE_SCENES;
 
 function element(tag, attributes = {}, children = []) {
   const node = Object.assign(document.createElement(tag), attributes);
@@ -80,23 +80,7 @@ export function startKiosk({ game, canvas, showPanel, openMenu, showVisitCard, g
       element('p', { className: 'kiosk-ad-touch', textContent: 'TOUCH THE SCREEN TO PLAY DRAWING THE HOURS' }),
     ]),
   ]);
-  // Clips of the other works: one silent video each, all loaded up front so one follows the next without a gap.
-  const lines = new Map(MULTICART_GAMES);
-  const clipVideos = ATTRACT_CLIPS.map(([, path]) => element('video', {
-    src: new URL(path, import.meta.url).href, muted: true, playsInline: true, preload: 'auto', hidden: true,
-  }));
-  for (const video of clipVideos) video.setAttribute('muted', ''); // iOS reads the attribute, not the property
-  const clipTitle = element('strong');
-  const clipLine = element('span');
-  const clipCount = element('span', { className: 'kiosk-clips-count' });
-  const clips = element('section', { className: 'kiosk-clips', hidden: true }, [
-    element('div', { className: 'kiosk-clips-screen' }, clipVideos),
-    element('p', { className: 'kiosk-clips-label' }, [
-      element('span', { className: 'kiosk-clips-also', textContent: 'ALSO ON THE MULTICART' }),
-      clipTitle, clipLine, clipCount,
-    ]),
-  ]);
-  const layer = element('div', { id: 'kiosk-attract', hidden: true }, [statement, caption, clips, ad]);
+  const layer = element('div', { id: 'kiosk-attract', hidden: true }, [statement, caption, ad]);
   // Both sit inside the field's own box, so nothing is drawn outside it.
   canvas.parentElement.append(layer, bar);
 
@@ -112,35 +96,13 @@ export function startKiosk({ game, canvas, showPanel, openMenu, showVisitCard, g
     demoEvents.add(event);
     (type === 'pointerdown' ? canvas : window).dispatchEvent(event);
   };
-  const player = createAutoplay(game, send);
+  const player = createAutoplay(game, send, { screensaver: true });
 
-  const state = { mode: 'live', scene: null, idleFor: 0, sceneTime: 0, sceneLength: 0, demoCount: 0, clip: -1, clipTime: 0 };
-
-  function stopClips() {
-    for (const video of clipVideos) { video.pause(); video.hidden = true; }
-    state.clip = -1;
-  }
-
-  /** Show clip `index` from its start. Returns false past the last one. */
-  function showClip(index) {
-    stopClips();
-    if (index >= clipVideos.length) return false;
-    const [title] = ATTRACT_CLIPS[index];
-    const video = clipVideos[index];
-    state.clip = index;
-    state.clipTime = 0;
-    clipTitle.textContent = title;
-    clipLine.textContent = lines.get(title) ?? '';
-    clipCount.textContent = `${index + 1} / ${clipVideos.length}`;
-    video.hidden = false;
-    video.currentTime = 0;
-    video.play().catch(() => {}); // a refused or failed play is caught by the stall limit in step()
-    return true;
-  }
+  const state = { mode: 'live', scene: null, idleFor: 0, sceneTime: 0, sceneLength: 0, sceneIndex: 0, hour: 0, lines: [] };
 
   /** Back to the title screen with nothing kept from the session. */
   function reset() {
-    game.musicIdle = state.mode === 'attract';
+    game.musicIdle = state.mode === 'attract' && state.scene !== 'title';
     player.stop();
     game.cancelStroke();
     storage.clearMemory();
@@ -156,38 +118,38 @@ export function startKiosk({ game, canvas, showPanel, openMenu, showVisitCard, g
     state.idleFor = 0;
   }
 
-  function enterScene(scene) {
+  function enterScene(entry) {
+    const { scene } = entry;
+    state.hour = entry.hour ?? state.hour;
     state.scene = scene;
     state.sceneTime = 0;
-    state.sceneLength = timing[scene];
+    state.sceneLength = scene === 'title' ? (entry.opening ? timing.title : timing.interlude) : timing[scene];
     reset();
     layer.hidden = scene === 'title';
     ad.hidden = scene !== 'ad';
-    clips.hidden = scene !== 'clips';
     caption.hidden = scene !== 'demo';
     statement.hidden = true;
-    stopClips();
-    if (scene === 'clips') {
-      // The scene lasts as long as its clips; step() ends it after the last.
-      state.sceneLength = Infinity;
-      if (!showClip(0)) return nextScene();
-    }
     if (scene === 'demo') {
       // Silent: nobody is playing.
       audio.isMuted = true;
-      game.startLevel(DEMO_VISITS[state.demoCount++ % DEMO_VISITS.length]);
+      game.startLevel(DEMO_VISITS[state.hour]);
       game.state = 'PLAYING';
       showPanel(null);
-      state.sceneLength = Math.max(timing.demo, STATEMENT.length * timing.line);
+      state.lines = STATEMENTS[state.hour];
+      state.sceneLength = Math.max(timing.demo, state.lines.reduce((sum, line) => sum + captionSeconds(line, timing.line), 0));
+      statement.textContent = state.lines[0];
+      statement.hidden = false;
     }
   }
 
   function nextScene() {
-    enterScene(SCENES[(SCENES.indexOf(state.scene) + 1) % SCENES.length]);
+    state.sceneIndex = (state.sceneIndex + 1) % SCENES.length;
+    enterScene(SCENES[state.sceneIndex]);
   }
 
   function startIdleLoop() {
     state.mode = 'attract';
+    state.sceneIndex = 0;
     enterScene(SCENES[0]);
   }
 
@@ -197,8 +159,7 @@ export function startKiosk({ game, canvas, showPanel, openMenu, showVisitCard, g
     state.mode = 'live';
     state.scene = null;
     reset();
-    ad.hidden = true; clips.hidden = true; caption.hidden = true; statement.hidden = true;
-    stopClips();
+    ad.hidden = true; caption.hidden = true; statement.hidden = true;
     // Keep the layer up for the rest of this touch, so its release presses nothing.
     if (covered) setTimeout(() => { if (state.mode === 'live') layer.hidden = true; }, 350);
   }
@@ -215,17 +176,19 @@ export function startKiosk({ game, canvas, showPanel, openMenu, showVisitCard, g
     state.sceneTime += dt;
     if (state.scene === 'demo') {
       player.step(dt);
-      const line = STATEMENT[Math.floor(state.sceneTime / timing.line)];
+      let remaining = state.sceneTime;
+      let line = state.lines.at(-1);
+      for (const candidate of state.lines) {
+        remaining -= captionSeconds(candidate, timing.line);
+        if (remaining < 0) { line = candidate; break; }
+      }
       statement.hidden = !line;
       if (line) statement.textContent = line;
-      // A finished or interrupted visit ends the scene early.
-      if (game.state !== 'PLAYING') return nextScene();
-    }
-    if (state.scene === 'clips') {
-      state.clipTime += dt;
-      const video = clipVideos[state.clip];
-      if (video.ended || video.error || state.clipTime >= timing.clip) {
-        if (!showClip(state.clip + 1)) return nextScene();
+      // Keep the paragraph on screen even if a visit ends before its reading time.
+      if (game.state !== 'PLAYING') {
+        player.stop();
+        game.startLevel(DEMO_VISITS[state.hour]);
+        game.state = 'PLAYING';
       }
     }
     if (state.sceneTime >= state.sceneLength) nextScene();
@@ -259,6 +222,6 @@ export function startKiosk({ game, canvas, showPanel, openMenu, showVisitCard, g
   requestAnimationFrame(frame);
 
   // Handle for checking from the console and from tests.
-  window.kiosk = { state, timing, step, reset, wake, startIdleLoop, player, clipVideos };
+  window.kiosk = { state, timing, step, reset, wake, startIdleLoop, player };
   return window.kiosk;
 }

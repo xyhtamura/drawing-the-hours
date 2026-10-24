@@ -62,7 +62,7 @@ function pointOnStroke(stroke) {
  * @param options.speed     pointer speed along the loop, in field px per second
  * @param options.reaction  seconds between the end of one stroke and the next look
  */
-export function createAutoplay(game, send, { speed = 700, reaction = 1.1, margin = MARGIN } = {}) {
+export function createAutoplay(game, send, { speed = 700, reaction = 1.1, margin = MARGIN, screensaver = false } = {}) {
   let stroke = null;
   let idle = 0;
   const stats = { strokes: 0, scored: 0 };
@@ -82,6 +82,12 @@ export function createAutoplay(game, send, { speed = 700, reaction = 1.1, margin
           const loop = planLoop(members, margin);
           if (loop.length > limit || !isClean(loop, game)) continue;
           if (!best || loop.R < best.R) best = loop;
+        }
+        if (!best && screensaver) {
+          const R = Math.min(game.width, game.height, limit / 7) * 0.3;
+          const angle = stats.strokes * 2.4;
+          best = { cx: game.width * (0.5 + 0.22 * Math.cos(angle)),
+            cy: game.height * (0.5 + 0.22 * Math.sin(angle)), R };
         }
         if (!best) return;
         stroke = { ...best, theta: 0, phase: Math.random() * Math.PI * 2, scoreBefore: game.score };

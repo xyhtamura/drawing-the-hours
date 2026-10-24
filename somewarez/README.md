@@ -26,19 +26,23 @@ Locally, with the root server running:
     sound, music, and colors go back to their starting values.
 - **The page resets itself** after 90 seconds without a touch during play or in a
   menu.
-- **An idle loop** starts after 20 seconds on an untouched title screen and repeats
-  until someone touches the screen:
-  1. The game playing itself for up to 45 seconds, without sound. It rotates through
-     one visit from each hour.
-  2. Clips of the other four works on the multicart, played one after another
-     without sound, each under its title and line from the multicart list: about
-     22 seconds. The clips are in `video/`.
-  3. A card with a QR code for the multicart, 18 seconds. It is set like the
-     multicart's own page and lists its five works.
-  4. The title screen, 20 seconds.
+- **An idle loop** starts after 60 seconds on an untouched title screen:
+  1. Dawn self-play with paragraph one of the statement.
+  2. Title screen, 30 seconds.
+  3. Noon self-play with paragraph two.
+  4. Title screen, 30 seconds.
+  5. Dusk self-play with paragraph three.
+  6. Title screen, 30 seconds.
+  7. Midnight self-play with paragraph four.
+  8. Multicart QR card, 12 seconds, then the title screen for 60 seconds before repeating.
 
-  A touch during the first three returns to the title screen. That touch does not
-  press anything under it.
+  Each self-play lasts at least 45 seconds and extends to fit its paragraph.
+  Sentences show for at least seven seconds, with longer ones allowed three words
+  per second. The last sentence stays until the scene ends. A finished visit
+  restarts within the same scene; captions keep their place. Empty circles are
+  allowed when no clear group is available. Self-play stays silent; title music
+  can play once a visitor has unlocked browser audio. A touch interrupts the loop.
+  The older multicart clips remain on disk but are not loaded or played.
 - **A local cast.** Creatures and plants carry Philippine names (paruparo, tutubi,
   alitaptap, putakti, dama de noche, abaca, cogon), the hawkmoth is an oleander
   hawkmoth in green and pink, dandelion seeds are cogon plumes, and the poppy
@@ -48,18 +52,13 @@ Locally, with the root server running:
 
 ## Settings
 
-[config.js](config.js) holds the multicart URL, the five titles on the card, the
-timings, the visits the demonstration plays, the clips and their order
-(`ATTRACT_CLIPS`), and `STATEMENT`. The titles repeat
-the multicart menu's; change them here when that menu changes.
+[config.js](config.js) holds timings, visits, `IDLE_SCENES`, and `STATEMENTS`.
+The first four statement paragraphs run over the four hours. About contains the
+whole statement, including paragraph five. Update both when revising the text;
+the kiosk test checks captions against `ARTIST-STATEMENT.md`.
 
-`STATEMENT` contains the opening paragraph of the artist statement, one sentence per display. About on the menu contains the full text. Put any later narration there as one string per
-line, and each line shows over the demonstration for seven seconds. The
-demonstration lengthens to fit all of them.
-
-To try other timings without editing the file, add them to the address in seconds:
-`?somewarez&idle=30&title=5&demo=20&ad=8`. `clip` is the longest one clip
-may run if its video stalls.
+For shorter checks, override timings in the URL:
+`?somewarez&idle=30&title=5&interlude=3&demo=20&ad=8`.
 
 ## Changing the multicart address
 

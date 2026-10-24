@@ -248,4 +248,33 @@ console.log('--- Running SOMEWAREZ kiosk tests ---');
   console.log('✔ Every attract clip names a multicart work and is an MP4 on disk.');
 }
 
+// Screensaver gestures still draw when no group can be enclosed.
+{
+  const game = new Game(canvas);
+  game.startLevel(DEMO_VISITS[0]); game.state = 'PLAYING'; game.entities = [];
+  const sent = [];
+  const player = createAutoplay(game, (type, point) => sent.push([type, point]), { screensaver: true });
+  player.step(2);
+  assert.equal(sent[0][0], 'pointerdown');
+  assert.ok(sent[0][1].every(Number.isFinite));
+  player.stop();
+}
+
+// The idle schedule visits every hour once, with complete reading time.
+{
+  const { IDLE_SCENES, STATEMENTS, TIMING, captionSeconds } = await import('../somewarez/config.js');
+  assert.equal(TIMING.title, 60);
+  assert.equal(TIMING.interlude, 30);
+  assert.deepEqual(IDLE_SCENES.map(s => s.scene), ['demo', 'title', 'demo', 'title', 'demo', 'title', 'demo', 'ad', 'title']);
+  assert.deepEqual(IDLE_SCENES.filter(s => s.scene === 'demo').map(s => s.hour), [0, 1, 2, 3]);
+  assert.equal(STATEMENTS.length, 4);
+  for (const lines of STATEMENTS) {
+    assert.ok(lines.length > 0);
+    for (const line of lines) assert.ok(captionSeconds(line) >= Math.max(7, line.split(/\s+/).length / 3));
+  }
+  const paragraphs = fs.readFileSync(new URL('../ARTIST-STATEMENT.md', import.meta.url), 'utf8').split('## Draft')[1].trim().split(/\r?\n\r?\n/);
+  assert.deepEqual(STATEMENTS.map(lines => lines.join(' ')), paragraphs.slice(0, 4).map(p => p.replace(/\*([^*]+)\*/g, '$1').trim()));
+  console.log('✔ Idle schedule and captions match the first four statement paragraphs.');
+}
+
 console.log('--- All SOMEWAREZ kiosk tests passed! ---');
