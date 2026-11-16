@@ -24,6 +24,7 @@ import { VisitClock } from './clock.js';
 import { audio } from './audio.js';
 import { music } from './music.js';
 import { drawHourWash, drawHourGauge, washFor, prepareHourSheet } from './hour-clock.js';
+import { trackPaths } from './paper.js';
 import { createDawnArt, wrapText } from './dawn-art.js';
 import { createNoonArt } from './noon-art.js';
 import { CampaignManager, CAMPAIGN_LEVELS, PRACTICE_LEVELS, OBJECTIVE_LABELS } from './campaign.js';
@@ -118,6 +119,7 @@ export class Game {
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
+    trackPaths(this.ctx); // lets paper shapes stamp stored shadows; see paper.js
 
     this.width = 960;
     this.height = 640;

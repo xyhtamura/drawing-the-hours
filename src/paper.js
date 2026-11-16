@@ -93,6 +93,7 @@ export function paperReady(name) { return sources.has(name); }
 /** Call after editing PAPER_USE or paperStyle so cached art is rebuilt. */
 export function paperChanged() {
   tiles.clear();
+  clearShadowSprites();
   version++;
   bumpThemeVersion();
 }
@@ -309,12 +310,13 @@ export function paperTile(role, color, override) {
   const a = Math.round(alpha * 255);
   for (let i = 3; i < image.data.length; i += 4) image.data[i] = a;
   ctx.putImageData(image, 0, 0);
-  tile = { canvas, pattern: null };
+  tile = { canvas, pattern: null, alpha };
   tiles.set(key, tile);
   return tile;
 }
 
-function patternFor(ctx, role, color) {
+/** The role's tile for this colour with its fill pattern made, or null when the texture is unavailable. */
+function patternTile(ctx, role, color) {
   if (typeof color !== 'string' || typeof ctx.createPattern !== 'function') return null;
   const tile = paperTile(role, color);
   if (!tile) return null;
@@ -323,7 +325,220 @@ function patternFor(ctx, role, color) {
     // Centre a tile on the local origin so a creature's shapes do not straddle a tile seam.
     tile.pattern?.setTransform?.(new DOMMatrix().translate(-TILE / 2, -TILE / 2).scale(1 / TILE_BAKE));
   }
-  return tile.pattern;
+  return tile.pattern ? tile : null;
+}
+
+function patternFor(ctx, role, color) {
+  return patternTile(ctx, role, color)?.pattern ?? null;
+}
+
+/*
+ * Cut-paper shadows from stored images.
+ *
+ * A blurred canvas shadow is rasterised again on every fill, and it is the
+ * most expensive thing a frame of the game asks for. A shape's shadow depends
+ * only on its outline, so it is blurred once into a small image and stamped
+ * from then on.
+ *
+ * trackPaths(ctx) makes a context keep a copy of the path being built. When
+ * paperShape is asked to fill a path it has a copy of, it looks the outline up
+ * and draws the stored shadow, offset on screen exactly as the canvas shadow
+ * was. A path that is new is blurred directly, as before, and stored the
+ * second time it is seen, so an outline that changes on every frame is never
+ * stored. Contexts that are not tracked, and paths too long or built across a
+ * change of transform, also take the direct route.
+ */
+const SHADOW_RGB = '38, 30, 26', SHADOW_ALPHA = 0.3;
+const SHADOW_BLUR = 2.4, SHADOW_DX = 1, SHADOW_DY = 1.6;   // in units of the drawing scale
+const PATH_MAX = 192;            // numbers kept per path; a longer path is not stored
+const SPRITE_SIDE_MAX = 512;     // pixels; a larger shadow is not stored
+const SPRITE_COUNT_MAX = 600;
+const SCALE_STEP = Math.log(1.25); // images are made at scales 1.25 apart, rounded up
+const tracked = new WeakMap();   // context → the copy of its current path
+const shadowSprites = new Map(); // outline, scale and opacity → { image, x, y, w, h, used }
+const seenOnce = new Map();      // the same key → the call it was first seen on
+const shadowCounts = { stamped: 0, stored: 0, direct: 0 };
+let shadowCall = 0;
+
+// Path commands, by the code each is copied under.
+const MOVE = 1, LINE = 2, QUAD = 3, CUBIC = 4, ARC = 5, ELLIPSE = 6, RECT = 7, CLOSE = 8;
+
+/** Counts since the last reset, and how many shadows are held. For tests and timing. */
+export function paperShadowStats(reset = false) {
+  const stats = { ...shadowCounts, held: shadowSprites.size };
+  if (reset) shadowCounts.stamped = shadowCounts.stored = shadowCounts.direct = 0;
+  return stats;
+}
+
+function clearShadowSprites() {
+  for (const sprite of shadowSprites.values()) sprite.image.close?.();
+  shadowSprites.clear();
+  seenOnce.clear();
+}
+
+/** Makes a context keep a copy of its current path, so paperShape can stamp stored shadows on it. */
+export function trackPaths(ctx) {
+  if (!hasDom || !ctx || tracked.has(ctx) || typeof ctx.getTransform !== 'function') return;
+  const proto = Object.getPrototypeOf(ctx);
+  const data = new Float64Array(PATH_MAX);
+  const path = { data, words: new Int32Array(data.buffer), n: 0, ok: true, proto };
+  tracked.set(ctx, path);
+  const room = (count) => {
+    if (path.ok && path.n + count > PATH_MAX) path.ok = false;
+    return path.ok;
+  };
+  ctx.beginPath = function () { path.n = 0; path.ok = true; proto.beginPath.call(this); };
+  ctx.moveTo = function (x, y) {
+    if (room(3)) { data[path.n++] = MOVE; data[path.n++] = x; data[path.n++] = y; }
+    proto.moveTo.call(this, x, y);
+  };
+  ctx.lineTo = function (x, y) {
+    if (room(3)) { data[path.n++] = LINE; data[path.n++] = x; data[path.n++] = y; }
+    proto.lineTo.call(this, x, y);
+  };
+  ctx.quadraticCurveTo = function (cx, cy, x, y) {
+    if (room(5)) { data[path.n++] = QUAD; data[path.n++] = cx; data[path.n++] = cy; data[path.n++] = x; data[path.n++] = y; }
+    proto.quadraticCurveTo.call(this, cx, cy, x, y);
+  };
+  ctx.bezierCurveTo = function (ax, ay, bx, by, x, y) {
+    if (room(7)) {
+      data[path.n++] = CUBIC; data[path.n++] = ax; data[path.n++] = ay; data[path.n++] = bx; data[path.n++] = by; data[path.n++] = x; data[path.n++] = y;
+    }
+    proto.bezierCurveTo.call(this, ax, ay, bx, by, x, y);
+  };
+  ctx.arc = function (x, y, r, from, to, anticlockwise = false) {
+    if (room(7)) {
+      data[path.n++] = ARC; data[path.n++] = x; data[path.n++] = y; data[path.n++] = r; data[path.n++] = from; data[path.n++] = to; data[path.n++] = anticlockwise ? 1 : 0;
+    }
+    proto.arc.call(this, x, y, r, from, to, anticlockwise);
+  };
+  ctx.ellipse = function (x, y, rx, ry, turn, from, to, anticlockwise = false) {
+    if (room(9)) {
+      data[path.n++] = ELLIPSE; data[path.n++] = x; data[path.n++] = y; data[path.n++] = rx; data[path.n++] = ry;
+      data[path.n++] = turn; data[path.n++] = from; data[path.n++] = to; data[path.n++] = anticlockwise ? 1 : 0;
+    }
+    proto.ellipse.call(this, x, y, rx, ry, turn, from, to, anticlockwise);
+  };
+  ctx.rect = function (x, y, w, h) {
+    if (room(5)) { data[path.n++] = RECT; data[path.n++] = x; data[path.n++] = y; data[path.n++] = w; data[path.n++] = h; }
+    proto.rect.call(this, x, y, w, h);
+  };
+  ctx.closePath = function () {
+    if (room(1)) data[path.n++] = CLOSE;
+    proto.closePath.call(this);
+  };
+  // Commands with no copy made, and a transform changed part-way through a path:
+  // the copy would no longer describe the path, so it is not used.
+  const spoils = (name, always) => {
+    const native = proto[name];
+    if (typeof native !== 'function') return;
+    ctx[name] = function (...args) {
+      if (always || path.n > 0) path.ok = false;
+      return native.apply(this, args);
+    };
+  };
+  for (const name of ['arcTo', 'roundRect']) spoils(name, true);
+  for (const name of ['translate', 'rotate', 'scale', 'transform', 'setTransform', 'resetTransform', 'restore', 'reset']) spoils(name, false);
+}
+
+function replayPath(path, ctx) {
+  const d = path.data;
+  ctx.beginPath();
+  for (let i = 0; i < path.n;) {
+    switch (d[i]) {
+      case MOVE: ctx.moveTo(d[i + 1], d[i + 2]); i += 3; break;
+      case LINE: ctx.lineTo(d[i + 1], d[i + 2]); i += 3; break;
+      case QUAD: ctx.quadraticCurveTo(d[i + 1], d[i + 2], d[i + 3], d[i + 4]); i += 5; break;
+      case CUBIC: ctx.bezierCurveTo(d[i + 1], d[i + 2], d[i + 3], d[i + 4], d[i + 5], d[i + 6]); i += 7; break;
+      case ARC: ctx.arc(d[i + 1], d[i + 2], d[i + 3], d[i + 4], d[i + 5], d[i + 6] === 1); i += 7; break;
+      case ELLIPSE: ctx.ellipse(d[i + 1], d[i + 2], d[i + 3], d[i + 4], d[i + 5], d[i + 6], d[i + 7], d[i + 8] === 1); i += 9; break;
+      case RECT: ctx.rect(d[i + 1], d[i + 2], d[i + 3], d[i + 4]); i += 5; break;
+      default: ctx.closePath(); i += 1;
+    }
+  }
+}
+
+/** A box that holds the path: control points for curves, the full circle for arcs. */
+function pathBounds(path) {
+  const d = path.data;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const point = (x, y) => { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; };
+  for (let i = 0; i < path.n;) {
+    switch (d[i]) {
+      case MOVE: case LINE: point(d[i + 1], d[i + 2]); i += 3; break;
+      case QUAD: point(d[i + 1], d[i + 2]); point(d[i + 3], d[i + 4]); i += 5; break;
+      case CUBIC: point(d[i + 1], d[i + 2]); point(d[i + 3], d[i + 4]); point(d[i + 5], d[i + 6]); i += 7; break;
+      case ARC: { const r = Math.abs(d[i + 3]); point(d[i + 1] - r, d[i + 2] - r); point(d[i + 1] + r, d[i + 2] + r); i += 7; break; }
+      case ELLIPSE: { const r = Math.max(Math.abs(d[i + 3]), Math.abs(d[i + 4])); point(d[i + 1] - r, d[i + 2] - r); point(d[i + 1] + r, d[i + 2] + r); i += 9; break; }
+      case RECT: point(d[i + 1], d[i + 2]); point(d[i + 1] + d[i + 3], d[i + 2] + d[i + 4]); i += 5; break;
+      default: i += 1;
+    }
+  }
+  return [x0, y0, x1, y1];
+}
+
+/** Blurs the path's shadow once, at `scale` pixels per unit, into an image placed in the path's own units. */
+function bakeShadow(path, scale, alpha) {
+  const [x0, y0, x1, y1] = pathBounds(path);
+  if (![x0, y0, x1, y1].every(Number.isFinite)) return null;
+  const pad = SHADOW_BLUR * 2 + 1;
+  const width = Math.ceil((x1 - x0 + 2 * pad) * scale), height = Math.ceil((y1 - y0 + 2 * pad) * scale);
+  if (width < 1 || height < 1 || width > SPRITE_SIDE_MAX || height > SPRITE_SIDE_MAX) return null;
+  const canvas = typeof OffscreenCanvas === 'function' ? new OffscreenCanvas(width, height) : Object.assign(document.createElement('canvas'), { width, height });
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  // The shape itself is drawn off the canvas, and its shadow is thrown back onto it.
+  const away = width + 64;
+  ctx.setTransform(scale, 0, 0, scale, (pad - x0) * scale - away, (pad - y0) * scale);
+  ctx.shadowColor = `rgba(${SHADOW_RGB}, ${SHADOW_ALPHA})`;
+  ctx.shadowBlur = SHADOW_BLUR * scale;
+  ctx.shadowOffsetX = away;
+  ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+  replayPath(path, ctx);
+  ctx.fill();
+  const image = typeof canvas.transferToImageBitmap === 'function' ? canvas.transferToImageBitmap() : canvas;
+  return { image, x: x0 - pad, y: y0 - pad, w: width / scale, h: height / scale, used: shadowCall };
+}
+
+function dropStaleSprites() {
+  for (const [key, sprite] of shadowSprites) {
+    if (shadowCall - sprite.used > 20000) { sprite.image.close?.(); shadowSprites.delete(key); }
+  }
+  if (shadowSprites.size >= SPRITE_COUNT_MAX) clearShadowSprites();
+}
+
+/** The stored shadow for the context's current path under transform `m`, or null to blur it directly. */
+function shadowSprite(ctx, m, alpha) {
+  const path = tracked.get(ctx);
+  if (!path) return null;
+  shadowCall++;
+  if (!path.ok || path.n === 0) return null;
+  const axis = Math.max(Math.hypot(m.a, m.b), Math.hypot(m.c, m.d));
+  if (!(axis > 0.05 && axis < 12)) return null;
+  const step = Math.ceil(Math.log(axis) / SCALE_STEP - 1e-6);
+  let h1 = 0x811c9dc5 ^ step, h2 = 0x9e3779b9 ^ Math.round(alpha * 255);
+  const words = path.words;
+  for (let i = 0, end = path.n * 2; i < end; i++) {
+    const v = words[i];
+    h1 = Math.imul(h1 ^ v, 0x01000193); h1 ^= h1 >>> 15;
+    h2 = Math.imul(h2 + v, 0x85ebca6b); h2 ^= h2 >>> 13;
+  }
+  const key = (h1 >>> 11) * 4294967296 + (h2 >>> 0);
+  let sprite = shadowSprites.get(key);
+  if (sprite) { sprite.used = shadowCall; shadowCounts.stamped++; return sprite; }
+  const first = seenOnce.get(key);
+  if (first === undefined || shadowCall - first > 5000) {
+    if (seenOnce.size > 4000) seenOnce.clear();
+    seenOnce.set(key, shadowCall);
+    return null;
+  }
+  seenOnce.delete(key);
+  if (shadowSprites.size >= SPRITE_COUNT_MAX) dropStaleSprites();
+  sprite = bakeShadow(path, Math.exp(step * SCALE_STEP), alpha);
+  if (!sprite) return null;
+  shadowSprites.set(key, sprite);
+  shadowCounts.stored++;
+  return sprite;
 }
 
 /**
@@ -332,20 +547,33 @@ function patternFor(ctx, role, color) {
  * outlines are on or no texture is available.
  */
 export function paperShape(ctx, role) {
-  const pattern = patternFor(ctx, role, ctx.fillStyle);
-  if (!pattern) { ctx.fill(); ctx.stroke(); return; }
+  const tile = patternTile(ctx, role, ctx.fillStyle);
+  if (!tile) { ctx.fill(); ctx.stroke(); return; }
+  const path = tracked.get(ctx);
+  const usable = path?.ok;
   ctx.save();
   if (paperStyle.shadows) {
     const m = ctx.getTransform?.();
     const unit = m ? Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) : 1;
-    ctx.shadowColor = 'rgba(38, 30, 26, 0.3)';
-    ctx.shadowBlur = 2.4 * unit;
-    ctx.shadowOffsetX = 1 * unit;
-    ctx.shadowOffsetY = 1.6 * unit;
+    const sprite = m ? shadowSprite(ctx, m, tile.alpha) : null;
+    if (sprite) {
+      // The canvas shadow's offset is in screen pixels whatever the transform, so the stamp's is too.
+      path.proto.setTransform.call(ctx, m.a, m.b, m.c, m.d, m.e + SHADOW_DX * unit, m.f + SHADOW_DY * unit);
+      ctx.drawImage(sprite.image, sprite.x, sprite.y, sprite.w, sprite.h);
+      path.proto.setTransform.call(ctx, m);
+    } else {
+      if (path) shadowCounts.direct++;
+      ctx.shadowColor = `rgba(${SHADOW_RGB}, ${SHADOW_ALPHA})`;
+      ctx.shadowBlur = SHADOW_BLUR * unit;
+      ctx.shadowOffsetX = SHADOW_DX * unit;
+      ctx.shadowOffsetY = SHADOW_DY * unit;
+    }
   }
-  ctx.fillStyle = pattern;
+  ctx.fillStyle = tile.pattern;
   ctx.fill();
   ctx.restore();
+  // The restore puts back the transform the path was built under, so the copy still describes it.
+  if (path) path.ok = usable;
   if (paperStyle.outlines) ctx.stroke();
 }
 
