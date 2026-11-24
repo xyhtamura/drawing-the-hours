@@ -19,7 +19,7 @@ import {
 } from './geometry.js';
 import { Butterfly, DandelionSeed, Snail, Hornet, WebPatch, FlaxFlower, drawFlaxFlower, SlowFlower, drawSlowFlower, NightJasmine, SPECIES_CONFIG, drawFirefly } from './entities.js';
 import { evaluateDrawing } from './recipes.js';
-import { COMBO_DIAGRAMS, drawComboDiagram } from './combo-diagrams.js';
+import { COMBO_DIAGRAMS, COMBO_HINTS, drawComboDiagram } from './combo-diagrams.js';
 import { VisitClock } from './clock.js';
 import { audio } from './audio.js';
 import { music } from './music.js';
@@ -56,25 +56,6 @@ const REQUIREMENT_ROW = 36;
 
 // Height added to a requirement row on the visit card while its hints are open.
 const HINT_ROW = 28;
-
-// One line per requirement, shown on the visit card when its hints are opened.
-// A hint names the figure and its shape; it never points at particular insects.
-const HINT_TEXT = {
-  any: 'Any combination counts. Two insects of one kind in a single loop is the shortest.',
-  single: 'Close one loop around two insects of the same kind.',
-  figure8: 'Cross the cord to make two pockets, with one insect in each.',
-  pair: 'Close one loop around two insects of the same kind.',
-  trio: 'Close one loop around three different kinds at once.',
-  seedWing: 'Close one loop around one insect and one drifting seed.',
-  counterpartPair: 'Cross the cord: one kind in one pocket, a different kind in the other.',
-  lacewingCounterpart: 'Cross the cord: a resting lacewing in one pocket, a different kind in the other.',
-  nursery: 'Cross the cord: exactly one insect in one pocket, exactly one seed in the other.',
-  mixedEcho: 'Cross the cord: the same two kinds mirrored in both pockets.',
-  seedTrio: 'Close one loop around three different kinds and one seed.',
-  twinSeedWing: 'Cross the cord: one insect and one seed in each pocket.',
-  trace: 'Thread a firefly, then a lacewing, then a different firefly in one stroke.',
-  lacewingTrace: 'Thread a lacewing, then a firefly, then the other lacewing in one stroke.',
-};
 
 // What cut the cord, named so the player can act on it. The snail is absent on
 // purpose: it spoils a pocket instead of cutting (Xyh, 2026-09-16).
@@ -1630,6 +1611,7 @@ export class Game {
 
   render() {
     const ctx = this.ctx;
+    this.combinationTargets = [];
     ctx.clearRect(0, 0, this.width, this.height);
 
     // 1. Paper Meadow Floor
@@ -1688,6 +1670,7 @@ export class Game {
     else if (this.state === 'PAUSED' && !this.uiSuspended) this.drawPausedModal(ctx);
     else if (this.state === 'LEVEL_COMPLETE' || this.state === 'VICTORY') this.drawLevelCompleteModal(ctx);
     else if (this.state === 'GAMEOVER') this.drawGameOverModal(ctx);
+    this.onCombinationTargets?.(this.combinationTargets);
   }
 
   drawMeadowFloor(ctx) {
@@ -2151,25 +2134,48 @@ export class Game {
     ctx.restore();
   }
 
-  drawObjectivePills(ctx, right, top, maxWidth) {
-    const entries = Object.values(this.campaign.objectiveProgress);
-    const labels = entries.length ? entries.map(o => `${o.label}: ${o.current}/${o.target}`) : [`Harmonies: ${this.harmoniesCount}`];
+  drawCombinationChevron(ctx, x, y) {
+    ctx.save();
+    ctx.strokeStyle = themeColor('ink', '#4a4235');
+    ctx.lineWidth = 1.3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x - 1.5, y - 3);
+    ctx.lineTo(x + 1.5, y);
+    ctx.lineTo(x - 1.5, y + 3);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  drawObjectivePills(ctx, right, top, maxWidth, hudScale) {
+    const entries = Object.entries(this.campaign.objectiveProgress);
+    if (!entries.length) entries.push(['', { label: `Harmonies: ${this.harmoniesCount}` }]);
     ctx.font = '500 11px Mali, sans-serif';
     ctx.textAlign = 'right';
     let y = top;
-    labels.forEach((label, i) => {
-      const lines = wrapText(ctx, label, maxWidth - 20);
-      const w = Math.min(maxWidth, Math.max(...lines.map(line => ctx.measureText(line).width)) + 20);
-      const h = lines.length * 14 + 8;
+    for (const [key, objective] of entries) {
+      const interactive = this.onCombinationTargets && this.state === 'PLAYING'
+        && !this.musicIdle && !this.victoryDelay && COMBO_DIAGRAMS[key];
+      const label = key ? `${objective.label}: ${objective.current}/${objective.target}` : objective.label;
+      const rightPad = interactive ? 24 : 10;
+      const lines = wrapText(ctx, label, maxWidth - rightPad - 10);
+      const w = Math.min(maxWidth, Math.max(...lines.map(line => ctx.measureText(line).width)) + rightPad + 10);
+      const h = Math.max(interactive ? 28 : 22, lines.length * 14 + 8);
       ctx.save();
-      ctx.globalAlpha = entries[i]?.current >= entries[i]?.target ? .4 : .6;
+      const complete = objective.current >= objective.target;
+      ctx.globalAlpha = interactive ? (complete ? .65 : .88) : (complete ? .4 : .6);
       ctx.fillStyle = themeColor('panel', '#eeeada');
       ctx.beginPath(); drawRoundedRect(ctx, right - w, y, w, h, 12); ctx.fill();
       ctx.restore();
       ctx.fillStyle = themeColor('ink', '#4a4235');
-      lines.forEach((line, j) => ctx.fillText(line, right - 10, y + 15 + j * 14));
+      lines.forEach((line, i) => ctx.fillText(line, right - rightPad, y + (h - lines.length * 14) / 2 + 11 + i * 14));
+      if (interactive) {
+        this.drawCombinationChevron(ctx, right - 11, y + h / 2);
+        this.combinationTargets.push({ key, label, x: (right - w) * hudScale, y: y * hudScale, w: w * hudScale, h: h * hudScale });
+      }
       y += h + 5;
-    });
+    }
     return y - top;
   }
 
@@ -2204,7 +2210,7 @@ export class Game {
       ctx.textAlign = 'right';
       ctx.fillStyle = themeColor('ink', '#4a4235');
       ctx.font = '600 11px system-ui, -apple-system, sans-serif';
-      const extraHUDHeight = this.drawObjectivePills(ctx, width - 16, 12, width - 126) - 14;
+      const extraHUDHeight = this.drawObjectivePills(ctx, width - 16, 12, width - 126, hudScale) - 14;
 
       ctx.fillStyle = themeColor('muted', '#7a6c57');
       ctx.font = 'italic 10.5px Mali, sans-serif';
@@ -2312,7 +2318,7 @@ export class Game {
       // requirements used to run its list back across the meter and the clock.
       const objRight = width - 24;
       const objWidth = Math.max(160, objRight - (cx + meterW / 2) - 16);
-      const objectiveDrop = this.drawObjectivePills(ctx, objRight, 16, objWidth) - 15;
+      const objectiveDrop = this.drawObjectivePills(ctx, objRight, 16, objWidth, hudScale) - 15;
 
       ctx.fillStyle = themeColor('muted', '#7a6c57');
       ctx.font = 'italic 11px Mali, sans-serif';
@@ -2490,8 +2496,9 @@ export class Game {
       || teachDawnPairs || teachDawnAll || teachNoonGust || teachNoonWeb || teachDuskCounterpart || teachMidnightRoute;
     const modalHeight = hasDiagram ? 445 : 310;
     // Each requirement row carries a diagram, so rows are taller than bare text.
+    const rowHeight = Math.max(REQUIREMENT_ROW, Math.min(58, 27 / (this.displayScale || 1)));
     const requirementCount = Object.keys(this.campaign.objectiveProgress).length;
-    const rowExtra = requirementCount * (REQUIREMENT_ROW - 21) + (this.cardHintsOpen ? requirementCount * HINT_ROW : 0);
+    const rowExtra = requirementCount * (rowHeight - 21) + (this.cardHintsOpen ? requirementCount * HINT_ROW : 0);
 
     this.drawModalBox(ctx, 500, modalHeight + rowExtra, (boxW, boxH) => {
       const isNarrow = boxW < 440;
@@ -2522,31 +2529,49 @@ export class Game {
 
       ctx.fillText('VISIT REQUIREMENTS:', padX, startY);
       this.drawCardHintsButton(ctx, -padX - 96, startY - 16, 96, 24);
-      startY += 19;
+      startY += 30;
 
       ctx.font = isNarrow ? '12px system-ui, sans-serif' : '13px system-ui, sans-serif';
       ctx.fillStyle = themeColor('ink', '#4c4234');
       const diagramW = isNarrow ? 76 : 92;
       const diagramH = isNarrow ? 28 : 34;
       for (const [k, obj] of Object.entries(this.campaign.objectiveProgress)) {
+        const rowTop = startY - 14;
+        const labelY = rowTop + rowHeight / 2 + 4;
+        const rowEnd = -padX;
         if (COMBO_DIAGRAMS[k]) {
           ctx.save();
-          ctx.translate(padX + 4, startY - 14 + (REQUIREMENT_ROW - diagramH) / 2 - 3);
+          ctx.translate(padX + 4, rowTop + (rowHeight - diagramH) / 2);
           drawComboDiagram(ctx, k, diagramW, diagramH);
           ctx.restore();
         }
-        const labelX = padX + diagramW + 16, labelY = startY + (REQUIREMENT_ROW - 21) / 2 - 3;
-        ctx.fillText(`${obj.label}: ${obj.current} / ${obj.target}`, labelX, labelY);
+        const labelX = padX + diagramW + 16;
+        const label = `${obj.label}: ${obj.current} / ${obj.target}`;
+        ctx.fillText(label, labelX, labelY, rowEnd - labelX - 22);
+        if (this.onCombinationTargets && COMBO_DIAGRAMS[k]) {
+          ctx.strokeStyle = themeColor('edge', '#d8ccb6');
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(padX + 4, rowTop + rowHeight - 1);
+          ctx.lineTo(rowEnd, rowTop + rowHeight - 1);
+          ctx.stroke();
+          this.drawCombinationChevron(ctx, rowEnd - 9, rowTop + rowHeight / 2);
+          const scale = this.modalScale;
+          this.combinationTargets.push({
+            key: k, label, x: this.width / 2 + padX * scale, y: this.height / 2 + rowTop * scale,
+            w: (rowEnd - padX) * scale, h: rowHeight * scale,
+          });
+        }
         if (this.cardHintsOpen) {
           ctx.save();
           ctx.font = isNarrow ? '10.5px system-ui, sans-serif' : '11.5px system-ui, sans-serif';
           ctx.fillStyle = themeColor('muted', '#7a6f5f');
-          wrapText(ctx, HINT_TEXT[k] || 'Draw one more combination the visit asks for.', boxW / 2 - 18 - labelX)
-            .slice(0, 2).forEach((line, i) => ctx.fillText(line, labelX, labelY + 15 + i * 13));
+          wrapText(ctx, COMBO_HINTS[k] || 'Draw one more combination the visit asks for.', boxW / 2 - 18 - labelX)
+            .slice(0, 2).forEach((line, i) => ctx.fillText(line, labelX, rowTop + rowHeight + 7 + i * 13));
           ctx.restore();
           startY += HINT_ROW;
         }
-        startY += REQUIREMENT_ROW;
+        startY += rowHeight;
       }
 
       // Duration note

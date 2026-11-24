@@ -4,9 +4,10 @@
  * through the entity art without throwing. Run: node test/test_combo_diagrams.js
  */
 import assert from 'node:assert/strict';
-import { CAMPAIGN_LEVELS, PRACTICE_LEVELS } from '../src/campaign.js';
-import { COMBO_DIAGRAMS, drawComboDiagram } from '../src/combo-diagrams.js';
+import { CAMPAIGN_LEVELS, PRACTICE_LEVELS, deriveObjectiveTags } from '../src/campaign.js';
+import { COMBO_DIAGRAMS, COMBO_HINTS, drawComboDiagram, visitComboExamples } from '../src/combo-diagrams.js';
 import { SPECIES_CONFIG } from '../src/entities.js';
+import { evaluateDrawing } from '../src/recipes.js';
 
 // A context that accepts any drawing call and counts how many it received.
 function recordingContext() {
@@ -27,7 +28,28 @@ function recordingContext() {
 
 const asked = new Set();
 for (const level of [...CAMPAIGN_LEVELS, ...PRACTICE_LEVELS]) {
-  for (const key of Object.keys(level.objectives)) asked.add(key);
+  for (const key of Object.keys(level.objectives)) {
+    asked.add(key);
+    const examples = visitComboExamples(key, level);
+    assert.ok(COMBO_HINTS[key] && examples.length, `${level.id}/${key} needs an illustrated hint`);
+    for (const spec of examples) {
+      const kinds = spec.sequence || spec.pockets.flat();
+      for (const kind of new Set(kinds)) {
+        assert.ok(level.population[kind] >= kinds.filter(k => k === kind).length,
+          `${level.id}/${key} shows unavailable ${kind}`);
+      }
+      let result, pockets;
+      if (spec.sequence) {
+        const sequences = level.traceSequences || [level.traceSequence];
+        assert.ok(sequences.some(sequence => sequence?.join() === spec.sequence.join()), `${level.id}/${key} shows an invalid trace`);
+        result = { valid: true, mode: 'trace', traceSequence: spec.sequence };
+      } else {
+        pockets = spec.pockets.map(tokens => ({ entities: tokens.map(kind => ({ kind, type: kind === 'seed' ? 'seed' : 'insect' })) }));
+        result = evaluateDrawing(pockets, 420);
+      }
+      assert.ok(deriveObjectiveTags(result, pockets).includes(key), `${level.id}/${key} shows a combination that does not count`);
+    }
+  }
 }
 for (const key of asked) {
   assert.ok(COMBO_DIAGRAMS[key], `objective "${key}" has no combination diagram`);

@@ -2824,3 +2824,19 @@ Nineteen 8DIO Mini object recordings were encoded under renamed `rhythm-*` filen
 2026-10-24 — Codex — Added Settings below Play music on the start screen. Settings remembers whether it opened from the title or pause menu; its Back button, close X, backdrop click, and Escape return to that screen. Browser check on isolated port 8769 confirmed title Settings opens, labels Back to title, and returns to the title. Flow and kiosk suites pass; offline inventory regenerated. Android device check remains pending; no development plan changed.
 
 2026-10-24 — Claude Code — Diagnosed "can't be installed" on the Android tablet: the main page was opened, and it has no manifest by design; the kiosk address is installable. Made installation and offline launch more reliable: (1) `index.html` links the manifest from an inline head script when `?somewarez` is present, so Chrome's install check finds it while the page parses instead of after the game modules load; `somewarez/offline.js` still links it for the exported copy, which has no query. (2) The offline worker answers `somewarez/` (the forwarding page, which is not cached) with a redirect to `?somewarez`, so a shortcut made from either address opens offline. (3) The inventory drops `assets/drawing-the-hours-embed.{png,jpg}`, link-preview cards the game never loads: 93 files, about 1.1 MB less to download. (4) The Offline ready status names the ⋮ menu items and says either icon opens offline. README install steps say only the kiosk address installs. Verification: headless Edge over DevTools against localhost:8000 — main page has 0 manifest links, kiosk has 1 at DOMContentLoaded, manifest parses with no errors, the cache holds 93 files, and with the network emulated offline `?somewarez`, `somewarez/`, and `somewarez/?idle=30` all load the kiosk with no failed requests. Before the change, the published page also passed manifest, icon-size, all-files-200, and offline-reload checks in the same browser. Not checked: Chrome on Android itself (no device on adb, no emulator); Chromium would not report installability errors in this setup. The kiosk and flow suites pass. Not yet published; the exported packages were not rebuilt.
+
+2026-11-24 — Codex — Made the meadow counters and visit-card requirements
+open a diagram using the active visit's cast and trace orders. The visit clock
+waits while a diagram is open. Closing it returns focus to the selected
+requirement. The Field Book groups 13 illustrated insects, plants, seeds, and
+hazards under Meadow Inhabitants. The portraits reuse the game's paper artwork
+and the SOMEWAREZ cast, including the cogon plume, abaca flower, and ylang-ylang.
+
+The 16 Node suites pass. The combination suite checks example populations,
+recipe scoring, and objective tags. Chrome touch and keyboard checks in both
+editions covered opening diagrams from play and the visit card, pausing the
+timer, closing, and returning focus. Field Book canvases contain artwork for
+all 13 entries, and the hour gate still applies. Impeccable flagged the
+existing title foil wash. The physical Android tablet check remains pending.
+Chrome reloaded the SOMEWAREZ forwarding address with networking disabled,
+then opened a combination diagram and the Field Book from the offline cache.

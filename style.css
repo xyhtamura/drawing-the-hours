@@ -269,6 +269,18 @@ footer {
   min-width: 0;
 }
 
+.field-specimen {
+  display: grid;
+  grid-template-columns: clamp(50px, 15vw, 72px) minmax(0, 1fr);
+  grid-template-areas: "art badge" "art text";
+  gap: 4px 12px;
+  align-items: start;
+}
+
+.field-specimen .entry-badge { grid-area: badge; justify-self: start; }
+.field-specimen .recipe-info { grid-area: text; }
+.specimen-art { grid-area: art; align-self: start; display: block; width: 100%; height: auto; }
+
 /* Figure diagram at the right of a Field Book combination. */
 .combo-diagram {
   flex: none;
@@ -565,6 +577,15 @@ footer {
     height: 42px;
   }
 
+  #fieldbook-modal .recipe-entry:has(.combo-diagram) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  #fieldbook-modal .recipe-entry:has(.combo-diagram) .entry-badge { justify-self: start; }
+  #fieldbook-modal .recipe-entry:has(.combo-diagram) .recipe-info { grid-column: 1 / -1; grid-row: 2; }
+
   .recipe-info p {
     font-size: 0.78rem;
     line-height: 1.3;
@@ -588,6 +609,28 @@ body .stage-wrapper canvas#game-canvas {
   bottom: max(12px, env(safe-area-inset-bottom)); z-index: 10;
   min-width: 68px; min-height: 44px; opacity: 0.9;
 }
+#combination-controls { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+#combination-controls button {
+  position: absolute;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+  pointer-events: auto;
+  touch-action: manipulation;
+  transform: none;
+}
+#combination-controls button:hover { background: color-mix(in srgb, var(--text-dark) 10%, transparent); }
+#combination-controls button:focus-visible { outline: 2px solid var(--text-dark); outline-offset: 1px; }
+
+.combination-card { max-width: 404px; }
+.combination-card .modal-close-btn { width: 44px; height: 44px; }
+#combination-hint { font-size: .9rem; color: var(--text-dark); margin: 8px 0 16px; }
+#combination-examples { clear: both; }
+#combination-examples canvas { display: block; width: min(100%, 304px); height: auto; margin: 12px auto 0; }
+
 [hidden] { display: none !important; }
 .stage-wrapper > .recipe-modal {
   position: absolute; transition: none;

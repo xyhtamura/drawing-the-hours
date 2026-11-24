@@ -47,6 +47,7 @@
 <body>
   <main class="stage-wrapper" aria-label="Drawing field">
     <canvas id="game-canvas" tabindex="0" aria-label="Draw on the field"></canvas>
+    <div id="combination-controls" role="group" aria-label="Visit requirements" hidden></div>
     <button id="btn-pause" class="stage-pause" title="Open pause menu (Escape)">Pause</button>
     <section id="title-screen" class="recipe-modal active" role="dialog" aria-modal="true" aria-labelledby="title-heading">
       <canvas id="title-art" aria-hidden="true"></canvas>
@@ -110,49 +111,104 @@
       <div class="field-section-title" style="font-family:Georgia,serif; font-size:1.05rem; font-weight:600; margin:12px 0 8px; color:var(--text-dark);">
         Meadow Inhabitants
       </div>
-      <div class="recipe-entry">
+      <div class="recipe-entry field-specimen">
+        <canvas class="specimen-art" data-specimen="brimstone" aria-hidden="true"></canvas>
         <span class="entry-badge" style="background:#fef3c7; color:#854d0e;">Species</span>
         <div class="recipe-info">
           <h3>Brimstone Butterfly</h3>
           <p>Folded sulphur-yellow paper wings. Wanders leisurely with delicate flutter and resting glides.</p>
         </div>
       </div>
-      <div class="recipe-entry" data-reveal-hour="midnight">
+      <div class="recipe-entry field-specimen">
+        <canvas class="specimen-art" data-specimen="damselfly" aria-hidden="true"></canvas>
+        <span class="entry-badge">Species</span>
+        <div class="recipe-info"><h3>Azure Damselfly</h3>
+          <p>Slender needle abdomen with 4 gauzy wings. Hovers motionlessly in place, then dashes in sudden straight darts.</p>
+        </div>
+      </div>
+      <div class="recipe-entry field-specimen">
+        <canvas class="specimen-art" data-specimen="hawkmoth" aria-hidden="true"></canvas>
+        <span class="entry-badge" style="background:#fce7f3; color:#9d174d;">Species</span>
+        <div class="recipe-info">
+          <h3>Roseate Hawkmoth</h3>
+          <p>Plump velvety body with swept delta wings. Cruises continuously in wide, sweeping arcing loops.</p>
+        </div>
+      </div>
+      <div class="recipe-entry field-specimen" data-reveal-hour="noon">
+        <canvas class="specimen-art" data-specimen="hoverfly" aria-hidden="true"></canvas>
+        <span class="entry-badge" style="background:#fef9c3; color:#854d0e;">Species</span>
+        <div class="recipe-info">
+          <h3>Amber Hoverfly</h3><p>Appears at Noon. Holds still, turns, then shifts a short distance, so it is the easiest insect to draw around.</p>
+        </div>
+      </div>
+      <div class="recipe-entry field-specimen" data-reveal-hour="dusk">
+        <canvas class="specimen-art" data-specimen="lacewing" aria-hidden="true"></canvas>
+        <span class="entry-badge" style="background:#dcfce7; color:#166534;">Species</span>
+        <div class="recipe-info">
+          <h3>Paper Lacewing</h3><p>Appears at Dusk. Mint veined wings fold while it rests on a leaf for 1.5 seconds. Draw a figure-eight with one lacewing and one different insect in separate pockets. Leaves do not count as targets.</p>
+        </div>
+      </div>
+      <div class="recipe-entry field-specimen" data-reveal-hour="midnight">
+        <canvas class="specimen-art" data-specimen="firefly" aria-hidden="true"></canvas>
         <span class="entry-badge" style="background:#e0f2fe; color:#0369a1;">Species</span>
         <div class="recipe-info">
           <h3>Window Firefly</h3><p>Appears at Midnight. A slow beetle with a pale abdomen that stays visible between glows. Target radius stays the same throughout the glow cycle.</p>
         </div>
       </div>
-      <div class="recipe-entry" data-reveal-hour="midnight">
+      <div class="recipe-entry field-specimen">
+        <canvas class="specimen-art" data-specimen="seed" aria-hidden="true"></canvas>
+        <span class="entry-badge" style="background:#e9efe0; color:#3f5b34;">Seed</span>
+        <div class="recipe-info">
+          <h3>Dandelion Seed</h3>
+          <p>Drifts on the wind. Draw around a seed and an insect together for Seed &amp; Wing.</p>
+        </div>
+      </div>
+      <div class="recipe-entry field-specimen" data-reveal-hour="noon">
+        <canvas class="specimen-art" data-specimen="bean" aria-hidden="true"></canvas>
+        <span class="entry-badge" style="background:#ede7d6; color:#5c4837;">Thread</span>
+        <div class="recipe-info">
+          <h3>Flax Flower</h3>
+          <p>Appears throughout Noon and returns in Dusk XVI and Midnight XXIV. Drawing the cord over a flax flower picks it. Your <em>next</em> cord runs 400 px longer — the mark on the cord meter moves right before you start it — and the length is spent on that one cord. A picked flower wilts after twelve seconds. Another grows eight seconds after picking at Noon, or twenty-four seconds later in Dusk and Midnight. A flower is never part of a combination.</p>
+        </div>
+      </div>
+      <div class="recipe-entry field-specimen" data-reveal-hour="noon">
+        <canvas class="specimen-art" data-specimen="poppy" aria-hidden="true"></canvas>
+        <span class="entry-badge" style="background:#fae5e5; color:#852b2b;">Thread</span>
+        <div class="recipe-info">
+          <h3>Poppy</h3>
+          <p>Appears from Noon X and returns in the busiest visits of each hour. Drawing the cord over a poppy picks it, and everything on the field moves at less than half its speed for eight seconds. The clock does not slow. Another poppy grows twenty seconds after the field is back to speed. A poppy is never part of a combination.</p>
+        </div>
+      </div>
+      <div class="recipe-entry field-specimen" data-reveal-hour="midnight">
+        <canvas class="specimen-art" data-specimen="jasmine" aria-hidden="true"></canvas>
         <span class="entry-badge" style="background:#e9efe0; color:#3f5b34;">Thread</span>
         <div class="recipe-info">
           <h3>Night Jasmine</h3>
           <p>Appears in the last two Midnight visits. Begin a thread <em>inside</em> the flower and the first insect that thread crosses settles on it: the cord ends there and the insect stays put for 24 seconds, which is long enough to draw around it at leisure. It gathers nothing by itself — it thins a crowded field and leaves you a target that holds still. The bloom is spent once its guest arrives, and another opens later.</p>
         </div>
       </div>
-      <div class="recipe-entry" data-reveal-hour="dusk">
-        <span class="entry-badge" style="background:#dcfce7; color:#166534;">Species</span>
+      <div class="recipe-entry field-specimen">
+        <canvas class="specimen-art" data-specimen="snail" aria-hidden="true"></canvas>
+        <span class="entry-badge" style="background:#fae5e5; color:#852b2b;">Hazard</span>
         <div class="recipe-info">
-          <h3>Paper Lacewing</h3><p>Appears at Dusk. Mint veined wings fold while it rests on a leaf for 1.5 seconds. Draw a figure-eight with one lacewing and one different insect in separate pockets. Leaves do not count as targets.</p>
+          <h3>Ground Crawler (Snail)</h3>
+          <p>At Dawn a snail crawls along the paving seam through the middle of the field; in later hours it keeps to the bottom edge. Your cord can cross a snail safely, but a loop that encloses one gathers nothing. Draw around it.</p>
         </div>
       </div>
-      <div class="recipe-entry" data-reveal-hour="noon">
-        <span class="entry-badge" style="background:#fef9c3; color:#854d0e;">Species</span>
+      <div class="recipe-entry field-specimen" data-reveal-hour="noon">
+        <canvas class="specimen-art" data-specimen="hornet" aria-hidden="true"></canvas>
+        <span class="entry-badge" style="background:#fae5e5; color:#852b2b;">Hazard</span>
         <div class="recipe-info">
-          <h3>Amber Hoverfly</h3><p>Appears at Noon. Holds still, turns, then shifts a short distance, so it is the easiest insect to draw around.</p>
+          <h3>Atrium Hornet</h3>
+          <p>Appears at Noon. Flies like the other insects, wandering and turning on its own. A cord that touches it is cut at once, and a loop that holds one fails.</p>
         </div>
       </div>
-      <div class="recipe-entry">
-        <span class="entry-badge">Species</span>
-        <div class="recipe-info"><h3>Azure Damselfly</h3>
-          <p>Slender needle abdomen with 4 gauzy wings. Hovers motionlessly in place, then dashes in sudden straight darts.</p>
-        </div>
-      </div>
-      <div class="recipe-entry">
-        <span class="entry-badge" style="background:#fce7f3; color:#9d174d;">Species</span>
+      <div class="recipe-entry field-specimen" data-reveal-hour="noon">
+        <canvas class="specimen-art" data-specimen="web" aria-hidden="true"></canvas>
+        <span class="entry-badge" style="background:#fae5e5; color:#852b2b;">Hazard</span>
         <div class="recipe-info">
-          <h3>Roseate Hawkmoth</h3>
-          <p>Plump velvety body with swept delta wings. Cruises continuously in wide, sweeping arcing loops.</p>
+          <h3>Web Patch</h3>
+          <p>Appears at Noon. A patch of web strung across the atrium in a fixed place — the one hazard that holds still, because it is a thing rather than a creature. A cord drawn into it sticks and is cut. A loop drawn around one is still valid; the cord simply cannot cross it.</p>
         </div>
       </div>
 
@@ -212,34 +268,6 @@
       </div>
 
       <div class="recipe-entry" data-reveal-hour="noon">
-        <span class="entry-badge" style="background:#ede7d6; color:#5c4837;">Thread</span>
-        <div class="recipe-info">
-          <h3>Flax Flower</h3>
-          <p>Appears throughout Noon and returns in Dusk XVI and Midnight XXIV. Drawing the cord over a flax flower picks it. Your <em>next</em> cord runs 400 px longer — the mark on the cord meter moves right before you start it — and the length is spent on that one cord. A picked flower wilts after twelve seconds. Another grows eight seconds after picking at Noon, or twenty-four seconds later in Dusk and Midnight. A flower is never part of a combination.</p>
-        </div>
-      </div>
-      <div class="recipe-entry" data-reveal-hour="noon">
-        <span class="entry-badge" style="background:#fae5e5; color:#852b2b;">Thread</span>
-        <div class="recipe-info">
-          <h3>Poppy</h3>
-          <p>Appears from Noon X and returns in the busiest visits of each hour. Drawing the cord over a poppy picks it, and everything on the field moves at less than half its speed for eight seconds. The clock does not slow. Another poppy grows twenty seconds after the field is back to speed. A poppy is never part of a combination.</p>
-        </div>
-      </div>
-      <div class="recipe-entry" data-reveal-hour="noon">
-        <span class="entry-badge" style="background:#fae5e5; color:#852b2b;">Hazard</span>
-        <div class="recipe-info">
-          <h3>Atrium Hornet</h3>
-          <p>Appears at Noon. Flies like the other insects, wandering and turning on its own. A cord that touches it is cut at once, and a loop that holds one fails.</p>
-        </div>
-      </div>
-      <div class="recipe-entry" data-reveal-hour="noon">
-        <span class="entry-badge" style="background:#fae5e5; color:#852b2b;">Hazard</span>
-        <div class="recipe-info">
-          <h3>Web Patch</h3>
-          <p>Appears at Noon. A patch of web strung across the atrium in a fixed place — the one hazard that holds still, because it is a thing rather than a creature. A cord drawn into it sticks and is cut. A loop drawn around one is still valid; the cord simply cannot cross it.</p>
-        </div>
-      </div>
-      <div class="recipe-entry" data-reveal-hour="noon">
         <span class="entry-badge badge-single">Single Loop</span>
         <div class="recipe-info">
           <h3>Seed &amp; Trio</h3>
@@ -293,17 +321,19 @@
         <canvas class="combo-diagram" data-combo="trace" data-w="160" data-h="60" role="img" aria-label="Diagram: one open stroke threading a firefly, a lacewing, then a different firefly, numbered 1 to 3"></canvas>
       </div>
 
-      <div class="recipe-entry">
-        <span class="entry-badge" style="background:#fae5e5; color:#852b2b;">Hazard</span>
-        <div class="recipe-info">
-          <h3>Ground Crawler (Snail)</h3>
-          <p>At Dawn a snail crawls along the paving seam through the middle of the field; in later hours it keeps to the bottom edge. Your cord can cross a snail safely, but a loop that encloses one gathers nothing. Draw around it.</p>
-        </div>
-      </div>
-
       <button id="btn-close-modal" class="close-btn">Back to menu</button>
     </div>
   </div>
+
+  <section id="combination-modal" class="recipe-modal" role="dialog" aria-modal="true"
+      aria-labelledby="combination-heading" aria-describedby="combination-hint" hidden inert>
+    <div class="recipe-card combination-card">
+      <button id="btn-close-combination" class="modal-close-btn close-btn" type="button" aria-label="Back to visit" title="Back to visit">✕</button>
+      <h2 id="combination-heading"></h2>
+      <p id="combination-hint"></p>
+      <div id="combination-examples"></div>
+    </div>
+  </section>
 
   <!-- Visit / Chapter Selection Modal -->
   <div id="visit-modal" class="recipe-modal" role="dialog" aria-modal="true">
@@ -510,10 +540,11 @@
   <script type="module">
     import { setupPerformanceSettings } from './src/performance-settings.js';
     import { KIOSK } from './src/build.js';
-    import { isLocal, localizeContext, localizeDocument } from './src/edition.js';
+    import { isLocal, localize, localizeContext, localizeDocument } from './src/edition.js';
     import { getColorMode, setColorMode } from './src/theme.js';
     import { Game } from './src/game.js';
-    import { renderComboCanvases } from './src/combo-diagrams.js';
+    import { COMBO_HINTS, renderComboCanvases, renderComboExample, renderSpecimens, visitComboExamples } from './src/combo-diagrams.js';
+    import { onPapersArrived } from './src/paper.js';
     import { audio } from './src/audio.js';
     import { music } from './src/music.js';
     import { createTitleArt, dressMenus } from './src/shell-art.js';
@@ -540,6 +571,10 @@
     const btnPause = document.getElementById('btn-pause');
     const btnRestart = document.getElementById('btn-restart');
     const modal = document.getElementById('fieldbook-modal');
+    const combinationControls = document.getElementById('combination-controls');
+    const combinationModal = document.getElementById('combination-modal');
+    const combinationExamples = document.getElementById('combination-examples');
+    const btnCloseCombination = document.getElementById('btn-close-combination');
     const btnCloseModal = document.getElementById('btn-close-modal');
     const visitModal = document.getElementById('visit-modal');
     const btnCloseVisitModal = document.getElementById('btn-close-visit-modal');
@@ -664,6 +699,7 @@
     let activePanel = null;
     let settingsReturn = 'pause-menu';
     let changingPanel = false;
+    let combinationTrigger = null;
     const showPanel = (id) => {
       if (id === 'settings-menu' && activePanel !== 'settings-menu') {
         settingsReturn = activePanel === 'title-screen' ? 'title-screen' : 'pause-menu';
@@ -675,6 +711,7 @@
       changingPanel = true;
       if (id) { game.cancelStroke(); audio.stopCicadas(); }
       activePanel = id;
+      if (id !== 'combination-modal') combinationTrigger = null;
       game.uiSuspended = Boolean(id);
       game.musicTitle = id === 'title-screen';
       for (const panel of panels) {
@@ -684,6 +721,7 @@
         panel.inert = !open;
       }
       canvas.inert = Boolean(id);
+      combinationControls.hidden = Boolean(id) || !combinationControls.childElementCount;
       btnPause.hidden = Boolean(id);
       if (!id && game.state === 'PAUSED') game.togglePause();
       changingPanel = false;
@@ -695,9 +733,69 @@
     };
     const openMenu = () => showPanel('pause-menu');
     const closeSettings = () => showPanel(settingsReturn);
+    let combinationArt = [];
+    const paintCombination = () => {
+      for (const [image, spec] of combinationArt) renderComboExample(image, spec, 304, 90);
+    };
+    const openCombination = (key, trigger) => {
+      const objective = game.campaign.objectiveProgress[key];
+      if (activePanel || !objective) return;
+      const examples = visitComboExamples(key, game.currentLevel);
+      if (!examples.length) return;
+      combinationTrigger = trigger;
+      document.getElementById('combination-heading').textContent = objective.label;
+      document.getElementById('combination-hint').textContent = COMBO_HINTS[key];
+      combinationArt = examples.map(spec => [document.createElement('canvas'), spec]);
+      combinationExamples.replaceChildren(...combinationArt.map(([image]) => image));
+      paintCombination();
+      showPanel('combination-modal');
+      combinationModal.querySelector('.recipe-card').scrollTop = 0;
+    };
+    const closeCombination = () => {
+      const trigger = combinationTrigger;
+      showPanel(null);
+      trigger?.focus({ preventScroll: true });
+    };
+
+    // The canvas supplies the layout. Native buttons over its rows handle touch and keyboard.
+    let combinationLayout = '';
+    game.onCombinationTargets = targets => {
+      const layout = JSON.stringify([game.width, game.height, targets]);
+      if (layout === combinationLayout) return;
+      combinationLayout = layout;
+      const buttons = new Map([...combinationControls.children].map(button => [button.dataset.key, button]));
+      const next = targets.map(({ key, label, x, y, w, h }) => {
+        let button = buttons.get(key);
+        if (!button) {
+          button = document.createElement('button');
+          button.type = 'button';
+          button.dataset.key = key;
+          button.setAttribute('aria-haspopup', 'dialog');
+          button.setAttribute('aria-controls', 'combination-modal');
+          button.onclick = () => openCombination(key, button);
+        }
+        button.setAttribute('aria-label', localize(`Show diagram for ${label}`));
+        Object.assign(button.style, {
+          left: `${x / game.width * 100}%`, top: `${y / game.height * 100}%`,
+          width: `${w / game.width * 100}%`, height: `${h / game.height * 100}%`,
+        });
+        return button;
+      });
+      if (next.length !== buttons.size || next.some((button, i) => button !== combinationControls.children[i])) {
+        combinationControls.replaceChildren(...next);
+      }
+      combinationControls.hidden = Boolean(activePanel) || !next.length;
+    };
+
+    const paintFieldBook = () => { renderSpecimens(modal); renderComboCanvases(modal); };
+    onPapersArrived(() => {
+      if (activePanel === 'fieldbook-modal') paintFieldBook();
+      if (activePanel === 'combination-modal') paintCombination();
+    });
     const toggleFieldbook = (open = activePanel !== 'fieldbook-modal') => {
-      if (open) renderComboCanvases(modal);
-      applyFieldBookReveal(); showPanel(open ? 'fieldbook-modal' : 'pause-menu');
+      applyFieldBookReveal();
+      if (open) paintFieldBook();
+      showPanel(open ? 'fieldbook-modal' : 'pause-menu');
     };
     const toggleVisitModal = (open = activePanel !== 'visit-modal') => {
       renderVisitModal(); showPanel(open ? 'visit-modal' : null);
@@ -731,6 +829,7 @@
     btnPause.onclick = openMenu;
     btnFieldbook.onclick = () => toggleFieldbook(true);
     btnCloseModal.onclick = openMenu;
+    btnCloseCombination.onclick = closeCombination;
     if (btnEncyclopedia) btnEncyclopedia.onclick = () => showPanel('encyclopedia-modal');
     const btnCloseEncyclopedia = document.getElementById('btn-close-encyclopedia');
     const btnCloseEncyclopediaX = document.getElementById('btn-close-encyclopedia-x');
@@ -769,6 +868,7 @@
         if (e.target === panel) {
           if (panel.id === 'pause-menu') showPanel(null);
           else if (panel.id === 'settings-menu') closeSettings();
+          else if (panel.id === 'combination-modal') closeCombination();
           else if (panel.id !== 'title-screen') openMenu();
         }
       });
@@ -788,11 +888,14 @@
           e.preventDefault();
           if (activePanel === 'pause-menu') showPanel(null);
           else if (activePanel === 'settings-menu') closeSettings();
+          else if (activePanel === 'combination-modal') closeCombination();
           else if (activePanel !== 'title-screen') openMenu();
         }
         return;
       }
-      if (e.target instanceof HTMLElement && e.target.closest('button')) return;
+      if (e.target instanceof HTMLElement && e.target.closest('button')) {
+        if (!combinationControls.contains(e.target) || e.code === 'Space' || e.key === 'Enter') return;
+      }
       if (e.key === 'Escape') { e.preventDefault(); openMenu(); }
       else if (e.code === 'Space') {
         e.preventDefault();
